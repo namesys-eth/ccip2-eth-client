@@ -1,5 +1,3 @@
-# Bored ENS Yacht Club
+# CCIP2 Client
 
-`npm install`
-
-`npm run build`
+Client for CCIP2 ENS Records Manager
