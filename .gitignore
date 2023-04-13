@@ -1,0 +1,13 @@
+.env*
+node_modules/
+package-lock.json
+out*
+build*
+*/img
+.next
+.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+*/*/*/.DS_Store
+*/*/*/*/.DS_Store
+
