@@ -10,8 +10,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@alch/alchemy-web3": "^1.4.7",
     "@coreui/coreui": "^4.2.2",
     "@coreui/react": "^4.4.0",
+    "@ensdomains/ensjs": "^3.0.0-alpha.59",
+    "@ethersproject/providers": "^5.7.2",
     "@rainbow-me/rainbowkit": "^0.2.0",
     "alchemy-sdk": "^2.2.0",
     "antd": "^4.24.1",
@@ -25,11 +28,12 @@
     "react-addons-shallow-compare": "^15.6.3",
     "react-device-detect": "^2.2.2",
     "react-dom": "^18.1.0",
+    "react-loading-icons": "^1.1.0",
     "react-modal": "^3.15.1",
     "react-router-dom": "^6.3.0",
     "styled-components": "^5.3.5",
     "wagmi": "^0.4.0",
-    "web3": "^1.7.3"
+    "web3": "^1.9.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.9",

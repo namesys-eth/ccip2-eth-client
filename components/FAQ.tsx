@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
 const FAQ = ({ show, onClose }) => {
-  const title = 'frequently asked questions';
+  const title = 'about';
   const [browser, setBrowser] = React.useState(false);
 
   React.useEffect(() => {
@@ -20,7 +20,14 @@ const FAQ = ({ show, onClose }) => {
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            x
+            <span 
+              className="material-icons"
+              style={{
+                marginTop: '4px'
+              }}
+            >
+              close
+            </span>
           </a>
         </StyledModalHeader>
         {title && <StyledModalTitle>{title}</StyledModalTitle>}
@@ -49,15 +56,17 @@ const StyledModalBody = styled.div`
   justify-content: center;
   height: 500px;
   overflow-y: auto;
+  color: white;
 `;
 
 const StyledModalTitle = styled.div`
-  padding-top: 20px;
+  padding-top: 0px;
   font-size: 22px;
   display: flex;
   justify-content: center;
   font-weight: 800;
   margin-bottom: 20px;
+  color: white;
 `;
 
 const StyledModalHeader = styled.div`
@@ -67,7 +76,7 @@ const StyledModalHeader = styled.div`
 `;
 
 const StyledModal = styled.div`
-  background: linear-gradient(144deg, rgba(224,145,145,1) 0%, rgba(223,223,223,1) 100%);
+  background: linear-gradient(127deg, rgba(125,90,78,1) 0%, rgba(125,90,78,1) 100%);
   width: 500px;
   height: 600px;
   border-radius: 6px;
@@ -85,7 +94,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.35);
 `;
 
 export default FAQ;

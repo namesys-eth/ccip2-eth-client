@@ -38,7 +38,7 @@ const customTheme: Theme = {
     connectButtonBackgroundError: 'red',
     connectButtonInnerBackground: 'linear-gradient(153deg, rgba(190,95,65,1) 0%, rgba(152,33,30,1) 48%, rgba(203,111,0,1) 100%)',
     connectButtonText: 'white',
-    connectButtonTextError: 'red',
+    connectButtonTextError: 'white',
     connectionIndicator: 'white',
     error: 'red',
     generalBorder: 'rgb(255, 255, 255, 0.75)',

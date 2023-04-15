@@ -27,8 +27,19 @@ const Preview = ({ show, onClose, title }) => {
         </StyledModalHeader>
         {title &&
           <StyledModalTitle>
-            <span style={{ fontFamily: 'RobotoMono', fontSize: '26px', margin: '-7.75px 1px', fontWeight: '800', letterSpacing: '0.5px' }}>{title}</span>
-            <span>.100kcat.eth</span>&nbsp;
+            <span style={{ 
+              fontFamily: 'RobotoMono', 
+              fontSize: '26px', 
+              margin: '-7.75px 1px', 
+              fontWeight: '800', 
+              letterSpacing: '0.5px' 
+            }}>
+              {title}
+            </span>
+            <span>
+              .100kcat.eth
+            </span>
+            &nbsp;
           </StyledModalTitle>}
         <StyledModalBody>
         </StyledModalBody>

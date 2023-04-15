@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
 @font-face {
     font-family: 'SF Mono';
     src: url('../assets/SF-Mono.woff2') format('woff2');
@@ -47,20 +49,18 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-size: 100% 100%;
   border-radius: 4px !important;
   color: black !important;
+  background-image: linear-gradient(112deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 48%, rgba(70,63,55,1) 100%);
+  background-size: cover;
+  background-repeat: no-repeat;
+  min-height: 100vh !important;
 }
 
 .page {
-  background: linear-gradient(45deg, rgb(32, 37, 41) 0%, rgb(0, 0, 0) 100%);
-  background-size: contain;
+  background-size: 100% auto;
   background-attachment: fixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0 auto;
+  height: auto;
   border-radius: 4px;
 }
 
@@ -69,6 +69,12 @@ body {
   border-radius: 6px;
   border: solid;
   border-width: 0;
+  width: 15%;
+}
+@media screen and (max-width: 800px) {
+  .avatar {
+    width: 25%;
+  }
 }
 
 .route {
@@ -94,14 +100,42 @@ body {
   background: transparent;
   animation: gradient 7s ease infinite;
   background-size: 400% 400%;
-  border: 1px solid #646464;
+  border: 0px solid #646464;
   border-radius: 10px;
   padding-bottom: 10px;
   padding-left: 50px;
   padding-right: 50px;
 }
 
-.icon{
+.input-box {
+  font-family: 'SF Mono';
+  padding-left: 7px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: black;
+  border-radius: 5px;
+  font-size: 15px;
+  color: white;
+  outline: none;
+  border: none;
+}
+
+.icon-ens {
+  align-items: center;
+  justify-content: center;
+  width: 80.55px;
+  height: 90px;
+  margin-bottom: 15px;
+}
+@media screen and (max-width: 800px) {
+  .icon-ens {
+    margin-top: 10px;
+    width: 44.75px;
+    height: 50px;
+  }
+}
+
+.icon {
   align-items: center;
   justify-content: center;
   width: 13px;
@@ -109,7 +143,19 @@ body {
   margin-bottom: -1.5px;
 }
 
-.largeicon{
+.miui {
+  font-size: 100px;
+}
+
+.smol{
+  margin-top: 0px;
+}
+
+.smoller{
+  font-size: 18px;
+}
+
+.largeicon {
   align-items: center;
   justify-content: center;
   width: 19px;
@@ -128,6 +174,36 @@ body {
     cursor: pointer;
 }
 
+.list-container {
+  width: 40%;
+  margin-left: 30%;
+  border-radius: 5px;
+  border: 0px solid rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(112deg, rgba(190,95,65,0.2) 0%, rgba(191,41,36,0.2) 48%, rgba(203,111,0,0.2) 100%);
+  padding: 25px 25px 25px 25px;
+}
+@media screen and (max-width: 800px) {
+  .list-container {
+    width: 90%;
+    margin-left: 5%;
+  }
+}
+
+.search-container {
+  width: 30%;
+  margin-left: 35%;
+  border-radius: 5px;
+  border: 0px solid rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(112deg, rgba(190,95,65,0.2) 0%, rgba(191,41,36,0.2) 48%, rgba(203,111,0,0.2) 100%);
+  padding: 25px 25px 25px 25px;
+}
+@media screen and (max-width: 800px) {
+  .search-container {
+    width: 90%;
+    margin-left: 5%;
+  }
+}
+
 .button {
   appearance: none;
   border: none;
@@ -141,6 +217,94 @@ body {
   align-items: left;
   color: white;
   transition: all ease 100ms;
+}
+.button::after {
+  content: attr(data-tooltip);
+  background-color: black;
+  color: white;
+  padding: 4px;
+  border-radius: 2px;
+  position: absolute;
+  top: -50%;
+  left: 0%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  font-size: 10px;
+  transition: opacity 0.2s ease-in-out;
+}
+.button:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
+.clear {
+  color: white;
+}
+
+.footer-text {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: -3px;
+}
+.footer-text:hover {
+  color: skyblue;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.button-header {
+  appearance: none;
+  border: none;
+  font-family: "Spotnik";
+  background-image: linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%);
+  font-size: 15px; 
+  font-weight: 800;
+  height: 40px;
+  padding: 1px 12px;
+  border-radius: 6px;
+  align-items: left;
+  color: white;
+  transition: all ease 100ms;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.button-header:disabled {
+  background-image: linear-gradient(112deg, rgba(190,95,65,0.1) 0%, rgba(191,41,36,0.1) 48%, rgba(203,111,0,0.1) 100%);
+}
+.button-header::after {
+  content: attr(data-tooltip);
+  background-color: black;
+  color: white;
+  padding: 4px;
+  border-radius: 2px;
+  position: absolute;
+  top: -50%;
+  left: 0%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  font-size: 10px;
+  transition: opacity 0.2s ease-in-out;
+}
+.button-header:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
+.connect-button {
+  margin-top: -170px;
+  padding-right: 40px;
+}
+@media screen and (max-width: 800px) {
+  .connect-button {
+    margin-top: -100px;
+    padding-right: 20px;
+  }
 }
 
 .small {
@@ -352,13 +516,22 @@ input[type="checkbox"].hide {
   display: flex;
   justify-content: center;
   text-align: center;
-  background: rgb(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0);
   padding-bottom: 10px;
   padding-left: 10px;
   padding-right:10px;
   padding-top: 10px;
   border-radius: 6px;
-  font-size: 18px;
+  font-size: 30px;
+  color: white;
+  font-weight: 700;
+  font-family: 'Spotnik';
+}
+@media screen and (max-width: 800px) {
+  .home-modal-item {
+    font-size: 18px;
+    letter-spacing: -1px;
+  }
 }
 
 .home-modal-inner {
@@ -463,7 +636,9 @@ img {
 /*
 /* Carousal Home */
 .content-slider {
-  height: 120px;
+  margin-top: 50px;
+  margin-bottom: 170px;
+  height: 200px;
   width: 100%;
   justify-content: center;
   align-items: center;
@@ -471,10 +646,15 @@ img {
 
 .slider {
   left: 50%;
-  margin-left: -150px;
+  margin-left: -400px;
   height: 100%;
   overflow: visible;
   position: relative;
+}
+@media screen and (max-width: 800px) {
+  .slider {
+    margin-left: -200px;
+  }
 }
 
 .mask {
@@ -489,16 +669,20 @@ img {
 }
 
 .slider li {
-  width: 300px;
+  width: 800px;
   height: 100%;
   position: absolute;
   top: -125px;
   list-style: none;
 }
+@media screen and (max-width: 800px) {
+  .slider li {
+    width: 400px;
+  }
+}
 
 .slider .quote {
   font-size: 40px;
-  font-style: italic;
 }
 
 .slider .source {
