@@ -43,58 +43,85 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                 color: '#bfbfbf'
               }}
             >
-              <span 
-                style={{ 
-                  fontFamily: 'SF Mono',
-                  letterSpacing: '-0px',
-                  fontWeight: '800',
-                  fontSize: '20px'
-                }}
-              >
-                {item.name}
-              </span>
-              <span 
-                style={{ 
-                  fontFamily: 'SF Mono',
-                  fontSize: '15px', 
-                  color: 'skyblue'
-                }}
-              >
-                .
-              </span>
-              <span 
-                style={{ 
-                  fontFamily: 'Spotnik',
-                  fontSize: '11px', 
-                  color: 'skyblue',
-                  fontWeight: '700'
-                }}
-              >
-                eth
-              </span>
-            </span>
-            <button
-              className="button"
-              style={{
-                alignSelf: 'flex-end',
-                height: '30px',
-                width: '100px'
-              }}
-              onClick={() => onItemClick(item.key)}
-              data-tooltip='Click to edit off-chain records'
-            >
-              <div 
-                  className="smol"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
+              <div>
+                <span 
+                  style={{ 
+                    fontFamily: 'SF Mono',
+                    letterSpacing: '-0px',
+                    fontWeight: '800',
+                    fontSize: '20px'
                   }}
                 >
-                    {'edit'}&nbsp;<span className="material-icons smoller">manage_history</span>
-                </div>
-            </button>
+                  {item.name}
+                </span>
+                <span 
+                  style={{ 
+                    fontFamily: 'SF Mono',
+                    fontSize: '15px', 
+                    color: 'skyblue'
+                  }}
+                >
+                  .
+                </span>
+                <span 
+                  style={{ 
+                    fontFamily: 'Spotnik',
+                    fontSize: '11px', 
+                    color: 'skyblue',
+                    fontWeight: '700'
+                  }}
+                >
+                  eth
+                </span>
+              </div>
+            </span>
+            <div>
+              <a 
+                href={`https://app.ens.domains/name/${item.name}.eth`} 
+                target='_blank'
+                rel="noreferrer"
+              >
+                <img
+                  className="icon-ens-small"
+                  alt="ens-icon"
+                  src="ens.png"
+                />
+              </a>
+              <a 
+                style={{ marginRight: '15px' }}
+                href={`https://ens.vision/name/${item.name}.eth`} 
+                target='_blank'            
+                rel="noreferrer"      
+              >
+                <img
+                  className="icon-vision-small"
+                  alt="ensvision-icon"
+                  src="ens-vision.png"
+                />
+              </a>
+              <button
+                className="button"
+                style={{
+                  alignSelf: 'flex-end',
+                  height: '30px',
+                  width: '100px'
+                }}
+                onClick={() => onItemClick(item.key)}
+                data-tooltip='Click to edit off-chain records'
+              >
+                <div 
+                    className="smol"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center'
+                    }}
+                  >
+                      {'edit'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                  </div>
+              </button>
+            </div>
           </div>
           <hr></hr>
         </li>

@@ -45,7 +45,7 @@ const customTheme: Theme = {
     generalBorderDim: 'rgb(255, 255, 255, 0.25)',
     menuItemBackground: 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)',
     modalBackdrop: 'none',
-    modalBackground: 'linear-gradient(90deg, rgba(36,28,57,0.985) 0%, rgba(114,137,149,0.985) 100%)',
+    modalBackground: 'linear-gradient(42deg, rgba(125,90,78,1) 0%, rgba(97,53,38,1) 100%)',
     modalBorder: 'white',
     modalText: 'white',
     modalTextDim: 'rgb(255, 255, 255, 0.825)',
