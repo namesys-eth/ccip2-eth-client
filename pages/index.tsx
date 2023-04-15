@@ -51,6 +51,7 @@ const Home: NextPage = () => {
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
+  const [empty, setEmpty] = React.useState(false)
   const [option, setOption] = React.useState('owner')
   const { chains } = useNetwork()
 
@@ -90,18 +91,25 @@ const Home: NextPage = () => {
     const allTokens = nfts.ownedNfts
     var allEns: string[] = []
     var items: any[] = []
+    var j = 0
     for (var i = 0; i < allTokens.length; i++) {
       // @TODO : ENS Metadata service is broken and not showing all the names
       if (ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
+        j = j + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
         items.push({
-          'key': i + 1,
+          'key': j,
           'name': allTokens[i].title.split('.eth')[0]
         })
       }
     }
     setMeta(items)
     setLoading(false)
+    if (j === 0) {
+      setEmpty(true)
+    } else {
+      setEmpty(false)
+    }
     //console.log(allTokens)
   }, [accountData])
 
@@ -109,7 +117,7 @@ const Home: NextPage = () => {
     if (accountData) {
       await logTokens()
     }
-  }, [accountData])
+  }, [accountData, logTokens])
 
   React.useEffect(() => {
     setLoading(true)
@@ -118,7 +126,7 @@ const Home: NextPage = () => {
       setLoading(false)
       setMeta(metadata)
     }
-  }, [accountData, isConnected])
+  }, [accountData, isConnected, getTokens])
 
   React.useEffect(() => {
     const handleBeforeUnload = () => {
@@ -128,7 +136,7 @@ const Home: NextPage = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [])
+  }, [meta])
 
   const onItemClick = (key: number) => {
     console.log(`Item ${key} clicked`)
@@ -176,7 +184,7 @@ const Home: NextPage = () => {
         style={{
           width: '100%',
           display: 'flex',
-          justifyContent: 'flex-end'
+          justifyContent: 'flex-end',
         }}>
         <button
           className='button clear'
@@ -392,7 +400,7 @@ const Home: NextPage = () => {
               <LoadingIcons.Bars />
             </div>
           )}
-          {!loading && option === 'owner' && meta && isConnected && (
+          {!loading && option === 'owner' && meta && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -477,6 +485,27 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
+          { empty && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  fontSize: '18px',
+                  color: 'white',
+                  marginBottom: '25px'
+                }}
+              >
+                <span 
+                  className="material-icons"
+                >
+                  warning
+                </span>&nbsp;
+                No Names Found
+              </div>
+            </div>
+          )}
           {/* Footer */}
           <div
             style={{
@@ -487,7 +516,17 @@ const Home: NextPage = () => {
               justifyContent: 'center',
               display: 'flex'
             }}>
-            <span className="material-icons">folder_open</span>&nbsp;<a className="footer-text">GitHub</a>
+            <span 
+              className="material-icons">folder_open
+            </span>&nbsp;
+            <a 
+              href="https://github.com/namesys-eth/ccip2-eth-client" 
+              className="footer-text"
+              target='_blank'
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
           </div>
           {/* Modals */}
           <Faq
