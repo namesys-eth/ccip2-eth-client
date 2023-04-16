@@ -63,7 +63,7 @@ const Home: NextPage = () => {
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
   const [option, setOption] = React.useState('owner')
@@ -142,8 +142,8 @@ const Home: NextPage = () => {
     setLoading(true)
     getTokens()
     if (metadata) {
-      setLoading(false)
       setMeta(metadata)
+      setLoading(false)
     }
   }, [accountData, isConnected, getTokens])
 
@@ -187,11 +187,12 @@ const Home: NextPage = () => {
     } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
       setManager(owner.toString())
     } else {
-      console.log('No response')
-      setResponse(false)
-      setLoading(false)
+      setTimeout(() => {
+        setLoading(false)
+        setResponse(false)
+      }, 2000);
     }
-  }, [tokenID])
+  }, [tokenID, controller, owner])
 
   React.useEffect(() => {
     if (manager === accountData?.address) {
@@ -206,28 +207,29 @@ const Home: NextPage = () => {
       if (items) {
         setMeta(items)
         setSuccess(true)
+        console.log('You are owner/manager')
+        setErrorModal(false)
+        setLoading(false)
       } else {
         setSuccess(false)
         setEmpty(true)
       }
-      console.log('You are owner/manager')
-      setErrorModal(false)
-      setLoading(false)
     } else {
-      if (manager === '') {
-        console.log('No response')
-      } else {
-        console.log('You are not owner/manager')
-        setErrorModal(true)
-      }
+      setErrorModal(true)
       setSuccess(false)
-      setLoading(false)
     }
-  }, [manager])
+  }, [manager, accountData?.address, query])
 
   React.useEffect(() => {
     if (query) {
-      setTokenID(`${ethers.BigNumber?.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))).toString()}`)
+      let token: ethers.BigNumber
+      try {
+        console.log(query)
+        token = ethers.BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0])))
+        setTokenID(token.toString())
+      } catch(error) {
+        console.log('BigNumberWarning')
+      }
     }
   }, [query])
 
@@ -433,7 +435,11 @@ const Home: NextPage = () => {
                   setTokenID(''), 
                   setQuery(''),
                   setSuccess(false),
-                  setManager('')
+                  setManager(''),
+                  setLoading(true),
+                  setTimeout(() => {
+                    setLoading(false)
+                  }, 2000)
                 }}
                 className='button-header'
                 disabled={ option === 'owner'}
@@ -458,7 +464,11 @@ const Home: NextPage = () => {
                   setMeta([]),
                   setOption('manager'),
                   setSuccess(false),
-                  setManager('') 
+                  setManager(''),
+                  setLoading(true),
+                  setTimeout(() => {
+                    setLoading(false)
+                  }, 2000)
                 }}
                 className='button-header'
                 disabled={ option === 'manager'}
@@ -483,7 +493,11 @@ const Home: NextPage = () => {
                   setMeta([]),
                   setOption('search'),
                   setSuccess(false),
-                  setManager('')
+                  setManager(''),
+                  setLoading(true),
+                  setTimeout(() => {
+                    setLoading(false)
+                  }, 2000)
                 }}
                 className='button-header'
                 disabled={ option === 'search'}
@@ -638,37 +652,43 @@ const Home: NextPage = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   display: 'flex',
-                  fontSize: '18px',
+                  flexDirection: 'column',
+                  fontSize: '22px',
                   color: 'white',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 <span 
-                  className="material-icons"
+                  className="material-icons miui-smaller"
                 >
                   warning
-                </span>&nbsp;
+                </span>
+                <br></br>
                 No Names Found
               </div>
             </div>
           )}
-          { !response && !manager && query && option !== 'owner' && (
+          { !response && !manager && query && option !== 'owner' && !loading && (
             <div>
               <div
                 style={{
                   alignItems: 'center',
                   justifyContent: 'center',
                   display: 'flex',
-                  fontSize: '18px',
+                  flexDirection: 'column',
+                  fontSize: '22px',
                   color: 'white',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 <span 
-                  className="material-icons"
+                  className="material-icons miui-smaller"
                 >
                   warning
-                </span>&nbsp;
+                </span>
+                <br></br>
                 No Names Found
               </div>
             </div>
@@ -704,22 +724,26 @@ const Home: NextPage = () => {
             onClose={() => { 
               setErrorModal(false), 
               setTokenID(''), 
-              setQuery('') 
+              setQuery(''), 
+              setManager('')
             }}
             show={errorModal && searchType === 'manager' && manager}
             title={'block'}
-            children={'you are not manager'}
-          />
+          >
+            {'you are not manager'}
+          </Error>
           <Error
             onClose={() => { 
               setErrorModal(false), 
               setTokenID(''), 
-              setQuery('') 
+              setQuery(''),
+              setManager('')
             }}
             show={errorModal && searchType === 'search' && manager}
             title={'block'}
-            children={'not owner or manager'}
-          />
+          >
+            {'not owner or manager'}
+          </Error>
           <div id="modal"></div>
         </div>
       </div>
