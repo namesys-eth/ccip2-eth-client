@@ -1,20 +1,28 @@
-import React, { useState } from "react";
+import React, { useState } from "react"
 
 interface SearchBoxProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string) => void
 }
 
 const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState("")
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value);
+    setQuery(event.target.value)
+  };
+
+  const handleInputInvalid = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.target.setCustomValidity("Please enter a valid .eth name")
+  };
+
+  const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.target.setCustomValidity("")
   };
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSearch(query);
-  };
+    event.preventDefault()
+    onSearch(query)
+  }
 
   return (
     <form 
@@ -27,11 +35,17 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
     >
       <div>
         <input
-          className="input-box"
           type="text"
           placeholder="search .eth"
           value={query}
+          name=".eth search"
+          id="eth-search"
           onChange={handleInputChange}
+          onInvalid={handleInputInvalid}
+          onInput={handleInput}
+          required
+          pattern=".*\.eth$"
+          title="❗ Input must end with '.eth'"
         />
         <button 
           className="button"
@@ -49,4 +63,4 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
   );
 };
 
-export default SearchBox;
+export default SearchBox
