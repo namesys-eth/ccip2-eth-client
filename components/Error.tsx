@@ -42,7 +42,7 @@ const Error = ({ show, onClose, title, children }) => {
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
-      document.getElementById("modal")
+      document.getElementById("modal")!
     );
   } else {
     return null;

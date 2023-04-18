@@ -21,16 +21,16 @@ import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
 import SearchBox from '../components/Search'
-import { Statistic } from 'antd'
 import LoadingIcons from 'react-loading-icons'
+import * as Name from 'w3name'
+import { ed25519Keygen } from '../utils/keygen'
 
+const network = process.env.NEXT_PUBLIC_NETWORK
 const alchemyConfig = {
   apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
-  network: Network.ETH_GOERLI
+  network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET
 }
 const alchemy = new Alchemy(alchemyConfig)
-const { Countdown } = Statistic
-const EnsGraphApi = 'https://api.thegraph.com/subgraphs/name/ensdomains/ens/graphql'
 const ensRegistrars = [
   "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // v1 Registrar
   "0x114d4603199df73e7d157787f8778e21fcd13066"  // v2 Name Wrapper
@@ -58,11 +58,15 @@ const carousal = [
 
 const Home: NextPage = () => {
   const { data: accountData } = useAccount()
-  const { connectors, isConnected } = useConnect()
+  const { isConnected } = useConnect()
   const { data: gasData, isError } = useFeeData()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
+  const [modal, setModal] = React.useState(false)
+  const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
+  const [previewModal, setPreviewModal] = React.useState(false)
+  const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
@@ -110,26 +114,27 @@ const Home: NextPage = () => {
     const allTokens = nfts.ownedNfts
     var allEns: string[] = []
     var items: any[] = []
-    var j = 0
+    var count = 0
     for (var i = 0; i < allTokens.length; i++) {
       // @TODO : ENS Metadata service is broken and not showing all the names
       if (ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        j = j + 1
+        count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
         items.push({
-          'key': j,
+          'key': count,
           'name': allTokens[i].title.split('.eth')[0]
         })
       }
     }
     setMeta(items)
-    setLoading(false)
-    if (j === 0) {
+    if (count === 0) {
       setEmpty(true)
     } else {
       setEmpty(false)
     }
-    //console.log(allTokens)
+    setTimeout(() => {
+      setLoading(false)
+    }, 2000);
   }, [accountData])
 
   const getTokens = useCallback(async () => {
@@ -157,8 +162,9 @@ const Home: NextPage = () => {
     }
   }, [meta])
 
-  const onItemClick = (key: number) => {
-    console.log(`Item ${key} clicked`)
+  const onItemClick = (name: string) => {
+    setPreviewModal(true);
+    setNameToPreview(name);
   }
 
   const { data: controller } = useContractRead(
@@ -222,16 +228,22 @@ const Home: NextPage = () => {
 
   React.useEffect(() => {
     if (query) {
-      let token: ethers.BigNumber
       try {
-        console.log(query)
-        token = ethers.BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0])))
+        let token = ethers.BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0])))
         setTokenID(token.toString())
-      } catch(error) {
+      } catch (error) {
         console.log('BigNumberWarning')
       }
     }
   }, [query])
+
+  React.useEffect(() => {
+    const genRandomKey = async () => {
+      const name = await Name.create()
+      //console.log(name.key.bytes)
+    };
+    genRandomKey()
+  }, [])
 
   const handleManagerSearch = (query: string) => {
     setLoading(true)
@@ -289,8 +301,7 @@ const Home: NextPage = () => {
           style={{ marginRight: 10 }}
           data-tooltip='Learn more'
         >
-          <div 
-            className="smol"
+          <div
             style={{
               display: 'flex',
               flexDirection: 'row',
@@ -298,9 +309,26 @@ const Home: NextPage = () => {
               alignItems: 'center'
             }}
           >
-              {'about'}&nbsp;<span className="material-icons">info</span>
+            {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
           </div>
-        </button> 
+        </button>
+        <button
+          className='button clear'
+          onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+          style={{ marginRight: 10 }}
+          data-tooltip='Terms of Use'
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            {'terms'}&nbsp;<span className="material-icons">gavel</span>
+          </div>
+        </button>
         {!isMobile && (
           <div>
             <ConnectButton
@@ -430,23 +458,22 @@ const Home: NextPage = () => {
               }}>
               <button
                 onClick={() => {
-                  setOption('owner'), 
-                  setMeta(cache), 
-                  setTokenID(''), 
-                  setQuery(''),
-                  setSuccess(false),
-                  setManager(''),
-                  setLoading(true),
-                  setTimeout(() => {
-                    setLoading(false)
-                  }, 2000)
+                  setOption('owner'),
+                    setMeta(cache),
+                    setTokenID(''),
+                    setQuery(''),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
                 }}
                 className='button-header'
-                disabled={ option === 'owner'}
+                disabled={option === 'owner'}
                 data-tooltip='Show names you own'
               >
-                <div 
-                  className="smol"
+                <div
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -454,28 +481,27 @@ const Home: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                    {'owned'}&nbsp;
-                    <span className="material-icons">manage_accounts</span>
+                  {'owned'}&nbsp;
+                  <span className="material-icons">manage_accounts</span>
                 </div>
               </button>
               <button
-                onClick={() => { 
-                  option === 'search' ? console.log(cache) : setCache(meta), 
-                  setMeta([]),
-                  setOption('manager'),
-                  setSuccess(false),
-                  setManager(''),
-                  setLoading(true),
-                  setTimeout(() => {
-                    setLoading(false)
-                  }, 2000)
+                onClick={() => {
+                  option === 'search' ? console.log(cache) : setCache(meta),
+                    setMeta([]),
+                    setOption('manager'),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
                 }}
                 className='button-header'
-                disabled={ option === 'manager'}
+                disabled={option === 'manager'}
                 data-tooltip='Search for a name that you manage'
               >
-                <div 
-                  className="smol"
+                <div
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -483,28 +509,27 @@ const Home: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                    {'managed'}&nbsp;
-                    <span className="material-icons">supervised_user_circle</span>
+                  {'managed'}&nbsp;
+                  <span className="material-icons">supervised_user_circle</span>
                 </div>
               </button>
               <button
-                onClick={() => { 
-                  option === 'manager' ? console.log(cache) : setCache(meta),  
-                  setMeta([]),
-                  setOption('search'),
-                  setSuccess(false),
-                  setManager(''),
-                  setLoading(true),
-                  setTimeout(() => {
-                    setLoading(false)
-                  }, 2000)
+                onClick={() => {
+                  option === 'manager' ? console.log(cache) : setCache(meta),
+                    setMeta([]),
+                    setOption('search'),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
                 }}
                 className='button-header'
-                disabled={ option === 'search'}
+                disabled={option === 'search'}
                 data-tooltip='Search for an ENS name'
               >
-                <div 
-                  className="smol"
+                <div
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -512,8 +537,8 @@ const Home: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                    {'search'}&nbsp;
-                    <span className="material-icons">search</span>
+                  {'search'}&nbsp;
+                  <span className="material-icons">search</span>
                 </div>
               </button>
             </div>
@@ -531,7 +556,7 @@ const Home: NextPage = () => {
               <LoadingIcons.Bars />
             </div>
           )}
-          {!loading && option === 'owner' && meta && isConnected && !empty && (
+          {!loading && option === 'owner' && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -553,9 +578,9 @@ const Home: NextPage = () => {
                   marginBottom: '50px',
                 }}
               >
-                <List 
-                  items={meta} 
-                  onItemClick={onItemClick} 
+                <List
+                  items={meta}
+                  onItemClick={onItemClick}
                 />
               </div>
             </div>
@@ -582,9 +607,9 @@ const Home: NextPage = () => {
                   marginBottom: '50px',
                 }}
               >
-                <List 
-                  items={meta} 
-                  onItemClick={onItemClick} 
+                <List
+                  items={meta}
+                  onItemClick={onItemClick}
                 />
               </div>
             </div>
@@ -645,7 +670,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          { empty && option === 'owner' && (
+          {empty && option === 'owner' && (
             <div>
               <div
                 style={{
@@ -659,7 +684,7 @@ const Home: NextPage = () => {
                   fontWeight: '700'
                 }}
               >
-                <span 
+                <span
                   className="material-icons miui-smaller"
                 >
                   warning
@@ -669,7 +694,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          { !response && !manager && query && option !== 'owner' && !loading && (
+          {!response && !manager && query && option !== 'owner' && !loading && (
             <div>
               <div
                 style={{
@@ -683,7 +708,7 @@ const Home: NextPage = () => {
                   fontWeight: '700'
                 }}
               >
-                <span 
+                <span
                   className="material-icons miui-smaller"
                 >
                   warning
@@ -703,11 +728,11 @@ const Home: NextPage = () => {
               justifyContent: 'center',
               display: 'flex'
             }}>
-            <span 
+            <span
               className="material-icons">folder_open
             </span>&nbsp;
-            <a 
-              href="https://github.com/namesys-eth/ccip2-eth-client" 
+            <a
+              href="https://github.com/namesys-eth/ccip2-eth-client"
               className="footer-text"
               target='_blank'
               rel="noreferrer"
@@ -720,12 +745,16 @@ const Home: NextPage = () => {
             onClose={() => setFaqModal(false)}
             show={faqModal}
           />
+          <Terms
+            onClose={() => setTermsModal(false)}
+            show={termsModal}
+          />
           <Error
-            onClose={() => { 
-              setErrorModal(false), 
-              setTokenID(''), 
-              setQuery(''), 
-              setManager('')
+            onClose={() => {
+              setErrorModal(false),
+                setTokenID(''),
+                setQuery(''),
+                setManager('')
             }}
             show={errorModal && searchType === 'manager' && manager}
             title={'block'}
@@ -733,18 +762,36 @@ const Home: NextPage = () => {
             {'you are not manager'}
           </Error>
           <Error
-            onClose={() => { 
-              setErrorModal(false), 
-              setTokenID(''), 
-              setQuery(''),
-              setManager('')
+            onClose={() => {
+              setErrorModal(false),
+                setTokenID(''),
+                setQuery(''),
+                setManager('')
             }}
             show={errorModal && searchType === 'search' && manager}
             title={'block'}
           >
             {'not owner or manager'}
           </Error>
-          <div id="modal"></div>
+          <div id="modal">
+            <Modal
+              onClose={() => setModal(false)}
+              show={modal}
+            >
+              {'not owner or manager'}
+            </Modal>
+          </div>
+          {previewModal && (
+            <div id="modal">
+              <Preview
+                onClose={() => setPreviewModal(false)}
+                show={previewModal}
+                title={nameToPreviewModal}
+              >
+                {true}
+              </Preview>
+            </div>
+          )}
         </div>
       </div>
     </div>

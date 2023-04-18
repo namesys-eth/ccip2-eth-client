@@ -17,6 +17,8 @@
     "@coreui/react": "^4.4.0",
     "@ensdomains/ensjs": "^3.0.0-alpha.59",
     "@ethersproject/providers": "^5.7.2",
+    "@noble/ed25519": "1.7.0",
+    "@noble/hashes": "1.2.0",
     "@rainbow-me/rainbowkit": "^0.2.0",
     "alchemy-sdk": "^2.2.0",
     "antd": "^4.24.1",
@@ -35,11 +37,14 @@
     "react-router-dom": "^6.3.0",
     "replace-in-file": "^6.3.5",
     "styled-components": "^5.3.5",
+    "w3name": "^1.0.8",
     "wagmi": "^0.4.0",
     "web3": "^1.9.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.11",
+    "@types/styled-components": "^5.1.26",
     "eslint": "8.15.0",
     "eslint-config-next": "12.1.6",
     "patch-package": "^6.4.7",

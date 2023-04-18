@@ -10,7 +10,7 @@ const Terms = ({ show, onClose }) => {
     setBrowser(true);
   }, []);
 
-  const handleCloseClick = (e) => {
+  const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     onClose();
   };
@@ -20,10 +20,28 @@ const Terms = ({ show, onClose }) => {
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            x
+            <span 
+              className="material-icons"
+              style={{
+                marginTop: '4px'
+              }}
+            >
+              close
+            </span>
           </a>
         </StyledModalHeader>
-        {title && <StyledModalTitle>{title}</StyledModalTitle>}
+        {title &&
+          <StyledModalTitle>
+            <span 
+              className="material-icons miui-small"
+              style={{
+                marginTop: '4px',
+                color: 'white'
+              }}
+            >
+              gavel
+            </span>
+          </StyledModalTitle>}
         <StyledModalBody>
         </StyledModalBody>
       </StyledModal>
@@ -33,7 +51,7 @@ const Terms = ({ show, onClose }) => {
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
-      document.getElementById("modal")
+      document.getElementById("modal")!
     );
   } else {
     return null;
@@ -67,7 +85,8 @@ const StyledModalHeader = styled.div`
 `;
 
 const StyledModal = styled.div`
-  background: linear-gradient(144deg, rgba(224,145,145,1) 0%, rgba(223,223,223,1) 100%);
+  background: linear-gradient(112deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 48%, rgba(70,63,55,1) 100%);
+  background-size: 400% 400%;
   width: 500px;
   height: 600px;
   border-radius: 6px;

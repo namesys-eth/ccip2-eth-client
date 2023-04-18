@@ -7,7 +7,7 @@ interface ListItem {
 
 interface ListProps {
   items: ListItem[];
-  onItemClick: (key: number) => void;
+  onItemClick: (value: string) => void;
 }
 
 const List: React.FC<ListProps> = ({ items, onItemClick }) => {
@@ -104,18 +104,18 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                 style={{
                   alignSelf: 'flex-end',
                   height: '30px',
-                  width: '100px'
+                  width: '80px'
                 }}
-                onClick={() => onItemClick(item.key)}
+                onClick={() => onItemClick(item.name + '.eth')}
                 data-tooltip='Click to edit off-chain records'
               >
                 <div 
-                    className="smol"
                     style={{
                       display: 'flex',
                       flexDirection: 'row',
                       justifyContent: 'center',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      fontSize: '14px'
                     }}
                   >
                       {'edit'}&nbsp;<span className="material-icons smoller">manage_history</span>

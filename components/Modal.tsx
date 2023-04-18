@@ -2,14 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-const Modal = ({ show, onClose, children, title }) => {
+const Modal = ({ show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false);
-
+  const title = 'about';
   React.useEffect(() => {
     setBrowser(true);
   }, []);
 
-  const handleCloseClick = (e) => {
+  const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     onClose();
   };
@@ -19,11 +19,31 @@ const Modal = ({ show, onClose, children, title }) => {
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            close
+            <span 
+              className="material-icons"
+              style={{
+                margin: '4px'
+              }}
+            >
+              close
+            </span>
           </a>
         </StyledModalHeader>
-        {title && <StyledModalTitle>{title}</StyledModalTitle>}
-        <StyledModalBody>{children}</StyledModalBody>
+        {title && 
+          <StyledModalTitle>
+            <span 
+              className="material-icons"
+              style={{
+                marginTop: '4px',
+                fontSize: '26px'
+              }}
+            >
+              info_outline
+            </span>
+          </StyledModalTitle>}
+        <StyledModalBody>
+          { children }
+        </StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
   ) : null;
@@ -31,7 +51,7 @@ const Modal = ({ show, onClose, children, title }) => {
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
-      document.getElementById("modal")
+      document.getElementById("modal")!
     );
   } else {
     return null;
@@ -39,37 +59,39 @@ const Modal = ({ show, onClose, children, title }) => {
 };
 
 const StyledModalBody = styled.div`
-  padding-top: 10px;
-  padding-left: 20px;
-  padding-right: 40px;
-  padding-bottom: 20px;
+  padding-top: 1px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-bottom: 5px;
   display: flex;
   justify-content: center;
-  height: 500px;
+  height: auto;
   overflow-y: auto;
+  color: white;
+  font-size: 14px;
 `;
 
 const StyledModalTitle = styled.div`
-  padding-top: 20px;
-  font-size: 22px;
+  margin-top: -15px;
+  font-size: 20px;
   display: flex;
   justify-content: center;
-  font-weight: 800;
-  margin-bottom: 20px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: white;
 `;
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-  font-size: 20px;
 `;
 
 const StyledModal = styled.div`
-  background: linear-gradient(144deg, rgba(224,145,145,1) 0%, rgba(223,223,223,1) 100%);
-  width: 500px;
-  height: 600px;
+  background: rgba(66,46,40,1);
+  background-size: 400% 400%;
+  width: 300px;
+  height: 100px;
   border-radius: 6px;
-  padding: 15px;
   overflow-y: initial !important
   padding-bottom: 20px;
 `;
@@ -83,7 +105,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.1);
 `;
 
 export default Modal;
