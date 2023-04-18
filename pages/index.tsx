@@ -7,11 +7,8 @@ import { Alchemy, Network } from "alchemy-sdk"
 import {
   useConnect,
   useAccount,
-  useFeeData,
   useContractRead
 } from 'wagmi'
-import iEnsRegistrar from '../contract-abi-ensRegistrar.json'
-import iEnsWrapper from '../contract-abi-ensWrapper.json'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
 import Modal from '../components/Modal'
@@ -24,6 +21,7 @@ import SearchBox from '../components/Search'
 import LoadingIcons from 'react-loading-icons'
 import * as Name from 'w3name'
 import { ed25519Keygen } from '../utils/keygen'
+import * as constants from '../utils/constants'
 
 const network = process.env.NEXT_PUBLIC_NETWORK
 const alchemyConfig = {
@@ -31,22 +29,7 @@ const alchemyConfig = {
   network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET
 }
 const alchemy = new Alchemy(alchemyConfig)
-const ensRegistrars = [
-  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // v1 Registrar
-  "0x114d4603199df73e7d157787f8778e21fcd13066"  // v2 Name Wrapper
-]
-const ensInterface = [
-  iEnsRegistrar,
-  iEnsWrapper
-]
-const ensConfig = [{
-  addressOrName: ensRegistrars[0],
-  contractInterface: ensInterface[0]
-},
-{
-  addressOrName: ensRegistrars[1],
-  contractInterface: ensInterface[1]
-}]
+
 let metadata: React.SetStateAction<any[]>
 const carousal = [
   '<span class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
@@ -59,7 +42,6 @@ const carousal = [
 const Home: NextPage = () => {
   const { data: accountData } = useAccount()
   const { isConnected } = useConnect()
-  const { data: gasData, isError } = useFeeData()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [modal, setModal] = React.useState(false)
@@ -117,7 +99,7 @@ const Home: NextPage = () => {
     var count = 0
     for (var i = 0; i < allTokens.length; i++) {
       // @TODO : ENS Metadata service is broken and not showing all the names
-      if (ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
+      if (constants.ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
         items.push({
@@ -168,7 +150,7 @@ const Home: NextPage = () => {
   }
 
   const { data: controller } = useContractRead(
-    ensConfig[0],
+    constants.ensConfig[1],
     'getApproved',
     {
       args: [
@@ -178,7 +160,7 @@ const Home: NextPage = () => {
   )
 
   const { data: owner } = useContractRead(
-    ensConfig[0],
+    constants.ensConfig[1],
     'ownerOf',
     {
       args: [
@@ -229,7 +211,8 @@ const Home: NextPage = () => {
   React.useEffect(() => {
     if (query) {
       try {
-        let token = ethers.BigNumber.from(ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0])))
+        let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let token = ethers.BigNumber.from(labelhash)
         setTokenID(token.toString())
       } catch (error) {
         console.log('BigNumberWarning')
@@ -788,7 +771,7 @@ const Home: NextPage = () => {
                 show={previewModal}
                 title={nameToPreviewModal}
               >
-                {true}
+                { true }
               </Preview>
             </div>
           )}

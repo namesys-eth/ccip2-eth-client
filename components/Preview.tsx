@@ -4,11 +4,19 @@ import styled from 'styled-components'
 import { ethers } from 'ethers'
 import LoadingIcons from 'react-loading-icons'
 import Modal from '../components/Modal'
+import {
+  useFeeData,
+  useContractWrite,
+  useWaitForTransaction
+} from 'wagmi'
+import * as constants from '../utils/constants'
 
 const Preview = ({ show, onClose, title, children }) => {
   const [browser, setBrowser] = React.useState(false);
+  const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
   const [modal, setModal] = React.useState(false)
+  const [finish, setFinish] = React.useState(false)
   const [resolver, setResolver] = React.useState<any>();
   const [addr, setAddr] = React.useState('');
   //const [addr60, setAddr60] = React.useState('');
@@ -20,7 +28,6 @@ const Preview = ({ show, onClose, title, children }) => {
   const [trigger, setTrigger] = React.useState(null);
   const [help, setHelp] = React.useState('');
 
-  const ccip2 = '0x0'
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
   const network = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 'goerli' : 'homestead'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
@@ -43,40 +50,75 @@ const Preview = ({ show, onClose, title, children }) => {
     }
   }
 
-  React.useEffect(() => {
-    setEdit(list)
-    const updatedList = list.map((item) => {
-      if (item.key === trigger) {
-        return { ...item, show: false };
-      }
-      return item;
-    });
-    console.log(updatedList)
-    setEdit(updatedList)
-  }, [trigger]);
-
   async function getContenthash(resolver: ethers.providers.Resolver | null) {
-    await resolver!.getContentHash()
-      .then((response: React.SetStateAction<string>) => {
-        setContenthash(response!)
-        getAvatar()
-      });
+    if ( resolver?.address !== constants.ccip2 ) {
+      console.log(resolver?.address)
+      console.log(constants.ccip2)
+      await resolver!.getContentHash()
+        .then((response: React.SetStateAction<string>) => {
+          if (!response) {
+            console.log('here')
+            setContenthash('')
+          } else {
+            setContenthash(response)
+          }
+          getAvatar()
+        })
+        .catch(() => {
+          setContenthash('')
+          getAvatar()
+        });
+    } else {
+      setContenthash('')
+      getAvatar()
+    }
   }
 
   async function getAvatar() {
-    await provider.getAvatar(title)
-      .then(response => {
-        setAvatar(response!)
-        getX()
-      });
+    if ( resolver?.address !== constants.ccip2 ) {
+      await provider.getAvatar(title)
+        .then(response => {
+          if (!response) {
+            console.log('here2')
+            setAvatar('')
+          } else {
+            setAvatar(response)
+          }
+          getRecord()
+        })
+        .catch(() => {
+          setAvatar('')
+          getRecord()
+        });
+    } else {
+      setAvatar('')
+      getRecord()
+    }
   }
 
-  async function getX() {
-    await provider.resolveName(title)
-      .then(response => {
-        setAddr(response!)
-        setName(title)
-      });
+  async function getRecord() {
+    if ( resolver?.address !== constants.ccip2 ) {
+      await provider.resolveName(title)
+        .then(response => {
+          if (!response) {
+            console.log('here3')
+            setAddr('')
+          } else {
+            setAddr(response)
+          }
+          setName(title)
+          setFinish(true)
+        })
+        .catch(() => {
+          setAddr('')
+          setName(title)
+          setFinish(true)
+        });
+    } else {
+      setAddr('')
+      setName(title)
+      setFinish(true)
+    }
   }
 
   async function getResolver() {
@@ -89,8 +131,8 @@ const Preview = ({ show, onClose, title, children }) => {
   }
 
   React.useEffect(() => {
-    setMetadata()
-  }, [name]);
+    if (finish) setMetadata()
+  }, [finish]);
 
   function setMetadata() {
     let data = [
@@ -98,7 +140,8 @@ const Preview = ({ show, onClose, title, children }) => {
         key: 0,
         type: 'reverse record',
         value: name,
-        show: resolver === ccip2,
+        editable: resolver === constants.ccip2,
+        active: resolver === constants.ccip2,
         action: 'setName',
         label: 'edit',
         help: 'your reverse record'
@@ -107,7 +150,8 @@ const Preview = ({ show, onClose, title, children }) => {
         key: 1,
         type: 'resolver',
         value: resolver,
-        show: true,
+        editable: false,
+        active: resolver !== constants.ccip2,
         action: 'setResolver',
         label: 'migrate',
         help: 'migrate to gasless resolver'
@@ -116,7 +160,8 @@ const Preview = ({ show, onClose, title, children }) => {
         key: 2,
         type: 'avatar',
         value: avatar,
-        show: resolver === ccip2,
+        editable: resolver === constants.ccip2,
+        active: resolver === constants.ccip2,
         action: 'setAvatar',
         label: 'edit',
         help: 'set avatar'
@@ -125,7 +170,8 @@ const Preview = ({ show, onClose, title, children }) => {
         key: 3,
         type: 'address',
         value: addr,
-        show: resolver === ccip2,
+        editable: resolver === constants.ccip2,
+        active: resolver === constants.ccip2,
         action: 'setAddr',
         label: 'edit',
         help: 'set default address'
@@ -134,7 +180,8 @@ const Preview = ({ show, onClose, title, children }) => {
         key: 4,
         type: 'web-contenthash',
         value: contenthash,
-        show: resolver === ccip2,
+        editable: resolver === constants.ccip2,
+        active: resolver === constants.ccip2,
         action: 'setContenthash',
         label: 'edit',
         help: 'set your web contenthash'
@@ -142,6 +189,69 @@ const Preview = ({ show, onClose, title, children }) => {
     ]
     finishQuery(data)
   }
+
+  const {
+    data: response,
+    write: migrate,
+    isLoading: isMigrateLoading,
+    isSuccess: isMigrateSuccess,
+  } = useContractWrite(
+    constants.ensConfig[0],
+    'setResolver',
+    {
+      args: [
+        ethers.utils.namehash(title), 
+        constants.ccip2
+      ]
+    }
+  );
+
+  const { isSuccess: txSuccess } = useWaitForTransaction({
+    hash: response?.hash,
+  });
+
+  React.useEffect(() => {
+    setEdit(list)
+    const updatedList = list.map((item) => {
+      if (item.key === trigger && item.type !== 'resolver') {
+        return { ...item, editable: false, active: false };
+      } else if (item.key === trigger && item.type === 'resolver') {
+        return { ...item, editable: false, active: constants.ccip2 !== resolver };
+      }
+      return item;
+    });
+    console.log(updatedList)
+    setEdit(updatedList)
+  }, [trigger]);
+
+  React.useEffect(() => {
+    if (isMigrateSuccess && txSuccess) {
+      setAvatar('')
+      setContenthash('')
+      setAddr('')
+      setResolver(constants.ccip2)
+      console.log('Resolver Migrated')
+      setEdit(list)
+      const updatedList = list.map((item) => {
+        if (item.type !== 'resolver') {
+          return { ...item, editable: false, active: false };
+        } else if (item.type === 'resolver') {
+          return { ...item, editable: true, active: true };
+        }
+        return item;
+      });
+      console.log(updatedList)
+      setEdit(updatedList)
+      setFinish(true)
+    }
+  }, [isMigrateSuccess, txSuccess]);
+
+  React.useEffect(() => {
+    if (isMigrateLoading) {
+      setFinish(false)
+      setLoading(true)
+    }
+  }, [isMigrateLoading]);
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -243,7 +353,7 @@ const Preview = ({ show, onClose, title, children }) => {
                   >
                     <div 
                       style={{                      
-                        marginBottom: '15px',
+                        marginBottom: '10px',
                         display: 'flex',
                         justifyContent: 'space-between',
                         width: '100%'
@@ -253,26 +363,39 @@ const Preview = ({ show, onClose, title, children }) => {
                         style={{ 
                           fontFamily: 'Spotnik',
                           fontWeight: '700',
-                          fontSize: '17px',
+                          fontSize: '15px',
                           color: 'skyblue',
                           marginRight: '15px'
                         }}
                       >
                         {item.type}
-                        <button 
-                          className="button-tiny"
-                          onClick={() => { 
-                            setModal(true),
-                            setHelp(item.help)
-                          }}
-                        >
-                          <div className="material-icons smol">info_outline</div>
-                        </button>
+                        { (item.type !== 'resolver' || resolver !== constants.ccip2)  &&
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setModal(true),
+                              setHelp(item.help)
+                            }}
+                          >
+                            <div className="material-icons smol">info_outline</div>
+                          </button>
+                        }
+                        { resolver === constants.ccip2 && item.type === 'resolver' &&
+                          <span 
+                            style={{ 
+                              color: 'lightgreen',
+                              marginLeft: '5px'
+                            }}
+                            className="material-icons smoller"
+                          >
+                            gpp_good
+                          </span>
+                        }
                       </span>
                       <button
                         className="button"
                         disabled={ 
-                          !edit[item.key]?.show
+                          !edit[item.key]?.active
                         }
                         style={{
                           alignSelf: 'flex-end',
@@ -280,7 +403,10 @@ const Preview = ({ show, onClose, title, children }) => {
                           width: 'auto',
                           marginTop: '-3px',
                         }}
-                        onClick={() => { setTrigger(item.key) }}
+                        onClick={() => { 
+                          setTrigger(item.key), 
+                          item.type === 'resolver' ? migrate() : ''
+                        }}
                         data-tooltip={ item.help }
                       >
                         <div 
@@ -302,6 +428,7 @@ const Preview = ({ show, onClose, title, children }) => {
                       placeholder={ item.value }
                       type='text'
                       defaultValue={ item.value }
+                      disabled={ !item.active }
                       style={{ 
                         fontFamily: 'SF Mono',
                         letterSpacing: '-0.5px',
@@ -310,11 +437,13 @@ const Preview = ({ show, onClose, title, children }) => {
                         width: '100%',
                         wordWrap: 'break-word',
                         textAlign: 'left',
-                        marginBottom: '-5px'
+                        marginBottom: '-5px',
+                        color: 'rgb(255, 255, 255, 0.6)',
+                        cursor: 'copy'
                       }}
                     />
                   </div>
-                  <hr></hr>
+                  <hr style={{ marginTop: '5px' }}></hr>
                 </li>
               ))}
             </ul>
