@@ -4,14 +4,23 @@ import styled from 'styled-components'
 import { ethers } from 'ethers'
 import LoadingIcons from 'react-loading-icons'
 import Modal from '../components/Modal'
+import Salt from '../components/Salt'
 import {
   useFeeData,
   useContractWrite,
   useWaitForTransaction
 } from 'wagmi'
 import * as constants from '../utils/constants'
+import { ed25519Keygen } from '../utils/keygen'
+
+interface MainBodyState {
+  modalData: string | null;
+}
 
 const Preview = ({ show, onClose, title, children }) => {
+  const [state, setState] = React.useState<MainBodyState>({
+    modalData: null,
+  });
   const [browser, setBrowser] = React.useState(false);
   const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
@@ -23,6 +32,7 @@ const Preview = ({ show, onClose, title, children }) => {
   const [avatar, setAvatar] = React.useState('');
   const [contenthash, setContenthash] = React.useState('');
   const [name, setName] = React.useState('');
+  const [salt, setSalt] = React.useState(false);
   const [list, setList] = React.useState<any[]>([]);
   const [edit, setEdit] = React.useState<any[]>([]);
   const [trigger, setTrigger] = React.useState(null);
@@ -31,6 +41,10 @@ const Preview = ({ show, onClose, title, children }) => {
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
   const network = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 'goerli' : 'homestead'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
+
+  const handleModalData = (data: string) => {
+    setState({ ...state, modalData: data });
+  };
 
   React.useEffect(() => {
     setBrowser(true) 
@@ -57,7 +71,6 @@ const Preview = ({ show, onClose, title, children }) => {
       await resolver!.getContentHash()
         .then((response: React.SetStateAction<string>) => {
           if (!response) {
-            console.log('here')
             setContenthash('')
           } else {
             setContenthash(response)
@@ -79,7 +92,6 @@ const Preview = ({ show, onClose, title, children }) => {
       await provider.getAvatar(title)
         .then(response => {
           if (!response) {
-            console.log('here2')
             setAvatar('')
           } else {
             setAvatar(response)
@@ -101,7 +113,6 @@ const Preview = ({ show, onClose, title, children }) => {
       await provider.resolveName(title)
         .then(response => {
           if (!response) {
-            console.log('here3')
             setAddr('')
           } else {
             setAddr(response)
@@ -152,9 +163,9 @@ const Preview = ({ show, onClose, title, children }) => {
         value: resolver,
         editable: false,
         active: resolver !== constants.ccip2,
-        action: 'setResolver',
+        action: 'migrate',
         label: 'migrate',
-        help: 'migrate to gasless resolver'
+        help: 'please migrate your resolver to enjoy off-chain records'
       },
       {
         key: 2,
@@ -214,9 +225,17 @@ const Preview = ({ show, onClose, title, children }) => {
     setEdit(list)
     const updatedList = list.map((item) => {
       if (item.key === trigger && item.type !== 'resolver') {
-        return { ...item, editable: false, active: false };
+        return { 
+          ...item, 
+          editable: false, 
+          active: false 
+        };
       } else if (item.key === trigger && item.type === 'resolver') {
-        return { ...item, editable: false, active: constants.ccip2 !== resolver };
+        return { 
+          ...item, 
+          editable: false, 
+          active: constants.ccip2 !== resolver 
+        };
       }
       return item;
     });
@@ -234,9 +253,17 @@ const Preview = ({ show, onClose, title, children }) => {
       setEdit(list)
       const updatedList = list.map((item) => {
         if (item.type !== 'resolver') {
-          return { ...item, editable: false, active: false };
+          return { 
+            ...item, 
+            editable: false, 
+            active: false 
+          };
         } else if (item.type === 'resolver') {
-          return { ...item, editable: true, active: true };
+          return { 
+            ...item, 
+            editable: true, 
+            active: true 
+          };
         }
         return item;
       });
@@ -342,7 +369,7 @@ const Preview = ({ show, onClose, title, children }) => {
                     onClose={() => setModal(false)}
                     show={modal}
                   >
-                    {help}
+                    <span>{ help }</span>
                   </Modal>
                   <div
                     style={{
@@ -404,8 +431,9 @@ const Preview = ({ show, onClose, title, children }) => {
                           marginTop: '-3px',
                         }}
                         onClick={() => { 
-                          setTrigger(item.key), 
-                          item.type === 'resolver' ? migrate() : ''
+                          setTrigger(item.key),
+                          setSalt(true),
+                          item.type === 'resolver' && salt ? migrate() : ''
                         }}
                         data-tooltip={ item.help }
                       >
@@ -421,6 +449,12 @@ const Preview = ({ show, onClose, title, children }) => {
                               {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
                           </div>
                       </button>
+                      <Salt
+                        handleModalData={handleModalData}
+                        onClose={() => setSalt(false)}
+                        show={salt}
+                      >
+                      </Salt>
                     </div>
                     <input 
                       id={ item.key }

@@ -20,7 +20,6 @@ import List from '../components/List'
 import SearchBox from '../components/Search'
 import LoadingIcons from 'react-loading-icons'
 import * as Name from 'w3name'
-import { ed25519Keygen } from '../utils/keygen'
 import * as constants from '../utils/constants'
 
 const network = process.env.NEXT_PUBLIC_NETWORK

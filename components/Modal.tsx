@@ -35,7 +35,8 @@ const Modal = ({ show, onClose, children }) => {
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '26px'
+                fontSize: '26px',
+                color: 'skyblue'
               }}
             >
               info_outline
@@ -59,16 +60,17 @@ const Modal = ({ show, onClose, children }) => {
 };
 
 const StyledModalBody = styled.div`
-  padding-top: 1px;
-  padding-left: 2px;
-  padding-right: 2px;
-  padding-bottom: 5px;
+  padding-top: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 25px;
   display: flex;
   justify-content: center;
   height: auto;
   overflow-y: auto;
   color: white;
   font-size: 14px;
+  font-weight: 700;
 `;
 
 const StyledModalTitle = styled.div`
@@ -89,11 +91,14 @@ const StyledModalHeader = styled.div`
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
-  width: 300px;
+  width: auto;
+  max-width: 60%;
   height: 100px;
   border-radius: 6px;
   overflow-y: initial !important
-  padding-bottom: 20px;
+  display: flex;
+  text-align: center;
+  justify-content: center;
 `;
 
 const StyledModalOverlay = styled.div`
