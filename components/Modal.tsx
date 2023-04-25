@@ -2,9 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-const Modal = ({ show, onClose, children }) => {
+const Modal = ({ title, color, show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false);
-  const title = 'about';
   React.useEffect(() => {
     setBrowser(true);
   }, []);
@@ -36,10 +35,10 @@ const Modal = ({ show, onClose, children }) => {
               style={{
                 marginTop: '4px',
                 fontSize: '26px',
-                color: 'skyblue'
+                color: color
               }}
             >
-              info_outline
+              { title }
             </span>
           </StyledModalTitle>}
         <StyledModalBody>
