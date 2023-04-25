@@ -1,8 +1,14 @@
-const purgecss = require('purgecss')
+const purgecss = require('purgecss');
 
-const result = await purgecss({
-  content: ['../**/*.ts'],
-  css: ['../**/*.css']
-})
-
-console.log(result)
+(async function () {
+  try {
+    const result = await purgecss({
+      content: ['../**/*.ts'],
+      css: ['../**/*.css'],
+      output: './purged.css'
+    })
+    console.log(result)
+  } catch (error) {
+    console.error('Error occurred:', error)
+  }
+})()
