@@ -10,6 +10,25 @@
 }
 
 @font-face {
+  font-family: 'Rajdhani';
+  src: url('../assets/Rajdhani.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  margin: 0;
+  padding: 0;
+}
+
+@font-face {
+  font-family: 'SF Mono Unicode';
+  src: url('../assets/SF-Mono.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  margin: 0;
+  padding: 0;
+  unicode-range: U+30-39;
+}
+
+@font-face {
   font-family: 'Roboto Mono';
   src: url('../assets/Roboto-Mono.woff2') format('woff2');
   font-weight: normal;
@@ -340,12 +359,12 @@ input[type="text"] {
 }
 
 .connect-button {
-  margin-top: -170px;
+  margin-top: -12%;
   padding-right: 40px;
 }
 @media screen and (max-width: 800px) {
   .connect-button {
-    margin-top: -80px;
+    margin-top: -20%;
     padding-right: 20px;
   }
 }

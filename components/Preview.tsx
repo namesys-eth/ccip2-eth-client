@@ -2,28 +2,38 @@ import React from "react"
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import { ethers } from 'ethers'
+import { verifyMessage } from 'ethers/lib/utils'
 import LoadingIcons from 'react-loading-icons'
 import Modal from '../components/Modal'
 import Salt from '../components/Salt'
 import {
+  useAccount,
   useFeeData,
   useContractWrite,
+  useSignMessage,
   useWaitForTransaction
 } from 'wagmi'
 import * as constants from '../utils/constants'
 import { ed25519Keygen } from '../utils/keygen'
+import * as Name from 'w3name'
+import * as ed25519_2 from 'ed25519-2.0.0'
 
 interface MainBodyState {
-  modalData: string | null;
+  modalData: string | undefined;
+  trigger: boolean;
 }
 
-const Preview = ({ show, onClose, title, children }) => {
+const Preview = ({ show, onClose, title, chain, children }) => {
   const [state, setState] = React.useState<MainBodyState>({
-    modalData: null,
+    modalData: undefined,
+    trigger: false
   });
   const [browser, setBrowser] = React.useState(false);
   const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
+  const [pinned, setPinned] = React.useState(false);
+  const [keygen, setKeygen] = React.useState(false);
+  const [cid, setCid] = React.useState('');
   const [modal, setModal] = React.useState(false)
   const [finish, setFinish] = React.useState(false)
   const [resolver, setResolver] = React.useState<any>();
@@ -37,19 +47,99 @@ const Preview = ({ show, onClose, title, children }) => {
   const [edit, setEdit] = React.useState<any[]>([]);
   const [trigger, setTrigger] = React.useState(null);
   const [help, setHelp] = React.useState('');
+  const [keypair, setKeypair] = React.useState<[string, string]>()
+  const [getch, setGetch] = React.useState(false);
+  const [action, setAction] = React.useState('none');
+  const [newValue, setNewValue] = React.useState({
+    name: '',
+    addr: '',
+    avatar: '', 
+    contenthash: ''
+  });
+  const [server, setServer] = React.useState({
+    type: '',
+    name: '',
+    addr: '',
+    avatar: '', 
+    contenthash: ''
+  });
+  const [duplicate, setDuplicate] = React.useState({
+    name: false,
+    addr: false,
+    avatar: false, 
+    contenthash: false
+  });
+  const [content, setContent] = React.useState({
+    name: '',
+    addr: '',
+    avatar: '', 
+    contenthash: ''
+  });
+
+
+  const { data: accountData } = useAccount()
+  const recoveredAddress = React.useRef<string>()
+  const { data, error, isLoading, signMessage } = useSignMessage({
+    onSuccess(data, variables) {
+      // Verify signature when sign message succeeds
+      const address = verifyMessage(variables.message, data)
+      recoveredAddress.current = address
+    },
+  })
 
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
   const network = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 'goerli' : 'homestead'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
-
-  const handleModalData = (data: string) => {
+  let caip10 = `eip155:${chain}:${accountData?.address}`
+  let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${title}\nSIGNED BY: ${caip10}`
+      
+  const handleModalData = (data: string | undefined) => {
     setState({ ...state, modalData: data });
+  };
+  const handleTrigger = (trigger: boolean) => {
+    setState({ ...state, trigger: trigger });
   };
 
   React.useEffect(() => {
     setBrowser(true) 
     getResolver()
   }, []);
+
+  React.useEffect(() => {
+    if (state.trigger) {
+      signMessage({ message: statement })
+      setKeygen(true)
+    }
+  }, [state]);
+
+  React.useEffect(() => {
+    if (data) {
+      const keygen = async () => {
+        const __keypair = await ed25519Keygen(title, caip10, data, state.modalData)
+        setKeypair(__keypair)
+      };
+      keygen()
+    }
+  }, [keygen, data]);
+
+  React.useEffect(() => {
+    if (keypair) {
+      const cidGen = async () => {
+        let key = '08011240' + keypair[0] + keypair[1]
+        const w3Name = await Name.from(ed25519_2.etc.hexToBytes(key))
+        const cidIpns = w3Name.toString()
+        setCid(cidIpns)
+        console.log(cid)
+      }
+      cidGen()
+    }
+  }, [keypair]);
+
+  React.useEffect(() => {
+    if (cid.startsWith('k5')) {
+      migrate()
+    }
+  }, [cid]);
   
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
@@ -57,7 +147,7 @@ const Preview = ({ show, onClose, title, children }) => {
   };
 
   function finishQuery(data: React.SetStateAction<any[]> | undefined) {
-    if ( data && data[0].value === title ) {
+    if ( data ) { // @TODO: Second condition probably not needed; check later
       setList(data)
       setEdit(data)
       setLoading(false)
@@ -66,8 +156,6 @@ const Preview = ({ show, onClose, title, children }) => {
 
   async function getContenthash(resolver: ethers.providers.Resolver | null) {
     if ( resolver?.address !== constants.ccip2 ) {
-      console.log(resolver?.address)
-      console.log(constants.ccip2)
       await resolver!.getContentHash()
         .then((response: React.SetStateAction<string>) => {
           if (!response) {
@@ -133,7 +221,6 @@ const Preview = ({ show, onClose, title, children }) => {
   }
 
   async function getResolver() {
-    console.log('Fetching ENS data')
     await provider.getResolver(title)
       .then(response => {
         setResolver(response?.address);
@@ -141,15 +228,65 @@ const Preview = ({ show, onClose, title, children }) => {
       });
   }
 
+  function setValues(key: string, value: string) {
+    const _array = newValue;
+    _array[key] = value;
+    setNewValue(_array)
+    const updatedList = edit.map((item) => {
+      if (item.type === key) {
+        return { 
+          ...item, 
+          editable: true, 
+          active: true 
+        };
+      }
+      return item;
+    });
+    setEdit(updatedList)
+  }
+
+  async function getUpdate() {
+    // @TODO: this is for beta testing only; in alpha, 
+    // query should be made to the CCIP2 Resolver instead 
+    // of CCIP2 backend
+    const request = {
+      type: 'read',
+      ens: title,
+      address: accountData?.address,
+      recordType: 'all',
+      recordValue: 'all'
+    }
+    try{
+      await fetch(
+        "https://sshmatrix.club:3003/read",
+        {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data)
+        })
+    } catch(error) {
+      console.log('Failed to read from CCIP2 backend; making fake data for tests')
+    }
+  }
+
   React.useEffect(() => {
-    if (finish) setMetadata()
+    if (finish) {
+      getUpdate()
+      setMetadata()
+    }
   }, [finish]);
 
   function setMetadata() {
     let data = [
       {
         key: 0,
-        type: 'reverse record',
+        type: 'name',
         value: name,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
@@ -162,7 +299,7 @@ const Preview = ({ show, onClose, title, children }) => {
         type: 'resolver',
         value: resolver,
         editable: false,
-        active: resolver !== constants.ccip2,
+        active: resolver !== constants.ccip2 && salt === false,
         action: 'migrate',
         label: 'migrate',
         help: 'please migrate your resolver to enjoy off-chain records'
@@ -179,7 +316,7 @@ const Preview = ({ show, onClose, title, children }) => {
       },
       {
         key: 3,
-        type: 'address',
+        type: 'addr',
         value: addr,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
@@ -189,7 +326,7 @@ const Preview = ({ show, onClose, title, children }) => {
       },
       {
         key: 4,
-        type: 'web-contenthash',
+        type: 'contenthash',
         value: contenthash,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
@@ -234,42 +371,99 @@ const Preview = ({ show, onClose, title, children }) => {
         return { 
           ...item, 
           editable: false, 
-          active: constants.ccip2 !== resolver 
+          active: false
         };
       }
       return item;
     });
-    console.log(updatedList)
     setEdit(updatedList)
   }, [trigger]);
 
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess) {
+    const request = {
+      signature: data,
+      ens: title,
+      address: recoveredAddress.current,
+      ipns: cid,
+      recordType: action,
+      recordValue: newValue
+    }
+    console.log(request)
+    const editRecord = async () => {
+      if (getch) {    
+        try {
+          await fetch(
+            "https://sshmatrix.club:3003/write",
+            {
+              method: "post",
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(request)
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log(data)
+              setContent(data)
+            })
+        } catch(error) {
+          console.log('Failed to write to CCIP2 backend; making fake data for tests')
+    
+        }
+      }
+    }
+    editRecord()
+  }, [getch]);
+
+  React.useEffect(() => {
+    if (isMigrateSuccess && txSuccess && pinned) {
       setAvatar('')
       setContenthash('')
       setAddr('')
       setResolver(constants.ccip2)
-      console.log('Resolver Migrated')
       setEdit(list)
       const updatedList = list.map((item) => {
-        if (item.type !== 'resolver') {
+        if (item.type === 'resolver') {
           return { 
             ...item, 
             editable: false, 
-            active: false 
+            active: false
           };
-        } else if (item.type === 'resolver') {
+        } else if (item.type !== 'resolver') {
           return { 
             ...item, 
+            value: '',
             editable: true, 
             active: true 
           };
         }
         return item;
       });
-      console.log(updatedList)
       setEdit(updatedList)
-      setFinish(true)
+      setDuplicate({
+        name: false,
+        addr: false,
+        contenthash: false,
+        avatar: false
+      })
+      setList(updatedList)
+      setLoading(false)
+      console.log(list)
+    }
+  }, [isMigrateSuccess, txSuccess, pinned]);
+
+  React.useEffect(() => {
+    if (isMigrateSuccess && txSuccess) {
+      const pin = async () => {
+        const key_ = await Name.create()
+        console.log(key_.key.bytes.length)
+        const name = await Name.from(key_.key.bytes)
+        console.log(name.toString())
+        // ** 
+        console.log('Migration Successful')
+        setPinned(true)
+      }
+      pin()
     }
   }, [isMigrateSuccess, txSuccess]);
 
@@ -422,7 +616,10 @@ const Preview = ({ show, onClose, title, children }) => {
                       <button
                         className="button"
                         disabled={ 
-                          !edit[item.key]?.active
+                          !edit[item.key]?.active || 
+                          (
+                            item.type !== 'resolver' && !newValue[item.type]
+                          )
                         }
                         style={{
                           alignSelf: 'flex-end',
@@ -432,8 +629,8 @@ const Preview = ({ show, onClose, title, children }) => {
                         }}
                         onClick={() => { 
                           setTrigger(item.key),
-                          setSalt(true),
-                          item.type === 'resolver' && salt ? migrate() : ''
+                          setAction(item.type),
+                          item.type === 'resolver' ? setSalt(true) : setGetch(true)
                         }}
                         data-tooltip={ item.help }
                       >
@@ -450,6 +647,7 @@ const Preview = ({ show, onClose, title, children }) => {
                           </div>
                       </button>
                       <Salt
+                        handleTrigger={handleTrigger}
                         handleModalData={handleModalData}
                         onClose={() => setSalt(false)}
                         show={salt}
@@ -462,7 +660,7 @@ const Preview = ({ show, onClose, title, children }) => {
                       placeholder={ item.value }
                       type='text'
                       defaultValue={ item.value }
-                      disabled={ !item.active }
+                      disabled={ !item.active || duplicate[item.type] }
                       style={{ 
                         fontFamily: 'SF Mono',
                         letterSpacing: '-0.5px',
@@ -474,6 +672,9 @@ const Preview = ({ show, onClose, title, children }) => {
                         marginBottom: '-5px',
                         color: 'rgb(255, 255, 255, 0.6)',
                         cursor: 'copy'
+                      }}
+                      onChange={(e) => {
+                        setValues(item.type, e.target.value)
                       }}
                     />
                   </div>

@@ -55,6 +55,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
             marginLeft: '20px'
           }}
           type="submit"
+          data-tooltip='Search'
         >
           Go
         </button>

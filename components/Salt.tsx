@@ -6,10 +6,11 @@ interface ModalProps {
   show: boolean;
   onClose: any;
   children: any;
-  handleModalData: (data: string) => void;
+  handleModalData: (data: string | undefined) => void;
+  handleTrigger: (data: boolean) => void;
 }
 
-const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData }) => {
+const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
   const [inputValue, setInputValue] = React.useState("");
   const [browser, setBrowser] = React.useState(false);
   
@@ -24,6 +25,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData }
 
   const handleSubmit = () => {
     handleModalData(inputValue);
+    handleTrigger(true);
     onClose();
   };
 
@@ -66,8 +68,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData }
             type='password'
             value={inputValue}
             onChange={(e) => {
-              setInputValue(e.target.value),
-              console.log(inputValue)
+              setInputValue(e.target.value)
             }}
             style={{ 
               background: 'black',

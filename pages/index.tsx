@@ -25,9 +25,11 @@ import * as constants from '../utils/constants'
 const network = process.env.NEXT_PUBLIC_NETWORK
 const alchemyConfig = {
   apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
-  network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET
+  network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
+  chainId: network === 'goerli' ? '5': '1',
 }
 const alchemy = new Alchemy(alchemyConfig)
+const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 
 let metadata: React.SetStateAction<any[]>
 const carousal = [
@@ -35,7 +37,7 @@ const carousal = [
   '<span class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
   '<span class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
   '<span class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<span class="material-icons miui">currency_bitcoin</span><br></br><span style="color: skyblue">Enjoy ENS gasfree</span>'
+  '<img class="icon-ens" src="/ens-white.png"/><br></br>Enjoy ENS gasfree</span>'
 ]
 
 const Home: NextPage = () => {
@@ -101,9 +103,11 @@ const Home: NextPage = () => {
       if (constants.ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
+        const response = await provider.getResolver(allTokens[i].title)
         items.push({
           'key': count,
-          'name': allTokens[i].title.split('.eth')[0]
+          'name': allTokens[i].title.split('.eth')[0],
+          'migrated': response?.address === constants.ccip2
         })
       }
     }
@@ -126,11 +130,18 @@ const Home: NextPage = () => {
 
   React.useEffect(() => {
     setLoading(true)
-    getTokens()
-    if (metadata) {
-      setMeta(metadata)
-      setLoading(false)
+    const setMetadata = async () => {
+      await getTokens()
+        .then(() => {
+          if (metadata) {
+            setMeta(metadata)
+            setTimeout(() => {
+              setLoading(false)
+            }, 2000);
+          }
+        })
     }
+    setMetadata()
   }, [accountData, isConnected, getTokens])
 
   React.useEffect(() => {
@@ -173,7 +184,7 @@ const Home: NextPage = () => {
       setManager(controller.toString())
     } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
       setManager(owner.toString())
-    } else {
+    } else if (option !== 'owner') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
@@ -187,20 +198,27 @@ const Home: NextPage = () => {
       var allEns: string[] = []
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
-      items.push({
-        'key': 1,
-        'name': query.split('.eth')[0]
-      })
-      if (items) {
-        setMeta(items)
-        setSuccess(true)
-        console.log('You are owner/manager')
-        setErrorModal(false)
-        setLoading(false)
-      } else {
-        setSuccess(false)
-        setEmpty(true)
+      const setMetadata = async () => {
+        provider.getResolver(query)
+          .then((response) => {
+            items.push({
+              'key': 1,
+              'name': query.split('.eth')[0],
+              'migrated': response?.address === constants.ccip2
+            })
+            if (items) {
+              setMeta(items)
+              setSuccess(true)
+              console.log('You are owner/manager')
+              setErrorModal(false)
+              setLoading(false)
+            } else {
+              setSuccess(false)
+              setEmpty(true)
+            }
+          })
       }
+      setMetadata()
     } else {
       setErrorModal(true)
       setSuccess(false)
@@ -218,14 +236,6 @@ const Home: NextPage = () => {
       }
     }
   }, [query])
-
-  React.useEffect(() => {
-    const genRandomKey = async () => {
-      const name = await Name.create()
-      //console.log(name.key.bytes)
-    };
-    genRandomKey()
-  }, [])
 
   const handleManagerSearch = (query: string) => {
     setLoading(true)
@@ -526,16 +536,20 @@ const Home: NextPage = () => {
             </div>
           )}
           {loading && isConnected && (
-            <div
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                marginTop: '50px',
-                marginBottom: '200px'
-              }}
-            >
-              <LoadingIcons.Bars />
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginTop: '50px',
+                  marginBottom: '200px'
+                }}
+              >
+                <LoadingIcons.Bars />
+              </div>
+              <h1>please wait</h1>
             </div>
           )}
           {!loading && option === 'owner' && meta.length > 0 && isConnected && !empty && (
@@ -547,7 +561,8 @@ const Home: NextPage = () => {
                   display: 'flex',
                   fontSize: '18px',
                   color: 'skyblue',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 names you own
@@ -576,7 +591,8 @@ const Home: NextPage = () => {
                   display: 'flex',
                   fontSize: '18px',
                   color: 'skyblue',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 search result
@@ -605,7 +621,8 @@ const Home: NextPage = () => {
                   display: 'flex',
                   fontSize: '18px',
                   color: 'skyblue',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 names you manage
@@ -652,7 +669,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {empty && option === 'owner' && (
+          {!loading && empty && option === 'owner' && (
             <div>
               <div
                 style={{
@@ -738,7 +755,7 @@ const Home: NextPage = () => {
                 setQuery(''),
                 setManager('')
             }}
-            show={errorModal && searchType === 'manager' && manager}
+            show={errorModal && searchType === 'manager' && manager && !loading}
             title={'block'}
           >
             {'you are not manager'}
@@ -750,7 +767,7 @@ const Home: NextPage = () => {
                 setQuery(''),
                 setManager('')
             }}
-            show={errorModal && searchType === 'search' && manager}
+            show={errorModal && searchType === 'search' && manager && !loading}
             title={'block'}
           >
             {'not owner or manager'}
@@ -769,6 +786,7 @@ const Home: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 title={nameToPreviewModal}
+                chain={alchemyConfig.chainId}
               >
                 { true }
               </Preview>
