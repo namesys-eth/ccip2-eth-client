@@ -190,7 +190,7 @@ const Home: NextPage = () => {
         setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner])
+  }, [tokenID, controller, owner, option])
 
   React.useEffect(() => {
     if (manager === accountData?.address) {
@@ -774,6 +774,7 @@ const Home: NextPage = () => {
           </Error>
           <div id="modal">
             <Modal
+              title={'warning'}
               onClose={() => setModal(false)}
               show={modal}
             >

@@ -10,7 +10,7 @@ interface ModalProps {
   handleTrigger: (data: boolean) => void;
 }
 
-const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
+const Record: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
   const [inputValue, setInputValue] = React.useState("");
   const [browser, setBrowser] = React.useState(false);
   
@@ -57,7 +57,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 marginTop: '10px'
               }}
             >
-              Please choose a secret identifier
+              Please enter your secret IPNS key identifier
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
@@ -107,7 +107,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 fontSize: '13px'
               }}
             >
-              { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
+              { 'proceed' }&nbsp;<span className="material-icons smoller">lock_open</span>
             </div>
           </button>
         </StyledModalBody>
@@ -187,4 +187,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 0.1);
 `;
 
-export default Salt;
+export default Record;

@@ -6,6 +6,7 @@ import { verifyMessage } from 'ethers/lib/utils'
 import LoadingIcons from 'react-loading-icons'
 import Modal from '../components/Modal'
 import Salt from '../components/Salt'
+import Record from '../components/Record'
 import {
   useAccount,
   useFeeData,
@@ -49,7 +50,10 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const [help, setHelp] = React.useState('');
   const [keypair, setKeypair] = React.useState<[string, string]>()
   const [getch, setGetch] = React.useState(false);
-  const [action, setAction] = React.useState('none');
+  const [write, setWrite] = React.useState(false);
+  const [action, setAction] = React.useState('');
+  const [icon, setIcon] = React.useState('');
+  const [color, setColor] = React.useState('');
   const [newValue, setNewValue] = React.useState({
     name: '',
     addr: '',
@@ -103,6 +107,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   React.useEffect(() => {
     setBrowser(true) 
     getResolver()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -110,7 +115,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       signMessage({ message: statement })
       setKeygen(true)
     }
-  }, [state]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, statement]);
 
   React.useEffect(() => {
     if (data) {
@@ -120,7 +126,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       };
       keygen()
     }
-  }, [keygen, data]);
+  }, [keygen, data, caip10, state.modalData, title]);
 
   React.useEffect(() => {
     if (keypair) {
@@ -129,17 +135,38 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         const w3Name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const cidIpns = w3Name.toString()
         setCid(cidIpns)
-        console.log(cid)
+        setWrite(true)
       }
       cidGen()
     }
-  }, [keypair]);
+  }, [keypair, cid]);
+
+  const {
+    data: response,
+    write: migrate,
+    isLoading: isMigrateLoading,
+    isSuccess: isMigrateSuccess,
+  } = useContractWrite(
+    constants.ensConfig[0],
+    'setResolver',
+    {
+      args: [
+        ethers.utils.namehash(title), 
+        constants.ccip2
+      ]
+    }
+  );
 
   React.useEffect(() => {
-    if (cid.startsWith('k5')) {
-      migrate()
+    if (action === 'resolver') {
+        if (cid.startsWith('k5')) {
+          migrate()
+        }
+    } else {
+      /* do nothing */
     }
-  }, [cid]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cid, action]);
   
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
@@ -254,7 +281,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       ens: title,
       address: accountData?.address,
       recordType: 'all',
-      recordValue: 'all'
+      recordsValues: 'all'
     }
     try{
       await fetch(
@@ -280,6 +307,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       getUpdate()
       setMetadata()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish]);
 
   function setMetadata() {
@@ -338,22 +366,6 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     finishQuery(data)
   }
 
-  const {
-    data: response,
-    write: migrate,
-    isLoading: isMigrateLoading,
-    isSuccess: isMigrateSuccess,
-  } = useContractWrite(
-    constants.ensConfig[0],
-    'setResolver',
-    {
-      args: [
-        ethers.utils.namehash(title), 
-        constants.ccip2
-      ]
-    }
-  );
-
   const { isSuccess: txSuccess } = useWaitForTransaction({
     hash: response?.hash,
   });
@@ -377,7 +389,17 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       return item;
     });
     setEdit(updatedList)
-  }, [trigger]);
+  }, [trigger, list]);
+
+  React.useEffect(() => {
+    if (getch) {
+      if (state.trigger) {
+        signMessage({ message: statement })
+        setKeygen(true)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, getch, statement]);
 
   React.useEffect(() => {
     const request = {
@@ -386,11 +408,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       address: recoveredAddress.current,
       ipns: cid,
       recordType: action,
-      recordValue: newValue
+      recordsValues: newValue
     }
-    console.log(request)
-    const editRecord = async () => {
-      if (getch) {    
+    if (write) {
+      setLoading(true)
+      const editRecord = async () => {
         try {
           await fetch(
             "https://sshmatrix.club:3003/write",
@@ -404,16 +426,17 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             .then(response => response.json())
             .then(data => {
               console.log(data)
+              setLoading(false)
               setContent(data)
             })
         } catch(error) {
           console.log('Failed to write to CCIP2 backend; making fake data for tests')
-    
         }
       }
+      editRecord()
+      setWrite(false)
     }
-    editRecord()
-  }, [getch]);
+  }, [write, action, cid, data, newValue, title]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
@@ -448,18 +471,14 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       })
       setList(updatedList)
       setLoading(false)
-      console.log(list)
     }
-  }, [isMigrateSuccess, txSuccess, pinned]);
+  }, [isMigrateSuccess, txSuccess, pinned, list]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess) {
       const pin = async () => {
         const key_ = await Name.create()
-        console.log(key_.key.bytes.length)
         const name = await Name.from(key_.key.bytes)
-        console.log(name.toString())
-        // ** 
         console.log('Migration Successful')
         setPinned(true)
       }
@@ -506,6 +525,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             <img 
               src={ avatar.replace('ipfs.io','pinata.cloud') } 
               width={ '100px' }
+              alt={ title }
             >
             </img>
           </StyledModalTitle>
@@ -560,6 +580,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                   }}
                 >
                   <Modal
+                    color={ color }
+                    title={ icon }
                     onClose={() => setModal(false)}
                     show={modal}
                   >
@@ -590,27 +612,60 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                         }}
                       >
                         {item.type}
-                        { (item.type !== 'resolver' || resolver !== constants.ccip2)  &&
+                        { item.type !== 'resolver' &&
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setModal(true),
+                              setIcon('info'),
+                              setColor('skyblue'),
                               setHelp(item.help)
                             }}
                           >
                             <div className="material-icons smol">info_outline</div>
                           </button>
                         }
-                        { resolver === constants.ccip2 && item.type === 'resolver' &&
-                          <span 
-                            style={{ 
-                              color: 'lightgreen',
-                              marginLeft: '5px'
+                        { item.type === 'resolver' && resolver === constants.ccip2  &&
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setModal(true),
+                              setIcon('gpp_good'),
+                              setColor('lightgreen'),
+                              setHelp('Resolver is migrated')
                             }}
-                            className="material-icons smoller"
                           >
-                            gpp_good
-                          </span>
+                            <div 
+                              className="material-icons smol"
+                              style={{
+                                color: 'lightgreen',
+                                marginLeft: '5px'
+                              }}
+                            >
+                              gpp_good
+                            </div>
+                          </button>
+                        }
+                        { item.type === 'resolver' && resolver !== constants.ccip2  &&
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setModal(true),
+                              setIcon('gpp_maybe'),
+                              setColor('orange'),
+                              setHelp('Resolver is not migrated')
+                            }}
+                          >
+                            <div 
+                              className="material-icons smol"
+                              style={{
+                                color: 'orange',
+                                marginLeft: '5px'
+                              }}
+                            >
+                              gpp_maybe
+                            </div>
+                          </button>
                         }
                       </span>
                       <button
@@ -653,6 +708,13 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                         show={salt}
                       >
                       </Salt>
+                      <Record
+                        handleTrigger={handleTrigger}
+                        handleModalData={handleModalData}
+                        onClose={() => setGetch(false)}
+                        show={getch}
+                      >
+                      </Record>
                     </div>
                     <input 
                       id={ item.key }
@@ -660,7 +722,10 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                       placeholder={ item.value }
                       type='text'
                       defaultValue={ item.value }
-                      disabled={ !item.active || duplicate[item.type] }
+                      disabled={ 
+                        !item.active || 
+                        duplicate[item.type] 
+                      }
                       style={{ 
                         fontFamily: 'SF Mono',
                         letterSpacing: '-0.5px',

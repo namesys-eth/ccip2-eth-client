@@ -1,4 +1,5 @@
 import React from "react";
+import Modal from './Modal'
 
 interface ListItem {
   key: number;
@@ -21,6 +22,11 @@ for (let i = 65; i <= 90; i++) {
 const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 const List: React.FC<ListProps> = ({ items, onItemClick }) => {
+  const [icon, setIcon] = React.useState('');
+  const [help, setHelp] = React.useState('');
+  const [color, setColor] = React.useState('');
+  const [modal, setModal] = React.useState(false)
+
   return (
     <ul
       style={{
@@ -118,28 +124,54 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                   ETH
                 </span>
                 { item.migrated &&
-                  <span 
-                    style={{ 
-                      color: 'lightgreen',
-                      marginLeft: '5px'
+                  <button 
+                    className="button-tiny"
+                    onClick={() => { 
+                      setModal(true),
+                      setIcon('gpp_good'),
+                      setColor('lightgreen'),
+                      setHelp('Resolver is migrated')
                     }}
-                    className="material-icons smoller"
                   >
-                    gpp_good
-                  </span>
+                    <div 
+                      className="material-icons smol"
+                      style={{
+                        color: 'lightgreen'
+                      }}
+                    >
+                      gpp_good
+                    </div>
+                  </button>
                 }
                 { !item.migrated &&
-                  <span 
-                    style={{ 
-                      color: 'orange',
-                      marginLeft: '5px'
+                  <button 
+                    className="button-tiny"
+                    onClick={() => { 
+                      setModal(true),
+                      setIcon('gpp_maybe'),
+                      setColor('orange'),
+                      setHelp('Resolver is not migrated')
                     }}
-                    className="material-icons smoller"
                   >
-                    gpp_maybe
-                  </span>
+                    <div 
+                      className="material-icons smol"
+                      style={{
+                        color: 'orange'
+                      }}
+                    >
+                      gpp_maybe
+                    </div>
+                  </button>
                 }
               </div>
+              <Modal
+                color={ color }
+                title={ icon }
+                onClose={() => setModal(false)}
+                show={modal}
+              >
+                <span>{ help }</span>
+              </Modal>
             </span>
             <div>
               <a 
