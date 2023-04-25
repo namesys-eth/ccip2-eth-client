@@ -3,12 +3,12 @@ const optionsCss = {
   files: './out/_next/static/css/*.css',
   from: [/webpack:\/\/\/mini-css-extract-plugin\/_next\//g],
   to: ['https://namesys-eth.github.io/ccip2-eth-client/_next/'],
-}
+};
 const optionsJs = {
   files: ['./out/_next/static/chunks/*.js'],
   from: [/_next\//g],
   to: ['ccip2-eth-client/_next/'],
-}
+};
 const optionsHtml = {
   files: './out/*.html',
   from: [/_next\/static/g],

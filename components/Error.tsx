@@ -1,16 +1,15 @@
-import React from "react";
+import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-const Terms = ({ show, onClose }) => {
-  const title = 'terms of use';
+const Error = ({ show, onClose, title, children }) => {
   const [browser, setBrowser] = React.useState(false);
 
   React.useEffect(() => {
     setBrowser(true);
   }, []);
 
-  const handleCloseClick = (e: { preventDefault: () => void; }) => {
+  const handleCloseClick = (e) => {
     e.preventDefault();
     onClose();
   };
@@ -20,30 +19,22 @@ const Terms = ({ show, onClose }) => {
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
-              className="material-icons"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-              close
-            </span>
+            <span className="material-icons">cancel</span>
           </a>
         </StyledModalHeader>
-        {title &&
-          <StyledModalTitle>
-            <span 
-              className="material-icons miui-small"
-              style={{
-                marginTop: '4px',
-                color: 'white'
-              }}
-            >
-              gavel
-            </span>
+        {title && <StyledModalTitle>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            <div className="material-icons miui-small">{title}</div>
+          </div>
           </StyledModalTitle>}
-        <StyledModalBody>
-        </StyledModalBody>
+        <StyledModalBody>{children}</StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
   ) : null;
@@ -59,23 +50,22 @@ const Terms = ({ show, onClose }) => {
 };
 
 const StyledModalBody = styled.div`
-  padding-top: 10px;
-  padding-left: 20px;
-  padding-right: 40px;
-  padding-bottom: 20px;
+  padding-top: 20px;
   display: flex;
   justify-content: center;
-  height: 500px;
   overflow-y: auto;
+  font-size: 18px;
+  color: white;
+  font-weight: 700;
 `;
 
 const StyledModalTitle = styled.div`
-  padding-top: 20px;
-  font-size: 22px;
+  font-size: 18px;
   display: flex;
   justify-content: center;
-  font-weight: 800;
-  margin-bottom: 20px;
+  font-weight: 700;
+  color: white;
+  margin-top: -20px;
 `;
 
 const StyledModalHeader = styled.div`
@@ -85,14 +75,14 @@ const StyledModalHeader = styled.div`
 `;
 
 const StyledModal = styled.div`
-  background: linear-gradient(112deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 48%, rgba(70,63,55,1) 100%);
-  background-size: 400% 400%;
-  width: 500px;
-  height: 600px;
+  background: red;
+  width: 400px;
+  height: 150px;
   border-radius: 6px;
   padding: 15px;
   overflow-y: initial !important
   padding-bottom: 20px;
+  justify-content: center;
 `;
 
 const StyledModalOverlay = styled.div`
@@ -104,8 +94,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.75);
-  background-size: contain;
+  background-color: rgba(0, 0, 0, 0.5);
 `;
 
-export default Terms;
+export default Error;

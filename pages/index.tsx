@@ -1,59 +1,65 @@
 import React from 'react'
 import { useCallback } from 'react'
 import Head from 'next/head'
-import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
 import { Alchemy, Network } from "alchemy-sdk"
 import {
-  useQuery,
   useConnect,
   useAccount,
-  useFeeData,
-  useNetwork
+  useContractRead
 } from 'wagmi'
-import contractInterface from '../contract-abi.json'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
 import Modal from '../components/Modal'
 import Terms from '../components/Terms'
 import Preview from '../components/Preview'
 import Faq from '../components/FAQ'
+import Error from '../components/Error'
 import List from '../components/List'
 import SearchBox from '../components/Search'
-import { Statistic } from 'antd'
 import LoadingIcons from 'react-loading-icons'
+import * as Name from 'w3name'
+import * as constants from '../utils/constants'
 
+const network = process.env.NEXT_PUBLIC_NETWORK
 const alchemyConfig = {
   apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
-  network: Network.ETH_GOERLI
+  network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
+  chainId: network === 'goerli' ? '5': '1',
 }
 const alchemy = new Alchemy(alchemyConfig)
-const { Countdown } = Statistic
-const EnsGraphApi = 'https://api.thegraph.com/subgraphs/name/ensdomains/ens/graphql'
-const ensRegistrars = [
-  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Old Registrar
-  "0x114d4603199df73e7d157787f8778e21fcd13066"  // Name Wrapper
-]
-let metadata
+const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
+
+let metadata: React.SetStateAction<any[]>
 const carousal = [
   '<span class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
   '<span class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
   '<span class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
   '<span class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<span class="material-icons miui">currency_bitcoin</span><br></br><span style="color: skyblue">Enjoy ENS gasfree</span>'
+  '<img class="icon-ens" src="/ens-white.png"/><br></br>Enjoy ENS gasfree</span>'
 ]
 
 const Home: NextPage = () => {
   const { data: accountData } = useAccount()
-  const { connectors, isConnected } = useConnect()
-  const { data: gasData, isError } = useFeeData()
+  const { isConnected } = useConnect()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
-  const [loading, setLoading] = React.useState(false)
+  const [modal, setModal] = React.useState(false)
+  const [termsModal, setTermsModal] = React.useState(false)
+  const [errorModal, setErrorModal] = React.useState(false)
+  const [previewModal, setPreviewModal] = React.useState(false)
+  const [nameToPreviewModal, setNameToPreview] = React.useState('')
+  const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
+  const [success, setSuccess] = React.useState(false)
   const [option, setOption] = React.useState('owner')
-  const { chains } = useNetwork()
+  const [tokenID, setTokenID] = React.useState('')
+  const [manager, setManager] = React.useState('')
+  const [query, setQuery] = React.useState('')
+  const [searchType, setSearchType] = React.useState('')
+  const [cache, setCache] = React.useState<any[]>([])
+  const [response, setResponse] = React.useState(false)
 
   /* @dev : GraphQL Instance
   const logNames = useCallback(async () => {
@@ -91,26 +97,29 @@ const Home: NextPage = () => {
     const allTokens = nfts.ownedNfts
     var allEns: string[] = []
     var items: any[] = []
-    var j = 0
+    var count = 0
     for (var i = 0; i < allTokens.length; i++) {
       // @TODO : ENS Metadata service is broken and not showing all the names
-      if (ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        j = j + 1
+      if (constants.ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
+        count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
+        const response = await provider.getResolver(allTokens[i].title)
         items.push({
-          'key': j,
-          'name': allTokens[i].title.split('.eth')[0]
+          'key': count,
+          'name': allTokens[i].title.split('.eth')[0],
+          'migrated': response?.address === constants.ccip2
         })
       }
     }
     setMeta(items)
-    setLoading(false)
-    if (j === 0) {
+    if (count === 0) {
       setEmpty(true)
     } else {
       setEmpty(false)
     }
-    //console.log(allTokens)
+    setTimeout(() => {
+      setLoading(false)
+    }, 2000);
   }, [accountData])
 
   const getTokens = useCallback(async () => {
@@ -121,11 +130,18 @@ const Home: NextPage = () => {
 
   React.useEffect(() => {
     setLoading(true)
-    getTokens()
-    if (metadata) {
-      setLoading(false)
-      setMeta(metadata)
+    const setMetadata = async () => {
+      await getTokens()
+        .then(() => {
+          if (metadata) {
+            setMeta(metadata)
+            setTimeout(() => {
+              setLoading(false)
+            }, 2000);
+          }
+        })
     }
+    setMetadata()
   }, [accountData, isConnected, getTokens])
 
   React.useEffect(() => {
@@ -138,15 +154,100 @@ const Home: NextPage = () => {
     }
   }, [meta])
 
-  const onItemClick = (key: number) => {
-    console.log(`Item ${key} clicked`)
+  const onItemClick = (name: string) => {
+    setPreviewModal(true);
+    setNameToPreview(name);
   }
 
+  const { data: controller } = useContractRead(
+    constants.ensConfig[1],
+    'getApproved',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
+
+  const { data: owner } = useContractRead(
+    constants.ensConfig[1],
+    'ownerOf',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
+
+  React.useEffect(() => {
+    if (controller && controller?.toString() !== '0x' + '0'.repeat(40)) {
+      setManager(controller.toString())
+    } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
+      setManager(owner.toString())
+    } else if (option !== 'owner') {
+      setTimeout(() => {
+        setLoading(false)
+        setResponse(false)
+      }, 2000);
+    }
+  }, [tokenID, controller, owner])
+
+  React.useEffect(() => {
+    if (manager === accountData?.address) {
+      setResponse(true)
+      var allEns: string[] = []
+      var items: any[] = []
+      allEns.push(query.split('.eth')[0])
+      const setMetadata = async () => {
+        provider.getResolver(query)
+          .then((response) => {
+            items.push({
+              'key': 1,
+              'name': query.split('.eth')[0],
+              'migrated': response?.address === constants.ccip2
+            })
+            if (items) {
+              setMeta(items)
+              setSuccess(true)
+              console.log('You are owner/manager')
+              setErrorModal(false)
+              setLoading(false)
+            } else {
+              setSuccess(false)
+              setEmpty(true)
+            }
+          })
+      }
+      setMetadata()
+    } else {
+      setErrorModal(true)
+      setSuccess(false)
+    }
+  }, [manager, accountData?.address, query])
+
+  React.useEffect(() => {
+    if (query) {
+      try {
+        let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let token = ethers.BigNumber.from(labelhash)
+        setTokenID(token.toString())
+      } catch (error) {
+        console.log('BigNumberWarning')
+      }
+    }
+  }, [query])
+
   const handleManagerSearch = (query: string) => {
+    setLoading(true)
+    setSearchType('manager')
+    setQuery(query)
     console.log(`Searching Manager for ${query}`)
   }
 
   const handleNameSearch = (query: string) => {
+    setLoading(true)
+    setSearchType('search')
+    setQuery(query)
     console.log(`Searching for ${query}`)
   }
 
@@ -170,13 +271,13 @@ const Home: NextPage = () => {
         <img
           className="avatar"
           alt="sample"
-          src="logo-dark-alpha.png"
+          src="logo.png"
         />
       </div>
       <Head>
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
-        <link rel="shortcut icon" href="logo-dark.png" />
+        <link rel="shortcut icon" href="logo.png" />
       </Head>
       {/* Detect Device */}
       <div
@@ -192,8 +293,7 @@ const Home: NextPage = () => {
           style={{ marginRight: 10 }}
           data-tooltip='Learn more'
         >
-          <div 
-            className="smol"
+          <div
             style={{
               display: 'flex',
               flexDirection: 'row',
@@ -201,9 +301,26 @@ const Home: NextPage = () => {
               alignItems: 'center'
             }}
           >
-              {'about'}&nbsp;<span className="material-icons">info</span>
+            {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
           </div>
-        </button> 
+        </button>
+        <button
+          className='button clear'
+          onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+          style={{ marginRight: 10 }}
+          data-tooltip='Terms of Use'
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            {'terms'}&nbsp;<span className="material-icons">gavel</span>
+          </div>
+        </button>
         {!isMobile && (
           <div>
             <ConnectButton
@@ -332,13 +449,23 @@ const Home: NextPage = () => {
                 marginBottom: '50px'
               }}>
               <button
-                onClick={() => { setOption('owner') }}
+                onClick={() => {
+                  setOption('owner'),
+                    setMeta(cache),
+                    setTokenID(''),
+                    setQuery(''),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
+                }}
                 className='button-header'
-                disabled={ option === 'owner'}
+                disabled={option === 'owner'}
                 data-tooltip='Show names you own'
               >
-                <div 
-                  className="smol"
+                <div
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -346,17 +473,27 @@ const Home: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                    {'owned'}&nbsp;<span className="material-icons">manage_accounts</span>
+                  {'owned'}&nbsp;
+                  <span className="material-icons">manage_accounts</span>
                 </div>
               </button>
               <button
-                onClick={() => { setOption('manager') }}
+                onClick={() => {
+                  option === 'search' ? console.log(cache) : setCache(meta),
+                    setMeta([]),
+                    setOption('manager'),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
+                }}
                 className='button-header'
-                disabled={ option === 'manager'}
+                disabled={option === 'manager'}
                 data-tooltip='Search for a name that you manage'
               >
-                <div 
-                  className="smol"
+                <div
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -364,17 +501,27 @@ const Home: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                    {'managed'}&nbsp;<span className="material-icons">supervised_user_circle</span>
+                  {'managed'}&nbsp;
+                  <span className="material-icons">supervised_user_circle</span>
                 </div>
               </button>
               <button
-                onClick={() => { setOption('search') }}
+                onClick={() => {
+                  option === 'manager' ? console.log(cache) : setCache(meta),
+                    setMeta([]),
+                    setOption('search'),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
+                }}
                 className='button-header'
-                disabled={ option === 'search'}
+                disabled={option === 'search'}
                 data-tooltip='Search for an ENS name'
               >
-                <div 
-                  className="smol"
+                <div
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -382,25 +529,30 @@ const Home: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                    {'search'}&nbsp;<span className="material-icons">search</span>
+                  {'search'}&nbsp;
+                  <span className="material-icons">search</span>
                 </div>
               </button>
             </div>
           )}
           {loading && isConnected && (
-            <div
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                marginTop: '50px',
-                marginBottom: '200px'
-              }}
-            >
-              <LoadingIcons.Bars />
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginTop: '50px',
+                  marginBottom: '200px'
+                }}
+              >
+                <LoadingIcons.Bars />
+              </div>
+              <h1>please wait</h1>
             </div>
           )}
-          {!loading && option === 'owner' && meta && isConnected && !empty && (
+          {!loading && option === 'owner' && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -408,8 +560,9 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'white',
-                  marginBottom: '25px'
+                  color: 'skyblue',
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 names you own
@@ -422,14 +575,14 @@ const Home: NextPage = () => {
                   marginBottom: '50px',
                 }}
               >
-                <List 
-                  items={meta} 
-                  onItemClick={onItemClick} 
+                <List
+                  items={meta}
+                  onItemClick={onItemClick}
                 />
               </div>
             </div>
           )}
-          {!loading && option === 'manager' && meta && isConnected && (
+          {!loading && (option === 'manager' || option === 'search') && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -437,8 +590,39 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'white',
-                  marginBottom: '25px'
+                  color: 'skyblue',
+                  marginBottom: '25px',
+                  fontWeight: '700'
+                }}
+              >
+                search result
+              </div>
+              <div
+                className='list-container'
+                style={{
+                  maxHeight: '520px',
+                  overflowY: 'auto',
+                  marginBottom: '50px',
+                }}
+              >
+                <List
+                  items={meta}
+                  onItemClick={onItemClick}
+                />
+              </div>
+            </div>
+          )}
+          {!loading && option === 'manager' && !success && meta && isConnected && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  fontSize: '18px',
+                  color: 'skyblue',
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
                 names you manage
@@ -457,7 +641,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && option === 'search' && meta && isConnected && (
+          {!loading && option === 'search' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -465,7 +649,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'white',
+                  color: 'skyblue',
                   marginBottom: '25px'
                 }}
               >
@@ -485,23 +669,50 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          { empty && (
+          {!loading && empty && option === 'owner' && (
             <div>
               <div
                 style={{
                   alignItems: 'center',
                   justifyContent: 'center',
                   display: 'flex',
-                  fontSize: '18px',
+                  flexDirection: 'column',
+                  fontSize: '22px',
                   color: 'white',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  fontWeight: '700'
                 }}
               >
-                <span 
-                  className="material-icons"
+                <span
+                  className="material-icons miui-smaller"
                 >
                   warning
-                </span>&nbsp;
+                </span>
+                <br></br>
+                No Names Found
+              </div>
+            </div>
+          )}
+          {!response && !manager && query && option !== 'owner' && !loading && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  fontSize: '22px',
+                  color: 'white',
+                  marginBottom: '25px',
+                  fontWeight: '700'
+                }}
+              >
+                <span
+                  className="material-icons miui-smaller"
+                >
+                  warning
+                </span>
+                <br></br>
                 No Names Found
               </div>
             </div>
@@ -516,11 +727,11 @@ const Home: NextPage = () => {
               justifyContent: 'center',
               display: 'flex'
             }}>
-            <span 
+            <span
               className="material-icons">folder_open
             </span>&nbsp;
-            <a 
-              href="https://github.com/namesys-eth/ccip2-eth-client" 
+            <a
+              href="https://github.com/namesys-eth/ccip2-eth-client"
               className="footer-text"
               target='_blank'
               rel="noreferrer"
@@ -533,7 +744,54 @@ const Home: NextPage = () => {
             onClose={() => setFaqModal(false)}
             show={faqModal}
           />
-          <div id="modal"></div>
+          <Terms
+            onClose={() => setTermsModal(false)}
+            show={termsModal}
+          />
+          <Error
+            onClose={() => {
+              setErrorModal(false),
+                setTokenID(''),
+                setQuery(''),
+                setManager('')
+            }}
+            show={errorModal && searchType === 'manager' && manager && !loading}
+            title={'block'}
+          >
+            {'you are not manager'}
+          </Error>
+          <Error
+            onClose={() => {
+              setErrorModal(false),
+                setTokenID(''),
+                setQuery(''),
+                setManager('')
+            }}
+            show={errorModal && searchType === 'search' && manager && !loading}
+            title={'block'}
+          >
+            {'not owner or manager'}
+          </Error>
+          <div id="modal">
+            <Modal
+              onClose={() => setModal(false)}
+              show={modal}
+            >
+              {'not owner or manager'}
+            </Modal>
+          </div>
+          {previewModal && (
+            <div id="modal">
+              <Preview
+                onClose={() => setPreviewModal(false)}
+                show={previewModal}
+                title={nameToPreviewModal}
+                chain={alchemyConfig.chainId}
+              >
+                { true }
+              </Preview>
+            </div>
+          )}
         </div>
       </div>
     </div>

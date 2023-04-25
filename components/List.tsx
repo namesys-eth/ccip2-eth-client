@@ -3,19 +3,28 @@ import React from "react";
 interface ListItem {
   key: number;
   name: string;
+  migrated: boolean;
 }
 
 interface ListProps {
   items: ListItem[];
-  onItemClick: (key: number) => void;
+  onItemClick: (value: string) => void;
 }
+
+const alphabets: string[] = [];
+for (let i = 65; i <= 90; i++) {
+  if (String.fromCharCode(i).toLocaleLowerCase() !== 'x') {
+    alphabets.push(String.fromCharCode(i).toLocaleLowerCase());
+  }
+}
+
+const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 const List: React.FC<ListProps> = ({ items, onItemClick }) => {
   return (
     <ul
       style={{
         listStyle: 'none',
-        fontFamily: 'SF Mono',
         color: 'white',
         display: 'flex',
         alignItems: 'center',
@@ -43,17 +52,51 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                 color: '#bfbfbf'
               }}
             >
-              <div>
-                <span 
-                  style={{ 
-                    fontFamily: 'SF Mono',
-                    letterSpacing: '-0px',
-                    fontWeight: '800',
-                    fontSize: '20px'
-                  }}
-                >
-                  {item.name}
-                </span>
+              <div
+              >
+                {item.name.split('').map((char, index) => (
+                  <span key={index}>
+                    { !alphabets.includes(char) &&
+                      !['x'].includes(char) && (
+                      <span
+                        style={{ 
+                          fontFamily: 'SF Mono',
+                          letterSpacing: '-0px',
+                          fontWeight: '600',
+                          fontSize: '21px'
+                        }}
+                      >
+                        { char }
+                      </span>
+                    )}
+                    { alphabets.includes(char) && (
+                      <span
+                        style={{ 
+                          fontFamily: 'Rajdhani',
+                          letterSpacing: '0.3px',
+                          fontWeight: '700',
+                          fontSize: '26px'
+                        }}
+                      >
+                        { char }
+                      </span>
+                    )}
+                    { ['x'].includes(char) &&
+                      numbers.includes(item.name.charAt(index - 1)) &&
+                      numbers.includes(item.name.charAt(index + 1)) && (
+                      <span
+                        style={{ 
+                          fontFamily: 'Rajdhani',
+                          letterSpacing: '0.3px',
+                          fontWeight: '700',
+                          fontSize: '24px'
+                        }}
+                      >
+                        { char }
+                      </span>
+                    )}
+                  </span>
+                ))}
                 <span 
                   style={{ 
                     fontFamily: 'SF Mono',
@@ -68,11 +111,34 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                     fontFamily: 'Spotnik',
                     fontSize: '11px', 
                     color: 'skyblue',
-                    fontWeight: '700'
+                    fontWeight: '700',
+                    letterSpacing: '0px'
                   }}
                 >
-                  eth
+                  ETH
                 </span>
+                { item.migrated &&
+                  <span 
+                    style={{ 
+                      color: 'lightgreen',
+                      marginLeft: '5px'
+                    }}
+                    className="material-icons smoller"
+                  >
+                    gpp_good
+                  </span>
+                }
+                { !item.migrated &&
+                  <span 
+                    style={{ 
+                      color: 'orange',
+                      marginLeft: '5px'
+                    }}
+                    className="material-icons smoller"
+                  >
+                    gpp_maybe
+                  </span>
+                }
               </div>
             </span>
             <div>
@@ -104,18 +170,18 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                 style={{
                   alignSelf: 'flex-end',
                   height: '30px',
-                  width: '100px'
+                  width: '80px'
                 }}
-                onClick={() => onItemClick(item.key)}
+                onClick={() => onItemClick(item.name + '.eth')}
                 data-tooltip='Click to edit off-chain records'
               >
                 <div 
-                    className="smol"
                     style={{
                       display: 'flex',
                       flexDirection: 'row',
                       justifyContent: 'center',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      fontSize: '14px'
                     }}
                   >
                       {'edit'}&nbsp;<span className="material-icons smoller">manage_history</span>
