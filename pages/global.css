@@ -336,12 +336,12 @@ input[type="text"] {
 }
 
 .connect-button {
-  margin-top: -12%;
+  margin-top: -10%;
   padding-right: 40px;
 }
 @media screen and (max-width: 800px) {
   .connect-button {
-    margin-top: -20%;
+    margin-top: -18%;
     padding-right: 20px;
   }
 }

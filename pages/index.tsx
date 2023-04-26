@@ -264,7 +264,8 @@ const Home: NextPage = () => {
       {/* Avatar */}
       <div
         style={{
-          width: '100%',
+          margin: '20px',
+          width: '60%',
           display: 'flex',
           justifyContent: 'flex-start'
         }}>
@@ -548,6 +549,19 @@ const Home: NextPage = () => {
                 }}
               >
                 <LoadingIcons.Bars />
+                <div
+                style={{
+                  marginTop: '40px'
+                }}
+              >
+                <span 
+                  style={{
+                    color: 'white',
+                  }}
+                >
+                  Loading Names
+                </span>
+              </div>
               </div>
               <h1>please wait</h1>
             </div>
@@ -774,6 +788,7 @@ const Home: NextPage = () => {
           </Error>
           <div id="modal">
             <Modal
+              color={'orange'}
               title={'warning'}
               onClose={() => setModal(false)}
               show={modal}
