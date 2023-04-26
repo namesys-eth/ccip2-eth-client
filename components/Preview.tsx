@@ -4,6 +4,7 @@ import styled from 'styled-components'
 import { ethers } from 'ethers'
 import { verifyMessage } from 'ethers/lib/utils'
 import LoadingIcons from 'react-loading-icons'
+import { FaCheck } from 'react-icons/fa'
 import Modal from '../components/Modal'
 import Salt from '../components/Salt'
 import Record from '../components/Record'
@@ -22,6 +23,20 @@ import * as ed25519_2 from 'ed25519-2.0.0'
 interface MainBodyState {
   modalData: string | undefined;
   trigger: boolean;
+}
+
+const EMPTY_STRING = {
+  name: '',
+  addr: '',
+  avatar: '', 
+  contenthash: ''
+}
+
+const EMPTY_BOOL = {
+  name: false,
+  addr: false,
+  avatar: false, 
+  contenthash: false
 }
 
 const Preview = ({ show, onClose, title, chain, children }) => {
@@ -45,40 +60,21 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const [name, setName] = React.useState('');
   const [salt, setSalt] = React.useState(false);
   const [list, setList] = React.useState<any[]>([]);
-  const [edit, setEdit] = React.useState<any[]>([]);
   const [trigger, setTrigger] = React.useState(null);
   const [help, setHelp] = React.useState('');
   const [keypair, setKeypair] = React.useState<[string, string]>()
   const [getch, setGetch] = React.useState(false);
   const [write, setWrite] = React.useState(false);
-  const [action, setAction] = React.useState('');
+  const [actions, setActions] = React.useState<any[]>([]);
   const [icon, setIcon] = React.useState('');
   const [color, setColor] = React.useState('');
-  const [newValue, setNewValue] = React.useState({
-    name: '',
-    addr: '',
-    avatar: '', 
-    contenthash: ''
-  });
+  const [message, setMessage] = React.useState('Loading Records');
+  const [newValues, setNewValues] = React.useState(EMPTY_STRING);
   const [server, setServer] = React.useState({
-    type: '',
-    name: '',
-    addr: '',
-    avatar: '', 
-    contenthash: ''
+    ...EMPTY_STRING,
+    type: ''
   });
-  const [duplicate, setDuplicate] = React.useState({
-    name: false,
-    addr: false,
-    avatar: false, 
-    contenthash: false
-  });
-  const [content, setContent] = React.useState({
-    name: '',
-    addr: '',
-    avatar: '', 
-    contenthash: ''
-  });
+  const [legit, setLegit] = React.useState(EMPTY_BOOL);
 
 
   const { data: accountData } = useAccount()
@@ -96,6 +92,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
   let caip10 = `eip155:${chain}:${accountData?.address}`
   let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${title}\nSIGNED BY: ${caip10}`
+  const defaultValue = '/ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui'
       
   const handleModalData = (data: string | undefined) => {
     setState({ ...state, modalData: data });
@@ -106,9 +103,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
 
   React.useEffect(() => {
     setBrowser(true) 
-    getResolver()
+    if (browser) {
+      getResolver()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [browser]);
 
   React.useEffect(() => {
     if (state.trigger) {
@@ -119,10 +118,13 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   }, [state, statement]);
 
   React.useEffect(() => {
+    setLoading(true)
     if (data) {
+      setMessage('Generating IPNS Key')
       const keygen = async () => {
         const __keypair = await ed25519Keygen(title, caip10, data, state.modalData)
         setKeypair(__keypair)
+        setMessage('IPNS Key Generated')
       };
       keygen()
     }
@@ -132,14 +134,18 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     if (keypair) {
       const cidGen = async () => {
         let key = '08011240' + keypair[0] + keypair[1]
-        const w3Name = await Name.from(ed25519_2.etc.hexToBytes(key))
-        const cidIpns = w3Name.toString()
+        const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
+        const cidIpns = w3name.toString()
+        // @TODO: Test w3name histories
+        //const revision = await Name.v0(w3name, defaultValue)
+        //await Name.publish(revision, w3name.key)
         setCid(cidIpns)
-        setWrite(true)
+        setMessage('IPNS CID Generated')
       }
       cidGen()
     }
-  }, [keypair, cid]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypair]);
 
   const {
     data: response,
@@ -158,15 +164,32 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   );
 
   React.useEffect(() => {
-    if (action === 'resolver') {
-        if (cid.startsWith('k5')) {
-          migrate()
-        }
+    if (actions.includes('resolver') && actions.length === 1) {
+      if (cid.startsWith('k5')) {
+        migrate()
+      }
     } else {
-      /* do nothing */
+      setMessage(message)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, action]);
+  }, [cid, actions]);
+
+  React.useEffect(() => {
+    if (actions.length > 1) {
+      const updatedList = list.map((item) => {
+        if (item.type !== 'resolver' && actions.includes(item.type)) {
+          return { 
+            ...item, 
+            label: 'edit all',
+            help: 'set multiple records in one click'
+          };
+        }
+        return item;
+      });
+      setList(updatedList)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions]);
   
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
@@ -176,7 +199,6 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   function finishQuery(data: React.SetStateAction<any[]> | undefined) {
     if ( data ) { // @TODO: Second condition probably not needed; check later
       setList(data)
-      setEdit(data)
       setLoading(false)
     }
   }
@@ -232,19 +254,32 @@ const Preview = ({ show, onClose, title, chain, children }) => {
           } else {
             setAddr(response)
           }
-          setName(title)
-          setFinish(true)
+          getName()
         })
         .catch(() => {
           setAddr('')
-          setName(title)
-          setFinish(true)
+          getName()
         });
     } else {
       setAddr('')
-      setName(title)
-      setFinish(true)
+      getName()
     }
+  }
+
+  function isLegit(type: any, value: any) {
+    if (type === 'name') {
+      return value.endsWith('.eth')
+    } 
+  }
+
+  // @TODO: getName() routine for both registrars
+  async function getName() {
+    if ( resolver?.address !== constants.ccip2 ) {
+      setName('to-do')
+    } else {
+      setName('to-do')
+    }
+    setFinish(true)
   }
 
   async function getResolver() {
@@ -255,21 +290,58 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       });
   }
 
+  function isName(value: string) {
+    return value.endsWith('.eth') && value.length <= 32 + 4
+  }
+
+  function isAddr(value: string) {
+    const hexRegex = /^[0-9a-fA-F]+$/;
+    return value.startsWith('0x') && value.length === 40 && hexRegex.test(value.split('0x')[1])
+  }
+
+  function isAvatar(value: string) {
+    const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    return urlRegex.test(value)
+  }
+
+  function isContenthash(value: string) {
+    const ipfsRegex = /^[a-z0-9]{46}$/;
+    return ipfsRegex.test(value)
+  }
+
   function setValues(key: string, value: string) {
-    const _array = newValue;
-    _array[key] = value;
-    setNewValue(_array)
-    const updatedList = edit.map((item) => {
-      if (item.type === key) {
+    let __object = EMPTY_BOOL
+    if (key == 'name') {
+      __object[key] = isName(value)
+    } else if (key == 'addr') {
+      __object[key] = isAddr(value)
+    } else if (key == 'avatar') {
+      __object[key] = isAvatar(value)
+    } else if (key == 'contenthash') {
+      __object[key] = isContenthash(value)
+    }
+    setLegit(__object)
+    const _object = newValues;
+    _object[key] = value;
+    setNewValues(_object)
+    const updatedList = list.map((item) => {
+      if (actions.includes(item.type)) {
         return { 
           ...item, 
           editable: true, 
-          active: true 
+          active: true,
+          action: false
         };
       }
       return item;
     });
-    setEdit(updatedList)
+    setList(updatedList)
+    const priorState = actions
+    if (!priorState.includes(key) && newValues[key]) {
+      setActions(prevState => [...prevState, key])
+    } else if (priorState.includes(key) && !newValues[key]) {
+      setActions(prevState => prevState.filter(item => item !== key))
+    }
   }
 
   async function getUpdate() {
@@ -280,7 +352,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       type: 'read',
       ens: title,
       address: accountData?.address,
-      recordType: 'all',
+      recordsTypes: 'all',
       recordsValues: 'all'
     }
     try{
@@ -295,10 +367,17 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         })
         .then(response => response.json())
         .then(data => {
-          console.log(data)
+          let history = {
+            type: data.type,
+            name: data.name,
+            addr: data.addr,
+            avatar: data.avatar,
+            contenthash: data.contenthash
+          }
+          setServer(history)
         })
     } catch(error) {
-      console.log('Failed to read from CCIP2 backend; making fake data for tests')
+      console.log('Failed to read from CCIP2 backend')
     }
   }
 
@@ -318,9 +397,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         value: name,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
-        action: 'setName',
+        action: false,
         label: 'edit',
-        help: 'your reverse record'
+        help: 'set your reverse record'
       },
       {
         key: 1,
@@ -328,7 +407,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         value: resolver,
         editable: false,
         active: resolver !== constants.ccip2 && salt === false,
-        action: 'migrate',
+        action: false,
         label: 'migrate',
         help: 'please migrate your resolver to enjoy off-chain records'
       },
@@ -338,9 +417,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         value: avatar,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
-        action: 'setAvatar',
+        action: false,
         label: 'edit',
-        help: 'set avatar'
+        help: 'set your avatar'
       },
       {
         key: 3,
@@ -348,9 +427,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         value: addr,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
-        action: 'setAddr',
+        action: false,
         label: 'edit',
-        help: 'set default address'
+        help: 'set your default address'
       },
       {
         key: 4,
@@ -358,7 +437,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         value: contenthash,
         editable: resolver === constants.ccip2,
         active: resolver === constants.ccip2,
-        action: 'setContenthash',
+        action: false,
         label: 'edit',
         help: 'set your web contenthash'
       }
@@ -371,15 +450,14 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   });
 
   React.useEffect(() => {
-    setEdit(list)
     const updatedList = list.map((item) => {
-      if (item.key === trigger && item.type !== 'resolver') {
+      if (actions.includes(item.type) && item.type !== 'resolver') {
         return { 
           ...item, 
-          editable: false, 
-          active: false 
+          editable: true, 
+          active: true 
         };
-      } else if (item.key === trigger && item.type === 'resolver') {
+      } else if (!actions.includes(item.type) && item.type === 'resolver') {
         return { 
           ...item, 
           editable: false, 
@@ -388,8 +466,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       }
       return item;
     });
-    setEdit(updatedList)
-  }, [trigger, list]);
+    setList(updatedList)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger]);
 
   React.useEffect(() => {
     if (getch) {
@@ -407,11 +486,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       ens: title,
       address: recoveredAddress.current,
       ipns: cid,
-      recordType: action,
-      recordsValues: newValue
+      recordsTypes: actions,
+      recordsValues: newValues
     }
-    if (write) {
-      setLoading(true)
+    if (write && keypair) {
+      console.log(request)
       const editRecord = async () => {
         try {
           await fetch(
@@ -425,26 +504,63 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             })
             .then(response => response.json())
             .then(data => {
-              console.log(data)
-              setLoading(false)
-              setContent(data)
+              if (keypair) {
+                let key = '08011240' + keypair[0] + keypair[1]
+                let w3name: Name.WritableName
+                const keygen = async () => {
+                  w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
+                  const pin = async () => {
+                    if (data.response.ipfs && w3name) {
+                      const nextValue = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
+                      // @TODO: Test w3name histories
+                      //const init = await Name.v0(w3name, defaultValue)
+                      //const revision = await Name.increment(init, nextValue)
+                      //await Name.publish(revision, w3name.key)
+                      setLoading(false)
+                      const updatedList = list.map((item) => {
+                        if (item.type !== 'resolver' && data.response.meta[item.type]) {
+                          return { 
+                            ...item,  
+                            value: data.response[item.type],
+                            action: true,
+                            label: 'edit'
+                          };
+                        } else {
+                          return item
+                        }
+                      })
+                      setList(updatedList)
+                      setActions([])
+                      setNewValues({
+                        name: '',
+                        addr: '',
+                        avatar: '', 
+                        contenthash: ''
+                      })
+                    }
+                  }
+                  pin()
+                }
+                keygen()
+              }
             })
         } catch(error) {
-          console.log('Failed to write to CCIP2 backend; making fake data for tests')
+          console.log('Failed to write to CCIP2 backend')
         }
       }
       editRecord()
       setWrite(false)
     }
-  }, [write, action, cid, data, newValue, title]);
+
+    if (!write) {
+      setGetch(false)
+
+    }
+  }, [write, actions, cid, data, newValues, title, keypair]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
-      setAvatar('')
-      setContenthash('')
-      setAddr('')
       setResolver(constants.ccip2)
-      setEdit(list)
       const updatedList = list.map((item) => {
         if (item.type === 'resolver') {
           return { 
@@ -462,23 +578,21 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         }
         return item;
       });
-      setEdit(updatedList)
-      setDuplicate({
+      setList(updatedList)
+      setLegit({
         name: false,
         addr: false,
         contenthash: false,
         avatar: false
       })
-      setList(updatedList)
-      setLoading(false)
+      getResolver()
     }
-  }, [isMigrateSuccess, txSuccess, pinned, list]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMigrateSuccess, txSuccess, pinned]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess) {
       const pin = async () => {
-        const key_ = await Name.create()
-        const name = await Name.from(key_.key.bytes)
         console.log('Migration Successful')
         setPinned(true)
       }
@@ -489,7 +603,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   React.useEffect(() => {
     if (isMigrateLoading) {
       setFinish(false)
-      setLoading(true)
+      setMessage('Waiting for Confirmation')
     }
   }, [isMigrateLoading]);
 
@@ -549,11 +663,26 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 display: 'flex',
+                flexDirection: 'column',
                 marginTop: '50px',
                 marginBottom: '200px'
               }}
             >
               <LoadingIcons.Bars />
+              <div
+                style={{
+                  marginTop: '40px'
+                }}
+              >
+                <span 
+                  style={{
+                    color: 'white',
+                    fontSize: '18px'
+                  }}
+                >
+                  { message }
+                </span>
+              </div>
             </div>
           </StyledModalBody>
         }
@@ -611,7 +740,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                           marginRight: '15px'
                         }}
                       >
-                        {item.type}
+                        { item.type }
                         { item.type !== 'resolver' &&
                           <button 
                             className="button-tiny"
@@ -624,6 +753,16 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                           >
                             <div className="material-icons smol">info_outline</div>
                           </button>
+                        }
+                        { item.action &&
+                          <div 
+                            className="material-icons smol"
+                            style={{ 
+                              color: 'lightgreen'
+                            }}
+                          >
+                            done
+                          </div>
                         }
                         { item.type === 'resolver' && resolver === constants.ccip2  &&
                           <button 
@@ -653,7 +792,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                               setModal(true),
                               setIcon('gpp_maybe'),
                               setColor('orange'),
-                              setHelp('Resolver is not migrated')
+                              setHelp(item.help)
                             }}
                           >
                             <div 
@@ -671,10 +810,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                       <button
                         className="button"
                         disabled={ 
-                          !edit[item.key]?.active || 
+                          !list[item.key]?.active || 
                           (
-                            item.type !== 'resolver' && !newValue[item.type]
-                          )
+                            item.type !== 'resolver' && !newValues[item.type]
+                          ) ||
+                          !legit[item.type]
                         }
                         style={{
                           alignSelf: 'flex-end',
@@ -684,8 +824,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                         }}
                         onClick={() => { 
                           setTrigger(item.key),
-                          setAction(item.type),
-                          item.type === 'resolver' ? setSalt(true) : setGetch(true)
+                          setMessage('Waiting for Signature'),
+                          item.type === 'resolver' ? setSalt(true) : setGetch(true),
+                          item.type === 'resolver' ? setWrite(false) : setWrite(true)
                         }}
                         data-tooltip={ item.help }
                       >
@@ -723,8 +864,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                       type='text'
                       defaultValue={ item.value }
                       disabled={ 
-                        !item.active || 
-                        duplicate[item.type] 
+                        !item.active
                       }
                       style={{ 
                         fontFamily: 'SF Mono',
