@@ -25,25 +25,36 @@ interface MainBodyState {
   trigger: boolean;
 }
 
-const EMPTY_STRING = {
-  name: '',
-  addr: '',
-  avatar: '', 
-  contenthash: ''
+const types = [
+	'name',
+	'addr',
+	'contenthash',
+	'avatar',
+  'resolver',
+	'revision'
+] 
+const EMPTY_STRING = {};
+for (const key of types) {
+  if (key !== 'resolver') {
+	  EMPTY_STRING[key] = '';
+  }
 }
 
-const EMPTY_BOOL = {
-  name: false,
-  addr: false,
-  avatar: false, 
-  contenthash: false
+const EMPTY_BOOL = {};
+for (const key of types) {
+  EMPTY_BOOL[key] = key === 'resolver' ? true : false;
+}
+
+const EMPTY_HISTORY = {
+  name: '',
+  addr: '',
+  contenthash: '',
+  avatar: '',
+  revision: '',
+  type: ''
 }
 
 const Preview = ({ show, onClose, title, chain, children }) => {
-  const [state, setState] = React.useState<MainBodyState>({
-    modalData: undefined,
-    trigger: false
-  });
   const [browser, setBrowser] = React.useState(false);
   const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
@@ -65,21 +76,22 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const [keypair, setKeypair] = React.useState<[string, string]>()
   const [getch, setGetch] = React.useState(false);
   const [write, setWrite] = React.useState(false);
-  const [actions, setActions] = React.useState<any[]>([]);
+  const [states, setStates] = React.useState<any[]>([]);
   const [icon, setIcon] = React.useState('');
   const [color, setColor] = React.useState('');
   const [message, setMessage] = React.useState('Loading Records');
   const [newValues, setNewValues] = React.useState(EMPTY_STRING);
-  const [server, setServer] = React.useState({
-    ...EMPTY_STRING,
-    type: ''
-  });
   const [legit, setLegit] = React.useState(EMPTY_BOOL);
+  const [modalState, setModalState] = React.useState<MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  });
+  const [history, setHistory] = React.useState(EMPTY_HISTORY);
 
-
+  const { Revision } = Name
   const { data: accountData } = useAccount()
   const recoveredAddress = React.useRef<string>()
-  const { data, error, isLoading, signMessage } = useSignMessage({
+  const { data: signature, error, isLoading, signMessage } = useSignMessage({
     onSuccess(data, variables) {
       // Verify signature when sign message succeeds
       const address = verifyMessage(variables.message, data)
@@ -92,13 +104,12 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
   let caip10 = `eip155:${chain}:${accountData?.address}`
   let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${title}\nSIGNED BY: ${caip10}`
-  const defaultValue = '/ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui'
       
   const handleModalData = (data: string | undefined) => {
-    setState({ ...state, modalData: data });
+    setModalState(prevState => ({ ...prevState, modalData: data }));
   };
   const handleTrigger = (trigger: boolean) => {
-    setState({ ...state, trigger: trigger });
+    setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
   React.useEffect(() => {
@@ -110,25 +121,26 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   }, [browser]);
 
   React.useEffect(() => {
-    if (state.trigger) {
+    if (modalState.trigger) {
       signMessage({ message: statement })
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, statement]);
+  }, [modalState, statement]);
 
   React.useEffect(() => {
     setLoading(true)
-    if (data) {
+    if (signature) {
       setMessage('Generating IPNS Key')
       const keygen = async () => {
-        const __keypair = await ed25519Keygen(title, caip10, data, state.modalData)
+        const __keypair = await ed25519Keygen(title, caip10, signature, modalState.modalData)
         setKeypair(__keypair)
         setMessage('IPNS Key Generated')
       };
       keygen()
     }
-  }, [keygen, data, caip10, state.modalData, title]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keygen, signature, caip10, title]);
 
   React.useEffect(() => {
     if (keypair) {
@@ -136,9 +148,6 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         let key = '08011240' + keypair[0] + keypair[1]
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const cidIpns = w3name.toString()
-        // @TODO: Test w3name histories
-        //const revision = await Name.v0(w3name, defaultValue)
-        //await Name.publish(revision, w3name.key)
         setCid(cidIpns)
         setMessage('IPNS CID Generated')
       }
@@ -164,7 +173,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   );
 
   React.useEffect(() => {
-    if (actions.includes('resolver') && actions.length === 1) {
+    if (states.includes('resolver')) {
       if (cid.startsWith('k5')) {
         migrate()
       }
@@ -172,12 +181,12 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       setMessage(message)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, actions]);
+  }, [cid, states]);
 
   React.useEffect(() => {
-    if (actions.length > 1) {
-      const updatedList = list.map((item) => {
-        if (item.type !== 'resolver' && actions.includes(item.type)) {
+    if (states.length > 1) {
+      const _updatedList = list.map((item) => {
+        if (item.type !== 'resolver' && states.includes(item.type)) {
           return { 
             ...item, 
             label: 'edit all',
@@ -186,13 +195,24 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         }
         return item;
       });
-      setList(updatedList)
+      setList(_updatedList)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actions]);
+  }, [states]);
   
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
+    setLoading(false)
+    const _updatedList = list.map((item) => {
+      return { 
+        ...item,  
+        active: false
+      };
+    })
+    setList(_updatedList)
+    setStates([])
+    setNewValues(EMPTY_STRING)
+    setLegit(EMPTY_BOOL)
     onClose();
   };
 
@@ -266,12 +286,6 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     }
   }
 
-  function isLegit(type: any, value: any) {
-    if (type === 'name') {
-      return value.endsWith('.eth')
-    } 
-  }
-
   // @TODO: getName() routine for both registrars
   async function getName() {
     if ( resolver?.address !== constants.ccip2 ) {
@@ -290,6 +304,36 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       });
   }
 
+  async function writeRevision(revision: Name.Revision) {
+    const request = {
+      ens: title,
+      address: accountData?.address,
+      signature: signature,
+      revision: Revision.encode(revision)
+    }
+    try {
+      await fetch(
+        "https://sshmatrix.club:3003/revision",
+        {
+          method: "post",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status) {
+            return data.status === 'true'
+          } else {
+            return false
+          }
+        })
+    } catch(error) {
+      console.log('Failed to write Revision to CCIP2 backend')
+    }
+  }
+
   function isName(value: string) {
     return value.endsWith('.eth') && value.length <= 32 + 4
   }
@@ -305,43 +349,48 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   }
 
   function isContenthash(value: string) {
-    const ipfsRegex = /^[a-z0-9]{46}$/;
+    const ipfsRegex = /^[a-z0-9]{62}$/;
     return ipfsRegex.test(value)
   }
 
   function setValues(key: string, value: string) {
-    let __object = EMPTY_BOOL
+    let __THIS = EMPTY_BOOL
+    __THIS['resolver'] = false
     if (key == 'name') {
-      __object[key] = isName(value)
+      __THIS[key] = isName(value)
     } else if (key == 'addr') {
-      __object[key] = isAddr(value)
+      __THIS[key] = isAddr(value)
     } else if (key == 'avatar') {
-      __object[key] = isAvatar(value)
+      __THIS[key] = isAvatar(value)
     } else if (key == 'contenthash') {
-      __object[key] = isContenthash(value)
+      __THIS[key] = isContenthash(value)
+    } else {
+      // @CHECKPOINT: should never trigger
+      setStates(prevState => [...prevState, key])
+      return
     }
-    setLegit(__object)
-    const _object = newValues;
-    _object[key] = value;
-    setNewValues(_object)
-    const updatedList = list.map((item) => {
-      if (actions.includes(item.type)) {
+    setLegit(__THIS)
+    const _THIS = newValues;
+    _THIS[key] = value;
+    setNewValues(_THIS)
+    const priorState = states
+    if (!priorState.includes(key) && newValues[key]) {
+      setStates(prevState => [...prevState, key])
+    } else if (priorState.includes(key) && !newValues[key]) {
+      setStates(prevState => prevState.filter(item => item !== key))
+    }
+    const _updatedList = list.map((item) => {
+      if (states.includes(item.type)) {
         return { 
           ...item, 
           editable: true, 
           active: true,
-          action: false
+          state: false
         };
       }
       return item;
     });
-    setList(updatedList)
-    const priorState = actions
-    if (!priorState.includes(key) && newValues[key]) {
-      setActions(prevState => [...prevState, key])
-    } else if (priorState.includes(key) && !newValues[key]) {
-      setActions(prevState => prevState.filter(item => item !== key))
-    }
+    setList(_updatedList)
   }
 
   async function getUpdate() {
@@ -367,14 +416,15 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         })
         .then(response => response.json())
         .then(data => {
-          let history = {
+          let _history = {
             type: data.type,
             name: data.name,
             addr: data.addr,
             avatar: data.avatar,
-            contenthash: data.contenthash
+            contenthash: data.contenthash,
+            revision: data.revision
           }
-          setServer(history)
+          setHistory(_history)
         })
     } catch(error) {
       console.log('Failed to read from CCIP2 backend')
@@ -396,8 +446,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         type: 'name',
         value: name,
         editable: resolver === constants.ccip2,
-        active: resolver === constants.ccip2,
-        action: false,
+        active: isName(name),
+        state: false,
         label: 'edit',
         help: 'set your reverse record'
       },
@@ -406,8 +456,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         type: 'resolver',
         value: resolver,
         editable: false,
-        active: resolver !== constants.ccip2 && salt === false,
-        action: false,
+        active: resolver !== constants.ccip2,
+        state: false,
         label: 'migrate',
         help: 'please migrate your resolver to enjoy off-chain records'
       },
@@ -416,8 +466,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         type: 'avatar',
         value: avatar,
         editable: resolver === constants.ccip2,
-        active: resolver === constants.ccip2,
-        action: false,
+        active: isAvatar(avatar),
+        state: false,
         label: 'edit',
         help: 'set your avatar'
       },
@@ -426,8 +476,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         type: 'addr',
         value: addr,
         editable: resolver === constants.ccip2,
-        active: resolver === constants.ccip2,
-        action: false,
+        active: isAddr(addr),
+        state: false,
         label: 'edit',
         help: 'set your default address'
       },
@@ -436,8 +486,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         type: 'contenthash',
         value: contenthash,
         editable: resolver === constants.ccip2,
-        active: resolver === constants.ccip2,
-        action: false,
+        active: isContenthash(contenthash),
+        state: false,
         label: 'edit',
         help: 'set your web contenthash'
       }
@@ -450,14 +500,14 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   });
 
   React.useEffect(() => {
-    const updatedList = list.map((item) => {
-      if (actions.includes(item.type) && item.type !== 'resolver') {
+    const _updatedList = list.map((item) => {
+      if (states.includes(item.type) && item.type !== 'resolver') {
         return { 
           ...item, 
           editable: true, 
           active: true 
         };
-      } else if (!actions.includes(item.type) && item.type === 'resolver') {
+      } else if (!states.includes(item.type) && item.type === 'resolver') {
         return { 
           ...item, 
           editable: false, 
@@ -466,30 +516,31 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       }
       return item;
     });
-    setList(updatedList)
+    setList(_updatedList)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
   React.useEffect(() => {
     if (getch) {
-      if (state.trigger) {
+      if (modalState.trigger) {
         signMessage({ message: statement })
         setKeygen(true)
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, getch, statement]);
+  }, [modalState, getch, statement]);
 
   React.useEffect(() => {
     const request = {
-      signature: data,
+      signature: signature,
       ens: title,
       address: recoveredAddress.current,
       ipns: cid,
-      recordsTypes: actions,
-      recordsValues: newValues
+      recordsTypes: states,
+      recordsValues: newValues,
+      revision: history.revision
     }
-    if (write && keypair) {
+    if (write && keypair && cid) {
       console.log(request)
       const editRecord = async () => {
         try {
@@ -511,32 +562,38 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                   w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
                   const pin = async () => {
                     if (data.response.ipfs && w3name) {
-                      const nextValue = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
-                      // @TODO: Test w3name histories
-                      //const init = await Name.v0(w3name, defaultValue)
-                      //const revision = await Name.increment(init, nextValue)
-                      //await Name.publish(revision, w3name.key)
+                      const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
+                      // w3name broadcast
+                      let _revision: Name.Revision;
+                      let status: boolean
+                      if (!history.revision) {
+                        _revision = await Name.v0(w3name, toPublish)
+                        const _status = await writeRevision(_revision)
+                        if (_status !== undefined) {
+                          if (_status) {
+                            status = _status
+                          }
+                        }
+                      } else {
+                        let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
+                        _revision = await Name.increment(_revision_, toPublish)
+                      }
+                      await Name.publish(_revision, w3name.key)
                       setLoading(false)
-                      const updatedList = list.map((item) => {
+                      const _updatedList = list.map((item) => {
                         if (item.type !== 'resolver' && data.response.meta[item.type]) {
                           return { 
                             ...item,  
                             value: data.response[item.type],
-                            action: true,
+                            state: true,
                             label: 'edit'
                           };
                         } else {
                           return item
                         }
                       })
-                      setList(updatedList)
-                      setActions([])
-                      setNewValues({
-                        name: '',
-                        addr: '',
-                        avatar: '', 
-                        contenthash: ''
-                      })
+                      setList(_updatedList)
+                      setNewValues(EMPTY_STRING)
                     }
                   }
                   pin()
@@ -554,14 +611,13 @@ const Preview = ({ show, onClose, title, chain, children }) => {
 
     if (!write) {
       setGetch(false)
-
     }
-  }, [write, actions, cid, data, newValues, title, keypair]);
+  }, [write, states, cid, signature, newValues, title, keypair]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
       setResolver(constants.ccip2)
-      const updatedList = list.map((item) => {
+      const _updatedList = list.map((item) => {
         if (item.type === 'resolver') {
           return { 
             ...item, 
@@ -578,13 +634,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         }
         return item;
       });
-      setList(updatedList)
-      setLegit({
-        name: false,
-        addr: false,
-        contenthash: false,
-        avatar: false
-      })
+      setList(_updatedList)
+      setLegit(EMPTY_BOOL)
+      setStates([])
       getResolver()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -754,14 +806,14 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                             <div className="material-icons smol">info_outline</div>
                           </button>
                         }
-                        { item.action &&
+                        { item.state &&
                           <div 
                             className="material-icons smol"
                             style={{ 
                               color: 'lightgreen'
                             }}
                           >
-                            done
+                            task_alt
                           </div>
                         }
                         { item.type === 'resolver' && resolver === constants.ccip2  &&
@@ -810,11 +862,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                       <button
                         className="button"
                         disabled={ 
-                          !list[item.key]?.active || 
-                          (
-                            item.type !== 'resolver' && !newValues[item.type]
-                          ) ||
-                          !legit[item.type]
+                          !list[item.key].active ||
+                          !legit[item.type] ||
+                          item.state
                         }
                         style={{
                           alignSelf: 'flex-end',
@@ -826,7 +876,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                           setTrigger(item.key),
                           setMessage('Waiting for Signature'),
                           item.type === 'resolver' ? setSalt(true) : setGetch(true),
-                          item.type === 'resolver' ? setWrite(false) : setWrite(true)
+                          item.type === 'resolver' ? setWrite(false) : setWrite(true),
+                          item.type === 'resolver' ? setStates(prevState => [...prevState, item.type]) : setStates(states)
                         }}
                         data-tooltip={ item.help }
                       >
@@ -864,7 +915,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                       type='text'
                       defaultValue={ item.value }
                       disabled={ 
-                        !item.active
+                        !item.editable
                       }
                       style={{ 
                         fontFamily: 'SF Mono',
