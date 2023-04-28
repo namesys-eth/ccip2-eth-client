@@ -291,7 +291,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     if (states.length > 1) {
       const _updatedList = list.map((item) => {
         if (item.type !== 'resolver' && 
-          states.includes(item.type)
+          states.includes(item.type) 
         ) 
         {
           return { 
@@ -466,7 +466,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   }
 
   function setValues(key: string, value: string) {
-    let __THIS = EMPTY_BOOL()
+    let __THIS = legit
     __THIS['resolver'] = false
     if (key === 'name') {
       //__THIS[key] = isName(value)
