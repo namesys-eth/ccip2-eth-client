@@ -1,5 +1,5 @@
 import React from "react";
-import Modal from './Modal'
+import Help from './Help'
 
 interface ListItem {
   key: number;
@@ -164,14 +164,14 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                   </button>
                 }
               </div>
-              <Modal
+              <Help
                 color={ color }
-                title={ icon }
+                _ENS_={ icon }
                 onClose={() => setModal(false)}
                 show={modal}
               >
                 <span>{ help }</span>
-              </Modal>
+              </Help>
             </span>
             <div>
               <a 

@@ -199,7 +199,7 @@ input[type="text"] {
     display: flex;
     justify-content: center;
     margin-bottom: 3px;
-    cursor: alias;
+    cursor: pointer;
 }
 
 .list-container {
@@ -292,7 +292,7 @@ input[type="text"] {
 .footer-text:hover {
   color: skyblue;
   background-color: transparent;
-  cursor: alias;
+  cursor: pointer;
 }
 
 .button-header {
@@ -828,7 +828,7 @@ button,
 button:not(:disabled),
 [type=button]:not(:disabled),
 [type=submit]:not(:disabled) {
-  cursor: alias;
+  cursor: pointer;
 }
 
 ::-moz-focus-inner {
@@ -932,7 +932,7 @@ button:not(:disabled),
   }
 }
 
-.modal {
+.modal .modal-inner {
   --cui-modal-zindex: 1055;
   --cui-modal-width: 500px;
   --cui-modal-padding: 1rem;
@@ -967,7 +967,7 @@ button:not(:disabled),
 }
 
 @media (min-width: 576px) {
-  .modal {
+  .modal .modal-inner {
     --cui-modal-margin: 1.75rem;
     --cui-modal-box-shadow: 0 0.5rem 1rem rgba(0, 0, 21, 0.15);
   }
