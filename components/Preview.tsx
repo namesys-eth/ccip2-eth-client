@@ -34,6 +34,16 @@ interface MainBodyState {
   trigger: boolean;
 }
 
+interface ModalProps {
+  _ENS_: string,
+  chain: string,
+  show: boolean;
+  onClose: any;
+  children: any;
+  handleParentModalData: (data: boolean) => void;
+  handleParentTrigger: (data: boolean) => void;
+}
+
 /// @dev : constants
 const forbidden = [
   'resolver',
@@ -84,7 +94,7 @@ function checkImageURL(url: string) {
   });
 }
 
-const Preview = ({ show, onClose, _ENS_, chain, children }) => {
+const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, handleParentModalData, handleParentTrigger }) => {
   const [browser, setBrowser] = React.useState(false);
   const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
@@ -127,7 +137,12 @@ const Preview = ({ show, onClose, _ENS_, chain, children }) => {
   const { Revision } = Name
   const { data: accountData } = useAccount()
   const recoveredAddress = React.useRef<string>()
-  const { data: signature, error, isLoading, signMessage } = useSignMessage({
+  const { 
+    data: signature, 
+    error: signError, 
+    isLoading: signLoading, 
+    signMessage 
+  } = useSignMessage({
     onSuccess(data, variables) {
       // Verify signature when sign message succeeds
       const address = verifyMessage(variables.message, data)
@@ -148,6 +163,11 @@ const Preview = ({ show, onClose, _ENS_, chain, children }) => {
   };
   const handleTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
+  };
+
+  const handleSuccess = () => {
+    handleParentModalData(true);
+    handleParentTrigger(true);
   };
 
   React.useEffect(() => {
@@ -761,6 +781,7 @@ const Preview = ({ show, onClose, _ENS_, chain, children }) => {
       setSuccessModal(true)
       setCid('')
       setKeypair(undefined)
+      handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateSuccess, txSuccess, pinned]);
@@ -785,12 +806,26 @@ const Preview = ({ show, onClose, _ENS_, chain, children }) => {
   React.useEffect(() => {
     if (txLoading && !txError) {
       setMessage('Waiting for Transaction')
+      setFatal(false)
     }
     if (txError && !txLoading) {
       setMessage('Transaction Failed')
+      setFatal(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading, txError]);
+
+  React.useEffect(() => {
+    if (signLoading && !signError) {
+      setMessage('Waiting for Signature')
+      setFatal(false)
+    }
+    if (signError && !signLoading) {
+      setMessage('Signature Failed')
+      setFatal(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signLoading, signError]);
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -873,7 +908,7 @@ const Preview = ({ show, onClose, _ENS_, chain, children }) => {
             </div>
           </StyledModalBody>
         }
-        {loading && fatal && 
+        {fatal && 
           <StyledModalBody>
             <div
               style={{
@@ -881,14 +916,16 @@ const Preview = ({ show, onClose, _ENS_, chain, children }) => {
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                marginTop: '50px',
-                marginBottom: '200px'
+                marginTop: '10px',
+                marginBottom: '20px',
+                color: 'orange',
+                fontSize: '150px'
               }}
             >
               <BiError />
               <div
                 style={{
-                  marginTop: '40px'
+                  marginTop: '-50px'
                 }}
               >
                 <span 
