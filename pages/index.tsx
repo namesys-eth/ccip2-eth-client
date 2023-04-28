@@ -31,6 +31,11 @@ const alchemyConfig = {
 const alchemy = new Alchemy(alchemyConfig)
 const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 
+interface MainBodyState {
+  modalData: boolean;
+  trigger: boolean;
+}
+
 let metadata: React.SetStateAction<any[]>
 const carousal = [
   '<span class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
@@ -63,6 +68,17 @@ const Home: NextPage = () => {
   const [searchType, setSearchType] = React.useState('')
   const [cache, setCache] = React.useState<any[]>([])
   const [response, setResponse] = React.useState(false)
+  const [modalState, setModalState] = React.useState<MainBodyState>({
+    modalData: false,
+    trigger: false
+  });
+
+  const handleParentModalData = (data: boolean) => {
+    setModalState(prevState => ({ ...prevState, modalData: data }));
+  };
+  const handleParentTrigger = (trigger: boolean) => {
+    setModalState(prevState => ({ ...prevState, trigger: trigger }));
+  };
 
   /* @dev : GraphQL Instance
   const logNames = useCallback(async () => {
@@ -145,7 +161,7 @@ const Home: NextPage = () => {
         })
     }
     setMetadata()
-  }, [accountData, isConnected, getTokens])
+  }, [accountData, isConnected, getTokens, modalState])
 
   React.useEffect(() => {
     const handleBeforeUnload = () => {
@@ -562,7 +578,7 @@ const Home: NextPage = () => {
                     color: 'white',
                   }}
                 >
-                  { tab === 'owner' ? 'Loading Names' : 'Please wait' }
+                  { tab === 'owner' || !modalState.modalData ? 'Loading Names' : 'Please wait' }
                 </span>
               </div>
               </div>
@@ -836,6 +852,8 @@ const Home: NextPage = () => {
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
                 chain={alchemyConfig.chainId}
+                handleParentTrigger={handleParentTrigger}
+                handleParentModalData={handleParentModalData}
               >
                 { true }
               </Preview>
