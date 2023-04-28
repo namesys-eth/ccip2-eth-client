@@ -2,7 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-const Modal = ({ title, color, show, onClose, children }) => {
+function sumValues(obj: { [key: string]: number }): number {
+  let total = 0;
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      total += obj[key];
+    }
+  }
+  return total;
+}
+
+const Gas = ({ _ENS_, color, show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false);
   React.useEffect(() => {
     setBrowser(true);
@@ -18,7 +28,7 @@ const Modal = ({ title, color, show, onClose, children }) => {
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
               style={{
                 margin: '4px'
@@ -28,21 +38,75 @@ const Modal = ({ title, color, show, onClose, children }) => {
             </span>
           </a>
         </StyledModalHeader>
-        {title && 
+        {_ENS_ &&
           <StyledModalTitle>
-            <span 
+            <span
               className="material-icons"
               style={{
-                marginTop: '4px',
-                fontSize: '26px',
+                marginTop: '14px',
+                fontSize: '72px',
                 color: color
               }}
             >
-              { title }
+              { _ENS_ }
             </span>
           </StyledModalTitle>}
         <StyledModalBody>
-          { children }
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            <div 
+              style={{
+                marginTop: '5px',
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                fontSize: '18px',
+                fontWeight: '700'
+              }}
+            >
+              <div>Your</div>&nbsp;
+              <div
+                className="material-icons"
+                style={{
+                  marginBottom: '3px',
+                  fontSize: '24px',
+                  color: color
+                }}
+              >
+                {'local_gas_station'}
+              </div>&nbsp;
+              <div>
+                savings
+              </div>
+            </div>
+            <div
+              style={{
+                marginTop: '10px',
+                fontFamily: 'SF Mono',
+                fontSize: '20px',
+                fontWeight: '600'
+              }}
+            >
+              { sumValues(children).toPrecision(3) } 
+              &nbsp;
+              <span
+                style={{
+                  fontFamily: 'Spotnik',
+                  fontSize: '17px',
+                  fontWeight: '800'
+                }}
+              >
+                ETH
+              </span>
+            </div>
+          </div>
         </StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
@@ -70,6 +134,8 @@ const StyledModalBody = styled.div`
   color: white;
   font-size: 14px;
   font-weight: 700;
+  line-height: 20px;
+  max-width: 400px;
 `;
 
 const StyledModalTitle = styled.div`
@@ -92,7 +158,7 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: 60%;
-  height: 100px;
+  height: 210px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
@@ -112,4 +178,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 0.1);
 `;
 
-export default Modal;
+export default Gas;

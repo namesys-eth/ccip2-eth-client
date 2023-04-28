@@ -2,11 +2,15 @@ import React from "react"
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import { ethers } from 'ethers'
+import Web3 from 'web3'
+import { AbiItem } from 'web3-utils'
 import { verifyMessage } from 'ethers/lib/utils'
 import LoadingIcons from 'react-loading-icons'
-import { FaCheck } from 'react-icons/fa'
-import Modal from '../components/Modal'
+import { BiError } from 'react-icons/bi'
+import Help from '../components/Help'
 import Salt from '../components/Salt'
+import Gas from '../components/Gas'
+import Success from '../components/Success'
 import Record from '../components/Record'
 import {
   useAccount,
@@ -15,6 +19,11 @@ import {
   useSignMessage,
   useWaitForTransaction
 } from 'wagmi'
+/*
+import {
+  usePrepareContractWrite
+} from 'wagmi2'
+*/
 import * as constants from '../utils/constants'
 import { ed25519Keygen } from '../utils/keygen'
 import * as Name from 'w3name'
@@ -25,6 +34,12 @@ interface MainBodyState {
   trigger: boolean;
 }
 
+/// @dev : constants
+const forbidden = [
+  'resolver',
+  'name'
+]
+
 const types = [
 	'name',
 	'addr',
@@ -33,6 +48,7 @@ const types = [
   'resolver',
 	'revision'
 ] 
+
 const EMPTY_STRING = {};
 for (const key of types) {
   if (key !== 'resolver') {
@@ -42,7 +58,7 @@ for (const key of types) {
 
 const EMPTY_BOOL = {};
 for (const key of types) {
-  EMPTY_BOOL[key] = key === 'resolver' ? true : false;
+  EMPTY_BOOL[key] = ['resolver'].includes(key) ? true : false;
 }
 
 const EMPTY_HISTORY = {
@@ -54,14 +70,31 @@ const EMPTY_HISTORY = {
   type: ''
 }
 
-const Preview = ({ show, onClose, title, chain, children }) => {
+/// @dev : library
+function checkImageURL(url: string) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      resolve(true);
+    };
+    img.onerror = function() {
+      reject(false);
+    };
+    img.src = url;
+  });
+}
+
+const Preview = ({ show, onClose, _ENS_, chain, children }) => {
   const [browser, setBrowser] = React.useState(false);
   const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
   const [pinned, setPinned] = React.useState(false);
   const [keygen, setKeygen] = React.useState(false);
+  const [fatal, setFatal] = React.useState(false);
   const [cid, setCid] = React.useState('');
-  const [modal, setModal] = React.useState(false)
+  const [helpModal, setHelpModal] = React.useState(false)
+  const [successModal, setSuccessModal] = React.useState(false)
+  const [gasModal, setGasModal] = React.useState(false);
   const [finish, setFinish] = React.useState(false)
   const [resolver, setResolver] = React.useState<any>();
   const [addr, setAddr] = React.useState('');
@@ -73,6 +106,8 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const [list, setList] = React.useState<any[]>([]);
   const [trigger, setTrigger] = React.useState(null);
   const [help, setHelp] = React.useState('');
+  const [success, setSuccess] = React.useState('');
+  const [gas, setGas] = React.useState<{}>({});
   const [keypair, setKeypair] = React.useState<[string, string]>()
   const [getch, setGetch] = React.useState(false);
   const [write, setWrite] = React.useState(false);
@@ -82,6 +117,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const [message, setMessage] = React.useState('Loading Records');
   const [newValues, setNewValues] = React.useState(EMPTY_STRING);
   const [legit, setLegit] = React.useState(EMPTY_BOOL);
+  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined);
   const [modalState, setModalState] = React.useState<MainBodyState>({
     modalData: undefined,
     trigger: false
@@ -102,8 +138,10 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
   const network = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 'goerli' : 'homestead'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
+  const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
+  const web3 = new Web3(alchemyEndpoint);
   let caip10 = `eip155:${chain}:${accountData?.address}`
-  let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${title}\nSIGNED BY: ${caip10}`
+  let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${_ENS_}\nSIGNED BY: ${caip10}`
       
   const handleModalData = (data: string | undefined) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
@@ -111,6 +149,12 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   const handleTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
+
+  React.useEffect(() => {
+    checkImageURL(avatar)
+      .then(() => setImageLoaded(true))
+      .catch(() => setImageLoaded(false));
+  }, [avatar]);
 
   React.useEffect(() => {
     setBrowser(true) 
@@ -133,14 +177,14 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     if (signature) {
       setMessage('Generating IPNS Key')
       const keygen = async () => {
-        const __keypair = await ed25519Keygen(title, caip10, signature, modalState.modalData)
+        const __keypair = await ed25519Keygen(_ENS_, caip10, signature, modalState.modalData)
         setKeypair(__keypair)
         setMessage('IPNS Key Generated')
       };
       keygen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, signature, caip10, title]);
+  }, [keygen, signature, caip10, _ENS_]);
 
   React.useEffect(() => {
     if (keypair) {
@@ -166,12 +210,46 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     'setResolver',
     {
       args: [
-        ethers.utils.namehash(title), 
+        ethers.utils.namehash(_ENS_), 
         constants.ccip2
       ]
     }
   );
 
+
+  /*
+  async function getGas(key: string, value: string) {
+    const { 
+      config: config, 
+      error: _error 
+    } = usePrepareContractWrite(
+      {
+        address: `0x${constants.ensConfig[2].addressOrName.substring(2)}`,
+        abi: constants.ensConfig[2].contractInterface,
+        functionName: 'setText',
+        args: [ethers.utils.namehash(_ENS_), key, value]
+      }
+    )
+    return {
+      config,
+       _error
+    }
+  }
+  */
+
+  async function getGas(key: string, value: string) {
+    const getGasAmountForContractCall = async () => {
+      const contract = new web3.eth.Contract(
+        constants.ensConfig[2].contractInterface as AbiItem[], 
+        constants.ensConfig[2].addressOrName
+      );
+      let gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address });
+      return gasAmount
+    }
+    const gas = await getGasAmountForContractCall()
+    return gas
+  }
+    
   React.useEffect(() => {
     if (states.includes('resolver')) {
       if (cid.startsWith('k5')) {
@@ -246,7 +324,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
 
   async function getAvatar() {
     if ( resolver?.address !== constants.ccip2 ) {
-      await provider.getAvatar(title)
+      await provider.getAvatar(_ENS_)
         .then(response => {
           if (!response) {
             setAvatar('')
@@ -267,7 +345,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
 
   async function getRecord() {
     if ( resolver?.address !== constants.ccip2 ) {
-      await provider.resolveName(title)
+      await provider.resolveName(_ENS_)
         .then(response => {
           if (!response) {
             setAddr('')
@@ -289,15 +367,15 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   // @TODO: getName() routine for both registrars
   async function getName() {
     if ( resolver?.address !== constants.ccip2 ) {
-      setName('to-do')
+      setName(_ENS_)
     } else {
-      setName('to-do')
+      setName(_ENS_)
     }
     setFinish(true)
   }
 
   async function getResolver() {
-    await provider.getResolver(title)
+    await provider.getResolver(_ENS_)
       .then(response => {
         setResolver(response?.address);
         getContenthash(response!)
@@ -306,10 +384,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
 
   async function writeRevision(revision: Name.Revision) {
     const request = {
-      ens: title,
+      ens: _ENS_,
       address: accountData?.address,
       signature: signature,
-      revision: Revision.encode(revision)
+      revision: Revision.encode(revision),
+      chain: chain
     }
     try {
       await fetch(
@@ -356,13 +435,14 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   function setValues(key: string, value: string) {
     let __THIS = EMPTY_BOOL
     __THIS['resolver'] = false
-    if (key == 'name') {
-      __THIS[key] = isName(value)
-    } else if (key == 'addr') {
+    if (key === 'name') {
+      //__THIS[key] = isName(value)
+      __THIS[key] = false
+    } else if (key === 'addr') {
       __THIS[key] = isAddr(value)
-    } else if (key == 'avatar') {
+    } else if (key === 'avatar') {
       __THIS[key] = isAvatar(value)
-    } else if (key == 'contenthash') {
+    } else if (key === 'contenthash') {
       __THIS[key] = isContenthash(value)
     } else {
       // @CHECKPOINT: should never trigger
@@ -399,10 +479,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     // of CCIP2 backend
     const request = {
       type: 'read',
-      ens: title,
+      ens: _ENS_,
       address: accountData?.address,
       recordsTypes: 'all',
-      recordsValues: 'all'
+      recordsValues: 'all',
+      chain: chain
     }
     try{
       await fetch(
@@ -445,11 +526,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
         key: 0,
         type: 'name',
         value: name,
-        editable: resolver === constants.ccip2,
-        active: isName(name),
+        editable: false,
+        active: false,
         state: false,
         label: 'edit',
-        help: 'set your reverse record'
+        help: 'off-chain reverse record feature not available'
       },
       {
         key: 1,
@@ -495,19 +576,25 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     finishQuery(data)
   }
 
-  const { isSuccess: txSuccess } = useWaitForTransaction({
+  const { isSuccess: txSuccess, isError: txError, isLoading: txLoading } = useWaitForTransaction({
     hash: response?.hash,
   });
 
   React.useEffect(() => {
     const _updatedList = list.map((item) => {
-      if (states.includes(item.type) && item.type !== 'resolver') {
+      if (states.includes(item.type) && !forbidden.includes(item.type)) {
         return { 
           ...item, 
           editable: true, 
           active: true 
         };
-      } else if (!states.includes(item.type) && item.type === 'resolver') {
+      } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
+        return { 
+          ...item, 
+          editable: false, 
+          active: false
+        };
+      } else if (['name'].includes(item.type)) {
         return { 
           ...item, 
           editable: false, 
@@ -533,15 +620,17 @@ const Preview = ({ show, onClose, title, chain, children }) => {
   React.useEffect(() => {
     const request = {
       signature: signature,
-      ens: title,
+      ens: _ENS_,
       address: recoveredAddress.current,
       ipns: cid,
       recordsTypes: states,
       recordsValues: newValues,
-      revision: history.revision
+      revision: history.revision,
+      chain: chain
     }
-    if (write && keypair && cid) {
-      console.log(request)
+    if (write && keypair && cid && signature) {
+      //console.log(request)
+      setMessage('Writing Records')
       const editRecord = async () => {
         try {
           await fetch(
@@ -555,6 +644,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             })
             .then(response => response.json())
             .then(data => {
+              setMessage('Publishing to IPNS')
               if (keypair) {
                 let key = '08011240' + keypair[0] + keypair[1]
                 let w3name: Name.WritableName
@@ -579,7 +669,34 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                         _revision = await Name.increment(_revision_, toPublish)
                       }
                       await Name.publish(_revision, w3name.key)
-                      setLoading(false)
+                      let gas = {}
+                      list.map(async (item) => {
+                        if (item.type !== 'resolver' && data.response.meta[item.type]) {
+                          const _gas = getGas(item.type, data.response[item.type])
+                          const _promise = async () => {
+                            await Promise.all([_gas])
+                          }
+                          await _promise()
+                          _gas.then((value) => {
+                            gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001
+                          })
+                          if (item.type === 'avatar') {
+                            setAvatar(data.response.avatar)
+                          }
+                        }
+                      })
+                      if (gas) {
+                        setGas(gas)
+                        setTimeout(() => {
+                          setGasModal(true)
+                          setLoading(false)
+                          setCid('')
+                          setKeypair(undefined)
+                          states.map((_state) => {
+                            setStates(prevState => prevState.filter(item => item !== _state))
+                          })
+                        }, 2000);
+                      }
                       const _updatedList = list.map((item) => {
                         if (item.type !== 'resolver' && data.response.meta[item.type]) {
                           return { 
@@ -612,19 +729,19 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     if (!write) {
       setGetch(false)
     }
-  }, [write, states, cid, signature, newValues, title, keypair]);
+  }, [write, states, cid, signature, newValues, _ENS_, keypair]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
       setResolver(constants.ccip2)
       const _updatedList = list.map((item) => {
-        if (item.type === 'resolver') {
+        if (forbidden.includes(item.type)) {
           return { 
             ...item, 
             editable: false, 
             active: false
           };
-        } else if (item.type !== 'resolver') {
+        } else {
           return { 
             ...item, 
             value: '',
@@ -638,6 +755,12 @@ const Preview = ({ show, onClose, title, chain, children }) => {
       setLegit(EMPTY_BOOL)
       setStates([])
       getResolver()
+      setSuccess('Resolver Migration Successful')
+      setIcon('check_circle_outline')
+      setColor('lightgreen')
+      setSuccessModal(true)
+      setCid('')
+      setKeypair(undefined)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateSuccess, txSuccess, pinned]);
@@ -659,6 +782,16 @@ const Preview = ({ show, onClose, title, chain, children }) => {
     }
   }, [isMigrateLoading]);
 
+  React.useEffect(() => {
+    if (txLoading && !txError) {
+      setMessage('Waiting for Transaction')
+    }
+    if (txError && !txLoading) {
+      setMessage('Transaction Failed')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading, txError]);
+
   const modalContent = show ? (
     <StyledModalOverlay>
       <StyledModal>
@@ -674,7 +807,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             </span>
           </a>
         </StyledModalHeader>
-        {title && loading && 
+        {_ENS_ && loading && 
           <StyledModalTitle>
             <span 
               className="material-icons miui-small"
@@ -686,17 +819,19 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             </span>
           </StyledModalTitle>
         }
-        {title && avatar && !loading && list.length > 0 &&
+        {_ENS_ && avatar && imageLoaded && !loading && list.length > 0 &&
           <StyledModalTitle>
             <img 
-              src={ avatar.replace('ipfs.io','pinata.cloud') } 
+              // @TODO: async wait for resolution across multiple public gateways 
+              //src={ avatar.replace('ipfs.io','pinata.cloud') } 
+              src={ avatar }
               width={ '100px' }
-              alt={ title }
-            >
-            </img>
+              alt={ _ENS_ }
+              onError={() => setImageLoaded(false)}
+            />
           </StyledModalTitle>
         }
-        {title && !avatar && !loading && list.length > 0 &&
+        {_ENS_ && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
             <span 
               className="material-icons miui"
@@ -708,7 +843,7 @@ const Preview = ({ show, onClose, title, chain, children }) => {
             </span>
           </StyledModalTitle>
         }
-        {loading && 
+        {loading && !fatal && 
           <StyledModalBody>
             <div
               style={{
@@ -721,6 +856,36 @@ const Preview = ({ show, onClose, title, chain, children }) => {
               }}
             >
               <LoadingIcons.Bars />
+              <div
+                style={{
+                  marginTop: '40px'
+                }}
+              >
+                <span 
+                  style={{
+                    color: 'white',
+                    fontSize: '18px'
+                  }}
+                >
+                  { message }
+                </span>
+              </div>
+            </div>
+          </StyledModalBody>
+        }
+        {loading && fatal && 
+          <StyledModalBody>
+            <div
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                marginTop: '50px',
+                marginBottom: '200px'
+              }}
+            >
+              <BiError />
               <div
                 style={{
                   marginTop: '40px'
@@ -760,14 +925,24 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                     paddingRight: '20px'
                   }}
                 >
-                  <Modal
-                    color={ color }
-                    title={ icon }
-                    onClose={() => setModal(false)}
-                    show={modal}
-                  >
-                    <span>{ help }</span>
-                  </Modal>
+                  <div id="modal-inner">
+                    <Help
+                      color={ color }
+                      _ENS_={ icon }
+                      onClose={() => setHelpModal(false)}
+                      show={helpModal}
+                    >
+                      <span>{ help }</span>
+                    </Help>
+                    <Success
+                      color={ color }
+                      _ENS_={ icon }
+                      onClose={() => setSuccessModal(false)}
+                      show={successModal}
+                    >
+                      <span>{ success }</span>
+                    </Success>
+                  </div>
                   <div
                     style={{
                       display: 'flex',
@@ -797,13 +972,20 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                           <button 
                             className="button-tiny"
                             onClick={() => { 
-                              setModal(true),
+                              setHelpModal(true),
                               setIcon('info'),
-                              setColor('skyblue'),
+                              setColor(['name'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'),
                               setHelp(item.help)
                             }}
                           >
-                            <div className="material-icons smol">info_outline</div>
+                            <div 
+                              className="material-icons smol"
+                              style={{ 
+                                color: ['name'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'
+                              }}
+                            >
+                              info_outline
+                            </div>
                           </button>
                         }
                         { item.state &&
@@ -816,11 +998,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                             task_alt
                           </div>
                         }
-                        { item.type === 'resolver' && resolver === constants.ccip2  &&
+                        { ['resolver'].includes(item.type) && resolver === constants.ccip2  &&
                           <button 
                             className="button-tiny"
                             onClick={() => { 
-                              setModal(true),
+                              setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('lightgreen'),
                               setHelp('Resolver is migrated')
@@ -837,11 +1019,11 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                             </div>
                           </button>
                         }
-                        { item.type === 'resolver' && resolver !== constants.ccip2  &&
+                        { ['resolver'].includes(item.type) && resolver !== constants.ccip2  &&
                           <button 
                             className="button-tiny"
                             onClick={() => { 
-                              setModal(true),
+                              setHelpModal(true),
                               setIcon('gpp_maybe'),
                               setColor('orange'),
                               setHelp(item.help)
@@ -875,9 +1057,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                         onClick={() => { 
                           setTrigger(item.key),
                           setMessage('Waiting for Signature'),
-                          item.type === 'resolver' ? setSalt(true) : setGetch(true),
-                          item.type === 'resolver' ? setWrite(false) : setWrite(true),
-                          item.type === 'resolver' ? setStates(prevState => [...prevState, item.type]) : setStates(states)
+                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true),
+                          ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true),
+                          ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states)
                         }}
                         data-tooltip={ item.help }
                       >
@@ -893,27 +1075,12 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                               {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
                           </div>
                       </button>
-                      <Salt
-                        handleTrigger={handleTrigger}
-                        handleModalData={handleModalData}
-                        onClose={() => setSalt(false)}
-                        show={salt}
-                      >
-                      </Salt>
-                      <Record
-                        handleTrigger={handleTrigger}
-                        handleModalData={handleModalData}
-                        onClose={() => setGetch(false)}
-                        show={getch}
-                      >
-                      </Record>
                     </div>
                     <input 
                       id={ item.key }
                       key={ item.key }
                       placeholder={ item.value }
                       type='text'
-                      defaultValue={ item.value }
                       disabled={ 
                         !item.editable
                       }
@@ -926,7 +1093,9 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                         wordWrap: 'break-word',
                         textAlign: 'left',
                         marginBottom: '-5px',
-                        color: 'rgb(255, 255, 255, 0.6)',
+                        color: ['resolver'].includes(item.type) ? 'skyblue' : (
+                          ['name'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'rgb(255, 255, 255, 0.75)'
+                          ),
                         cursor: 'copy'
                       }}
                       onChange={(e) => {
@@ -938,6 +1107,30 @@ const Preview = ({ show, onClose, title, chain, children }) => {
                 </li>
               ))}
             </ul>
+            <div id="modal-inner">
+              <Gas
+                color={ 'lightgreen' }
+                _ENS_={ 'check_circle_outline' }
+                onClose={() => setGasModal(false)}
+                show={gasModal}
+              >
+                { gas }
+              </Gas>
+              <Salt
+                handleTrigger={handleTrigger}
+                handleModalData={handleModalData}
+                onClose={() => setSalt(false)}
+                show={salt}
+              >
+              </Salt>
+              <Record
+                handleTrigger={handleTrigger}
+                handleModalData={handleModalData}
+                onClose={() => setGetch(false)}
+                show={getch}
+              >
+              </Record>
+            </div>
           </StyledModalBody>
         }
       </StyledModal>

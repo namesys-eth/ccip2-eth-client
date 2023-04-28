@@ -11,7 +11,7 @@ import {
 } from 'wagmi'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
-import Modal from '../components/Modal'
+import Help from '../components/Help'
 import Terms from '../components/Terms'
 import Preview from '../components/Preview'
 import Faq from '../components/FAQ'
@@ -53,10 +53,13 @@ const Home: NextPage = () => {
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [option, setOption] = React.useState('owner')
+  const [tab, setTab] = React.useState('owner')
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
+  const [icon, setIcon] = React.useState('');
+  const [color, setColor] = React.useState('');
+  const [help, setHelp] = React.useState('');
   const [searchType, setSearchType] = React.useState('')
   const [cache, setCache] = React.useState<any[]>([])
   const [response, setResponse] = React.useState(false)
@@ -100,7 +103,7 @@ const Home: NextPage = () => {
     var count = 0
     for (var i = 0; i < allTokens.length; i++) {
       // @TODO : ENS Metadata service is broken and not showing all the names
-      if (constants.ensRegistrars.includes(allTokens[i].contract.address) && allTokens[i].title) {
+      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
         const response = await provider.getResolver(allTokens[i].title)
@@ -184,13 +187,13 @@ const Home: NextPage = () => {
       setManager(controller.toString())
     } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
       setManager(owner.toString())
-    } else if (option !== 'owner') {
+    } else if (tab !== 'owner') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner, option])
+  }, [tokenID, controller, owner, tab])
 
   React.useEffect(() => {
     if (manager === accountData?.address) {
@@ -451,7 +454,7 @@ const Home: NextPage = () => {
               }}>
               <button
                 onClick={() => {
-                  setOption('owner'),
+                  setTab('owner'),
                     setMeta(cache),
                     setTokenID(''),
                     setQuery(''),
@@ -463,7 +466,7 @@ const Home: NextPage = () => {
                     }, 2000)
                 }}
                 className='button-header'
-                disabled={option === 'owner'}
+                disabled={tab === 'owner'}
                 data-tooltip='Show names you own'
               >
                 <div
@@ -480,9 +483,9 @@ const Home: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  option === 'search' ? console.log(cache) : setCache(meta),
+                  tab === 'search' ? console.log(cache) : setCache(meta),
                     setMeta([]),
-                    setOption('manager'),
+                    setTab('manager'),
                     setSuccess(false),
                     setManager(''),
                     setLoading(true),
@@ -491,7 +494,7 @@ const Home: NextPage = () => {
                     }, 2000)
                 }}
                 className='button-header'
-                disabled={option === 'manager'}
+                disabled={tab === 'manager'}
                 data-tooltip='Search for a name that you manage'
               >
                 <div
@@ -508,9 +511,9 @@ const Home: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  option === 'manager' ? console.log(cache) : setCache(meta),
+                  tab === 'manager' ? console.log(cache) : setCache(meta),
                     setMeta([]),
-                    setOption('search'),
+                    setTab('search'),
                     setSuccess(false),
                     setManager(''),
                     setLoading(true),
@@ -519,7 +522,7 @@ const Home: NextPage = () => {
                     }, 2000)
                 }}
                 className='button-header'
-                disabled={option === 'search'}
+                disabled={tab === 'search'}
                 data-tooltip='Search for an ENS name'
               >
                 <div
@@ -559,14 +562,14 @@ const Home: NextPage = () => {
                     color: 'white',
                   }}
                 >
-                  Loading Names
+                  { tab === 'owner' ? 'Loading Names' : 'Please wait' }
                 </span>
               </div>
               </div>
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && option === 'owner' && meta.length > 0 && isConnected && !empty && (
+          {!loading && tab === 'owner' && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -579,7 +582,31 @@ const Home: NextPage = () => {
                   fontWeight: '700'
                 }}
               >
-                names you own
+                <span
+                  style={{ 
+                    marginRight: '5px'
+                  }}
+                >
+                  names you own
+                </span>
+                <button 
+                  className="button-tiny"
+                  onClick={() => { 
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('if this list doesn\'t a name that you own, please use the search 🔎 tab')
+                  }}
+                >
+                  <div 
+                    className="material-icons smol"
+                    style={{ 
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
               </div>
               <div
                 className='list-container'
@@ -596,7 +623,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && (option === 'manager' || option === 'search') && meta.length > 0 && isConnected && !empty && (
+          {!loading && (tab === 'manager' || tab === 'search') && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -626,7 +653,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && option === 'manager' && !success && meta && isConnected && (
+          {!loading && tab === 'manager' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -639,7 +666,31 @@ const Home: NextPage = () => {
                   fontWeight: '700'
                 }}
               >
-                names you manage
+                <span
+                  style={{ 
+                    marginRight: '5px'
+                  }}
+                >
+                  names you manage
+                </span>
+                <button 
+                  className="button-tiny"
+                  onClick={() => { 
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('search for an ENS name that you manage (or own)')
+                  }}
+                >
+                  <div 
+                    className="material-icons smol"
+                    style={{ 
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
               </div>
               <div
                 className='search-container'
@@ -655,7 +706,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && option === 'search' && !success && meta && isConnected && (
+          {!loading && tab === 'search' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -667,7 +718,31 @@ const Home: NextPage = () => {
                   marginBottom: '25px'
                 }}
               >
-                search names
+                <span
+                  style={{ 
+                    marginRight: '5px'
+                  }}
+                >
+                  search names
+                </span>
+                <button 
+                  className="button-tiny"
+                  onClick={() => { 
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('search for a name')
+                  }}
+                >
+                  <div 
+                    className="material-icons smol"
+                    style={{ 
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
               </div>
               <div
                 className='search-container'
@@ -683,7 +758,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && empty && option === 'owner' && (
+          {!loading && empty && tab === 'owner' && (
             <div>
               <div
                 style={{
@@ -707,7 +782,7 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
-          {!response && !manager && query && option !== 'owner' && !loading && (
+          {!response && !manager && query && tab !== 'owner' && !loading && (
             <div>
               <div
                 style={{
@@ -754,60 +829,58 @@ const Home: NextPage = () => {
             </a>
           </div>
           {/* Modals */}
-          <Faq
-            onClose={() => setFaqModal(false)}
-            show={faqModal}
-          />
-          <Terms
-            onClose={() => setTermsModal(false)}
-            show={termsModal}
-          />
-          <Error
-            onClose={() => {
-              setErrorModal(false),
-                setTokenID(''),
-                setQuery(''),
-                setManager('')
-            }}
-            show={errorModal && searchType === 'manager' && manager && !loading}
-            title={'block'}
-          >
-            {'you are not manager'}
-          </Error>
-          <Error
-            onClose={() => {
-              setErrorModal(false),
-                setTokenID(''),
-                setQuery(''),
-                setManager('')
-            }}
-            show={errorModal && searchType === 'search' && manager && !loading}
-            title={'block'}
-          >
-            {'not owner or manager'}
-          </Error>
           <div id="modal">
-            <Modal
-              color={'orange'}
-              title={'warning'}
-              onClose={() => setModal(false)}
-              show={modal}
-            >
-              {'not owner or manager'}
-            </Modal>
-          </div>
-          {previewModal && (
-            <div id="modal">
+            {previewModal && (
               <Preview
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
-                title={nameToPreviewModal}
+                _ENS_={nameToPreviewModal}
                 chain={alchemyConfig.chainId}
               >
                 { true }
               </Preview>
-            </div>
-          )}
+            )}
+            <Faq
+              onClose={() => setFaqModal(false)}
+              show={faqModal}
+            />
+            <Terms
+              onClose={() => setTermsModal(false)}
+              show={termsModal}
+            />
+            <Error
+              onClose={() => {
+                setErrorModal(false),
+                  setTokenID(''),
+                  setQuery(''),
+                  setManager('')
+              }}
+              show={errorModal && searchType === 'manager' && manager && !loading}
+              title={'block'}
+            >
+              {'you are not manager'}
+            </Error>
+            <Error
+              onClose={() => {
+                setErrorModal(false),
+                  setTokenID(''),
+                  setQuery(''),
+                  setManager('')
+              }}
+              show={errorModal && searchType === 'search' && manager && !loading}
+              title={'block'}
+            >
+              {'not owner or manager'}
+            </Error>
+            <Help
+                color={ color }
+                _ENS_={ icon }
+                onClose={() => setModal(false)}
+                show={modal}
+              >
+                { help }
+            </Help>
+          </div>
         </div>
       </div>
     </div>
