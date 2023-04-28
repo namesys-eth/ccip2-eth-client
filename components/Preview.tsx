@@ -59,16 +59,22 @@ const types = [
 	'revision'
 ] 
 
-const EMPTY_STRING = {};
-for (const key of types) {
-  if (key !== 'resolver') {
-	  EMPTY_STRING[key] = '';
+function EMPTY_STRING() {
+  const EMPTY_STRING = {};
+  for (const key of types) {
+    if (key !== 'resolver') {
+      EMPTY_STRING[key] = '';
+    }
   }
+  return EMPTY_STRING
 }
 
-const EMPTY_BOOL = {};
-for (const key of types) {
-  EMPTY_BOOL[key] = ['resolver'].includes(key) ? true : false;
+function EMPTY_BOOL() {
+  const EMPTY_BOOL = {};
+  for (const key of types) {
+    EMPTY_BOOL[key] = ['resolver'].includes(key) ? true : false;
+  }
+  return EMPTY_BOOL
 }
 
 const EMPTY_HISTORY = {
@@ -125,8 +131,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const [icon, setIcon] = React.useState('');
   const [color, setColor] = React.useState('');
   const [message, setMessage] = React.useState('Loading Records');
-  const [newValues, setNewValues] = React.useState(EMPTY_STRING);
-  const [legit, setLegit] = React.useState(EMPTY_BOOL);
+  const [newValues, setNewValues] = React.useState(EMPTY_STRING());
+  const [legit, setLegit] = React.useState(EMPTY_BOOL());
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined);
   const [modalState, setModalState] = React.useState<MainBodyState>({
     modalData: undefined,
@@ -284,33 +290,40 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   React.useEffect(() => {
     if (states.length > 1) {
       const _updatedList = list.map((item) => {
-        if (item.type !== 'resolver' && states.includes(item.type)) {
+        if (item.type !== 'resolver' && 
+          states.includes(item.type)
+        ) 
+        {
           return { 
             ...item, 
             label: 'edit all',
             help: 'set multiple records in one click'
           };
+        } else {
+          return { 
+            ...item, 
+            label: 'edit'
+          };
         }
-        return item;
       });
       setList(_updatedList)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [states]);
-  
+
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
+    setLegit(EMPTY_BOOL())
     setLoading(false)
     const _updatedList = list.map((item) => {
       return { 
         ...item,  
-        active: false
+        active: resolver !== constants.ccip2
       };
     })
     setList(_updatedList)
     setStates([])
-    setNewValues(EMPTY_STRING)
-    setLegit(EMPTY_BOOL)
+    setNewValues(EMPTY_STRING())
+    e.preventDefault();
     onClose();
   };
 
@@ -453,7 +466,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   }
 
   function setValues(key: string, value: string) {
-    let __THIS = EMPTY_BOOL
+    let __THIS = EMPTY_BOOL()
     __THIS['resolver'] = false
     if (key === 'name') {
       //__THIS[key] = isName(value)
@@ -715,6 +728,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                           states.map((_state) => {
                             setStates(prevState => prevState.filter(item => item !== _state))
                           })
+                          setLegit(EMPTY_BOOL())
                         }, 2000);
                       }
                       const _updatedList = list.map((item) => {
@@ -730,7 +744,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         }
                       })
                       setList(_updatedList)
-                      setNewValues(EMPTY_STRING)
+                      setNewValues(EMPTY_STRING())
                     }
                   }
                   pin()
@@ -772,7 +786,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
         return item;
       });
       setList(_updatedList)
-      setLegit(EMPTY_BOOL)
+      setLegit(EMPTY_BOOL())
       setStates([])
       getResolver()
       setSuccess('Resolver Migration Successful')
@@ -829,7 +843,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
 
   const modalContent = show ? (
     <StyledModalOverlay>
-      <StyledModal>
+      <StyledModal
+        style={{
+          background: fatal ? 'red' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+        }}
+      >
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
             <span 
@@ -842,7 +860,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </span>
           </a>
         </StyledModalHeader>
-        {_ENS_ && loading && 
+        {_ENS_ && !fatal && loading && 
           <StyledModalTitle>
             <span 
               className="material-icons miui-small"
@@ -899,7 +917,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                 <span 
                   style={{
                     color: 'white',
-                    fontSize: '18px'
+                    fontSize: '18px',
+                    fontWeight: '700'
                   }}
                 >
                   { message }
@@ -916,22 +935,24 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                marginTop: '10px',
+                marginTop: '-20px',
                 marginBottom: '20px',
-                color: 'orange',
-                fontSize: '150px'
+                color: 'white',
+                fontSize: '150px',
+                backgroundColor: 'red'
               }}
             >
               <BiError />
               <div
                 style={{
-                  marginTop: '-50px'
+                  marginTop: '-70px'
                 }}
               >
                 <span 
                   style={{
                     color: 'white',
-                    fontSize: '18px'
+                    fontSize: '18px',
+                    fontWeight: '700'
                   }}
                 >
                   { message }
@@ -1214,7 +1235,6 @@ const StyledModalHeader = styled.div`
 `;
 
 const StyledModal = styled.div`
-  background: linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%);
   width: auto;
   min-width: 400px;
   border-radius: 6px;

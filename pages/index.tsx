@@ -576,6 +576,7 @@ const Home: NextPage = () => {
                 <span 
                   style={{
                     color: 'white',
+                    fontWeight: '700'
                   }}
                 >
                   { tab === 'owner' || !modalState.modalData ? 'Loading Names' : 'Please wait' }
