@@ -9,7 +9,7 @@ const Error = ({ show, onClose, title, children }) => {
     setBrowser(true);
   }, []);
 
-  const handleCloseClick = (e) => {
+  const handleCloseClick = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     onClose();
   };
