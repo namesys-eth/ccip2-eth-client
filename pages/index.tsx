@@ -17,6 +17,7 @@ import Preview from '../components/Preview'
 import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
+import Ticker from '../components/Ticker'
 import SearchBox from '../components/Search'
 import LoadingIcons from 'react-loading-icons'
 import * as Name from 'w3name'
@@ -81,6 +82,7 @@ const Home: NextPage = () => {
   };
 
   /* @dev : GraphQL Instance
+  /// we need our own subgraph for this
   const logNames = useCallback(async () => {
     let EnsQuery = await fetch(EnsGraphApi, {
       method: "POST",
@@ -307,6 +309,7 @@ const Home: NextPage = () => {
           display: 'flex',
           justifyContent: 'flex-end',
         }}>
+        <Ticker variable='12.2345'/>
         <button
           className='button clear'
           onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}

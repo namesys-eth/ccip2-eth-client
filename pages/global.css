@@ -350,6 +350,38 @@ input[type="text"] {
   appearance: none;
   border: none;
   background: transparent;
+  font-family: "Spotnik";
+  font-size: 15px;
+  font-weight: 800;
+  height: 40px;
+  padding: 1px 12px;
+  border-radius: 6px;
+  align-items: left;
+  color: white;
+  transition: all ease 100ms;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.button-tiny::after {
+  content: attr(data-tooltip);
+  background-color: black;
+  color: white;
+  padding: 4px;
+  border-radius: 2px;
+  position: absolute;
+  top: -30%;
+  left: 0%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  font-size: 10px;
+  transition: opacity 0.2s ease-in-out;
+}
+.button-tiny:hover::after {
+  visibility: visible;
+  opacity: 1;
 }
 
 button:not(:disabled):hover {
@@ -363,6 +395,7 @@ h1 {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale
 }
+h2 { font-family: "SF Mono" !important; font-size: 18px; font-weight: 800 }
 h4 { font-family: "Spotnik"; font-size: 18px; font-weight: 800 }
 
 a:link {
@@ -927,7 +960,7 @@ button:not(:disabled),
 }
 
 @keyframes progress-bar-stripes {
-  0% {
+  0% { 
     background-position-x: 1rem;
   }
 }
