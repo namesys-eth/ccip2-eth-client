@@ -401,7 +401,8 @@ const Home: NextPage = () => {
         </div>
         <div
           style={{
-            marginRight: !isMobile ? '15px': '0'
+            marginRight: !isMobile ? '15px': '0',
+            paddingRight: '10px'
           }}
         >
           <Ticker variable={ savings }/>
