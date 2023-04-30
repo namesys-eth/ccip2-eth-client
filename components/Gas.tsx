@@ -60,9 +60,17 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
               alignItems: 'center'
             }}
           >
+            <div
+              style={{
+                fontSize: '26px',
+                marginTop: '5px'
+              }}
+            >
+              Records set
+            </div>
             <div 
               style={{
-                marginTop: '10px',
+                marginTop: '30px',
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'center',
@@ -162,7 +170,7 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: 60%;
-  height: 230px;
+  height: 280px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;

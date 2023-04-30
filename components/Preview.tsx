@@ -130,6 +130,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const [states, setStates] = React.useState<any[]>([]);
   const [icon, setIcon] = React.useState('');
   const [color, setColor] = React.useState('');
+  const [signature, setSignature] = React.useState('');
+  const [migrated, setMigrated] = React.useState(false);
   const [message, setMessage] = React.useState('Loading Records');
   const [newValues, setNewValues] = React.useState(EMPTY_STRING());
   const [legit, setLegit] = React.useState(EMPTY_BOOL());
@@ -144,10 +146,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const { data: accountData } = useAccount()
   const recoveredAddress = React.useRef<string>()
   const { 
-    data: signature, 
+    data: _Signature, 
     error: signError, 
     isLoading: signLoading, 
-    signMessage 
+    signMessage
   } = useSignMessage({
     onSuccess(data, variables) {
       const address = verifyMessage(variables.message, data)
@@ -161,8 +163,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
   const web3 = new Web3(alchemyEndpoint);
   let caip10 = `eip155:${chain}:${accountData?.address}`
-  let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${_ENS_}\nSIGNED BY: ${caip10}`
       
+  // @dev : handle receiving password
   const handleModalData = (data: string | undefined) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
   };
@@ -170,6 +172,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
+  // @dev : handle sending trigger of successful migration to home
   const handleSuccess = () => {
     handleParentModalData(true);
     handleParentTrigger(true);
@@ -188,42 +191,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [browser]);
-
-  React.useEffect(() => {
-    if (modalState.trigger) {
-      signMessage({ message: statement })
-      setKeygen(true)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState, statement]);
-
-  React.useEffect(() => {
-    setLoading(true)
-    if (signature) {
-      setMessage('Generating IPNS Key')
-      const keygen = async () => {
-        const __keypair = await ed25519Keygen(_ENS_, caip10, signature, modalState.modalData)
-        setKeypair(__keypair)
-        setMessage('IPNS Key Generated')
-      };
-      keygen()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, signature, caip10, _ENS_]);
-
-  React.useEffect(() => {
-    if (keypair) {
-      const CIDGen = async () => {
-        let key = '08011240' + keypair[0] + keypair[1]
-        const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
-        const CIDIpns = w3name.toString()
-        setCID(CIDIpns)
-        setMessage('IPNS CID Generated')
-      }
-      CIDGen()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypair]);
 
   const {
     data: response,
@@ -322,6 +289,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     setList(_updatedList)
     setStates([])
     setNewValues(EMPTY_STRING())
+    setSignature('')
     e.preventDefault();
     onClose();
   };
@@ -414,13 +382,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       });
   }
 
-  async function writeRevision(revision: Name.Revision) {
+  async function writeRevision(revision: Name.Revision, gas: {}) {
     const request = {
       ens: _ENS_,
       address: accountData?.address,
       signature: signature,
       revision: Revision.encode(revision),
-      chain: chain
+      chain: chain,
+      gas: JSON.stringify(gas)
     }
     try {
       await fetch(
@@ -640,30 +609,82 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   }, [trigger]);
 
   React.useEffect(() => {
-    if (getch) {
-      if (modalState.trigger) {
-        signMessage({ message: statement })
+    if (signature) {
+      setMessage('Generating IPNS Key')
+      const keygen = async () => {
+        let password = modalState.modalData
+        const __keypair = await ed25519Keygen(_ENS_, caip10, signature, password)
+        setKeypair(__keypair)
+        setMessage('IPNS Key Generated')
+        setSignature('')
+      };
+      keygen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keygen, _Signature]);
+
+  React.useEffect(() => {
+    if (keypair) {
+      const CidGen = async () => {
+        let key = '08011240' + keypair[0] + keypair[1]
+        const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
+        const CidIpns = w3name.toString()
+        setCID(CidIpns)
+        setMessage('IPNS CID Generated')
+        if (write && CID) {
+          setMigrated(true)
+        }
+      }
+      CidGen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypair, CID]);
+
+  // @dev : Signature A: Sig 1, 2
+  React.useEffect(() => {
+    if (modalState.trigger) {
+      if (_Signature) {
+        setSignature(_Signature)
         setKeygen(true)
+      } else {
+        if (!migrated) {
+          setLoading(true)
+          let password = modalState.modalData ? modalState.modalData : ""
+          let statementKeygen = `Requesting Signature for Deterministic IPNS Keygen\n\nENS Domain: ${_ENS_}\nExtradata: ${ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_ + password + caip10))}\nSigned By: ${caip10}`
+          signMessage({ message: statementKeygen })
+        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState, getch, statement]);
+  }, [modalState, _Signature]);
 
+  // @dev : Signature B, Sig 3
   React.useEffect(() => {
-    const request = {
-      signature: signature,
-      ens: _ENS_,
-      address: recoveredAddress.current,
-      ipns: CID,
-      recordsTypes: states,
-      recordsValues: newValues,
-      revision: history.revision,
-      chain: chain
-    }
-    if (write && keypair && CID && signature) {
+    console.log(write, CID, signature, migrated, keypair)
+    if (write && CID && migrated && !signLoading) {
+      if (!signature) {
+        setLoading(true)
+        if (_Signature) setSignature(_Signature)
+        let password = modalState.modalData ? modalState.modalData : ""
+        let statementSign: string
+        statementSign = `Requesting Signature for Off-Chain ENS Records Manager\n\nENS Domain: ${_ENS_}\nExtradata: ${ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_ + password + caip10))}\nSigned By: ${caip10}`
+        if (!signature) {
+          signMessage({ message: statementSign })
+        }
+      }
+      const request = {
+        signature: signature,
+        ens: _ENS_,
+        address: recoveredAddress.current,
+        ipns: CID,
+        recordsTypes: states,
+        recordsValues: newValues,
+        revision: history.revision,
+        chain: chain
+      }
       //console.log(request)
-      setMessage('Writing Records')
       const editRecord = async () => {
+        setMessage('Writing Records')
         try {
           await fetch(
             "https://sshmatrix.club:3003/write",
@@ -676,8 +697,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             })
             .then(response => response.json())
             .then(data => {
+              //console.log(data)
               setMessage('Publishing to IPNS')
-              if (keypair) {
+              if (keypair && data.response) {
+                // @dev : get gas consumption estimate
+                let gas = {}
+                list.map(async (item) => {
+                  if (item.type !== 'resolver' && data.response.meta[item.type]) {
+                    // @dev : get gas for each record separately
+                    const _gas = getGas(item.type, data.response[item.type])
+                    const _promise = async () => {
+                      await Promise.all([_gas])
+                    }
+                    await _promise()
+                    _gas.then((value) => {
+                      gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001
+                    })
+                    if (item.type === 'avatar') {
+                      setAvatar(data.response.avatar)
+                    }
+                  }
+                })
+                // handle w3name publish 
                 let key = '08011240' + keypair[0] + keypair[1]
                 let w3name: Name.WritableName
                 const keygen = async () => {
@@ -690,7 +731,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                       let status: boolean
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
-                        const _status = await writeRevision(_revision)
+                        const _status = await writeRevision(_revision, gas)
                         if (_status !== undefined) {
                           if (_status) {
                             status = _status
@@ -701,22 +742,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         _revision = await Name.increment(_revision_, toPublish)
                       }
                       await Name.publish(_revision, w3name.key)
-                      let gas = {}
-                      list.map(async (item) => {
-                        if (item.type !== 'resolver' && data.response.meta[item.type]) {
-                          const _gas = getGas(item.type, data.response[item.type])
-                          const _promise = async () => {
-                            await Promise.all([_gas])
-                          }
-                          await _promise()
-                          _gas.then((value) => {
-                            gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001
-                          })
-                          if (item.type === 'avatar') {
-                            setAvatar(data.response.avatar)
-                          }
-                        }
-                      })
                       if (gas) {
                         setGas(gas)
                         setTimeout(() => {
@@ -755,15 +780,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
           console.log('Failed to write to CCIP2 backend')
         }
       }
-      editRecord()
-      setWrite(false)
+      if (signature && !signLoading && !signError) {
+        editRecord()
+        setWrite(false)
+      }
     }
-
     if (!write) {
       setGetch(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, states, CID, signature, newValues, _ENS_, keypair]);
+  }, [write, CID, signature, migrated, _Signature]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
@@ -789,7 +815,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       setLegit(EMPTY_BOOL())
       setStates([])
       getResolver()
-      setSuccess('Resolver Migration Successful')
+      setSuccess('Migration Successful')
+      setMigrated(true)
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
@@ -1115,7 +1142,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         onClick={() => { 
                           setTrigger(item.key),
                           setMessage('Waiting for Signature'),
-                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true),
+                          ['resolver'].includes(item.type) ? setSalt(true) : 
+                            (migrated && signature && !keypair ? setKeygen(true) : setGetch(true)),
                           ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true),
                           ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states)
                         }}

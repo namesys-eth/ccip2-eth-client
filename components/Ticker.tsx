@@ -40,7 +40,7 @@ const MyComponent: React.FC<Props> = ({ variable }) => {
             fontWeight: '700'
           }}
         >
-          { variable }&nbsp;ETH
+          { variable ? variable : '0.00' }&nbsp;ETH
       </span>
       </div>
     </button>
