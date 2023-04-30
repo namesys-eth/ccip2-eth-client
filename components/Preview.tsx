@@ -106,8 +106,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const [loading, setLoading] = React.useState(true);
   const [pinned, setPinned] = React.useState(false);
   const [keygen, setKeygen] = React.useState(false);
-  const [fatal, setFatal] = React.useState(false);
-  const [cid, setCid] = React.useState('');
+  const [sauron, setSauron] = React.useState(false);
+  const [CID, setCID] = React.useState('');
   const [helpModal, setHelpModal] = React.useState(false)
   const [successModal, setSuccessModal] = React.useState(false)
   const [gasModal, setGasModal] = React.useState(false);
@@ -150,7 +150,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     signMessage 
   } = useSignMessage({
     onSuccess(data, variables) {
-      // Verify signature when sign message succeeds
       const address = verifyMessage(variables.message, data)
       recoveredAddress.current = address
     },
@@ -214,14 +213,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
 
   React.useEffect(() => {
     if (keypair) {
-      const cidGen = async () => {
+      const CIDGen = async () => {
         let key = '08011240' + keypair[0] + keypair[1]
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
-        const cidIpns = w3name.toString()
-        setCid(cidIpns)
+        const CIDIpns = w3name.toString()
+        setCID(CIDIpns)
         setMessage('IPNS CID Generated')
       }
-      cidGen()
+      CIDGen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypair]);
@@ -278,14 +277,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     
   React.useEffect(() => {
     if (states.includes('resolver')) {
-      if (cid.startsWith('k5')) {
+      if (CID.startsWith('k5')) {
         migrate()
       }
     } else {
       setMessage(message)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cid, states]);
+  }, [CID, states]);
 
   React.useEffect(() => {
     if (states.length > 1) {
@@ -415,13 +414,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       });
   }
 
-  async function writeRevision(revision: Name.Revision) {
+  async function writeRevision(revision: Name.Revision, gas: {}) {
     const request = {
       ens: _ENS_,
       address: accountData?.address,
       signature: signature,
       revision: Revision.encode(revision),
-      chain: chain
+      chain: chain,
+      gas: JSON.stringify(gas)
     }
     try {
       await fetch(
@@ -655,16 +655,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       signature: signature,
       ens: _ENS_,
       address: recoveredAddress.current,
-      ipns: cid,
+      ipns: CID,
       recordsTypes: states,
       recordsValues: newValues,
       revision: history.revision,
       chain: chain
     }
-    if (write && keypair && cid && signature) {
+    if (write && keypair && CID && signature) {
       //console.log(request)
-      setMessage('Writing Records')
       const editRecord = async () => {
+        setMessage('Writing Records')
         try {
           await fetch(
             "https://sshmatrix.club:3003/write",
@@ -678,7 +678,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             .then(response => response.json())
             .then(data => {
               setMessage('Publishing to IPNS')
-              if (keypair) {
+              if (keypair && data.response) {	
+                // @dev : get gas consumption estimate	
+                let gas = {}	
+                list.map(async (item) => {	
+                  if (item.type !== 'resolver' && data.response.meta[item.type]) {	
+                    // @dev : get gas for each record separately	
+                    const _gas = getGas(item.type, data.response[item.type])	
+                    const _promise = async () => {	
+                      await Promise.all([_gas])	
+                    }	
+                    await _promise()	
+                    _gas.then((value) => {	
+                      gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001	
+                    })	
+                    if (item.type === 'avatar') {	
+                      setAvatar(data.response.avatar)	
+                    }	
+                  }	
+                })	
+                // handle w3name publish 
                 let key = '08011240' + keypair[0] + keypair[1]
                 let w3name: Name.WritableName
                 const keygen = async () => {
@@ -691,7 +710,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                       let status: boolean
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
-                        const _status = await writeRevision(_revision)
+                        const _status = await writeRevision(_revision, gas)
                         if (_status !== undefined) {
                           if (_status) {
                             status = _status
@@ -702,28 +721,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         _revision = await Name.increment(_revision_, toPublish)
                       }
                       await Name.publish(_revision, w3name.key)
-                      let gas = {}
-                      list.map(async (item) => {
-                        if (item.type !== 'resolver' && data.response.meta[item.type]) {
-                          const _gas = getGas(item.type, data.response[item.type])
-                          const _promise = async () => {
-                            await Promise.all([_gas])
-                          }
-                          await _promise()
-                          _gas.then((value) => {
-                            gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001
-                          })
-                          if (item.type === 'avatar') {
-                            setAvatar(data.response.avatar)
-                          }
-                        }
-                      })
                       if (gas) {
                         setGas(gas)
                         setTimeout(() => {
                           setGasModal(true)
                           setLoading(false)
-                          setCid('')
+                          setCID('')
                           setKeypair(undefined)
                           states.map((_state) => {
                             setStates(prevState => prevState.filter(item => item !== _state))
@@ -763,7 +766,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     if (!write) {
       setGetch(false)
     }
-  }, [write, states, cid, signature, newValues, _ENS_, keypair]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [write, states, CID, signature, newValues, _ENS_, keypair]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
@@ -793,7 +797,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
-      setCid('')
+      setCID('')
       setKeypair(undefined)
       handleSuccess()
     }
@@ -820,11 +824,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   React.useEffect(() => {
     if (txLoading && !txError) {
       setMessage('Waiting for Transaction')
-      setFatal(false)
+      setSauron(false)
     }
     if (txError && !txLoading) {
       setMessage('Transaction Failed')
-      setFatal(true)
+      setSauron(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading, txError]);
@@ -832,11 +836,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   React.useEffect(() => {
     if (signLoading && !signError) {
       setMessage('Waiting for Signature')
-      setFatal(false)
+      setSauron(false)
     }
     if (signError && !signLoading) {
       setMessage('Signature Failed')
-      setFatal(true)
+      setSauron(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError]);
@@ -845,7 +849,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     <StyledModalOverlay>
       <StyledModal
         style={{
-          background: fatal ? 'red' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+          background: sauron ? 'red' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
         }}
       >
         <StyledModalHeader>
@@ -860,7 +864,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </span>
           </a>
         </StyledModalHeader>
-        {_ENS_ && !fatal && loading && 
+        {_ENS_ && !sauron && loading && 
           <StyledModalTitle>
             <span 
               className="material-icons miui-small"
@@ -896,7 +900,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </span>
           </StyledModalTitle>
         }
-        {loading && !fatal && 
+        {loading && !sauron && 
           <StyledModalBody>
             <div
               style={{
@@ -927,7 +931,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </div>
           </StyledModalBody>
         }
-        {fatal && 
+        {sauron && 
           <StyledModalBody>
             <div
               style={{

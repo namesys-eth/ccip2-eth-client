@@ -17,6 +17,7 @@ import Preview from '../components/Preview'
 import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
+import Ticker from '../components/Ticker'
 import SearchBox from '../components/Search'
 import LoadingIcons from 'react-loading-icons'
 import * as Name from 'w3name'
@@ -62,6 +63,7 @@ const Home: NextPage = () => {
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
+  const [savings, setSavings] = React.useState('')
   const [icon, setIcon] = React.useState('');
   const [color, setColor] = React.useState('');
   const [help, setHelp] = React.useState('');
@@ -81,6 +83,7 @@ const Home: NextPage = () => {
   };
 
   /* @dev : GraphQL Instance
+  /// we need our own subgraph for this
   const logNames = useCallback(async () => {
     let EnsQuery = await fetch(EnsGraphApi, {
       method: "POST",
@@ -110,6 +113,31 @@ const Home: NextPage = () => {
     setMeta(data)
   }, [accountData])
   */
+
+  async function getSavings() {
+    const request = {
+      type: 'gas'
+    };
+    try {
+      await fetch(
+        "https://sshmatrix.club:3003/gas",
+        {
+          method: "post",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request)
+        })
+        .then(response => response.json())
+        .then(data => {
+          return data.response.gas
+        })
+    } catch(error) {
+      console.log('Failed to get gas data from CCIP2 backend')
+      return ''
+    }
+    return ''
+  }
 
   const logTokens = useCallback(async () => {
     const nfts = await alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
@@ -146,6 +174,14 @@ const Home: NextPage = () => {
       await logTokens()
     }
   }, [accountData, logTokens])
+
+  React.useEffect(() => {
+    const getSaving = async () => {
+      const _savings = await getSavings() 
+      setSavings(_savings)
+    }
+    getSaving()
+  }, []);
 
   React.useEffect(() => {
     setLoading(true)
@@ -301,60 +337,76 @@ const Home: NextPage = () => {
       </Head>
       {/* Detect Device */}
       <div
-        className='connect-button'
         style={{
-          width: '100%',
           display: 'flex',
-          justifyContent: 'flex-end',
-        }}>
-        <button
-          className='button clear'
-          onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
-          style={{ marginRight: 10 }}
-          data-tooltip='Learn more'
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+          flexDirection: 'column',
+          alignItems: 'end'
+        }}
+      >
+        <div
+          className='connect-button'
+          style={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}>
+          <button
+            className='button clear'
+            onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
+            style={{ marginRight: 10 }}
+            data-tooltip='Learn more'
           >
-            {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
-          </div>
-        </button>
-        <button
-          className='button clear'
-          onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
-          style={{ marginRight: 10 }}
-          data-tooltip='Terms of Use'
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
+            </div>
+          </button>
+          <button
+            className='button clear'
+            onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+            style={{ marginRight: 10 }}
+            data-tooltip='Terms of Use'
           >
-            {'terms'}&nbsp;<span className="material-icons">gavel</span>
-          </div>
-        </button>
-        {!isMobile && (
-          <div>
-            <ConnectButton
-              label='connect'
-            />
-          </div>
-        )}
-        {isMobile && (
-          <div>
-            <ConnectButton
-              label="connect"
-            />
-          </div>
-        )}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              {'terms'}&nbsp;<span className="material-icons">gavel</span>
+            </div>
+          </button>
+          {!isMobile && (
+            <div>
+              <ConnectButton
+                label='connect'
+              />
+            </div>
+          )}
+          {isMobile && (
+            <div>
+              <ConnectButton
+                label="connect"
+              />
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            marginRight: !isMobile ? '15px': '0',
+            paddingRight: '10px'
+          }}
+        >
+          <Ticker variable={ savings }/>
+        </div>
       </div>
       {/* Container */}
       <div
@@ -377,7 +429,7 @@ const Home: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens.png"
+                    src="ens-red.png"
                   />
                   <h4
                     style={{
@@ -393,7 +445,7 @@ const Home: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens.png"
+                    src="ens-red.png"
                   />
                   <h4
                     style={{
@@ -409,7 +461,7 @@ const Home: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens.png"
+                    src="ens-red.png"
                   />
                   <h4
                     style={{
@@ -425,7 +477,7 @@ const Home: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens.png"
+                    src="ens-red.png"
                   />
                   <h4
                     style={{
@@ -579,7 +631,9 @@ const Home: NextPage = () => {
                     fontWeight: '700'
                   }}
                 >
-                  { tab === 'owner' || !modalState.modalData ? 'Loading Names' : 'Please wait' }
+                  { tab !== 'owner' ? 'Please Wait' :
+                    (modalState.modalData ? 'Please wait' : 'Loading Names')
+                  }
                 </span>
               </div>
               </div>
@@ -612,7 +666,7 @@ const Home: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('if this list doesn\'t a name that you own, please use the search 🔎 tab')
+                    setHelp('if a name that you own is not listed, please use the search 🔎 tab')
                   }}
                 >
                   <div 
