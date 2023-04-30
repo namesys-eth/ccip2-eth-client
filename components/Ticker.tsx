@@ -40,7 +40,16 @@ const MyComponent: React.FC<Props> = ({ variable }) => {
             fontWeight: '700'
           }}
         >
-          { variable ? variable : '0.00' }&nbsp;ETH
+          { variable ? variable : '0.00' }&nbsp;
+          <span
+            style={{ 
+              fontFamily: 'Spotnik',
+              fontSize: '15px',
+              fontWeight: '700'
+            }}
+          >
+            ETH
+          </span>
       </span>
       </div>
     </button>
