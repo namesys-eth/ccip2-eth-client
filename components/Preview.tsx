@@ -127,6 +127,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const [keypair, setKeypair] = React.useState<[string, string]>()
   const [getch, setGetch] = React.useState(false);
   const [write, setWrite] = React.useState(false);
+  const [ready, setReady] = React.useState(false);
   const [states, setStates] = React.useState<any[]>([]);
   const [icon, setIcon] = React.useState('');
   const [color, setColor] = React.useState('');
@@ -609,14 +610,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   }, [trigger]);
 
   React.useEffect(() => {
-    if (signature) {
+    if (signature && keygen) {
       setMessage('Generating IPNS Key')
       const keygen = async () => {
         let password = modalState.modalData
         const __keypair = await ed25519Keygen(_ENS_, caip10, signature, password)
         setKeypair(__keypair)
         setMessage('IPNS Key Generated')
-        setSignature('')
       };
       keygen()
     }
@@ -631,8 +631,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
         const CidIpns = w3name.toString()
         setCID(CidIpns)
         setMessage('IPNS CID Generated')
-        if (write && CID) {
+        if (write && CID && _Signature) {
+          setReady(true)
           setMigrated(true)
+          setSignature('')
         }
       }
       CidGen()
@@ -660,17 +662,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
 
   // @dev : Signature B, Sig 3
   React.useEffect(() => {
-    console.log(write, CID, signature, migrated, keypair)
-    if (write && CID && migrated && !signLoading) {
+    console.log(write, CID, signature, migrated, keypair, ready)
+    if (write && CID && migrated && ready && !signLoading) {
       if (!signature) {
         setLoading(true)
-        if (_Signature) setSignature(_Signature)
         let password = modalState.modalData ? modalState.modalData : ""
         let statementSign: string
         statementSign = `Requesting Signature for Off-Chain ENS Records Manager\n\nENS Domain: ${_ENS_}\nExtradata: ${ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_ + password + caip10))}\nSigned By: ${caip10}`
-        if (!signature) {
-          signMessage({ message: statementSign })
-        }
+        signMessage({ message: statementSign })
       }
       const request = {
         signature: signature,
@@ -748,6 +747,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                           setGasModal(true)
                           setLoading(false)
                           setCID('')
+                          setReady(false)
                           setKeypair(undefined)
                           states.map((_state) => {
                             setStates(prevState => prevState.filter(item => item !== _state))
@@ -789,7 +789,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       setGetch(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, CID, signature, migrated, _Signature]);
+  }, [write, CID, signature, ready]);
 
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess && pinned) {
@@ -817,6 +817,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       getResolver()
       setSuccess('Migration Successful')
       setMigrated(true)
+      setKeygen(false)
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
