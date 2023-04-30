@@ -414,13 +414,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       });
   }
 
-  async function writeRevision(revision: Name.Revision) {
+  async function writeRevision(revision: Name.Revision, gas: {}) {
     const request = {
       ens: _ENS_,
       address: accountData?.address,
       signature: signature,
       revision: Revision.encode(revision),
-      chain: chain
+      chain: chain,
+      gas: JSON.stringify(gas)
     }
     try {
       await fetch(
@@ -662,8 +663,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     }
     if (write && keypair && CID && signature) {
       //console.log(request)
-      setMessage('Writing Records')
       const editRecord = async () => {
+        setMessage('Writing Records')
         try {
           await fetch(
             "https://sshmatrix.club:3003/write",
@@ -677,7 +678,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             .then(response => response.json())
             .then(data => {
               setMessage('Publishing to IPNS')
-              if (keypair) {
+              if (keypair && data.response) {	
+                // @dev : get gas consumption estimate	
+                let gas = {}	
+                list.map(async (item) => {	
+                  if (item.type !== 'resolver' && data.response.meta[item.type]) {	
+                    // @dev : get gas for each record separately	
+                    const _gas = getGas(item.type, data.response[item.type])	
+                    const _promise = async () => {	
+                      await Promise.all([_gas])	
+                    }	
+                    await _promise()	
+                    _gas.then((value) => {	
+                      gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001	
+                    })	
+                    if (item.type === 'avatar') {	
+                      setAvatar(data.response.avatar)	
+                    }	
+                  }	
+                })	
+                // handle w3name publish 
                 let key = '08011240' + keypair[0] + keypair[1]
                 let w3name: Name.WritableName
                 const keygen = async () => {
@@ -690,7 +710,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                       let status: boolean
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
-                        const _status = await writeRevision(_revision)
+                        const _status = await writeRevision(_revision, gas)
                         if (_status !== undefined) {
                           if (_status) {
                             status = _status
@@ -701,22 +721,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         _revision = await Name.increment(_revision_, toPublish)
                       }
                       await Name.publish(_revision, w3name.key)
-                      let gas = {}
-                      list.map(async (item) => {
-                        if (item.type !== 'resolver' && data.response.meta[item.type]) {
-                          const _gas = getGas(item.type, data.response[item.type])
-                          const _promise = async () => {
-                            await Promise.all([_gas])
-                          }
-                          await _promise()
-                          _gas.then((value) => {
-                            gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001
-                          })
-                          if (item.type === 'avatar') {
-                            setAvatar(data.response.avatar)
-                          }
-                        }
-                      })
                       if (gas) {
                         setGas(gas)
                         setTimeout(() => {

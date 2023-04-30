@@ -354,12 +354,11 @@ input[type="text"] {
   font-size: 15px;
   font-weight: 800;
   height: 40px;
-  padding: 1px 12px;
+  padding: 1px 1px;
   border-radius: 6px;
   align-items: left;
   color: white;
   transition: all ease 100ms;
-  margin-left: 10px;
   margin-right: 10px;
 }
 
