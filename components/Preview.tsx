@@ -421,7 +421,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       signature: signature,
       revision: Revision.encode(revision),
       chain: chain,
-      gas: JSON.stringify(gas)
+      gas: JSON.stringify(gas), 
+      version: JSON.stringify(revision)
     }
     try {
       await fetch(
@@ -707,19 +708,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
                       // w3name broadcast
                       let _revision: Name.Revision;
-                      let status: boolean
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
-                        const _status = await writeRevision(_revision, gas)
-                        if (_status !== undefined) {
-                          if (_status) {
-                            status = _status
-                          }
-                        }
                       } else {
                         let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
                         _revision = await Name.increment(_revision_, toPublish)
                       }
+                      await writeRevision(_revision, gas)
                       await Name.publish(_revision, w3name.key)
                       if (gas) {
                         setGas(gas)
