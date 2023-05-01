@@ -177,7 +177,7 @@ const Home: NextPage = () => {
 
   React.useEffect(() => {
     const getSaving = async () => {
-      const _savings = await getSavings() 
+      const _savings = await getSavings()
       setSavings(_savings)
     }
     getSaving()
@@ -334,6 +334,10 @@ const Home: NextPage = () => {
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
         <link rel="shortcut icon" href="logo.png" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&amp;display=swap" media="print" crossOrigin="anonymous" />
+        <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+        <link rel="preload" href="SF-Mono.woff2'" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="Spotnik.woff2'" as="font" type="font/woff2" crossOrigin="anonymous" />
       </Head>
       {/* Detect Device */}
       <div
@@ -625,7 +629,7 @@ const Home: NextPage = () => {
                   marginTop: '40px'
                 }}
               >
-                <span 
+                <span
                   style={{
                     color: 'white',
                     fontWeight: '700'
@@ -654,24 +658,24 @@ const Home: NextPage = () => {
                 }}
               >
                 <span
-                  style={{ 
+                  style={{
                     marginRight: '5px'
                   }}
                 >
                   names you own
                 </span>
-                <button 
+                <button
                   className="button-tiny"
-                  onClick={() => { 
+                  onClick={() => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
                     setHelp('if a name that you own is not listed, please use the search 🔎 tab')
                   }}
                 >
-                  <div 
+                  <div
                     className="material-icons smol"
-                    style={{ 
+                    style={{
                       color: 'skyblue'
                     }}
                   >
@@ -738,24 +742,24 @@ const Home: NextPage = () => {
                 }}
               >
                 <span
-                  style={{ 
+                  style={{
                     marginRight: '5px'
                   }}
                 >
                   names you manage
                 </span>
-                <button 
+                <button
                   className="button-tiny"
-                  onClick={() => { 
+                  onClick={() => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
                     setHelp('search for an ENS name that you manage (or own)')
                   }}
                 >
-                  <div 
+                  <div
                     className="material-icons smol"
-                    style={{ 
+                    style={{
                       color: 'skyblue'
                     }}
                   >
@@ -790,24 +794,24 @@ const Home: NextPage = () => {
                 }}
               >
                 <span
-                  style={{ 
+                  style={{
                     marginRight: '5px'
                   }}
                 >
                   search names
                 </span>
-                <button 
+                <button
                   className="button-tiny"
-                  onClick={() => { 
+                  onClick={() => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
                     setHelp('search for a name')
                   }}
                 >
-                  <div 
+                  <div
                     className="material-icons smol"
-                    style={{ 
+                    style={{
                       color: 'skyblue'
                     }}
                   >
