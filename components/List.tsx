@@ -132,6 +132,7 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                       setColor('lightgreen'),
                       setHelp('Resolver is migrated')
                     }}
+                    data-tooltip={ 'Resolver is migrated' }
                   >
                     <div 
                       className="material-icons smol"
@@ -152,6 +153,7 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                       setColor('orange'),
                       setHelp('Resolver is not migrated')
                     }}
+                    data-tooltip={ 'Resolver is not migrated' }
                   >
                     <div 
                       className="material-icons smol"

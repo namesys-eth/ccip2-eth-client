@@ -18,6 +18,7 @@ import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
+import Loading from '../components/Loading'
 import SearchBox from '../components/Search'
 import LoadingIcons from 'react-loading-icons'
 import * as Name from 'w3name'
@@ -623,7 +624,19 @@ const Home: NextPage = () => {
                   marginBottom: '200px'
                 }}
               >
-                <LoadingIcons.Bars />
+                <div
+                  style={{
+                    paddingBottom: '10px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex'
+                  }}
+                >
+                  <Loading 
+                    height={60}
+                    width={60}
+                  />
+                </div>
                 <div
                 style={{
                   marginTop: '40px'

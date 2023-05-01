@@ -10,6 +10,7 @@ import { BiError } from 'react-icons/bi'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
 import Gas from '../components/Gas'
+import Loading from '../components/Loading'
 import Success from '../components/Success'
 import Record from '../components/Record'
 import {
@@ -867,7 +868,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                 marginTop: '4px'
               }}
             >
-              display_settings
             </span>
           </StyledModalTitle>
         }
@@ -903,14 +903,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                marginTop: '50px',
-                marginBottom: '200px'
+                marginTop: '-70px',
+                marginBottom: '80px'
               }}
             >
-              <LoadingIcons.Bars />
+              <div>
+                <Loading 
+                  height={70}
+                  width={70}
+                />
+              </div>
               <div
                 style={{
-                  marginTop: '40px'
+                  marginTop: '60px'
                 }}
               >
                 <span 
