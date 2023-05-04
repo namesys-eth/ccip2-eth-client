@@ -1,6 +1,8 @@
 import React from 'react'
 import { useCallback } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
+import Image from 'next/image'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
 import { Alchemy, Network } from "alchemy-sdk"
@@ -19,7 +21,7 @@ import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/Loading'
-import MainSearchBox from '../components/MainSearchBox'
+import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
 
 const network = process.env.NEXT_PUBLIC_NETWORK
@@ -45,7 +47,7 @@ const carousal = [
   '<img class="icon-ens" src="/ens-white.png"/><br></br>Enjoy ENS gasfree</span>'
 ]
 
-const Home: NextPage = () => {
+const Account: NextPage = () => {
   const { data: accountData } = useAccount()
   const { isConnected } = useConnect()
   const [meta, setMeta] = React.useState<any[]>([])
@@ -69,7 +71,6 @@ const Home: NextPage = () => {
   const [searchType, setSearchType] = React.useState('')
   const [cache, setCache] = React.useState<any[]>([])
   const [response, setResponse] = React.useState(false)
-  const [onSearch, setOnSearch] = React.useState(false)
   const [modalState, setModalState] = React.useState<MainBodyState>({
     modalData: false,
     trigger: false
@@ -147,7 +148,7 @@ const Home: NextPage = () => {
     var count = 0
     for (var i = 0; i < allTokens.length; i++) {
       // @TODO : ENS Metadata service is broken and not showing all the names
-      if (constants.ensContracts.includes(allTokens[i].contract.address)) {
+      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
         const response = await provider.getResolver(allTokens[i].title)
@@ -167,8 +168,7 @@ const Home: NextPage = () => {
     setTimeout(() => {
       setLoading(false)
     }, 2000);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSearch])
+  }, [accountData])
 
   const getTokens = useCallback(async () => {
     if (accountData) {
@@ -177,7 +177,6 @@ const Home: NextPage = () => {
   }, [accountData, logTokens])
 
   React.useEffect(() => {
-    setTab('search')
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
@@ -186,25 +185,20 @@ const Home: NextPage = () => {
   }, []);
 
   React.useEffect(() => {
-    if (onSearch) {
-      setLoading(true)
-      const setMetadata = async () => {
-        await getTokens()
-          .then(() => {
-            if (metadata) {
-              setMeta(metadata)
-              setTimeout(() => {
-                setLoading(false)
-              }, 2000);
-            }
-          })
-      }
-      setMetadata()
-    } else {
-      setLoading(false)
+    setLoading(true)
+    const setMetadata = async () => {
+      await getTokens()
+        .then(() => {
+          if (metadata) {
+            setMeta(metadata)
+            setTimeout(() => {
+              setLoading(false)
+            }, 2000);
+          }
+        })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSearch, modalState])
+    setMetadata()
+  }, [accountData, isConnected, getTokens, modalState])
 
   React.useEffect(() => {
     const handleBeforeUnload = () => {
@@ -409,35 +403,33 @@ const Home: NextPage = () => {
             </div>
           )}
         </div>
-        { isConnected && (
-          <div
-            style={{
-              marginRight: !isMobile ? '15px': '0',
-              paddingRight: '10px'
+        <div
+          style={{
+            marginRight: !isMobile ? '15px': '0',
+            paddingRight: '10px'
+          }}
+        >
+          <button
+            className='button clear'
+            onClick={() => { window.location.href = '/' }}
+            style={{ 
+              marginRight: 15,
+              marginTop: 12
             }}
+            data-tooltip='My Names'
           >
-            <button
-              className='button'
-              onClick={() => { window.location.href = '/account' }}
-              style={{ 
-                marginRight: 15,
-                marginTop: 12
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center'
               }}
-              data-tooltip='My Names'
             >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
-              >
-                {'Ny Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
-              </div>
-            </button>
-          </div>
-        )}
+              {'Home'}&nbsp;<span className="material-icons">home</span>
+            </div>
+          </button>
+        </div>
         <div
           style={{
             marginRight: !isMobile ? '15px': '0',
@@ -456,7 +448,7 @@ const Home: NextPage = () => {
         }}>
         {/* Content */}
         <div style={{ flex: '1 1 auto' }}>
-          <div style={{ marginTop: '-35px' }}>
+          <div style={{ marginTop: '-20px' }}>
             <div
               style={{
                 display: 'flex',
@@ -472,8 +464,8 @@ const Home: NextPage = () => {
                   />
                   <h4
                     style={{
-                      fontSize: 36,
-                      color: 'white'
+                      fontSize: 26,
+                      color: '#fc6603'
                     }}>
                     Off-chain Records Manager
                   </h4>
@@ -481,17 +473,12 @@ const Home: NextPage = () => {
               )}
               {!isMobile && isConnected && (
                 <div style={{ marginTop: '-50px' }}>
-                  <img
-                    className="icon-ens"
-                    alt="sample-icon"
-                    src="ens-red.png"
-                  />
                   <h4
                     style={{
                       fontSize: 22,
-                      color: 'white'
+                      color: '#fc6603'
                     }}>
-                    Off-chain Records Manager
+                    Your Names
                   </h4>
                 </div>
               )}
@@ -505,7 +492,7 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 26,
-                      color: 'white'
+                      color: '#fc6603'
                     }}>
                     Off-chain Records Manager
                   </h4>
@@ -521,30 +508,16 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 18,
-                      color: 'white'
+                      color: '#fc6603'
                     }}>
-                    Off-chain Records Manager
+                    Your Names
                   </h4>
                 </div>
               )}
             </div>
           </div>
           <br></br><br></br>
-          {isConnected && (
-            <div
-              className='main-search-container'
-              style={{
-                maxHeight: '520px',
-                overflowY: 'auto',
-                marginBottom: '100px',
-              }}
-            >
-              <MainSearchBox
-                onSearch={handleNameSearch}
-              />
-            </div>
-          )}
-          {isConnected && !onSearch && (
+          {!isConnected && (
             <div
               style={{
                 marginBottom: '0px'
@@ -562,6 +535,103 @@ const Home: NextPage = () => {
                   </ul>
                 </div>
               </div></div>
+            </div>
+          )}
+          {isConnected && (
+            <div
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'row',
+                marginBottom: '50px',
+                marginTop: '-30px',
+              }}>
+              <button
+                onClick={() => {
+                  setTab('owner'),
+                    setMeta(cache),
+                    setTokenID(''),
+                    setQuery(''),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
+                }}
+                className='button-header'
+                disabled={tab === 'owner'}
+                data-tooltip='Show names you own'
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  {'owned'}&nbsp;
+                  <span className="material-icons">manage_accounts</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  tab === 'search' ? console.log(cache) : setCache(meta),
+                    setMeta([]),
+                    setTab('manager'),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
+                }}
+                className='button-header'
+                disabled={tab === 'manager' || loading}
+                data-tooltip='Search for a name that you manage'
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  {'managed'}&nbsp;
+                  <span className="material-icons">supervised_user_circle</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  tab === 'manager' ? console.log(cache) : setCache(meta),
+                    setMeta([]),
+                    setTab('search'),
+                    setSuccess(false),
+                    setManager(''),
+                    setLoading(true),
+                    setTimeout(() => {
+                      setLoading(false)
+                    }, 2000)
+                }}
+                className='button-header'
+                disabled={tab === 'search' || loading}
+                data-tooltip='Search for an ENS name'
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  {'search'}&nbsp;
+                  <span className="material-icons">search</span>
+                </div>
+              </button>
             </div>
           )}
           {loading && isConnected && (
@@ -609,7 +679,61 @@ const Home: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'search' && meta.length > 0 && isConnected && !empty && (
+          {!loading && tab === 'owner' && meta.length > 0 && isConnected && !empty && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  fontSize: '18px',
+                  color: 'skyblue',
+                  marginBottom: '25px',
+                  fontWeight: '700'
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: '5px'
+                  }}
+                >
+                  names you own
+                </span>
+                <button
+                  className="button-tiny"
+                  onClick={() => {
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('if a name that you own is not listed, please use the search 🔎 tab')
+                  }}
+                >
+                  <div
+                    className="material-icons smol"
+                    style={{
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
+              </div>
+              <div
+                className='list-container'
+                style={{
+                  maxHeight: '520px',
+                  overflowY: 'auto',
+                  marginBottom: '50px',
+                }}
+              >
+                <List
+                  items={meta}
+                  onItemClick={onItemClick}
+                />
+              </div>
+            </div>
+          )}
+          {!loading && (tab === 'manager' || tab === 'search') && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -639,11 +763,164 @@ const Home: NextPage = () => {
               </div>
             </div>
           )}
+          {!loading && tab === 'manager' && !success && meta && isConnected && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  fontSize: '18px',
+                  color: 'skyblue',
+                  marginBottom: '25px',
+                  fontWeight: '700'
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: '5px'
+                  }}
+                >
+                  names you manage
+                </span>
+                <button
+                  className="button-tiny"
+                  onClick={() => {
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('search for an ENS name that you manage (or own)')
+                  }}
+                >
+                  <div
+                    className="material-icons smol"
+                    style={{
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
+              </div>
+              <div
+                className='search-container'
+                style={{
+                  maxHeight: '520px',
+                  overflowY: 'auto',
+                  marginBottom: '50px',
+                }}
+              >
+                <SearchBox
+                  onSearch={handleManagerSearch}
+                />
+              </div>
+            </div>
+          )}
+          {!loading && tab === 'search' && !success && meta && isConnected && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  fontSize: '18px',
+                  color: 'skyblue',
+                  marginBottom: '25px'
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: '5px'
+                  }}
+                >
+                  search names
+                </span>
+                <button
+                  className="button-tiny"
+                  onClick={() => {
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('search for a name')
+                  }}
+                >
+                  <div
+                    className="material-icons smol"
+                    style={{
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
+              </div>
+              <div
+                className='search-container'
+                style={{
+                  maxHeight: '520px',
+                  overflowY: 'auto',
+                  marginBottom: '50px',
+                }}
+              >
+                <SearchBox
+                  onSearch={handleNameSearch}
+                />
+              </div>
+            </div>
+          )}
+          {!loading && empty && tab === 'owner' && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  fontSize: '22px',
+                  color: 'white',
+                  marginBottom: '25px',
+                  fontWeight: '700'
+                }}
+              >
+                <span
+                  className="material-icons miui-smaller"
+                >
+                  warning
+                </span>
+                <br></br>
+                No Names Found
+              </div>
+            </div>
+          )}
+          {!response && !manager && query && tab !== 'owner' && !loading && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  fontSize: '22px',
+                  color: 'white',
+                  marginBottom: '25px',
+                  fontWeight: '700'
+                }}
+              >
+                <span
+                  className="material-icons miui-smaller"
+                >
+                  warning
+                </span>
+                <br></br>
+                No Names Found
+              </div>
+            </div>
+          )}
           {/* Footer */}
           <div
             style={{
               color: 'white',
-              marginTop: '20%',
+              marginTop: '0%',
               marginBottom: 20,
               alignItems: 'center',
               justifyContent: 'center',
@@ -722,4 +999,4 @@ const Home: NextPage = () => {
   )
 }
 
-export default Home
+export default Account

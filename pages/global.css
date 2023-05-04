@@ -128,6 +128,20 @@ input[type="text"] {
   border: none;
 }
 
+.input-main[type="text"] {
+  font-family: 'Spotnik', 'SF Mono';
+  background-color: black;
+  border-radius: 5px;
+  font-size: 20px;
+  padding-left: 20px;
+  padding-top: 17px;
+  padding-bottom: 17px;
+  color: white;
+  outline: none;
+  border: none;
+  width: 150%;
+}
+
 .icon-ens {
   align-items: center;
   justify-content: center;
@@ -228,6 +242,21 @@ input[type="text"] {
 }
 @media screen and (max-width: 800px) {
   .search-container {
+    width: 90%;
+    margin-left: 5%;
+  }
+}
+
+.main-search-container {
+  width: 50%;
+  margin-left: 25%;
+  border-radius: 5px;
+  border: 0px solid rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(112deg, rgba(190,95,65,0.2) 0%, rgba(191,41,36,0.2) 48%, rgba(203,111,0,0.2) 100%);
+  padding: 35px 35px 35px 35px;
+}
+@media screen and (max-width: 800px) {
+  .main-search-container {
     width: 90%;
     margin-left: 5%;
   }
