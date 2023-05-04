@@ -463,7 +463,7 @@ const Home: NextPage = () => {
                 justifyContent: 'center',
                 textAlign: 'center'
               }}>
-              {!isMobile && !isConnected && (
+              {!isMobile && (
                 <div>
                   <img
                     className="icon-ens"
@@ -473,29 +473,13 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 36,
-                      color: 'white'
+                      color: '#fc6603'
                     }}>
                     Off-chain Records Manager
                   </h4>
                 </div>
               )}
-              {!isMobile && isConnected && (
-                <div style={{ marginTop: '-50px' }}>
-                  <img
-                    className="icon-ens"
-                    alt="sample-icon"
-                    src="ens-red.png"
-                  />
-                  <h4
-                    style={{
-                      fontSize: 22,
-                      color: 'white'
-                    }}>
-                    Off-chain Records Manager
-                  </h4>
-                </div>
-              )}
-              {isMobile && !isConnected && (
+              {isMobile && (
                 <div>
                   <img
                     className="icon-ens"
@@ -505,23 +489,7 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 26,
-                      color: 'white'
-                    }}>
-                    Off-chain Records Manager
-                  </h4>
-                </div>
-              )}
-              {isMobile && isConnected && (
-                <div>
-                  <img
-                    className="icon-ens"
-                    alt="sample-icon"
-                    src="ens-red.png"
-                  />
-                  <h4
-                    style={{
-                      fontSize: 18,
-                      color: 'white'
+                      color: '#fc6603'
                     }}>
                     Off-chain Records Manager
                   </h4>
@@ -530,21 +498,19 @@ const Home: NextPage = () => {
             </div>
           </div>
           <br></br><br></br>
-          {isConnected && (
-            <div
-              className='main-search-container'
-              style={{
-                maxHeight: '520px',
-                overflowY: 'auto',
-                marginBottom: '100px',
-              }}
-            >
-              <MainSearchBox
-                onSearch={handleNameSearch}
-              />
-            </div>
-          )}
-          {isConnected && !onSearch && (
+          <div
+            className='main-search-container'
+            style={{
+              maxHeight: '520px',
+              overflowY: 'auto',
+              marginBottom: '100px',
+            }}
+          >
+            <MainSearchBox
+              onSearch={handleNameSearch}
+            />
+          </div>
+          {!onSearch && (
             <div
               style={{
                 marginBottom: '0px'
@@ -643,7 +609,7 @@ const Home: NextPage = () => {
           <div
             style={{
               color: 'white',
-              marginTop: '20%',
+              marginTop: '0%',
               marginBottom: 20,
               alignItems: 'center',
               justifyContent: 'center',

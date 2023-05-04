@@ -1,32 +1,25 @@
 /** @type {import('next').NextConfig} */
 
-const withImages = require('next-images');
-
 const nextConfig = {
+  reactStrictMode: true,
+  assetPrefix: "#",
   images: {
     loader: 'akamai',
     path: '',
   },
+  exportPathMap: async function (defaultPathMap) {
+    return {
+      '/': { page: '/' },
+      '/account': { page: '/account' },
+    }
+  },
 };
 module.exports = nextConfig;
-module.exports = withImages();
-
 module.exports = {
   reactStrictMode: true,
   externals: {
     FileReader: "FileReader"
   },
-  exportPathMap: async function (
-    defaultPathMap,
-    { dev, dir, outDir, distDir, buildId }
-  ) {
-    return {
-      '/': { page: '/' },
-      '/account': { page: '/account' }
-    }
-  },
-  reactStrictMode: true,
-  assetPrefix: "#",
   webpack5: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
