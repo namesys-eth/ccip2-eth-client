@@ -42,7 +42,6 @@
     "react-icons": "^4.8.0",
     "react-loading-icons": "^1.1.0",
     "react-modal": "^3.15.1",
-    "react-router-dom": "^6.3.0",
     "replace-in-file": "^6.3.5",
     "styled-components": "^5.3.5",
     "w3name": "^1.0.8",
@@ -52,13 +51,17 @@
     "web3-utils": "^1.9.0"
   },
   "devDependencies": {
+    "@svgr/cli": "^7.0.0",
+    "@svgr/webpack": "^7.0.0",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.11",
+    "@types/react-router-dom": "^5.3.3",
     "@types/styled-components": "^5.1.26",
     "eslint": "8.15.0",
     "eslint-config-next": "12.1.6",
     "patch-package": "^6.4.7",
     "purgecss": "^5.0.0",
+    "react-router-dom": "^6.11.1",
     "typescript": "4.9.4"
   }
 }
