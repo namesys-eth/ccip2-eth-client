@@ -5,14 +5,14 @@ const optionsCss = {
   to: ['https://namesys-eth.github.io/ccip2-eth-client/_next/'],
 };
 const optionsJs = {
-  files: ['./out/_next/static/chunks/*.js'],
-  from: [/_next\//g],
-  to: ['ccip2-eth-client/_next/'],
+  files: ['./out/_next/static/chunks/*.js', './out/_next/static/chunks/pages/*.js'],
+  from: [/_next\//g, /ens-white.png/g],
+  to: ['ccip2-eth-client/_next/', 'ccip2-eth-client/ens-white.png'],
 };
 const optionsHtml = {
   files: './out/*.html',
-  from: [/_next\/static/g],
-  to: ['ccip2-eth-client/_next/static'],
+  from: [/_next\/static/g, /ens-white.png/g],
+  to: ['ccip2-eth-client/_next/static', 'ccip2-eth-client/ens-white.png'],
 };
 (async function () {
   try {

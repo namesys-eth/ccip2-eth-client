@@ -335,10 +335,9 @@ const Home: NextPage = () => {
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
         <link rel="shortcut icon" href="logo.png" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&amp;display=swap" media="print" crossOrigin="anonymous" />
         <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-        <link rel="preload" href="SF-Mono.woff2'" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="Spotnik.woff2'" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </Head>
       {/* Detect Device */}
       <div

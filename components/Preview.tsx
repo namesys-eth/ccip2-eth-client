@@ -903,14 +903,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                marginTop: '-70px',
+                marginTop: '-60px',
                 marginBottom: '80px'
               }}
             >
               <div>
                 <Loading 
-                  height={70}
-                  width={70}
+                  height={50}
+                  width={50}
                 />
               </div>
               <div
