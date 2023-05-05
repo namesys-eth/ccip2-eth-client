@@ -318,19 +318,21 @@ const Account: NextPage = () => {
         top: '20px'
       }}>
       {/* Avatar */}
-      <div
-        style={{
-          margin: '20px',
-          width: '60%',
-          display: 'flex',
-          justifyContent: 'flex-start'
-        }}>
-        <img
-          className="avatar"
-          alt="sample"
-          src="logo.png"
-        />
-      </div>
+      {!isMobile && (
+        <div
+          style={{
+            margin: '20px',
+            width: '40%',
+            display: 'flex',
+            justifyContent: 'flex-start'
+          }}>
+          <img
+            className="avatar"
+            alt="sample"
+            src="logo.png"
+          />
+        </div>
+      )}
       <Head>
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
@@ -339,103 +341,113 @@ const Account: NextPage = () => {
         <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </Head>
-      {/* Detect Device */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'end',
-          marginRight: !isMobile ? '0':  '-20px'
-        }}
-      >
+      {/* buttons */}
+      <div>
         <div
-          className='connect-button-2'
           style={{
-            width: '100%',
             display: 'flex',
-            justifyContent: 'flex-end'
-          }}>
-          <button
-            className='button clear'
-            onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
-            style={{ marginRight: 10 }}
-            data-tooltip='Learn more'
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span>
-              <span className="material-icons">info</span>
-            </div>
-          </button>
-          <button
-            className='button clear'
-            onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
-            style={{ marginRight: 10 }}
-            data-tooltip='Terms of Use'
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {'terms'}&nbsp;<span className="material-icons">gavel</span>
-            </div>
-          </button>
-          {!isMobile && (
-            <div>
-              <ConnectButton
-                label='connect'
-              />
-            </div>
-          )}
-          {isMobile && (
-            <div>
-              <ConnectButton
-                label="connect"
-              />
-            </div>
-          )}
-        </div>
-        <div
-          style={{
-            marginRight: !isMobile ? '40px':  '0'
+            flexDirection: 'row',
+            alignItems: 'space-between',
+            width: '100%'
           }}
         >
-          <button
-            className='button'
-            onClick={() => { window.location.href = '/' }}
-            style={{ 
-              marginTop: 12
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: !isMobile ? 'row' : 'column',
+              marginLeft: !isMobile ? '9%' : '25px',
+              marginRight: 'auto',
+              marginTop: !isMobile ? '-7%' : '25px'
             }}
-            data-tooltip='Homepage'
           >
             <div
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
+                marginRight: !isMobile ? '40px': '20px',
               }}
             >
-              {'Home'}&nbsp;<span className="material-icons">home</span>
+              <button
+                className='button'
+                onClick={() => { window.location.href = '/' }}
+                data-tooltip='Homepage'
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  {!isMobile ? 'Home' : 'Home'}&nbsp;<span className="material-icons">home</span>
+                </div>
+              </button>
             </div>
-          </button>
-        </div>
-        <div
-          style={{
-            marginRight: !isMobile ? '24px' : '0'
-          }}
-        >
-          <Ticker variable={ savings }/>
+            <div
+              style={{
+                marginLeft: !isMobile ? '-30px' : '-9px'
+              }}
+            >
+              <Ticker variable={ savings }/>
+            </div>
+          </div>
+          <div
+            className='connect-button'
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              flexDirection: 'row',
+              marginTop: !isMobile ? '-7%': '25px',
+            }}
+          >
+            <button
+              className='button clear'
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
+              style={{ marginRight: 10 }}
+              data-tooltip='Learn more'
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
+              </div>
+            </button>
+            <button
+              className='button clear'
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+              style={{ marginRight: 10 }}
+              data-tooltip='Terms of Use'
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                {'terms'}&nbsp;<span className="material-icons">gavel</span>
+              </div>
+            </button>
+            {!isMobile && (
+              <div>
+                <ConnectButton
+                  label='connect'
+                />
+              </div>
+            )}
+            {isMobile && (
+              <div>
+                <ConnectButton
+                  label="connect"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {/* Container */}
@@ -457,9 +469,9 @@ const Account: NextPage = () => {
               {!isMobile && !isConnected && (
                 <div>
                   <img
-                    className="icon-ens"
+                    className="icon-ccip2"
                     alt="sample-icon"
-                    src="ens-pink.png"
+                    src="logo.png"
                   />
                   <h4
                     style={{
@@ -471,7 +483,17 @@ const Account: NextPage = () => {
                 </div>
               )}
               {!isMobile && isConnected && (
-                <div style={{ marginTop: '-50px' }}>
+                <div 
+                  style={{ 
+                    marginTop: '-50px',
+                    marginBottom: '20px' 
+                  }}
+                >
+                  <img
+                    className="icon-ccip2"
+                    alt="sample-icon"
+                    src="logo.png"
+                  />
                   <h4
                     style={{
                       fontSize: 22,
@@ -484,9 +506,9 @@ const Account: NextPage = () => {
               {isMobile && !isConnected && (
                 <div>
                   <img
-                    className="icon-ens"
+                    className="icon-ccip2"
                     alt="sample-icon"
-                    src="ens-pink.png"
+                    src="logo.png"
                   />
                   <h4
                     style={{
@@ -498,7 +520,17 @@ const Account: NextPage = () => {
                 </div>
               )}
               {isMobile && isConnected && (
-                <div style={{ marginTop: '0px' }}>
+                <div 
+                  style={{ 
+                    marginTop: '-25px',
+                    marginBottom: '20px' 
+                  }}
+                >
+                  <img
+                    className="icon-ccip2"
+                    alt="sample-icon"
+                    src="logo.png"
+                  />
                   <h4
                     style={{
                       fontSize: 18,

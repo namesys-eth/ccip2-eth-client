@@ -253,19 +253,21 @@ const Home: NextPage = () => {
         top: '20px'
       }}>
       {/* Avatar */}
-      <div
-        style={{
-          margin: '20px',
-          width: '60%',
-          display: 'flex',
-          justifyContent: 'flex-start'
-        }}>
-        <img
-          className="avatar"
-          alt="sample"
-          src="logo.png"
-        />
-      </div>
+      {!isMobile && (
+        <div
+          style={{
+            margin: '20px',
+            width: '40%',
+            display: 'flex',
+            justifyContent: 'flex-start'
+          }}>
+          <img
+            className="avatar"
+            alt="sample"
+            src="logo.png"
+          />
+        </div>
+      )}
       <Head>
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
@@ -274,83 +276,70 @@ const Home: NextPage = () => {
         <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
         <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
       </Head>
-      {/* Detect Device */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'end'
-        }}
-      >
+      {/* Buttons */}
+      <div>
         <div
-          className='connect-button'
           style={{
-            width: '100%',
             display: 'flex',
-            justifyContent: 'flex-end',
-          }}>
-          <button
-            className='button clear'
-            onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
-            style={{ marginRight: 10 }}
-            data-tooltip='Learn more'
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
-            </div>
-          </button>
-          <button
-            className='button clear'
-            onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
-            style={{ marginRight: 10 }}
-            data-tooltip='Terms of Use'
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {'terms'}&nbsp;<span className="material-icons">gavel</span>
-            </div>
-          </button>
-          {!isMobile && (
-            <div>
-              <ConnectButton
-                label='connect'
-              />
-            </div>
-          )}
-          {isMobile && (
-            <div>
-              <ConnectButton
-                label="connect"
-              />
-            </div>
-          )}
-        </div>
-        { isConnected && (
+            flexDirection: 'row',
+            alignItems: 'space-between',
+            width: '100%'
+          }}
+        >
           <div
             style={{
-              marginRight: !isMobile ? '40px': '20px',
+              display: 'flex',
+              flexDirection: !isMobile ? 'row' : 'column',
+              marginLeft: !isMobile ? '9%' : '25px',
+              marginRight: 'auto',
+              marginTop: !isMobile ? '-7%' : '25px'
+            }}
+          >
+            <div
+              style={{
+                marginRight: !isMobile ? '40px': '20px',
+              }}
+            >
+              <button
+                className='button'
+                onClick={() => { window.location.href = '/account' }}
+                data-tooltip='My Names'
+                disabled={!isConnected}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  {!isMobile ? 'My Names' : 'Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
+                </div>
+              </button>
+            </div>
+            <div
+              style={{
+                marginLeft: !isMobile ? '-30px' : '-9px'
+              }}
+            >
+              <Ticker variable={ savings }/>
+            </div>
+          </div>
+          <div
+            className='connect-button'
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              flexDirection: 'row',
+              marginTop: !isMobile ? '-7%': '25px',
             }}
           >
             <button
-              className='button'
-              onClick={() => { window.location.href = '/account' }}
-              style={{ 
-                marginTop: 12
-              }}
-              data-tooltip='My Names'
+              className='button clear'
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
+              style={{ marginRight: 10 }}
+              data-tooltip='Learn more'
             >
               <div
                 style={{
@@ -360,17 +349,41 @@ const Home: NextPage = () => {
                   alignItems: 'center'
                 }}
               >
-                {'Ny Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
+                {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
               </div>
             </button>
+            <button
+              className='button clear'
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+              style={{ marginRight: 10 }}
+              data-tooltip='Terms of Use'
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                {'terms'}&nbsp;<span className="material-icons">gavel</span>
+              </div>
+            </button>
+            {!isMobile && (
+              <div>
+                <ConnectButton
+                  label='connect'
+                />
+              </div>
+            )}
+            {isMobile && (
+              <div>
+                <ConnectButton
+                  label="connect"
+                />
+              </div>
+            )}
           </div>
-        )}
-        <div
-          style={{
-            marginRight: !isMobile ? '24px': '4px'
-          }}
-        >
-          <Ticker variable={ savings }/>
         </div>
       </div>
       {/* Container */}
@@ -392,9 +405,9 @@ const Home: NextPage = () => {
               {!isMobile && (
                 <div style={{ marginTop: '-20px' }}>
                   <img
-                    className="icon-ens"
+                    className="icon-ccip2"
                     alt="sample-icon"
-                    src="ens-pink.png"
+                    src="logo.png"
                   />
                   <h4
                     style={{
@@ -409,9 +422,9 @@ const Home: NextPage = () => {
               {isMobile && (
                 <div>
                   <img
-                    className="icon-ens"
+                    className="icon-ccip2"
                     alt="sample-icon"
-                    src="ens-pink.png"
+                    src="logo.png"
                   />
                   <div
                     style={{
