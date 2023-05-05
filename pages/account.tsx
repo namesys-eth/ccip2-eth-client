@@ -40,11 +40,11 @@ interface MainBodyState {
 
 let metadata: React.SetStateAction<any[]>
 const carousal = [
-  '<span class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-white.png"/><br></br>Enjoy ENS gasfree</span>'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
 ]
 
 const Account: NextPage = () => {
@@ -666,7 +666,7 @@ const Account: NextPage = () => {
               >
                 <span
                   style={{
-                    color: 'white',
+                    color: '#fc6603',
                     fontWeight: '700'
                   }}
                 >
@@ -727,6 +727,7 @@ const Account: NextPage = () => {
                 }}
               >
                 <List
+                  label='edit'
                   items={meta}
                   onItemClick={onItemClick}
                 />
@@ -757,6 +758,7 @@ const Account: NextPage = () => {
                 }}
               >
                 <List
+                  label='edit'
                   items={meta}
                   onItemClick={onItemClick}
                 />
@@ -877,7 +879,7 @@ const Account: NextPage = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   fontSize: '22px',
-                  color: 'white',
+                  color: '#fc6603',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -901,7 +903,7 @@ const Account: NextPage = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   fontSize: '22px',
-                  color: 'white',
+                  color: '#fc6603',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -919,12 +921,14 @@ const Account: NextPage = () => {
           {/* Footer */}
           <div
             style={{
-              color: 'white',
-              marginTop: '0%',
-              marginBottom: 20,
+              color: '#fc6603',
+              top: 'auto',
+              left: '47%',
+              bottom: 10,
               alignItems: 'center',
               justifyContent: 'center',
-              display: 'flex'
+              display: 'flex',
+              position: 'fixed'
             }}>
             <span
               className="material-icons">folder_open

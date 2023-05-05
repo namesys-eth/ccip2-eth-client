@@ -38,11 +38,11 @@ interface MainBodyState {
 
 let metadata: React.SetStateAction<any[]>
 const carousal = [
-  '<span class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-white.png"/><br></br>Enjoy ENS gasfree</span>'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
 ]
 
 const Home: NextPage = () => {
@@ -58,7 +58,6 @@ const Home: NextPage = () => {
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [tab, setTab] = React.useState('owner')
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
@@ -139,72 +138,13 @@ const Home: NextPage = () => {
     return ''
   }
 
-  const logTokens = useCallback(async () => {
-    const nfts = await alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
-    const allTokens = nfts.ownedNfts
-    var allEns: string[] = []
-    var items: any[] = []
-    var count = 0
-    for (var i = 0; i < allTokens.length; i++) {
-      // @TODO : ENS Metadata service is broken and not showing all the names
-      if (constants.ensContracts.includes(allTokens[i].contract.address)) {
-        count = count + 1
-        allEns.push(allTokens[i].title.split('.eth')[0])
-        const response = await provider.getResolver(allTokens[i].title)
-        items.push({
-          'key': count,
-          'name': allTokens[i].title.split('.eth')[0],
-          'migrated': response?.address === constants.ccip2
-        })
-      }
-    }
-    setMeta(items)
-    if (count === 0) {
-      setEmpty(true)
-    } else {
-      setEmpty(false)
-    }
-    setTimeout(() => {
-      setLoading(false)
-    }, 2000);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSearch])
-
-  const getTokens = useCallback(async () => {
-    if (accountData) {
-      await logTokens()
-    }
-  }, [accountData, logTokens])
-
   React.useEffect(() => {
-    setTab('search')
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
     }
     getSaving()
   }, []);
-
-  React.useEffect(() => {
-    if (onSearch) {
-      setLoading(true)
-      const setMetadata = async () => {
-        await getTokens()
-          .then(() => {
-            if (metadata) {
-              setMeta(metadata)
-              setTimeout(() => {
-                setLoading(false)
-              }, 2000);
-            }
-          })
-      }
-      setMetadata()
-    } else {
-      setLoading(false)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSearch, modalState])
 
   React.useEffect(() => {
     const handleBeforeUnload = () => {
@@ -246,46 +186,41 @@ const Home: NextPage = () => {
       setManager(controller.toString())
     } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
       setManager(owner.toString())
-    } else if (tab !== 'owner') {
+    } else {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner, tab])
+  }, [tokenID, controller, owner])
 
   React.useEffect(() => {
-    if (manager === accountData?.address) {
-      setResponse(true)
-      var allEns: string[] = []
-      var items: any[] = []
-      allEns.push(query.split('.eth')[0])
-      const setMetadata = async () => {
-        provider.getResolver(query)
-          .then((response) => {
-            items.push({
-              'key': 1,
-              'name': query.split('.eth')[0],
-              'migrated': response?.address === constants.ccip2
-            })
-            if (items) {
-              setMeta(items)
-              setSuccess(true)
-              console.log('You are owner/manager')
-              setErrorModal(false)
-              setLoading(false)
-            } else {
-              setSuccess(false)
-              setEmpty(true)
-            }
+    setResponse(true)
+    var allEns: string[] = []
+    var items: any[] = []
+    allEns.push(query.split('.eth')[0])
+    const setMetadata = async () => {
+      provider.getResolver(query)
+        .then((response) => {
+          items.push({
+            'key': 1,
+            'name': query.split('.eth')[0],
+            'migrated': response?.address === constants.ccip2
           })
-      }
-      setMetadata()
-    } else {
-      setErrorModal(true)
-      setSuccess(false)
+          if (items) {
+            setMeta(items)
+            setSuccess(true)
+            console.log('You are owner/manager')
+            setErrorModal(false)
+            setLoading(false)
+          } else {
+            setSuccess(false)
+            setEmpty(true)
+          }
+        })
     }
-  }, [manager, accountData?.address, query])
+    setMetadata()
+  }, [query])
 
   React.useEffect(() => {
     if (query) {
@@ -299,17 +234,11 @@ const Home: NextPage = () => {
     }
   }, [query])
 
-  const handleManagerSearch = (query: string) => {
-    setLoading(true)
-    setSearchType('manager')
-    setQuery(query)
-    console.log(`Searching Manager for ${query}`)
-  }
-
   const handleNameSearch = (query: string) => {
     setLoading(true)
     setSearchType('search')
     setQuery(query)
+    setOnSearch(true)
     console.log(`Searching for ${query}`)
   }
 
@@ -341,9 +270,9 @@ const Home: NextPage = () => {
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
         <link rel="shortcut icon" href="logo.png" />
-        <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
+        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
+        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
       </Head>
       {/* Detect Device */}
       <div
@@ -452,11 +381,11 @@ const Home: NextPage = () => {
         className="container"
         style={{
           maxWidth: `inherit`,
-          margin: '50px 0 0 0'
+          marginTop: onSearch ? '0px' : '40px'
         }}>
         {/* Content */}
         <div style={{ flex: '1 1 auto' }}>
-          <div style={{ marginTop: '-35px' }}>
+          <div style={{ marginTop: '-40px' }}>
             <div
               style={{
                 display: 'flex',
@@ -472,7 +401,7 @@ const Home: NextPage = () => {
                   />
                   <h4
                     style={{
-                      fontSize: 36,
+                      fontSize: onSearch ? '28px' : '36px',
                       color: '#fc6603'
                     }}>
                     Off-chain Records Manager
@@ -488,7 +417,7 @@ const Home: NextPage = () => {
                   />
                   <h4
                     style={{
-                      fontSize: 26,
+                      fontSize: onSearch ? '20px' : '26px',
                       color: '#fc6603'
                     }}>
                     Off-chain Records Manager
@@ -503,7 +432,7 @@ const Home: NextPage = () => {
             style={{
               maxHeight: '520px',
               overflowY: 'auto',
-              marginBottom: '100px',
+              marginBottom: '50px',
             }}
           >
             <MainSearchBox
@@ -511,26 +440,25 @@ const Home: NextPage = () => {
             />
           </div>
           {!onSearch && (
-            <div
-              style={{
-                marginBottom: '0px'
-              }}>
-              <div className="content-slider"><div className="slider">
-                <div className="mask">
-                  <ul>
-                    {carousal.map((item, index) => (
-                      <li className={`anim${index + 1}`} key={index}>
-                        <div className="home-modal-item">
-                          <div dangerouslySetInnerHTML={{ __html: item }}></div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+            <div>
+              <div className="content-slider">
+                <div className="slider">
+                  <div className="mask">
+                    <ul>
+                      {carousal.map((item, index) => (
+                        <li className={`anim${index + 1}`} key={index}>
+                          <div className="home-modal-item">
+                            <div dangerouslySetInnerHTML={{ __html: item }}></div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div></div>
+              </div>
             </div>
           )}
-          {loading && isConnected && (
+          {loading && onSearch && (
             <div>
               <div
                 style={{
@@ -538,7 +466,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   flexDirection: 'column',
-                  marginTop: '50px',
+                  marginTop: '-50px',
                   marginBottom: '200px'
                 }}
               >
@@ -556,26 +484,23 @@ const Home: NextPage = () => {
                   />
                 </div>
                 <div
-                style={{
-                  marginTop: '40px'
-                }}
-              >
-                <span
                   style={{
-                    color: 'white',
-                    fontWeight: '700'
+                    marginTop: '40px'
                   }}
                 >
-                  { tab !== 'owner' ? 'Please Wait' :
-                    (modalState.modalData ? 'Please wait' : 'Loading Names')
-                  }
-                </span>
+                  <span
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700'
+                    }}
+                  >
+                    { 'Please Wait' }
+                  </span>
+                </div>
               </div>
-              </div>
-              <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'search' && meta.length > 0 && isConnected && !empty && (
+          {!loading && meta.length > 0 && !empty && onSearch && (
             <div>
               <div
                 style={{
@@ -588,7 +513,31 @@ const Home: NextPage = () => {
                   fontWeight: '700'
                 }}
               >
-                search result
+                <span
+                  style={{
+                    marginRight: '5px'
+                  }}
+                >
+                  search results
+                </span>
+                <button
+                  className="button-tiny"
+                  onClick={() => {
+                    setModal(true),
+                    setIcon('info'),
+                    setColor('skyblue'),
+                    setHelp('search results for your query')
+                  }}
+                >
+                  <div
+                    className="material-icons smol"
+                    style={{
+                      color: 'skyblue'
+                    }}
+                  >
+                    info_outline
+                  </div>
+                </button>
               </div>
               <div
                 className='list-container'
@@ -599,6 +548,7 @@ const Home: NextPage = () => {
                 }}
               >
                 <List
+                  label={isConnected && manager === accountData?.address ? 'edit' : 'view'}
                   items={meta}
                   onItemClick={onItemClick}
                 />
@@ -608,12 +558,14 @@ const Home: NextPage = () => {
           {/* Footer */}
           <div
             style={{
-              color: 'white',
-              marginTop: '0%',
-              marginBottom: 20,
+              color: '#fc6603',
+              top: 'auto',
+              left: '47%',
+              bottom: 10,
               alignItems: 'center',
               justifyContent: 'center',
-              display: 'flex'
+              display: 'flex',
+              position: 'fixed'
             }}>
             <span
               className="material-icons">folder_open
@@ -649,18 +601,6 @@ const Home: NextPage = () => {
               onClose={() => setTermsModal(false)}
               show={termsModal}
             />
-            <Error
-              onClose={() => {
-                setErrorModal(false),
-                  setTokenID(''),
-                  setQuery(''),
-                  setManager('')
-              }}
-              show={errorModal && searchType === 'manager' && manager && !loading}
-              title={'block'}
-            >
-              {'you are not manager'}
-            </Error>
             <Error
               onClose={() => {
                 setErrorModal(false),

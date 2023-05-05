@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import { isMobile } from 'react-device-detect'
 
 interface SearchBoxProps {
   onSearch: (query: string) => void
@@ -53,6 +54,9 @@ const MainSearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
           required
           pattern=".*\.eth$"
           title="❗ Input must end with '.eth'"
+          style={{
+            fontSize: isMobile ? '16px' : '20px' 
+          }}
         />
         <button 
           className="button"
