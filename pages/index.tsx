@@ -19,9 +19,7 @@ import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/Loading'
-import SearchBox from '../components/Search'
-import LoadingIcons from 'react-loading-icons'
-import * as Name from 'w3name'
+import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
 
 const network = process.env.NEXT_PUBLIC_NETWORK
@@ -40,11 +38,11 @@ interface MainBodyState {
 
 let metadata: React.SetStateAction<any[]>
 const carousal = [
-  '<span class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-white.png"/><br></br>Enjoy ENS gasfree</span>'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
 ]
 
 const Home: NextPage = () => {
@@ -60,7 +58,6 @@ const Home: NextPage = () => {
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [tab, setTab] = React.useState('owner')
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
@@ -71,6 +68,7 @@ const Home: NextPage = () => {
   const [searchType, setSearchType] = React.useState('')
   const [cache, setCache] = React.useState<any[]>([])
   const [response, setResponse] = React.useState(false)
+  const [onSearch, setOnSearch] = React.useState(false)
   const [modalState, setModalState] = React.useState<MainBodyState>({
     modalData: false,
     trigger: false
@@ -140,42 +138,6 @@ const Home: NextPage = () => {
     return ''
   }
 
-  const logTokens = useCallback(async () => {
-    const nfts = await alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
-    const allTokens = nfts.ownedNfts
-    var allEns: string[] = []
-    var items: any[] = []
-    var count = 0
-    for (var i = 0; i < allTokens.length; i++) {
-      // @TODO : ENS Metadata service is broken and not showing all the names
-      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        count = count + 1
-        allEns.push(allTokens[i].title.split('.eth')[0])
-        const response = await provider.getResolver(allTokens[i].title)
-        items.push({
-          'key': count,
-          'name': allTokens[i].title.split('.eth')[0],
-          'migrated': response?.address === constants.ccip2
-        })
-      }
-    }
-    setMeta(items)
-    if (count === 0) {
-      setEmpty(true)
-    } else {
-      setEmpty(false)
-    }
-    setTimeout(() => {
-      setLoading(false)
-    }, 2000);
-  }, [accountData])
-
-  const getTokens = useCallback(async () => {
-    if (accountData) {
-      await logTokens()
-    }
-  }, [accountData, logTokens])
-
   React.useEffect(() => {
     const getSaving = async () => {
       const _savings = await getSavings()
@@ -183,22 +145,6 @@ const Home: NextPage = () => {
     }
     getSaving()
   }, []);
-
-  React.useEffect(() => {
-    setLoading(true)
-    const setMetadata = async () => {
-      await getTokens()
-        .then(() => {
-          if (metadata) {
-            setMeta(metadata)
-            setTimeout(() => {
-              setLoading(false)
-            }, 2000);
-          }
-        })
-    }
-    setMetadata()
-  }, [accountData, isConnected, getTokens, modalState])
 
   React.useEffect(() => {
     const handleBeforeUnload = () => {
@@ -240,46 +186,41 @@ const Home: NextPage = () => {
       setManager(controller.toString())
     } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
       setManager(owner.toString())
-    } else if (tab !== 'owner') {
+    } else {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner, tab])
+  }, [tokenID, controller, owner])
 
   React.useEffect(() => {
-    if (manager === accountData?.address) {
-      setResponse(true)
-      var allEns: string[] = []
-      var items: any[] = []
-      allEns.push(query.split('.eth')[0])
-      const setMetadata = async () => {
-        provider.getResolver(query)
-          .then((response) => {
-            items.push({
-              'key': 1,
-              'name': query.split('.eth')[0],
-              'migrated': response?.address === constants.ccip2
-            })
-            if (items) {
-              setMeta(items)
-              setSuccess(true)
-              console.log('You are owner/manager')
-              setErrorModal(false)
-              setLoading(false)
-            } else {
-              setSuccess(false)
-              setEmpty(true)
-            }
+    setResponse(true)
+    var allEns: string[] = []
+    var items: any[] = []
+    allEns.push(query.split('.eth')[0])
+    const setMetadata = async () => {
+      provider.getResolver(query)
+        .then((response) => {
+          items.push({
+            'key': 1,
+            'name': query.split('.eth')[0],
+            'migrated': response?.address === constants.ccip2
           })
-      }
-      setMetadata()
-    } else {
-      setErrorModal(true)
-      setSuccess(false)
+          if (items) {
+            setMeta(items)
+            setSuccess(true)
+            console.log('You are owner/manager')
+            setErrorModal(false)
+            setLoading(false)
+          } else {
+            setSuccess(false)
+            setEmpty(true)
+          }
+        })
     }
-  }, [manager, accountData?.address, query])
+    setMetadata()
+  }, [query])
 
   React.useEffect(() => {
     if (query) {
@@ -293,17 +234,11 @@ const Home: NextPage = () => {
     }
   }, [query])
 
-  const handleManagerSearch = (query: string) => {
-    setLoading(true)
-    setSearchType('manager')
-    setQuery(query)
-    console.log(`Searching Manager for ${query}`)
-  }
-
   const handleNameSearch = (query: string) => {
     setLoading(true)
     setSearchType('search')
     setQuery(query)
+    setOnSearch(true)
     console.log(`Searching for ${query}`)
   }
 
@@ -318,98 +253,137 @@ const Home: NextPage = () => {
         top: '20px'
       }}>
       {/* Avatar */}
-      <div
-        style={{
-          margin: '20px',
-          width: '60%',
-          display: 'flex',
-          justifyContent: 'flex-start'
-        }}>
-        <img
-          className="avatar"
-          alt="sample"
-          src="logo.png"
-        />
-      </div>
+      {!isMobile && (
+        <div
+          style={{
+            margin: '20px',
+            width: '40%',
+            display: 'flex',
+            justifyContent: 'flex-start'
+          }}>
+          <img
+            className="avatar"
+            alt="sample"
+            src="logo.png"
+          />
+        </div>
+      )}
       <Head>
         <title>CCIP2 - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
         <link rel="shortcut icon" href="logo.png" />
-        <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
+        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
+        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
       </Head>
-      {/* Detect Device */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'end'
-        }}
-      >
+      {/* Buttons */}
+      <div>
         <div
-          className='connect-button'
           style={{
-            width: '100%',
             display: 'flex',
-            justifyContent: 'flex-end',
-          }}>
-          <button
-            className='button clear'
-            onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
-            style={{ marginRight: 10 }}
-            data-tooltip='Learn more'
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
-            </div>
-          </button>
-          <button
-            className='button clear'
-            onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
-            style={{ marginRight: 10 }}
-            data-tooltip='Terms of Use'
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {'terms'}&nbsp;<span className="material-icons">gavel</span>
-            </div>
-          </button>
-          {!isMobile && (
-            <div>
-              <ConnectButton
-                label='connect'
-              />
-            </div>
-          )}
-          {isMobile && (
-            <div>
-              <ConnectButton
-                label="connect"
-              />
-            </div>
-          )}
-        </div>
-        <div
-          style={{
-            marginRight: !isMobile ? '15px': '0',
-            paddingRight: '10px'
+            flexDirection: 'row',
+            alignItems: 'space-between',
+            width: '100%'
           }}
         >
-          <Ticker variable={ savings }/>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: !isMobile ? 'row' : 'column',
+              marginLeft: !isMobile ? '9%' : '25px',
+              marginRight: 'auto',
+              marginTop: !isMobile ? '-7%' : '25px'
+            }}
+          >
+            <div
+              style={{
+                marginRight: !isMobile ? '40px': '20px',
+              }}
+            >
+              <button
+                className='button'
+                onClick={() => { window.location.href = '/account' }}
+                data-tooltip='My Names'
+                disabled={!isConnected}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  {!isMobile ? 'My Names' : 'Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
+                </div>
+              </button>
+            </div>
+            <div
+              style={{
+                marginLeft: !isMobile ? '-30px' : '-9px'
+              }}
+            >
+              <Ticker variable={ savings }/>
+            </div>
+          </div>
+          <div
+            className='connect-button'
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              flexDirection: 'row',
+              marginTop: !isMobile ? '-7%': '25px',
+            }}
+          >
+            <button
+              className='button clear'
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
+              style={{ marginRight: 10 }}
+              data-tooltip='Learn more'
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
+              </div>
+            </button>
+            <button
+              className='button clear'
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+              style={{ marginRight: 10 }}
+              data-tooltip='Terms of Use'
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                {'terms'}&nbsp;<span className="material-icons">gavel</span>
+              </div>
+            </button>
+            {!isMobile && (
+              <div>
+                <ConnectButton
+                  label='connect'
+                />
+              </div>
+            )}
+            {isMobile && (
+              <div>
+                <ConnectButton
+                  label="connect"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {/* Container */}
@@ -417,201 +391,87 @@ const Home: NextPage = () => {
         className="container"
         style={{
           maxWidth: `inherit`,
-          margin: '50px 0 0 0'
+          marginTop: onSearch ? '0px' : '40px'
         }}>
         {/* Content */}
         <div style={{ flex: '1 1 auto' }}>
-          <div style={{ marginTop: '0px' }}>
+          <div style={{ marginTop: '-40px' }}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'center',
                 textAlign: 'center'
               }}>
-              {!isMobile && !isConnected && (
-                <div>
+              {!isMobile && (
+                <div style={{ marginTop: '-20px' }}>
                   <img
-                    className="icon-ens"
+                    className="icon-ccip2"
                     alt="sample-icon"
-                    src="ens-red.png"
+                    src="logo.png"
                   />
                   <h4
                     style={{
-                      fontSize: 36,
-                      color: 'white'
-                    }}>
+                      fontSize: onSearch ? '28px' : '36px',
+                      color: '#fc6603'
+                    }}
+                  >
                     Off-chain Records Manager
                   </h4>
                 </div>
               )}
-              {!isMobile && isConnected && (
-                <div style={{ marginTop: '-50px' }}>
-                  <img
-                    className="icon-ens"
-                    alt="sample-icon"
-                    src="ens-red.png"
-                  />
-                  <h4
-                    style={{
-                      fontSize: 22,
-                      color: 'white'
-                    }}>
-                    Off-chain Records Manager
-                  </h4>
-                </div>
-              )}
-              {isMobile && !isConnected && (
+              {isMobile && (
                 <div>
                   <img
-                    className="icon-ens"
+                    className="icon-ccip2"
                     alt="sample-icon"
-                    src="ens-red.png"
+                    src="logo.png"
                   />
-                  <h4
+                  <div
                     style={{
-                      fontSize: 26,
-                      color: 'white'
-                    }}>
+                      fontSize: onSearch ? '20px' : '24px',
+                      fontWeight: 700,
+                      color: '#fc6603'
+                    }}
+                  >
                     Off-chain Records Manager
-                  </h4>
-                </div>
-              )}
-              {isMobile && isConnected && (
-                <div>
-                  <img
-                    className="icon-ens"
-                    alt="sample-icon"
-                    src="ens-red.png"
-                  />
-                  <h4
-                    style={{
-                      fontSize: 18,
-                      color: 'white'
-                    }}>
-                    Off-chain Records Manager
-                  </h4>
+                  </div>
                 </div>
               )}
             </div>
           </div>
           <br></br><br></br>
-          {!isConnected && (
-            <div
-              style={{
-                marginBottom: '0px'
-              }}>
-              <div className="content-slider"><div className="slider">
-                <div className="mask">
-                  <ul>
-                    {carousal.map((item, index) => (
-                      <li className={`anim${index + 1}`} key={index}>
-                        <div className="home-modal-item">
-                          <div dangerouslySetInnerHTML={{ __html: item }}></div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+          <div
+            className='main-search-container'
+            style={{
+              maxHeight: '520px',
+              overflowY: 'auto',
+              marginBottom: '50px',
+            }}
+          >
+            <MainSearchBox
+              onSearch={handleNameSearch}
+            />
+          </div>
+          {!onSearch && (
+            <div>
+              <div className="content-slider">
+                <div className="slider">
+                  <div className="mask">
+                    <ul>
+                      {carousal.map((item, index) => (
+                        <li className={`anim${index + 1}`} key={index}>
+                          <div className="carousal-item">
+                            <div dangerouslySetInnerHTML={{ __html: item }}></div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div></div>
+              </div>
             </div>
           )}
-          {isConnected && (
-            <div
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'row',
-                marginBottom: '50px'
-              }}>
-              <button
-                onClick={() => {
-                  setTab('owner'),
-                    setMeta(cache),
-                    setTokenID(''),
-                    setQuery(''),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setTimeout(() => {
-                      setLoading(false)
-                    }, 2000)
-                }}
-                className='button-header'
-                disabled={tab === 'owner'}
-                data-tooltip='Show names you own'
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
-                >
-                  {'owned'}&nbsp;
-                  <span className="material-icons">manage_accounts</span>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  tab === 'search' ? console.log(cache) : setCache(meta),
-                    setMeta([]),
-                    setTab('manager'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setTimeout(() => {
-                      setLoading(false)
-                    }, 2000)
-                }}
-                className='button-header'
-                disabled={tab === 'manager'}
-                data-tooltip='Search for a name that you manage'
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
-                >
-                  {'managed'}&nbsp;
-                  <span className="material-icons">supervised_user_circle</span>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  tab === 'manager' ? console.log(cache) : setCache(meta),
-                    setMeta([]),
-                    setTab('search'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setTimeout(() => {
-                      setLoading(false)
-                    }, 2000)
-                }}
-                className='button-header'
-                disabled={tab === 'search'}
-                data-tooltip='Search for an ENS name'
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
-                >
-                  {'search'}&nbsp;
-                  <span className="material-icons">search</span>
-                </div>
-              </button>
-            </div>
-          )}
-          {loading && isConnected && (
+          {loading && onSearch && (
             <div>
               <div
                 style={{
@@ -619,7 +479,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   flexDirection: 'column',
-                  marginTop: '50px',
+                  marginTop: '-50px',
                   marginBottom: '200px'
                 }}
               >
@@ -637,26 +497,23 @@ const Home: NextPage = () => {
                   />
                 </div>
                 <div
-                style={{
-                  marginTop: '40px'
-                }}
-              >
-                <span
                   style={{
-                    color: 'white',
-                    fontWeight: '700'
+                    marginTop: '40px'
                   }}
                 >
-                  { tab !== 'owner' ? 'Please Wait' :
-                    (modalState.modalData ? 'Please wait' : 'Loading Names')
-                  }
-                </span>
+                  <span
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700'
+                    }}
+                  >
+                    { 'Please Wait' }
+                  </span>
+                </div>
               </div>
-              </div>
-              <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'owner' && meta.length > 0 && isConnected && !empty && (
+          {!loading && meta.length > 0 && !empty && onSearch && (
             <div>
               <div
                 style={{
@@ -674,7 +531,7 @@ const Home: NextPage = () => {
                     marginRight: '5px'
                   }}
                 >
-                  names you own
+                  search results
                 </span>
                 <button
                   className="button-tiny"
@@ -682,7 +539,7 @@ const Home: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('if a name that you own is not listed, please use the search 🔎 tab')
+                    setHelp('search results for your query')
                   }}
                 >
                   <div
@@ -704,204 +561,25 @@ const Home: NextPage = () => {
                 }}
               >
                 <List
+                  label={isConnected && manager === accountData?.address ? 'edit' : 'view'}
                   items={meta}
                   onItemClick={onItemClick}
                 />
-              </div>
-            </div>
-          )}
-          {!loading && (tab === 'manager' || tab === 'search') && meta.length > 0 && isConnected && !empty && (
-            <div>
-              <div
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  fontSize: '18px',
-                  color: 'skyblue',
-                  marginBottom: '25px',
-                  fontWeight: '700'
-                }}
-              >
-                search result
-              </div>
-              <div
-                className='list-container'
-                style={{
-                  maxHeight: '520px',
-                  overflowY: 'auto',
-                  marginBottom: '50px',
-                }}
-              >
-                <List
-                  items={meta}
-                  onItemClick={onItemClick}
-                />
-              </div>
-            </div>
-          )}
-          {!loading && tab === 'manager' && !success && meta && isConnected && (
-            <div>
-              <div
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  fontSize: '18px',
-                  color: 'skyblue',
-                  marginBottom: '25px',
-                  fontWeight: '700'
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: '5px'
-                  }}
-                >
-                  names you manage
-                </span>
-                <button
-                  className="button-tiny"
-                  onClick={() => {
-                    setModal(true),
-                    setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('search for an ENS name that you manage (or own)')
-                  }}
-                >
-                  <div
-                    className="material-icons smol"
-                    style={{
-                      color: 'skyblue'
-                    }}
-                  >
-                    info_outline
-                  </div>
-                </button>
-              </div>
-              <div
-                className='search-container'
-                style={{
-                  maxHeight: '520px',
-                  overflowY: 'auto',
-                  marginBottom: '50px',
-                }}
-              >
-                <SearchBox
-                  onSearch={handleManagerSearch}
-                />
-              </div>
-            </div>
-          )}
-          {!loading && tab === 'search' && !success && meta && isConnected && (
-            <div>
-              <div
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  fontSize: '18px',
-                  color: 'skyblue',
-                  marginBottom: '25px'
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: '5px'
-                  }}
-                >
-                  search names
-                </span>
-                <button
-                  className="button-tiny"
-                  onClick={() => {
-                    setModal(true),
-                    setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('search for a name')
-                  }}
-                >
-                  <div
-                    className="material-icons smol"
-                    style={{
-                      color: 'skyblue'
-                    }}
-                  >
-                    info_outline
-                  </div>
-                </button>
-              </div>
-              <div
-                className='search-container'
-                style={{
-                  maxHeight: '520px',
-                  overflowY: 'auto',
-                  marginBottom: '50px',
-                }}
-              >
-                <SearchBox
-                  onSearch={handleNameSearch}
-                />
-              </div>
-            </div>
-          )}
-          {!loading && empty && tab === 'owner' && (
-            <div>
-              <div
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  fontSize: '22px',
-                  color: 'white',
-                  marginBottom: '25px',
-                  fontWeight: '700'
-                }}
-              >
-                <span
-                  className="material-icons miui-smaller"
-                >
-                  warning
-                </span>
-                <br></br>
-                No Names Found
-              </div>
-            </div>
-          )}
-          {!response && !manager && query && tab !== 'owner' && !loading && (
-            <div>
-              <div
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  fontSize: '22px',
-                  color: 'white',
-                  marginBottom: '25px',
-                  fontWeight: '700'
-                }}
-              >
-                <span
-                  className="material-icons miui-smaller"
-                >
-                  warning
-                </span>
-                <br></br>
-                No Names Found
               </div>
             </div>
           )}
           {/* Footer */}
           <div
             style={{
-              color: 'white',
-              marginTop: '20%',
-              marginBottom: 20,
+              color: '#fc6603',
+              top: 'auto',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              bottom: 10,
               alignItems: 'center',
               justifyContent: 'center',
-              display: 'flex'
+              display: 'flex',
+              position: 'fixed'
             }}>
             <span
               className="material-icons">folder_open
@@ -937,18 +615,6 @@ const Home: NextPage = () => {
               onClose={() => setTermsModal(false)}
               show={termsModal}
             />
-            <Error
-              onClose={() => {
-                setErrorModal(false),
-                  setTokenID(''),
-                  setQuery(''),
-                  setManager('')
-              }}
-              show={errorModal && searchType === 'manager' && manager && !loading}
-              title={'block'}
-            >
-              {'you are not manager'}
-            </Error>
             <Error
               onClose={() => {
                 setErrorModal(false),

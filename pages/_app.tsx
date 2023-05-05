@@ -2,7 +2,6 @@ import React from 'react';
 import './global.css';
 import '@rainbow-me/rainbowkit/styles.css';
 import type { AppProps } from 'next/app';
-import Script from 'next/script';
 import {
   RainbowKitProvider,
   getDefaultWallets
@@ -110,7 +109,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           appInfo={appInfo}
           chains={chains}
           theme={customTheme}
-        >
+        >  
           <Component {...pageProps} />
         </RainbowKitProvider>
       </WagmiConfig>

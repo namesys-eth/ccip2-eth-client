@@ -107,7 +107,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const [loading, setLoading] = React.useState(true);
   const [pinned, setPinned] = React.useState(false);
   const [keygen, setKeygen] = React.useState(false);
-  const [sauron, setSauron] = React.useState(false);
+  const [crash, setCrash] = React.useState(false);
   const [CID, setCID] = React.useState('');
   const [helpModal, setHelpModal] = React.useState(false)
   const [successModal, setSuccessModal] = React.useState(false)
@@ -820,11 +820,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   React.useEffect(() => {
     if (txLoading && !txError) {
       setMessage('Waiting for Transaction')
-      setSauron(false)
+      setCrash(false)
     }
     if (txError && !txLoading) {
       setMessage('Transaction Failed')
-      setSauron(true)
+      setCrash(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading, txError]);
@@ -832,11 +832,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   React.useEffect(() => {
     if (signLoading && !signError) {
       setMessage('Waiting for Signature')
-      setSauron(false)
+      setCrash(false)
     }
     if (signError && !signLoading) {
       setMessage('Signature Failed')
-      setSauron(true)
+      setCrash(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError]);
@@ -845,7 +845,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     <StyledModalOverlay>
       <StyledModal
         style={{
-          background: sauron ? 'red' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+          background: crash ? 'red' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
         }}
       >
         <StyledModalHeader>
@@ -860,7 +860,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </span>
           </a>
         </StyledModalHeader>
-        {_ENS_ && !sauron && loading && 
+        {_ENS_ && !crash && loading && 
           <StyledModalTitle>
             <span 
               className="material-icons miui-small"
@@ -895,7 +895,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </span>
           </StyledModalTitle>
         }
-        {loading && !sauron && 
+        {loading && !crash && 
           <StyledModalBody>
             <div
               style={{
@@ -931,7 +931,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
             </div>
           </StyledModalBody>
         }
-        {sauron && 
+        {crash && 
           <StyledModalBody>
             <div
               style={{
@@ -1108,7 +1108,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         disabled={ 
                           !list[item.key].active ||
                           !legit[item.type] ||
-                          item.state
+                          item.state ||
+                          !accountData
                         }
                         style={{
                           alignSelf: 'flex-end',

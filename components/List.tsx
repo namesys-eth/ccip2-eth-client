@@ -8,6 +8,7 @@ interface ListItem {
 }
 
 interface ListProps {
+  label: string;
   items: ListItem[];
   onItemClick: (value: string) => void;
 }
@@ -21,7 +22,7 @@ for (let i = 65; i <= 90; i++) {
 
 const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-const List: React.FC<ListProps> = ({ items, onItemClick }) => {
+const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
   const [icon, setIcon] = React.useState('');
   const [help, setHelp] = React.useState('');
   const [color, setColor] = React.useState('');
@@ -207,7 +208,7 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                   width: '80px'
                 }}
                 onClick={() => onItemClick(item.name + '.eth')}
-                data-tooltip='Click to edit off-chain records'
+                data-tooltip={`Click to ${label} off-chain record`}
               >
                 <div 
                     style={{
@@ -218,7 +219,10 @@ const List: React.FC<ListProps> = ({ items, onItemClick }) => {
                       fontSize: '14px'
                     }}
                   >
-                      {'edit'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                      { label }&nbsp;
+                      <span className="material-icons smoller">
+                        {label === "view" ? 'open_in_new' : 'manage_history'}
+                      </span>
                   </div>
               </button>
             </div>

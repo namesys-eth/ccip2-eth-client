@@ -6,13 +6,13 @@ const optionsCss = {
 };
 const optionsJs = {
   files: ['./out/_next/static/chunks/*.js', './out/_next/static/chunks/pages/*.js'],
-  from: [/_next\//g, /ens-white.png/g],
-  to: ['ccip2-eth-client/_next/', 'ccip2-eth-client/ens-white.png'],
+  from: [/_next\//g, /ens-white.png/g, /href=\"\//g],
+  to: ['ccip2-eth-client/_next/', 'ccip2-eth-client/ens-white.png', 'href="/ccip2-eth-client/'],
 };
 const optionsHtml = {
   files: './out/*.html',
-  from: [/_next\/static/g, /ens-white.png/g],
-  to: ['ccip2-eth-client/_next/static', 'ccip2-eth-client/ens-white.png'],
+  from: [/_next\/static/g, /ens-red.png/g],
+  to: ['ccip2-eth-client/_next/static', 'ccip2-eth-client/ens-red.png'],
 };
 (async function () {
   try {
