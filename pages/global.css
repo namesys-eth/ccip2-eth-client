@@ -89,9 +89,9 @@ body {
   border-width: 0;
   width: 15%;
 }
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 600px) {
   .avatar {
-    width: 25%;
+    width: 0%;
   }
 }
 
@@ -115,11 +115,35 @@ body {
   }
 }
 
+input[type="text"].input-main[type="text"] {
+  font-family: 'Spotnik';
+  padding-left: 15px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  background-color: black;
+  border-radius: 5px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  outline: none;
+  border: none;
+  width: 100%;
+}
+@media screen and (max-width: 800px) {
+  input[type="text"].input-main[type="text"] {
+    font-size: 16px;
+    font-weight: 700;
+    padding-left: 10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+}
+
 input[type="text"] {
   font-family: 'SF Mono';
   padding-left: 7px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
   background-color: black;
   border-radius: 5px;
   font-size: 15px;
@@ -143,10 +167,25 @@ input[type="text"] {
   }
 }
 
+.icon-ccip2 {
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 15px;
+}
+@media screen and (max-width: 800px) {
+  .icon-ccip2 {
+    margin-top: 10px;
+    width: 60px;
+    height: 60px;
+  }
+}
+
 .icon-ens-small {
   align-items: center;
   justify-content: center;
-  width: 16.11px;
+  width: 16.66px;
   height: 18px;
   margin-bottom: -4px;
   margin-left: 13px;
@@ -233,6 +272,21 @@ input[type="text"] {
   }
 }
 
+.main-search-container {
+  width: 50%;
+  margin-left: 25%;
+  border-radius: 5px;
+  border: 0px solid rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(112deg, rgba(190,95,65,0.2) 0%, rgba(191,41,36,0.2) 48%, rgba(203,111,0,0.2) 100%);
+  padding: 35px 35px 35px 35px;
+}
+@media screen and (max-width: 800px) {
+  .main-search-container {
+    width: 90%;
+    margin-left: 5%;
+  }
+}
+
 .button {
   appearance: none;
   border: none;
@@ -259,8 +313,8 @@ input[type="text"] {
   padding: 4px;
   border-radius: 2px;
   position: absolute;
-  top: -50%;
-  left: 0%;
+  top: -40%;
+  left: 100%;
   transform: translateX(-50%);
   white-space: nowrap;
   visibility: visible;
@@ -321,8 +375,8 @@ input[type="text"] {
   padding: 4px;
   border-radius: 2px;
   position: absolute;
-  top: -50%;
-  left: 0%;
+  top: -40%;
+  left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
   visibility: hidden;
@@ -343,6 +397,17 @@ input[type="text"] {
   .connect-button {
     margin-top: -18%;
     padding-right: 20px;
+  }
+}
+
+.connect-button-2 {
+  margin-top: -10%;
+  padding-right: 40px;
+}
+@media screen and (max-width: 800px) {
+  .connect-button-2 {
+    margin-top: -18%;
+    padding-right: 40px;
   }
 }
 
@@ -370,7 +435,7 @@ input[type="text"] {
   border-radius: 2px;
   position: absolute;
   top: -30%;
-  left: 0%;
+  left: 110%;
   transform: translateX(-50%);
   white-space: nowrap;
   visibility: hidden;
@@ -427,14 +492,14 @@ a:visited {
 	}
 }
 
-.home-modal-item {
+.carousal-item {
   display: flex;
   justify-content: center;
   text-align: center;
   background: rgba(255, 255, 255, 0);
   padding-bottom: 10px;
   padding-left: 10px;
-  padding-right:10px;
+  padding-right: 10px;
   padding-top: 10px;
   border-radius: 6px;
   font-size: 30px;
@@ -443,9 +508,9 @@ a:visited {
   font-family: 'Spotnik';
 }
 @media screen and (max-width: 800px) {
-  .home-modal-item {
-    font-size: 18px;
-    letter-spacing: -1px;
+  .carousal-item {
+    font-size: 20px;
+    letter-spacing: 0px;
   }
 }
 

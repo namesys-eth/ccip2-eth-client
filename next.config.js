@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-const withImages = require('next-images');
-
 const nextConfig = {
   reactStrictMode: true,
   assetPrefix: "#",
@@ -9,25 +7,19 @@ const nextConfig = {
     loader: 'akamai',
     path: '',
   },
-  exportPathMap: async function (
-    defaultPathMap,
-    { dev, dir, outDir, distDir, buildId }
-  ) {
+  exportPathMap: async function (defaultPathMap) {
     return {
       '/': { page: '/' },
+      '/account': { page: '/account' },
     }
-  }
+  },
 };
-
 module.exports = nextConfig;
-module.exports = withImages();
-
 module.exports = {
   reactStrictMode: true,
   externals: {
     FileReader: "FileReader"
   },
-
   webpack5: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
