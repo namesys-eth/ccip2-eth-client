@@ -344,15 +344,16 @@ const Account: NextPage = () => {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'end'
+          alignItems: 'end',
+          marginRight: !isMobile ? '0':  '-20px'
         }}
       >
         <div
-          className='connect-button'
+          className='connect-button-2'
           style={{
             width: '100%',
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'flex-end'
           }}>
           <button
             className='button clear'
@@ -406,7 +407,7 @@ const Account: NextPage = () => {
         </div>
         <div
           style={{
-            marginRight: !isMobile ? '40px': '0px',
+            marginRight: !isMobile ? '40px':  '0'
           }}
         >
           <button
@@ -431,7 +432,7 @@ const Account: NextPage = () => {
         </div>
         <div
           style={{
-            marginRight: !isMobile ? '24px': '0px'
+            marginRight: !isMobile ? '24px' : '0'
           }}
         >
           <Ticker variable={ savings }/>
