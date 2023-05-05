@@ -44,7 +44,7 @@ const MainSearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
         <input
           className="input-main"
           type="text"
-          placeholder="search for a .eth domain"
+          placeholder={ isMobile ? "search .eth" : "search for a .eth domain" }
           value={query}
           name=".eth search"
           id="eth-search"
@@ -54,14 +54,11 @@ const MainSearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
           required
           pattern=".*\.eth$"
           title="❗ Input must end with '.eth'"
-          style={{
-            fontSize: isMobile ? '16px' : '20px' 
-          }}
         />
         <button 
           className="button"
           style={{
-            height: '50px',
+            height: '46px',
             width: '80px',
             marginLeft: '20px'
           }}
@@ -71,7 +68,7 @@ const MainSearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
           <span 
             className="material-icons"
             style={{
-              fontSize: '30px',
+              fontSize: '28px',
               fontWeight: '700'
             }}
           >

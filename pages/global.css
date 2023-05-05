@@ -115,30 +115,41 @@ body {
   }
 }
 
+input[type="text"].input-main[type="text"] {
+  font-family: 'Spotnik';
+  padding-left: 15px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  background-color: black;
+  border-radius: 5px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  outline: none;
+  border: none;
+  width: 100%;
+}
+@media screen and (max-width: 800px) {
+  input[type="text"].input-main[type="text"] {
+    font-size: 16px;
+    font-weight: 700;
+    padding-left: 10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+}
+
 input[type="text"] {
   font-family: 'SF Mono';
   padding-left: 7px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
   background-color: black;
   border-radius: 5px;
   font-size: 15px;
   color: white;
   outline: none;
   border: none;
-}
-
-.input-main[type="text"] {
-  font-family: 'Spotnik', 'SF Mono';
-  background-color: black;
-  border-radius: 5px;
-  padding-left: 20px;
-  padding-top: 17px;
-  padding-bottom: 17px;
-  color: white;
-  outline: none;
-  border: none;
-  width: 150%;
 }
 
 .icon-ens {
@@ -455,7 +466,7 @@ a:visited {
 	}
 }
 
-.home-modal-item {
+.carousal-item {
   display: flex;
   justify-content: center;
   text-align: center;
@@ -471,9 +482,9 @@ a:visited {
   font-family: 'Spotnik';
 }
 @media screen and (max-width: 800px) {
-  .home-modal-item {
-    font-size: 18px;
-    letter-spacing: -1px;
+  .carousal-item {
+    font-size: 20px;
+    letter-spacing: 0px;
   }
 }
 

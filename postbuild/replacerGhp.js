@@ -11,8 +11,8 @@ const optionsJs = {
 };
 const optionsHtml = {
   files: './out/*.html',
-  from: [/_next\/static/g, /ens-white.png/g],
-  to: ['ccip2-eth-client/_next/static', 'ccip2-eth-client/ens-white.png'],
+  from: [/_next\/static/g, /ens-red.png/g],
+  to: ['ccip2-eth-client/_next/static', 'ccip2-eth-client/ens-red.png'],
 };
 (async function () {
   try {

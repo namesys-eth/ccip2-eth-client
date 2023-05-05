@@ -368,7 +368,8 @@ const Account: NextPage = () => {
                 alignItems: 'center'
               }}
             >
-              {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
+              {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span>
+              <span className="material-icons">info</span>
             </div>
           </button>
           <button
@@ -405,18 +406,16 @@ const Account: NextPage = () => {
         </div>
         <div
           style={{
-            marginRight: !isMobile ? '15px': '0',
-            paddingRight: '10px'
+            marginRight: !isMobile ? '40px': '0px',
           }}
         >
           <button
-            className='button clear'
+            className='button'
             onClick={() => { window.location.href = '/' }}
             style={{ 
-              marginRight: 15,
               marginTop: 12
             }}
-            data-tooltip='My Names'
+            data-tooltip='Homepage'
           >
             <div
               style={{
@@ -432,8 +431,7 @@ const Account: NextPage = () => {
         </div>
         <div
           style={{
-            marginRight: !isMobile ? '15px': '0',
-            paddingRight: '10px'
+            marginRight: !isMobile ? '24px': '0px'
           }}
         >
           <Ticker variable={ savings }/>
@@ -460,7 +458,7 @@ const Account: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens-red.png"
+                    src="ens-pink.png"
                   />
                   <h4
                     style={{
@@ -487,7 +485,7 @@ const Account: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens-red.png"
+                    src="ens-pink.png"
                   />
                   <h4
                     style={{
@@ -499,12 +497,7 @@ const Account: NextPage = () => {
                 </div>
               )}
               {isMobile && isConnected && (
-                <div>
-                  <img
-                    className="icon-ens"
-                    alt="sample-icon"
-                    src="ens-red.png"
-                  />
+                <div style={{ marginTop: '0px' }}>
                   <h4
                     style={{
                       fontSize: 18,
@@ -527,7 +520,7 @@ const Account: NextPage = () => {
                   <ul>
                     {carousal.map((item, index) => (
                       <li className={`anim${index + 1}`} key={index}>
-                        <div className="home-modal-item">
+                        <div className="carousal-item">
                           <div dangerouslySetInnerHTML={{ __html: item }}></div>
                         </div>
                       </li>
@@ -923,7 +916,8 @@ const Account: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: '47%',
+              left: '50%',
+              transform: 'translateX(-50%)',
               bottom: 10,
               alignItems: 'center',
               justifyContent: 'center',

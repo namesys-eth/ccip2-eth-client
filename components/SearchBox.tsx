@@ -33,10 +33,16 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
       }}
       onSubmit={handleFormSubmit}
     >
-      <div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexDirection: 'row'
+        }}
+      >
         <input
           type="text"
-          placeholder="search .eth"
+          placeholder={"search .eth name".toLowerCase()}
           value={query}
           name=".eth search"
           id="eth-search"
@@ -50,14 +56,22 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
         <button 
           className="button"
           style={{
-            height: '30px',
+            height: '38px',
             width: '50px',
-            marginLeft: '20px'
+            marginLeft: '15px'
           }}
           type="submit"
           data-tooltip='Search'
         >
-          Go
+          <span 
+            className="material-icons"
+            style={{
+              fontSize: '22px',
+              fontWeight: '700'
+            }}
+          >
+            search
+          </span>
         </button>
       </div>
     </form>

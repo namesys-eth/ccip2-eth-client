@@ -341,15 +341,13 @@ const Home: NextPage = () => {
         { isConnected && (
           <div
             style={{
-              marginRight: !isMobile ? '15px': '0',
-              paddingRight: '10px'
+              marginRight: !isMobile ? '40px': '20px',
             }}
           >
             <button
               className='button'
               onClick={() => { window.location.href = '/account' }}
               style={{ 
-                marginRight: 15,
                 marginTop: 12
               }}
               data-tooltip='My Names'
@@ -369,8 +367,7 @@ const Home: NextPage = () => {
         )}
         <div
           style={{
-            marginRight: !isMobile ? '15px': '0',
-            paddingRight: '10px'
+            marginRight: !isMobile ? '24px': '4px'
           }}
         >
           <Ticker variable={ savings }/>
@@ -393,17 +390,18 @@ const Home: NextPage = () => {
                 textAlign: 'center'
               }}>
               {!isMobile && (
-                <div>
+                <div style={{ marginTop: '-20px' }}>
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens-red.png"
+                    src="ens-pink.png"
                   />
                   <h4
                     style={{
                       fontSize: onSearch ? '28px' : '36px',
                       color: '#fc6603'
-                    }}>
+                    }}
+                  >
                     Off-chain Records Manager
                   </h4>
                 </div>
@@ -413,15 +411,17 @@ const Home: NextPage = () => {
                   <img
                     className="icon-ens"
                     alt="sample-icon"
-                    src="ens-red.png"
+                    src="ens-pink.png"
                   />
-                  <h4
+                  <div
                     style={{
-                      fontSize: onSearch ? '20px' : '26px',
+                      fontSize: onSearch ? '20px' : '24px',
+                      fontWeight: 700,
                       color: '#fc6603'
-                    }}>
+                    }}
+                  >
                     Off-chain Records Manager
-                  </h4>
+                  </div>
                 </div>
               )}
             </div>
@@ -447,7 +447,7 @@ const Home: NextPage = () => {
                     <ul>
                       {carousal.map((item, index) => (
                         <li className={`anim${index + 1}`} key={index}>
-                          <div className="home-modal-item">
+                          <div className="carousal-item">
                             <div dangerouslySetInnerHTML={{ __html: item }}></div>
                           </div>
                         </li>
@@ -560,7 +560,8 @@ const Home: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: '47%',
+              left: '50%',
+              transform: 'translateX(-50%)',
               bottom: 10,
               alignItems: 'center',
               justifyContent: 'center',
