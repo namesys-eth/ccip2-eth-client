@@ -1,5 +1,6 @@
 import React from "react";
 import Help from './Help'
+import * as lang from '../utils/languages'
 
 interface ListItem {
   key: number;
@@ -70,7 +71,12 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                           fontFamily: 'SF Mono',
                           letterSpacing: '-0px',
                           fontWeight: '600',
-                          fontSize: '21px'
+                          fontSize: lang.arabic.includes(char) ||
+                            lang.hindi.includes(char) || 
+                            lang.persian.includes(char) ||
+                            lang.chinese.includes(char) || 
+                            lang.korean.includes(char)
+                            ? '24px' : '21px'
                         }}
                       >
                         { char }
