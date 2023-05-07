@@ -118,7 +118,7 @@ const Home: NextPage = () => {
       type: 'gas'
     };
     try {
-      await fetch(
+      const response = await fetch(
         "https://sshmatrix.club:3003/gas",
         {
           method: "post",
@@ -126,16 +126,14 @@ const Home: NextPage = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(request)
-        })
-        .then(response => response.json())
-        .then(data => {
-          return data.response.gas
-        })
-    } catch(error) {
+        }
+      );
+      const data = await response.json();
+      return data.response.gas;
+    } catch (error) {
       console.log('Failed to get gas data from CCIP2 backend')
-      return ''
+      return '';
     }
-    return ''
   }
 
   React.useEffect(() => {
@@ -603,9 +601,7 @@ const Home: NextPage = () => {
                 chain={alchemyConfig.chainId}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
-              >
-                { true }
-              </Preview>
+              />
             )}
             <Faq
               onClose={() => setFaqModal(false)}
@@ -625,7 +621,7 @@ const Home: NextPage = () => {
               show={errorModal && searchType === 'search' && manager && !loading}
               title={'block'}
             >
-              {'not owner or manager'}
+              {'Not Owner or Manager'}
             </Error>
             <Help
                 color={ color }

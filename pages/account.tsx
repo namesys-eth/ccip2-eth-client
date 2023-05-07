@@ -24,6 +24,7 @@ import Loading from '../components/Loading'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
 
+const zeroAddress = '0x' + '0'.repeat(40)
 const network = process.env.NEXT_PUBLIC_NETWORK
 const alchemyConfig = {
   apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
@@ -120,7 +121,7 @@ const Account: NextPage = () => {
       type: 'gas'
     };
     try {
-      await fetch(
+      const response = await fetch(
         "https://sshmatrix.club:3003/gas",
         {
           method: "post",
@@ -128,17 +129,23 @@ const Account: NextPage = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(request)
-        })
-        .then(response => response.json())
-        .then(data => {
-          return data.response.gas
-        })
-    } catch(error) {
+        }
+      );
+      const data = await response.json();
+      return data.response.gas;
+    } catch (error) {
       console.log('Failed to get gas data from CCIP2 backend')
-      return ''
+      return '';
     }
-    return ''
   }
+
+  React.useEffect(() => {
+    const getSaving = async () => {
+      const _savings = await getSavings()
+      setSavings(_savings)
+    }
+    getSaving()
+  }, []);
 
   const logTokens = useCallback(async () => {
     const nfts = await alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
@@ -175,14 +182,6 @@ const Account: NextPage = () => {
       await logTokens()
     }
   }, [accountData, logTokens])
-
-  React.useEffect(() => {
-    const getSaving = async () => {
-      const _savings = await getSavings()
-      setSavings(_savings)
-    }
-    getSaving()
-  }, []);
 
   React.useEffect(() => {
     setLoading(true)
@@ -236,9 +235,9 @@ const Account: NextPage = () => {
   )
 
   React.useEffect(() => {
-    if (controller && controller?.toString() !== '0x' + '0'.repeat(40)) {
+    if (controller && controller?.toString() !== zeroAddress) {
       setManager(controller.toString())
-    } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
+    } else if (owner && controller?.toString() === zeroAddress) {
       setManager(owner.toString())
     } else if (tab !== 'owner') {
       setTimeout(() => {
@@ -979,9 +978,7 @@ const Account: NextPage = () => {
                 chain={alchemyConfig.chainId}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
-              >
-                { true }
-              </Preview>
+              />
             )}
             <Faq
               onClose={() => setFaqModal(false)}

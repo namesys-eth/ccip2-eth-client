@@ -18,7 +18,8 @@ import {
   useFeeData,
   useContractWrite,
   useSignMessage,
-  useWaitForTransaction
+  useWaitForTransaction,
+  useContractRead
 } from 'wagmi'
 /*
 import {
@@ -40,7 +41,6 @@ interface ModalProps {
   chain: string,
   show: boolean;
   onClose: any;
-  children: any;
   handleParentModalData: (data: boolean) => void;
   handleParentTrigger: (data: boolean) => void;
 }
@@ -101,7 +101,7 @@ function checkImageURL(url: string) {
   });
 }
 
-const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, handleParentModalData, handleParentTrigger }) => {
+const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
   const [browser, setBrowser] = React.useState(false);
   const { data: gasData, isError } = useFeeData()
   const [loading, setLoading] = React.useState(true);
@@ -117,6 +117,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const [addr, setAddr] = React.useState('');
   //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState('');
+  const [tokenID, setTokenID] = React.useState('')
+  const [manager, setManager] = React.useState('')
   const [contenthash, setContenthash] = React.useState('');
   const [name, setName] = React.useState('');
   const [salt, setSalt] = React.useState(false);
@@ -163,6 +165,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const web3 = new Web3(alchemyEndpoint);
   let caip10 = `eip155:${chain}:${accountData?.address}`
   let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${_ENS_}\nSIGNED BY: ${caip10}`
+  let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_.split('.eth')[0]))
+  let token = ethers.BigNumber.from(labelhash)
+  const zeroAddress = '0x' + '0'.repeat(40)
       
   const handleModalData = (data: string | undefined) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
@@ -170,6 +175,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   const handleTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
+
+  const { data: controller } = useContractRead(
+    constants.ensConfig[1],
+    'getApproved',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
+  
+  const { data: owner } = useContractRead(
+    constants.ensConfig[1],
+    'ownerOf',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
 
   const handleSuccess = () => {
     handleParentModalData(true);
@@ -185,6 +210,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
   React.useEffect(() => {
     setBrowser(true) 
     if (browser) {
+      setTokenID(token.toString())
       getResolver()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,6 +251,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypair]);
+
+  React.useEffect(() => {
+    if (controller && controller?.toString() !== zeroAddress) {
+      setManager(controller.toString())
+    } else if (owner && controller?.toString() === zeroAddress) {
+      setManager(owner.toString())
+    }
+  }, [tokenID, controller, owner])
 
   const {
     data: response,
@@ -302,7 +336,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
         } else {
           return { 
             ...item, 
-            label: 'edit'
+            label: item.type !== 'resolver' ? 'edit' : 'migrate'
           };
         }
       });
@@ -423,7 +457,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
       revision: Revision.encode(revision),
       chain: chain,
       gas: JSON.stringify(gas), 
-      version: JSON.stringify(revision)
+      version: JSON.stringify(revision, (key, value) => {
+        return typeof value === 'bigint' ? value.toString() : value;
+      })
     }
     try {
       await fetch(
@@ -678,7 +714,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
               body: JSON.stringify(request)
             })
             .then(response => response.json())
-            .then(data => {
+            .then(async data => {
               setMessage('Publishing to IPNS')
               if (keypair && data.response) {	
                 // @dev : get gas consumption estimate	
@@ -699,6 +735,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                     }	
                   }	
                 })	
+                // @dev: wait for gas to be estimated
+                await new Promise<void>(resolve => {
+                  const checkGas = () => {
+                    if (Object.keys(gas).length > 0) {
+                      resolve()
+                    } else {
+                      setTimeout(checkGas, 100)
+                    }
+                  }
+                  checkGas()
+                })
                 // handle w3name publish 
                 let key = '08011240' + keypair[0] + keypair[1]
                 let w3name: Name.WritableName
@@ -707,7 +754,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                   const pin = async () => {
                     if (data.response.ipfs && w3name) {
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
-                      // w3name broadcast
+                      // @dev : w3name broadcast
                       let _revision: Name.Revision;
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
@@ -715,21 +762,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                         let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
                         _revision = await Name.increment(_revision_, toPublish)
                       }
+                      // @dev : write revision to database
                       await writeRevision(_revision, gas)
+                      // @dev : publish IPNS
                       await Name.publish(_revision, w3name.key)
-                      if (gas) {
-                        setGas(gas)
-                        setTimeout(() => {
-                          setGasModal(true)
-                          setLoading(false)
-                          setCID('')
-                          setKeypair(undefined)
-                          states.map((_state) => {
-                            setStates(prevState => prevState.filter(item => item !== _state))
-                          })
-                          setLegit(EMPTY_BOOL())
-                        }, 2000);
-                      }
+                      // @dev : wrap up
+                      setGas(gas)
+                      setTimeout(() => {
+                        setGasModal(true)
+                        setLoading(false)
+                        setCID('')
+                        setKeypair(undefined)
+                        states.map((_state) => {
+                          setStates(prevState => prevState.filter(item => item !== _state))
+                        })
+                        setLegit(EMPTY_BOOL())
+                      }, 2000);
                       const _updatedList = list.map((item) => {
                         if (item.type !== 'resolver' && data.response.meta[item.type]) {
                           return { 
@@ -746,7 +794,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                       setNewValues(EMPTY_STRING())
                     }
                   }
-                  pin()
+                  if (Object.keys(gas).length > 0) {
+                    pin()
+                  }
                 }
                 keygen()
               }
@@ -1109,7 +1159,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, children, 
                           !list[item.key].active ||
                           !legit[item.type] ||
                           item.state ||
-                          !accountData
+                          !accountData ||
+                          accountData?.address !== manager
                         }
                         style={{
                           alignSelf: 'flex-end',
