@@ -1,11 +1,8 @@
 import React from 'react'
 import { useCallback } from 'react'
 import Head from 'next/head'
-import Link from 'next/link'
-import Image from 'next/image'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
-import { Alchemy, Network } from "alchemy-sdk"
 import {
   useConnect,
   useAccount,
@@ -24,29 +21,7 @@ import Loading from '../components/Loading'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
 
-const zeroAddress = '0x' + '0'.repeat(40)
-const network = process.env.NEXT_PUBLIC_NETWORK
-const alchemyConfig = {
-  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
-  network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
-  chainId: network === 'goerli' ? '5': '1',
-}
-const alchemy = new Alchemy(alchemyConfig)
-const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
-
-interface MainBodyState {
-  modalData: boolean;
-  trigger: boolean;
-}
-
 let metadata: React.SetStateAction<any[]>
-const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
-]
 
 const Account: NextPage = () => {
   const { data: accountData } = useAccount()
@@ -72,7 +47,7 @@ const Account: NextPage = () => {
   const [searchType, setSearchType] = React.useState('')
   const [cache, setCache] = React.useState<any[]>([])
   const [response, setResponse] = React.useState(false)
-  const [modalState, setModalState] = React.useState<MainBodyState>({
+  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
     modalData: false,
     trigger: false
   });
@@ -148,7 +123,7 @@ const Account: NextPage = () => {
   }, []);
 
   const logTokens = useCallback(async () => {
-    const nfts = await alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
+    const nfts = await constants.alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
     const allTokens = nfts.ownedNfts
     var allEns: string[] = []
     var items: any[] = []
@@ -158,7 +133,7 @@ const Account: NextPage = () => {
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
-        const response = await provider.getResolver(allTokens[i].title)
+        const response = await constants.provider.getResolver(allTokens[i].title)
         items.push({
           'key': count,
           'name': allTokens[i].title.split('.eth')[0],
@@ -235,9 +210,9 @@ const Account: NextPage = () => {
   )
 
   React.useEffect(() => {
-    if (controller && controller?.toString() !== zeroAddress) {
+    if (controller && controller?.toString() !== constants.zeroAddress) {
       setManager(controller.toString())
-    } else if (owner && controller?.toString() === zeroAddress) {
+    } else if (owner && controller?.toString() === constants.zeroAddress) {
       setManager(owner.toString())
     } else if (tab !== 'owner') {
       setTimeout(() => {
@@ -254,7 +229,7 @@ const Account: NextPage = () => {
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
       const setMetadata = async () => {
-        provider.getResolver(query)
+        constants.provider.getResolver(query)
           .then((response) => {
             items.push({
               'key': 1,
@@ -474,6 +449,15 @@ const Account: NextPage = () => {
                   />
                   <h4
                     style={{
+                      fontSize: '70px',
+                      color: '#fc6603',
+                      marginBottom: '20px'
+                    }}
+                  >
+                    NameSys
+                  </h4>
+                  <h4
+                    style={{
                       fontSize: 26,
                       color: '#fc6603'
                     }}>
@@ -495,6 +479,15 @@ const Account: NextPage = () => {
                   />
                   <h4
                     style={{
+                      fontSize: '52px',
+                      color: '#fc6603',
+                      marginBottom: '20px' 
+                    }}
+                  >
+                    NameSys
+                  </h4>
+                  <h4
+                    style={{
                       fontSize: 22,
                       color: '#fc6603'
                     }}>
@@ -511,6 +504,15 @@ const Account: NextPage = () => {
                   />
                   <h4
                     style={{
+                      fontSize: '52px',
+                      color: '#fc6603',
+                      marginBottom: '20px' 
+                    }}
+                  >
+                    NameSys
+                  </h4>
+                  <h4
+                    style={{
                       fontSize: 26,
                       color: '#fc6603'
                     }}>
@@ -521,7 +523,7 @@ const Account: NextPage = () => {
               {isMobile && isConnected && (
                 <div 
                   style={{ 
-                    marginTop: '-25px',
+                    marginTop: '-50px',
                     marginBottom: '20px' 
                   }}
                 >
@@ -530,6 +532,15 @@ const Account: NextPage = () => {
                     alt="sample-icon"
                     src="logo.png"
                   />
+                  <h4
+                    style={{
+                      fontSize: '40px',
+                      color: '#fc6603',
+                      marginBottom: '20px' 
+                    }}
+                  >
+                    NameSys
+                  </h4>
                   <h4
                     style={{
                       fontSize: 18,
@@ -550,7 +561,7 @@ const Account: NextPage = () => {
               <div className="content-slider"><div className="slider">
                 <div className="mask">
                   <ul>
-                    {carousal.map((item, index) => (
+                    {constants.carousal.map((item, index) => (
                       <li className={`anim${index + 1}`} key={index}>
                         <div className="carousal-item">
                           <div dangerouslySetInnerHTML={{ __html: item }}></div>
@@ -975,7 +986,7 @@ const Account: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
-                chain={alchemyConfig.chainId}
+                chain={constants.alchemyConfig.chainId}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
               />
