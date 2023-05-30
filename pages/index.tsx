@@ -1,9 +1,7 @@
 import React from 'react'
-import { useCallback } from 'react'
 import Head from 'next/head'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
-import { Alchemy, Network } from "alchemy-sdk"
 import {
   useConnect,
   useAccount,
@@ -22,28 +20,7 @@ import Loading from '../components/Loading'
 import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
 
-const network = process.env.NEXT_PUBLIC_NETWORK
-const alchemyConfig = {
-  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
-  network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
-  chainId: network === 'goerli' ? '5': '1',
-}
-const alchemy = new Alchemy(alchemyConfig)
-const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
-
-interface MainBodyState {
-  modalData: boolean;
-  trigger: boolean;
-}
-
 let metadata: React.SetStateAction<any[]>
-const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
-]
 
 const Home: NextPage = () => {
   const { data: accountData } = useAccount()
@@ -69,7 +46,7 @@ const Home: NextPage = () => {
   const [cache, setCache] = React.useState<any[]>([])
   const [response, setResponse] = React.useState(false)
   const [onSearch, setOnSearch] = React.useState(false)
-  const [modalState, setModalState] = React.useState<MainBodyState>({
+  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
     modalData: false,
     trigger: false
   });
@@ -198,7 +175,7 @@ const Home: NextPage = () => {
     var items: any[] = []
     allEns.push(query.split('.eth')[0])
     const setMetadata = async () => {
-      provider.getResolver(query)
+      constants.provider.getResolver(query)
         .then((response) => {
           items.push({
             'key': 1,
@@ -267,7 +244,7 @@ const Home: NextPage = () => {
         </div>
       )}
       <Head>
-        <title>CCIP2 - Off-chain Records Manager</title>
+        <title>NameSys - Off-Chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
@@ -409,6 +386,15 @@ const Home: NextPage = () => {
                   />
                   <h4
                     style={{
+                      fontSize: onSearch ? '40px' : '70px',
+                      color: '#fc6603',
+                      marginBottom: '10px'
+                    }}
+                  >
+                    NameSys
+                  </h4>
+                  <h4
+                    style={{
                       fontSize: onSearch ? '28px' : '36px',
                       color: '#fc6603'
                     }}
@@ -424,6 +410,14 @@ const Home: NextPage = () => {
                     alt="sample-icon"
                     src="logo.png"
                   />
+                  <h4
+                    style={{
+                      fontSize: onSearch ? '28px' : '40px',
+                      color: '#fc6603'
+                    }}
+                  >
+                    NameSys
+                  </h4>
                   <div
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
@@ -456,7 +450,7 @@ const Home: NextPage = () => {
                 <div className="slider">
                   <div className="mask">
                     <ul>
-                      {carousal.map((item, index) => (
+                      {constants.carousal.map((item, index) => (
                         <li className={`anim${index + 1}`} key={index}>
                           <div className="carousal-item">
                             <div dangerouslySetInnerHTML={{ __html: item }}></div>
@@ -598,7 +592,7 @@ const Home: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
-                chain={alchemyConfig.chainId}
+                chain={constants.alchemyConfig.chainId}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
               />

@@ -50,13 +50,13 @@ const forbidden = [
   'resolver',
   'name'
 ]
-
 const types = [
+  'resolver',
 	'name',
 	'addr',
 	'contenthash',
 	'avatar',
-  'resolver',
+  'zonehash',
 	'revision'
 ] 
 
@@ -258,6 +258,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     } else if (owner && controller?.toString() === zeroAddress) {
       setManager(owner.toString())
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenID, controller, owner])
 
   const {

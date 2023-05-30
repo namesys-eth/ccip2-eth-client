@@ -86,12 +86,12 @@ const { chains, provider } = configureChains(
 );
 
 const { connectors } = getDefaultWallets({
-  appName: 'CCIP2.eth',
+  appName: 'NameSys',
   chains,
 });
 
 const appInfo = {
-  appName: 'CCIP2.eth: Off-chain ENS Records Manager',
+  appName: 'NameSys: Off-chain ENS Records Manager',
 };
 
 const wagmiClient = createClient({
