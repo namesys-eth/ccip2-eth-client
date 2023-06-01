@@ -3,6 +3,7 @@ import { ethers } from 'ethers'
 import iEnsRegistry from '../contract-abi-ensRegistry.json'
 import iEnsRegistrar from '../contract-abi-ensRegistrar.json'
 import iEnsResolver from '../contract-abi-ensResolver.json'
+import iCCIP2 from '../contract-abi-ccip2.json'
 
 export interface MainBodyState {
   modalData: boolean;
@@ -16,7 +17,7 @@ export const alchemyConfig = {
 }
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
-export const ccip2 = '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec'
+export const ccip2 = '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec' // CCIP2 Resolver
 export const zeroAddress = '0x' + '0'.repeat(40)
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // v1 Registry
@@ -35,6 +36,9 @@ export const ensInterface = [
   iEnsRegistrar,
   iEnsResolver
 ]
+export const ccip2Interface = [
+  iCCIP2
+]
 export const ensConfig = [
   {
     addressOrName: ensContracts[0],
@@ -47,6 +51,12 @@ export const ensConfig = [
   {
     addressOrName: ensContracts[2],
     contractInterface: ensInterface[2]
+  }
+]
+export const ccip2Config = [
+  {
+    addressOrName: ccip2,
+    contractInterface: ccip2Interface[0]
   }
 ]
 
