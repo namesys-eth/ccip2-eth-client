@@ -60,4 +60,30 @@ export const ccip2Config = [
   }
 ]
 
+// Uneditable records in Preview modal
+export const forbidden = [
+  'resolver',
+  'name'
+]
+// Record types in Preview modal
+export const types = [
+  'resolver',
+	'name',
+	'addr',
+	'contenthash',
+	'avatar',
+  'zonehash',
+	'revision'
+] 
+// Record filenames corresponding to record types
+export const files = [
+  '',
+	'name',
+	'_address/60',
+	'contenthash',
+	'text/avatar',
+	'_dnsrecord/zonehash',
+	'revision'
+] 
+
 

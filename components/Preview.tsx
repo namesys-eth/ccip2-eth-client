@@ -49,37 +49,11 @@ interface ModalProps {
   handleParentTrigger: (data: boolean) => void;
 }
 
-// Uneditable records in Preview modal
-const forbidden = [
-  'resolver',
-  'name'
-]
-// Record types in Preview modal
-const types = [
-  'resolver',
-	'name',
-	'addr',
-	'contenthash',
-	'avatar',
-  'zonehash',
-	'revision'
-] 
-// Record filenames corresponding to record types
-const files = [
-  '',
-	'name',
-	'_address/60',
-	'contenthash',
-	'text/avatar',
-	'_dnsrecord/zonehash',
-	'revision'
-] 
-
 /// Init 
 // Types object with empty strings
 function EMPTY_STRING() {
   const EMPTY_STRING = {};
-  for (const key of types) {
+  for (const key of constants.types) {
     if (key !== 'resolver') {
       EMPTY_STRING[key] = '';
     }
@@ -90,7 +64,7 @@ function EMPTY_STRING() {
 // Types object with empty bools
 function EMPTY_BOOL() {
   const EMPTY_BOOL = {};
-  for (const key of types) {
+  for (const key of constants.types) {
     EMPTY_BOOL[key] = ['resolver'].includes(key) ? true : false;
   }
   return EMPTY_BOOL
@@ -177,7 +151,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [getch, setGetch] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in LIST[] format
+  const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState('Loading Records'); // Sets message for the loading state
@@ -218,6 +192,63 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   let token = ethers.BigNumber.from(labelhash)
   const zeroAddress = '0x' + '0'.repeat(40)
 
+  // Initialises internal LIST[] object
+  function setMetadata() {
+    let _LIST = [
+      {
+        key: 0,
+        type: 'name',
+        value: name,
+        editable: false,
+        active: false,
+        state: false,
+        label: 'edit',
+        help: 'off-chain reverse record feature not available'
+      },
+      {
+        key: 1,
+        type: 'resolver',
+        value: resolver,
+        editable: false,
+        active: resolver !== constants.ccip2,
+        state: false,
+        label: 'migrate',
+        help: 'please migrate resolver to enjoy off-chain records'
+      },
+      {
+        key: 2,
+        type: 'avatar',
+        value: avatar,
+        editable: resolver === constants.ccip2,
+        active: isAvatar(avatar),
+        state: false,
+        label: 'edit',
+        help: 'set your avatar'
+      },
+      {
+        key: 3,
+        type: 'addr',
+        value: addr,
+        editable: resolver === constants.ccip2,
+        active: isAddr(addr),
+        state: false,
+        label: 'edit',
+        help: 'set your default address'
+      },
+      {
+        key: 4,
+        type: 'contenthash',
+        value: contenthash,
+        editable: resolver === constants.ccip2,
+        active: isContenthash(contenthash),
+        state: false,
+        label: 'edit',
+        help: 'set your web contenthash'
+      }
+    ]
+    finishQuery(_LIST)
+  }
+
   // Signature S1 statement; S1(K1)
   function statementIPNSKey() {
     return `Requesting Signature For IPNS Key Generation\n\nUsername: ${_ENS_}\nSigned By: ${caip10}`
@@ -233,23 +264,29 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Generate Record Type suffix
-  function genRecordType(_states: any[]) {
-    // TODO : Add Record Type routine
+  function genRecordType(_recordType: string) {
     // return suffixes of filenames
-    return '[record1.json, _here/record2.json, there/record3.json]'
+    return constants.files[constants.types.indexOf(_recordType)]
   }
 
-  //
-  function genExtradata(_states: any[]) {
+  // Generate extradata
+  function genExtradata(_recordType: string) {
     // TODO : Add extradata routine
     // return bytesToHexString(abi.encodePacked(keccak256(result)))
-    return '0x00'
+    return '0x0'
   }
 
-  function _signMessage(input: any) {
-    // TODO : Add secp256k1 signature scheme
-    let message = input.message
-    return '0x00'
+  // Signature S2 with K0
+  async function _signMessage(input: any) {
+    if (keypair) {
+      const SignS2 = async () => {
+        const _signer = new ethers.Wallet('0x' + keypair[1][0], provider)
+        const __signature = await _signer.signMessage(input.message) 
+        if (__signature) return __signature
+      }
+      const _signature = SignS2() 
+      return _signature
+    }
   }
       
   // Handle secondary modal data return
@@ -619,6 +656,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         })
     } catch(error) {
       console.log('Failed to write Revision to CCIP2 backend')
+      setMessage('Record Update Failed')
+      setCrash(true)
     }
   }
 
@@ -735,63 +774,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish]);
 
-  // Initialises internal LIST[] object
-  function setMetadata() {
-    let data = [
-      {
-        key: 0,
-        type: 'name',
-        value: name,
-        editable: false,
-        active: false,
-        state: false,
-        label: 'edit',
-        help: 'off-chain reverse record feature not available'
-      },
-      {
-        key: 1,
-        type: 'resolver',
-        value: resolver,
-        editable: false,
-        active: resolver !== constants.ccip2,
-        state: false,
-        label: 'migrate',
-        help: 'please migrate resolver to enjoy off-chain records'
-      },
-      {
-        key: 2,
-        type: 'avatar',
-        value: avatar,
-        editable: resolver === constants.ccip2,
-        active: isAvatar(avatar),
-        state: false,
-        label: 'edit',
-        help: 'set your avatar'
-      },
-      {
-        key: 3,
-        type: 'addr',
-        value: addr,
-        editable: resolver === constants.ccip2,
-        active: isAddr(addr),
-        state: false,
-        label: 'edit',
-        help: 'set your default address'
-      },
-      {
-        key: 4,
-        type: 'contenthash',
-        value: contenthash,
-        editable: resolver === constants.ccip2,
-        active: isContenthash(contenthash),
-        state: false,
-        label: 'edit',
-        help: 'set your web contenthash'
-      }
-    ]
-    finishQuery(data)
-  }
-
   // Wagmi hook for awaiting transaction processing
   const { isSuccess: txSuccess, isError: txError, isLoading: txLoading } = useWaitForTransaction({
     hash: response?.hash,
@@ -800,7 +782,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
     const _updatedList = list.map((item) => {
-      if (states.includes(item.type) && !forbidden.includes(item.type)) {
+      if (states.includes(item.type) && !constants.forbidden.includes(item.type)) {
         return { 
           ...item, 
           editable: true, 
@@ -825,7 +807,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
-  // Handles Signature (S1) prompt Resolver is migrated
+  // Handles Signature (S1) prompt when Resolver is to be migrated
   // in the Preview modal
   React.useEffect(() => {
     if (getch) { // Check for false → true
@@ -836,30 +818,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalState, getch]);
 
-  // Handles Signature (S2) prompt when Records are updated
-  // in the Preview modal
-  React.useEffect(() => {
-    if (getch) { // check for false → true
-      // handle record update trigger
-      _signMessage({ message: statementRecords(genRecordType(states), genExtradata(states)) }) // sign with K0
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getch]);
-
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
-    const request = {
-      signature: sigIPNS,
-      ens: _ENS_,
-      address: recoveredAddress.current,
-      ipns: CID,
-      recordsTypes: states,
-      recordsValues: newValues,
-      revision: history.revision,
-      chain: chain
-    }
-    if (write && keypair && CID && sigIPNS) {
-      //console.log(request)
+    // Handle Signature (S2) to add as extradata
+    let signatures: string[] = []
+    states.forEach(async (recordType) => {
+      const _signature = await _signMessage({ message: statementRecords(genRecordType(recordType), genExtradata(recordType)) })
+      console.log(_signature)
+      signatures.push(_signature!) // Sign with K0
+    });
+    if (write && keypair && signatures.length > 0) {
+      // Generate POST request for writing records
+      const request = {
+        signatures: signatures,
+        ens: _ENS_,
+        address: recoveredAddress.current,
+        ipns: CID,
+        recordsTypes: states,
+        recordsValues: newValues,
+        revision: history.revision,
+        chain: chain
+      }
+      console.log(request)
       const editRecord = async () => {
         setMessage('Writing Records')
         try {
@@ -962,6 +942,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
         } catch(error) {
           console.log('Failed to write to CCIP2 backend')
+          setMessage('Record Update Failed')
+          setCrash(true)
         }
       }
       editRecord()
@@ -979,7 +961,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (isMigrateSuccess && txSuccess && migration) {
       setResolver(constants.ccip2)
       const _updatedList = list.map((item) => {
-        if (forbidden.includes(item.type)) {
+        if (constants.forbidden.includes(item.type)) {
           return { 
             ...item, 
             editable: false, 
@@ -1336,9 +1318,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         onClick={() => { 
                           setTrigger(item.key),
                           setMessage('Waiting for Signature'),
-                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true), // Trigger R1
-                          ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger R2
-                          ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Trigger R3
+                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true), // Prompt password for Resolver; derive S2(K0) for Records
+                          ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger write for Records
+                          ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
                         }}
                         data-tooltip={ item.help }
                       >
