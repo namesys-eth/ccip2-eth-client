@@ -314,7 +314,7 @@ input[type="text"] {
   border-radius: 2px;
   position: absolute;
   top: -40%;
-  left: 5%;
+  left: -25%;
   transform: translateX(-50%);
   white-space: nowrap;
   visibility: visible;

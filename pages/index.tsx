@@ -20,8 +20,7 @@ import Loading from '../components/Loading'
 import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
 
-let metadata: React.SetStateAction<any[]>
-
+/// Homepage
 const Home: NextPage = () => {
   const { data: accountData } = useAccount()
   const { isConnected } = useConnect()
@@ -51,15 +50,18 @@ const Home: NextPage = () => {
     trigger: false
   });
 
+  let metadata: React.SetStateAction<any[]>
+
+  // Handle Preview modal data return
   const handleParentModalData = (data: boolean) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
   };
+  // Handle Preview modal trigger return
   const handleParentTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
-  /* @dev : GraphQL Instance
-  /// we need our own subgraph for this
+  /* GraphQL instance; need subgraph for this
   const logNames = useCallback(async () => {
     let EnsQuery = await fetch(EnsGraphApi, {
       method: "POST",
@@ -90,6 +92,7 @@ const Home: NextPage = () => {
   }, [accountData])
   */
 
+  // Get historical gas savings
   async function getSavings() {
     const request = {
       type: 'gas'
@@ -108,11 +111,12 @@ const Home: NextPage = () => {
       const data = await response.json();
       return data.response.gas;
     } catch (error) {
-      console.log('Failed to get gas data from CCIP2 backend')
+      console.log('Failed to get gas data from NameSys backend')
       return '';
     }
   }
 
+  // Load historical gas savings on pageload
   React.useEffect(() => {
     const getSaving = async () => {
       const _savings = await getSavings()
@@ -121,6 +125,7 @@ const Home: NextPage = () => {
     getSaving()
   }, []);
 
+  // Preserve metadata across pageloads
   React.useEffect(() => {
     const handleBeforeUnload = () => {
       metadata = meta
@@ -131,11 +136,14 @@ const Home: NextPage = () => {
     }
   }, [meta])
 
+  // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
     setPreviewModal(true);
     setNameToPreview(name);
   }
 
+  /// ENS Domain Search Functionality
+  // Read ENS Legacy Registry for Controller record of ENS domain
   const { data: controller } = useContractRead(
     constants.ensConfig[1],
     'getApproved',
@@ -146,6 +154,7 @@ const Home: NextPage = () => {
     }
   )
 
+  // Read ENS Legacy Registry for Owner record of ENS domain
   const { data: owner } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
@@ -156,6 +165,7 @@ const Home: NextPage = () => {
     }
   )
 
+  // Set in-app manager for the ENS domain
   React.useEffect(() => {
     if (controller && controller?.toString() !== '0x' + '0'.repeat(40)) {
       setManager(controller.toString())
@@ -169,6 +179,7 @@ const Home: NextPage = () => {
     }
   }, [tokenID, controller, owner])
 
+  // Shows search result for ENS domain search
   React.useEffect(() => {
     setResponse(true)
     var allEns: string[] = []
@@ -178,7 +189,7 @@ const Home: NextPage = () => {
       constants.provider.getResolver(query)
         .then((response) => {
           items.push({
-            'key': 1,
+            'key': 1, // Redundant [?]
             'name': query.split('.eth')[0],
             'migrated': response?.address === constants.ccip2
           })
@@ -197,6 +208,7 @@ const Home: NextPage = () => {
     setMetadata()
   }, [query])
 
+  // Sets tokenID for ENS domain search result
   React.useEffect(() => {
     if (query) {
       try {
@@ -209,6 +221,7 @@ const Home: NextPage = () => {
     }
   }, [query])
 
+  // Triggers search of ENS domain
   const handleNameSearch = (query: string) => {
     setLoading(true)
     setSearchType('search')
@@ -245,7 +258,7 @@ const Home: NextPage = () => {
       )}
       <Head>
         <title>NameSys - Off-Chain Records Manager</title>
-        <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
         <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />

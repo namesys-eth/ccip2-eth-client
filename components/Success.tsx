@@ -62,7 +62,7 @@ const StyledModalBody = styled.div`
   padding-top: 0px;
   padding-left: 40px;
   padding-right: 40px;
-  padding-bottom: 40px;
+  padding-bottom: 70px;
   margin-top: 0px;
   margin-left: 40px;
   margin-right: 40px;
@@ -74,7 +74,7 @@ const StyledModalBody = styled.div`
   color: white;
   font-size: 18px;
   font-weight: 700;
-  line-height: 20px;
+  line-height: 22px;
   max-width: 400px;
 `;
 
@@ -98,7 +98,7 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: 60%;
-  height: 150px;
+  height: 170px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;

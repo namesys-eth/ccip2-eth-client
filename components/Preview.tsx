@@ -1,3 +1,4 @@
+/// ENS Domain Preview Modal
 import React from "react"
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
@@ -5,7 +6,7 @@ import { ethers } from 'ethers'
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import { verifyMessage } from 'ethers/lib/utils'
-import LoadingIcons from 'react-loading-icons'
+//import LoadingIcons from 'react-loading-icons'
 import { BiError } from 'react-icons/bi'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
@@ -13,6 +14,11 @@ import Gas from '../components/Gas'
 import Loading from '../components/Loading'
 import Success from '../components/Success'
 import Record from '../components/Record'
+import * as constants from '../utils/constants'
+import { _KEYGEN } from '../utils/keygen'
+import * as Name from 'w3name'
+import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
+import * as ensHash from '@ensdomains/content-hash'
 import {
   useAccount,
   useFeeData,
@@ -20,22 +26,20 @@ import {
   useSignMessage,
   useWaitForTransaction,
   useContractRead
-} from 'wagmi'
-/*
+} from 'wagmi' // Legacy Wagmi 1.6
+/* →
 import {
   usePrepareContractWrite
-} from 'wagmi2'
-*/
-import * as constants from '../utils/constants'
-import { ed25519Keygen } from '../utils/keygen'
-import * as Name from 'w3name'
-import * as ed25519_2 from 'ed25519-2.0.0'
+} from 'wagmi2' // New Wagmi 2.0.0
+*/ 
 
+// State to pass back to homepage
 interface MainBodyState {
   modalData: string | undefined;
   trigger: boolean;
 }
 
+// Modal data to pass back to homepage
 interface ModalProps {
   _ENS_: string,
   chain: string,
@@ -45,11 +49,12 @@ interface ModalProps {
   handleParentTrigger: (data: boolean) => void;
 }
 
-/// @dev : constants
+// Uneditable records in Preview modal
 const forbidden = [
   'resolver',
   'name'
 ]
+// Record types in Preview modal
 const types = [
   'resolver',
 	'name',
@@ -59,7 +64,19 @@ const types = [
   'zonehash',
 	'revision'
 ] 
+// Record filenames corresponding to record types
+const files = [
+  '',
+	'name',
+	'_address/60',
+	'contenthash',
+	'text/avatar',
+	'_dnsrecord/zonehash',
+	'revision'
+] 
 
+/// Init 
+// Types object with empty strings
 function EMPTY_STRING() {
   const EMPTY_STRING = {};
   for (const key of types) {
@@ -70,6 +87,7 @@ function EMPTY_STRING() {
   return EMPTY_STRING
 }
 
+// Types object with empty bools
 function EMPTY_BOOL() {
   const EMPTY_BOOL = {};
   for (const key of types) {
@@ -78,6 +96,7 @@ function EMPTY_BOOL() {
   return EMPTY_BOOL
 }
 
+// History object with empty strings
 const EMPTY_HISTORY = {
   name: '',
   addr: '',
@@ -87,7 +106,8 @@ const EMPTY_HISTORY = {
   type: ''
 }
 
-/// @dev : library
+/// Library
+// Check if image URL resolves
 function checkImageURL(url: string) {
   return new Promise(function(resolve, reject) {
     var img = new Image();
@@ -101,49 +121,79 @@ function checkImageURL(url: string) {
   });
 }
 
+// Returns ed25519/IPNS keypair formatted for sure
+function formatkey(keypair: [[string, string], [string, string]]) {
+  return '08011240' + keypair[0][0] + keypair[0][1] // ed25519 keypair = keypair[0]
+}
+
+// Encode ENS contenthash
+function encodeContenthash(contenthash: string) {
+  const matched = contenthash.match(/^(ipfs|sia|ipns|bzz|onion|onion3|arweave):\/\/(.*)/)
+    || contenthash.match(/\/(ipfs)\/(.*)/)  
+    || contenthash.match(/\/(ipns)\/(.*)/)
+    if (matched) {
+      const contentType = matched[1]
+      const content = matched![2]
+      const ensContentHash = ensHash.contentHash.encode(`${contentType}-ns`, content)
+      return ensContentHash
+    }
+    return ''
+}
+
+/// Preview Modal
+// @input show : Show modal trigger
+// @input onClose : Close modal trigger
+// @input _ENS_ : Native ENS domain for modal
+// @input chain : Chain ID
+// @interface handleParentModalData : Send modal data to Homepage
+// @interface handleParentTrigger : Send modal state to Homepage
 const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
-  const [browser, setBrowser] = React.useState(false);
-  const { data: gasData, isError } = useFeeData()
-  const [loading, setLoading] = React.useState(true);
-  const [pinned, setPinned] = React.useState(false);
-  const [keygen, setKeygen] = React.useState(false);
-  const [crash, setCrash] = React.useState(false);
-  const [CID, setCID] = React.useState('');
-  const [helpModal, setHelpModal] = React.useState(false)
-  const [successModal, setSuccessModal] = React.useState(false)
-  const [gasModal, setGasModal] = React.useState(false);
-  const [finish, setFinish] = React.useState(false)
-  const [resolver, setResolver] = React.useState<any>();
-  const [addr, setAddr] = React.useState('');
+  const [browser, setBrowser] = React.useState(false); // Triggers at modal load
+  const { data: gasData, isError } = useFeeData(); // Current gas prices
+  const [loading, setLoading] = React.useState(true); // Loading process indicator
+  const [migration, setMigration] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
+  const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
+  const [crash, setCrash] = React.useState(false);  // Signature fail indicator
+  const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
+  const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
+  const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
+  const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
+  const [finish, setFinish] = React.useState(false); // Indicates when all records have finished fetching
+  const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
+  const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   //const [addr60, setAddr60] = React.useState('');
-  const [avatar, setAvatar] = React.useState('');
-  const [tokenID, setTokenID] = React.useState('')
-  const [manager, setManager] = React.useState('')
-  const [contenthash, setContenthash] = React.useState('');
-  const [name, setName] = React.useState('');
-  const [salt, setSalt] = React.useState(false);
-  const [list, setList] = React.useState<any[]>([]);
-  const [trigger, setTrigger] = React.useState(null);
-  const [help, setHelp] = React.useState('');
-  const [success, setSuccess] = React.useState('');
-  const [gas, setGas] = React.useState<{}>({});
-  const [keypair, setKeypair] = React.useState<[string, string]>()
-  const [getch, setGetch] = React.useState(false);
-  const [write, setWrite] = React.useState(false);
-  const [states, setStates] = React.useState<any[]>([]);
-  const [icon, setIcon] = React.useState('');
-  const [color, setColor] = React.useState('');
-  const [message, setMessage] = React.useState('Loading Records');
-  const [newValues, setNewValues] = React.useState(EMPTY_STRING());
-  const [legit, setLegit] = React.useState(EMPTY_BOOL());
-  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined);
+  const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
+  const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
+  const [manager, setManager] = React.useState(''); // Manager of ENS Domain
+  const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
+  const [name, setName] = React.useState(''); // Name record (Reverse Record) for ENS Domain
+  const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
+  const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
+  const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
+  const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
+  const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
+  const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
+  const [keypair, setKeypair] = React.useState<[[string, string], [string, string]]>(); // Sets generated K0 and K2 keys
+  const [getch, setGetch] = React.useState(false); // Triggers signature for record update
+  const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
+  const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
+  const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in LIST[] format
+  const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
+  const [color, setColor] = React.useState(''); // Sets color for the loading state
+  const [message, setMessage] = React.useState('Loading Records'); // Sets message for the loading state
+  
+  const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
+  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [modalState, setModalState] = React.useState<MainBodyState>({
     modalData: undefined,
     trigger: false
-  });
-  const [history, setHistory] = React.useState(EMPTY_HISTORY);
+  }); // Child modal state
+  const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
+  const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
+  const [sigRecord, setSigRecord] = React.useState(''); // Signature S2(K0) for Record update
+  const [sigApproved, setApproved] = React.useState(''); // Signature S3(K1) for Records Manager
 
-  const { Revision } = Name
+  const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
   const recoveredAddress = React.useRef<string>()
   const { 
@@ -156,26 +206,63 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const address = verifyMessage(variables.message, data)
       recoveredAddress.current = address
     },
-  })
+  })  // Wagmi Signature hook
 
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
   const network = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 'goerli' : 'homestead'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
   const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
   const web3 = new Web3(alchemyEndpoint);
-  let caip10 = `eip155:${chain}:${accountData?.address}`
-  let statement = `Requesting signature for IPNS key generation\n\nUSERNAME: ${_ENS_}\nSIGNED BY: ${caip10}`
+  let caip10 = `eip155:${chain}:${accountData?.address}`  // CAIP-10
   let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_.split('.eth')[0]))
   let token = ethers.BigNumber.from(labelhash)
   const zeroAddress = '0x' + '0'.repeat(40)
+
+  // Signature S1 statement; S1(K1)
+  function statementIPNSKey() {
+    return `Requesting Signature For IPNS Key Generation\n\nUsername: ${_ENS_}\nSigned By: ${caip10}`
+  }
+  // Signature S2 statement; S2(K0)
+  function statementRecords(recordType: string, extradata: string) {
+    return `Requesting Signature To Update Off-Chain ENS Record\n\nENS Domain: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${caip10}`
+  }
+
+  // Signature S3 statement; S3(K1)
+  function statementManager(manageFor: string) {
+    return `Requesting Signature To Approve Off-Chain ENS Records Manager Key\n\nENS Domain: ${_ENS_}\nApproved For: ${manageFor}\nSigned By: ${caip10}`
+  }
+
+  // Generate Record Type suffix
+  function genRecordType(_states: any[]) {
+    // TODO : Add Record Type routine
+    // return suffixes of filenames
+    return '[record1.json, _here/record2.json, there/record3.json]'
+  }
+
+  //
+  function genExtradata(_states: any[]) {
+    // TODO : Add extradata routine
+    // return bytesToHexString(abi.encodePacked(keccak256(result)))
+    return '0x00'
+  }
+
+  function _signMessage(input: any) {
+    // TODO : Add secp256k1 signature scheme
+    let message = input.message
+    return '0x00'
+  }
       
+  // Handle secondary modal data return
   const handleModalData = (data: string | undefined) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
   };
+  // Handle secondary modal trigger
   const handleTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
+  /// Preview Domain Metadata
+  // Read ENS Registry for ENS domain Controller
   const { data: controller } = useContractRead(
     constants.ensConfig[1],
     'getApproved',
@@ -185,7 +272,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     }
   )
-  
+  // Read ENS Registry for ENS domain Owner
   const { data: owner } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
@@ -196,17 +283,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   )
 
+  // Send data to Homepage and trigger update
   const handleSuccess = () => {
     handleParentModalData(true);
     handleParentTrigger(true);
   };
 
+  // Handles loading of avatar
   React.useEffect(() => {
     checkImageURL(avatar)
       .then(() => setImageLoaded(true))
       .catch(() => setImageLoaded(false));
   }, [avatar]);
 
+  // Triggers upon Preview load and attempts to get Resolver for ENS domain
   React.useEffect(() => {
     setBrowser(true) 
     if (browser) {
@@ -215,36 +305,41 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [browser]);
-
+ 
+  // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (modalState.trigger) {
-      signMessage({ message: statement })
+    if (modalState.trigger && !getch) {
+      signMessage({ message: statementIPNSKey() })
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState, statement]);
+  }, [modalState]);
 
+  // Triggers S1(K1) after password is set
   React.useEffect(() => {
     setLoading(true)
-    if (signature) {
+    if (sigIPNS && !keypair) {
       setMessage('Generating IPNS Key')
       const keygen = async () => {
-        const __keypair = await ed25519Keygen(_ENS_, caip10, signature, modalState.modalData)
+        const __keypair = await _KEYGEN(_ENS_, caip10, sigIPNS, modalState.modalData)
         setKeypair(__keypair)
         setMessage('IPNS Key Generated')
       };
       keygen()
+    } else {
+      setMessage('IPNS Key/CID Exists')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, signature, caip10, _ENS_]);
+  }, [keygen, sigIPNS, caip10, _ENS_]);
 
+  // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
     if (keypair) {
       const CIDGen = async () => {
-        let key = '08011240' + keypair[0] + keypair[1]
+        let key = formatkey(keypair)
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
-        const CIDIpns = w3name.toString()
-        setCID(CIDIpns)
+        const CID_IPNS = w3name.toString()
+        setCID(CID_IPNS)
         setMessage('IPNS CID Generated')
       }
       CIDGen()
@@ -252,6 +347,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypair]);
 
+  // Sets in-app ENS domain manager
+  // TODO: Extend to Wrapper
   React.useEffect(() => {
     if (controller && controller?.toString() !== zeroAddress) {
       setManager(controller.toString())
@@ -261,6 +358,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenID, controller, owner])
 
+  // Sets signature from Wagmi signMessage() as S1(K1)
+  React.useEffect(() => {
+    if (signature) {
+      setSigIPNS(signature)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature])
+
+  // Sets new ENS Resolver
+  // TODO: Extend to Wrapper
   const {
     data: response,
     write: migrate,
@@ -277,8 +384,25 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   );
 
+  // Sets Recordhash in CCIP2 Resolver
+  const {
+    data: response_,
+    write: setRecordhash,
+    isLoading: isSetRecordhashLoading_,
+    isSuccess: isSetRecordhashSuccess_,
+  } = useContractWrite(
+    constants.ccip2Config[0],
+    'setRecordhash',
+    {
+      args: [
+        ethers.utils.namehash(_ENS_), 
+        encodeContenthash(CID)
+      ]
+    }
+  );
 
-  /*
+
+  /* → 
   async function getGas(key: string, value: string) {
     const { 
       config: config, 
@@ -298,6 +422,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
   */
 
+  // Get gas cost estimate for hypothetical on-chain record update
   async function getGas(key: string, value: string) {
     const getGasAmountForContractCall = async () => {
       const contract = new web3.eth.Contract(
@@ -310,7 +435,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     const gas = await getGasAmountForContractCall()
     return gas
   }
-    
+  
+  // Triggers Resolver migration after IPNS CID is generated and validated 
   React.useEffect(() => {
     if (states.includes('resolver')) {
       if (CID.startsWith('k5')) {
@@ -322,6 +448,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [CID, states]);
 
+  // Handles single vs. mulitple record updates
   React.useEffect(() => {
     if (states.length > 1) {
       const _updatedList = list.map((item) => {
@@ -346,6 +473,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [states]);
 
+  // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     setLegit(EMPTY_BOOL())
     setLoading(false)
@@ -357,18 +485,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     })
     setList(_updatedList)
     setStates([])
+    setCID('')
+    setKeypair(undefined) // Purge keypairs from local storage 
     setNewValues(EMPTY_STRING())
     e.preventDefault();
     onClose();
   };
 
+  // Finish query for ENS domain records
   function finishQuery(data: React.SetStateAction<any[]> | undefined) {
-    if ( data ) { // @TODO: Second condition probably not needed; check later
+    if ( data ) { // TODO: Second condition probably not needed; check later
       setList(data)
       setLoading(false)
     }
   }
 
+  // Get Contenthash for ENS domain first
   async function getContenthash(resolver: ethers.providers.Resolver | null) {
     if ( resolver?.address !== constants.ccip2 ) {
       await resolver!.getContentHash()
@@ -390,6 +522,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
+  // Get Avatar for ENS domain second
   async function getAvatar() {
     if ( resolver?.address !== constants.ccip2 ) {
       await provider.getAvatar(_ENS_)
@@ -411,6 +544,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
+  // Get Addr for ENS domain third
   async function getRecord() {
     if ( resolver?.address !== constants.ccip2 ) {
       await provider.resolveName(_ENS_)
@@ -432,7 +566,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
-  // @TODO: getName() routine for both registrars
+  // Get Name for ENS domain last & finish
+  // TODO: getName() routine for both registrars
   async function getName() {
     if ( resolver?.address !== constants.ccip2 ) {
       setName(_ENS_)
@@ -442,6 +577,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setFinish(true)
   }
 
+  // Get Resolver for ENS domain
   async function getResolver() {
     await provider.getResolver(_ENS_)
       .then(response => {
@@ -450,11 +586,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       });
   }
 
+  // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
   async function writeRevision(revision: Name.Revision, gas: {}) {
     const request = {
       ens: _ENS_,
       address: accountData?.address,
-      signature: signature,
+      signature: sigIPNS,
       revision: Revision.encode(revision),
       chain: chain,
       gas: JSON.stringify(gas), 
@@ -485,25 +622,29 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
+  // Check if value is a valid Name
   function isName(value: string) {
     return value.endsWith('.eth') && value.length <= 32 + 4
   }
 
+  // Check if value is a valid Addr
   function isAddr(value: string) {
     const hexRegex = /^[0-9a-fA-F]+$/;
     return value.startsWith('0x') && value.length === 40 && hexRegex.test(value.split('0x')[1])
   }
 
+  // Check if value is a valid Avatar URL
   function isAvatar(value: string) {
     const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
     return urlRegex.test(value)
   }
-
+  // Check if value is a valid Contenthash
   function isContenthash(value: string) {
     const ipfsRegex = /^[a-z0-9]{62}$/;
     return ipfsRegex.test(value)
   }
 
+  // Upates new record values in local storage before pushing updates
   function setValues(key: string, value: string) {
     let __THIS = legit
     __THIS['resolver'] = false
@@ -545,6 +686,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setList(_updatedList)
   }
 
+  // Get records from history on NameSys backend
   async function getUpdate() {
     // @TODO: this is for beta testing only; in alpha, 
     // query should be made to the CCIP2 Resolver instead 
@@ -584,6 +726,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
+  // Triggers fetching history from NameSys backend
   React.useEffect(() => {
     if (finish) {
       getUpdate()
@@ -592,6 +735,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish]);
 
+  // Initialises internal LIST[] object
   function setMetadata() {
     let data = [
       {
@@ -612,7 +756,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: resolver !== constants.ccip2,
         state: false,
         label: 'migrate',
-        help: 'please migrate your resolver to enjoy off-chain records'
+        help: 'please migrate resolver to enjoy off-chain records'
       },
       {
         key: 2,
@@ -648,10 +792,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     finishQuery(data)
   }
 
+  // Wagmi hook for awaiting transaction processing
   const { isSuccess: txSuccess, isError: txError, isLoading: txLoading } = useWaitForTransaction({
     hash: response?.hash,
   });
 
+  // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
     const _updatedList = list.map((item) => {
       if (states.includes(item.type) && !forbidden.includes(item.type)) {
@@ -679,19 +825,31 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
+  // Handles Signature (S1) prompt Resolver is migrated
+  // in the Preview modal
   React.useEffect(() => {
-    if (getch) {
-      if (modalState.trigger) {
-        signMessage({ message: statement })
-        setKeygen(true)
-      }
+    if (getch) { // Check for false → true
+      // Handle incoming password for IPNS key/CID-gen
+      signMessage({ message: statementIPNSKey() }) // sign with K1
+      setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState, getch, statement]);
+  }, [modalState, getch]);
 
+  // Handles Signature (S2) prompt when Records are updated
+  // in the Preview modal
+  React.useEffect(() => {
+    if (getch) { // check for false → true
+      // handle record update trigger
+      _signMessage({ message: statementRecords(genRecordType(states), genExtradata(states)) }) // sign with K0
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getch]);
+
+  // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
     const request = {
-      signature: signature,
+      signature: sigIPNS,
       ens: _ENS_,
       address: recoveredAddress.current,
       ipns: CID,
@@ -700,7 +858,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       revision: history.revision,
       chain: chain
     }
-    if (write && keypair && CID && signature) {
+    if (write && keypair && CID && sigIPNS) {
       //console.log(request)
       const editRecord = async () => {
         setMessage('Writing Records')
@@ -718,11 +876,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             .then(async data => {
               setMessage('Publishing to IPNS')
               if (keypair && data.response) {	
-                // @dev : get gas consumption estimate	
+                // Get gas consumption estimate	
                 let gas = {}	
                 list.map(async (item) => {	
                   if (item.type !== 'resolver' && data.response.meta[item.type]) {	
-                    // @dev : get gas for each record separately	
+                    // Get gas for each record separately	
                     const _gas = getGas(item.type, data.response[item.type])	
                     const _promise = async () => {	
                       await Promise.all([_gas])	
@@ -736,7 +894,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     }	
                   }	
                 })	
-                // @dev: wait for gas to be estimated
+                // Wait for gas to be estimated
                 await new Promise<void>(resolve => {
                   const checkGas = () => {
                     if (Object.keys(gas).length > 0) {
@@ -747,15 +905,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   }
                   checkGas()
                 })
-                // handle w3name publish 
-                let key = '08011240' + keypair[0] + keypair[1]
+                // Handle W3Name publish 
+                let key = formatkey(keypair)
                 let w3name: Name.WritableName
                 const keygen = async () => {
                   w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
                   const pin = async () => {
                     if (data.response.ipfs && w3name) {
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
-                      // @dev : w3name broadcast
+                      // @W3Name broadcast
                       let _revision: Name.Revision;
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
@@ -763,17 +921,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
                         _revision = await Name.increment(_revision_, toPublish)
                       }
-                      // @dev : write revision to database
+                      // Write revision to database
                       await writeRevision(_revision, gas)
-                      // @dev : publish IPNS
+                      // Publish IPNS
                       await Name.publish(_revision, w3name.key)
-                      // @dev : wrap up
+                      // Wrap up
                       setGas(gas)
                       setTimeout(() => {
                         setGasModal(true)
                         setLoading(false)
-                        setCID('')
-                        setKeypair(undefined)
+                        //setCID('')
+                        //setKeypair(undefined)
                         states.map((_state) => {
                           setStates(prevState => prevState.filter(item => item !== _state))
                         })
@@ -809,15 +967,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       editRecord()
       setWrite(false)
     }
-
+    // Handle exception
     if (!write) {
       setGetch(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, states, CID, signature, newValues, _ENS_, keypair]);
+  }, [write, states, CID, sigIPNS, newValues, _ENS_, keypair]);
 
+  // Handles migration of Resolver to CCIP2
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess && pinned) {
+    if (isMigrateSuccess && txSuccess && migration) {
       setResolver(constants.ccip2)
       const _updatedList = list.map((item) => {
         if (forbidden.includes(item.type)) {
@@ -844,23 +1003,25 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
-      setCID('')
-      setKeypair(undefined)
+      //setCID('')
+      //setKeypair(undefined)
       handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess, pinned]);
+  }, [isMigrateSuccess, txSuccess, migration]);
 
+  // Sets migration state to true upon successful transaction receipt
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess) {
       const pin = async () => {
-        console.log('Migration Successful')
-        setPinned(true)
+        console.log('Resolver Migration Successful')
+        setMigration(true)
       }
       pin()
     }
   }, [isMigrateSuccess, txSuccess]);
 
+  // Handles transaction wait
   React.useEffect(() => {
     if (isMigrateLoading) {
       setFinish(false)
@@ -868,6 +1029,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }, [isMigrateLoading]);
 
+  // Handles transaction loading and error
   React.useEffect(() => {
     if (txLoading && !txError) {
       setMessage('Waiting for Transaction')
@@ -880,6 +1042,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading, txError]);
 
+  // Handles signature loading and error
   React.useEffect(() => {
     if (signLoading && !signError) {
       setMessage('Waiting for Signature')
@@ -892,6 +1055,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError]);
 
+  /// Modal Content
   const modalContent = show ? (
     <StyledModalOverlay>
       <StyledModal
@@ -1172,9 +1336,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         onClick={() => { 
                           setTrigger(item.key),
                           setMessage('Waiting for Signature'),
-                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true),
-                          ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true),
-                          ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states)
+                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true), // Trigger R1
+                          ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger R2
+                          ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Trigger R3
                         }}
                         data-tooltip={ item.help }
                       >
