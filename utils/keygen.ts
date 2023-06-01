@@ -36,6 +36,7 @@ function Stringify(arg: any) {
  * @param sig Deterministic signature from X-wallet provider
  * @param password Optional password
  * @returns Deterministic private/public keypairs as hex strings
+ * hex encoded [[ed25519.priv, ed25519.pub], [secp256k1.priv, secp256k1.pub]]
  */
 export async function _KEYGEN(
   username: string,
