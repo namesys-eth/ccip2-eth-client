@@ -47,7 +47,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '26px'
+                fontSize: '46px'
               }}
             >
               key
@@ -57,7 +57,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 marginTop: '10px'
               }}
             >
-              Please choose a secret identifier
+              Please enter your secret IPNS key identifier
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
@@ -166,7 +166,7 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: 60%;
-  height: 178px;
+  height: 198px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;

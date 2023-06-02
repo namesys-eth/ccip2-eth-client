@@ -13,7 +13,6 @@ import Salt from '../components/Salt'
 import Gas from '../components/Gas'
 import Loading from '../components/Loading'
 import Success from '../components/Success'
-import Record from '../components/Record'
 import * as constants from '../utils/constants'
 import { _KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
@@ -155,6 +154,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState('Loading Records'); // Sets message for the loading state
+  const [signatures, setSignatures] = React.useState<string[]>([]); // Contains S2(K0) signatures of active records in the modal
   
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
@@ -367,7 +367,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setMessage('IPNS Key/CID Exists')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, sigIPNS, caip10, _ENS_]);
+  }, [keygen, sigIPNS]);
 
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
@@ -807,27 +807,39 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
-  // Handles Signature (S1) prompt when Resolver is to be migrated
-  // in the Preview modal
+  // Handles password prompt for S1(K1)
   React.useEffect(() => {
     if (getch) { // Check for false → true
-      // Handle incoming password for IPNS key/CID-gen
-      signMessage({ message: statementIPNSKey() }) // sign with K1
-      setKeygen(true)
+      if (!keypair || !CID) {
+        setSalt(true) // Start K0 keygen if it doesn't exist in local storage
+        setGetch(false) // Reset
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState, getch]);
+  }, [getch]);
+
+  // Handles generating signatures for all records to be updated
+  React.useEffect(() => {
+    // Handle Signature (S2) to add as extradata
+    if (write && keypair) {
+      let __signatures: string[] = []
+      states.forEach(async (recordType) => {
+        const _signature = await _signMessage({ message: statementRecords(genRecordType(recordType), genExtradata(recordType)) }) // Sign with K0
+        if (_signature) __signatures.push(_signature)
+      });
+      setSignatures(__signatures)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [write, keypair]);
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
-    // Handle Signature (S2) to add as extradata
-    let signatures: string[] = []
-    states.forEach(async (recordType) => {
-      const _signature = await _signMessage({ message: statementRecords(genRecordType(recordType), genExtradata(recordType)) })
-      console.log(_signature)
-      signatures.push(_signature!) // Sign with K0
-    });
-    if (write && keypair && signatures.length > 0) {
+    if (
+      write && 
+      keypair && 
+      signatures.length === states.length && 
+      signatures.length > 0
+    ) {
       // Generate POST request for writing records
       const request = {
         signatures: signatures,
@@ -839,7 +851,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         revision: history.revision,
         chain: chain
       }
-      console.log(request)
+      //console.log(request)
       const editRecord = async () => {
         setMessage('Writing Records')
         try {
@@ -856,7 +868,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             .then(async data => {
               setMessage('Publishing to IPNS')
               if (keypair && data.response) {	
-                // Get gas consumption estimate	
+                // Get gas consumption estimate
                 let gas = {}	
                 list.map(async (item) => {	
                   if (item.type !== 'resolver' && data.response.meta[item.type]) {	
@@ -864,7 +876,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     const _gas = getGas(item.type, data.response[item.type])	
                     const _promise = async () => {	
                       await Promise.all([_gas])	
-                    }	
+                    }
                     await _promise()	
                     _gas.then((value) => {	
                       gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001	
@@ -872,7 +884,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     if (item.type === 'avatar') {	
                       setAvatar(data.response.avatar)	
                     }	
-                  }	
+                  }
                 })	
                 // Wait for gas to be estimated
                 await new Promise<void>(resolve => {
@@ -954,7 +966,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setGetch(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, states, CID, sigIPNS, newValues, _ENS_, keypair]);
+  }, [signatures]);
 
   // Handles migration of Resolver to CCIP2
   React.useEffect(() => {
@@ -1384,13 +1396,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 show={salt}
               >
               </Salt>
-              <Record
-                handleTrigger={handleTrigger}
-                handleModalData={handleModalData}
-                onClose={() => setGetch(false)}
-                show={getch}
-              >
-              </Record>
             </div>
           </StyledModalBody>
         }
