@@ -1,9 +1,11 @@
 import { Alchemy, Network } from "alchemy-sdk"
 import { ethers } from 'ethers'
-import iEnsRegistry from '../contract-abi-ensRegistry.json'
-import iEnsRegistrar from '../contract-abi-ensRegistrar.json'
-import iEnsResolver from '../contract-abi-ensResolver.json'
-import iCCIP2 from '../contract-abi-ccip2.json'
+import iEnsLegacyRegistry from '../abi/contract-abi-ensLegacyRegistry.json'
+import iEnsLegacyRegistrar from '../abi/contract-abi-ensLegacyRegistrar.json'
+import iEnsLegacyResolver from '../abi/contract-abi-ensLegacyResolver.json'
+import iEnsUniversalResolver from '../abi/contract-abi-ensUniversalResolver.json'
+import iEnsWrapper from '../abi/contract-abi-ensWrapper.json'
+import iCCIP2 from '../abi/contract-abi-ccip2.json'
 
 export interface MainBodyState {
   modalData: boolean;
@@ -20,9 +22,11 @@ export const provider = new ethers.providers.AlchemyProvider(network, alchemyCon
 export const ccip2 = '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec' // CCIP2 Resolver
 export const zeroAddress = '0x' + '0'.repeat(40)
 export const ensContracts = [
-  "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // v1 Registry
-  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // v2 Registrar
-  "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750" // Current Public Resolver
+  "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry
+  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar
+  "0x0000000000000000000000000000000000000000", // Legacy Resolver
+  "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper
+  "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750" // Universal Resolver
 ]
 export const carousal = [
   '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
@@ -32,9 +36,11 @@ export const carousal = [
   '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
 ]
 export const ensInterface = [
-  iEnsRegistry,
-  iEnsRegistrar,
-  iEnsResolver
+  iEnsLegacyRegistry,
+  iEnsLegacyRegistrar,
+  iEnsLegacyResolver,
+  iEnsWrapper,
+  iEnsUniversalResolver
 ]
 export const ccip2Interface = [
   iCCIP2
@@ -51,6 +57,14 @@ export const ensConfig = [
   {
     addressOrName: ensContracts[2],
     contractInterface: ensInterface[2]
+  },
+  {
+    addressOrName: ensContracts[3],
+    contractInterface: ensInterface[3]
+  },
+  {
+    addressOrName: ensContracts[4],
+    contractInterface: ensInterface[4]
   }
 ]
 export const ccip2Config = [

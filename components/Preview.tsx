@@ -79,6 +79,9 @@ const EMPTY_HISTORY = {
   type: ''
 }
 
+// Init ABI Encoder
+const abi = ethers.utils
+
 /// Library
 // Check if image URL resolves
 function checkImageURL(url: string) {
@@ -113,13 +116,15 @@ function encodeContenthash(contenthash: string) {
     return ''
 }
 
-/// Preview Modal
-// @input show : Show modal trigger
-// @input onClose : Close modal trigger
-// @input _ENS_ : Native ENS domain for modal
-// @input chain : Chain ID
-// @interface handleParentModalData : Send modal data to Homepage
-// @interface handleParentTrigger : Send modal state to Homepage
+/**
+* Preview Modal
+* @param show : Show modal trigger
+* @param onClose : Close modal trigger
+* @param _ENS_ : Native ENS domain for modal
+* @param chain : Chain ID
+* @interface handleParentModalData : Send modal data to Home/Account-page
+* @interface handleParentTrigger : Send modal state to Home/Account-page
+**/
 const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
@@ -137,7 +142,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
   const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
-  const [manager, setManager] = React.useState(''); // Manager of ENS Domain
+  const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
   const [name, setName] = React.useState(''); // Name record (Reverse Record) for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
@@ -147,7 +152,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [keypair, setKeypair] = React.useState<[[string, string], [string, string]]>(); // Sets generated K0 and K2 keys
-  const [getch, setGetch] = React.useState(false); // Triggers signature for record update
+  const [update, setUpdate] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
   const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in {a:b} format
@@ -155,7 +160,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState('Loading Records'); // Sets message for the loading state
   const [signatures, setSignatures] = React.useState<string[]>([]); // Contains S2(K0) signatures of active records in the modal
-  
+  const [query, setQuery] = React.useState(''); // CCIP2 Query for on-chain manager
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [modalState, setModalState] = React.useState<MainBodyState>({
@@ -246,7 +251,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         help: 'set your web contenthash'
       }
     ]
-    finishQuery(_LIST)
+    finishQuery(_LIST) // Assign _LIST
   }
 
   // Signature S1 statement; S1(K1)
@@ -264,16 +269,25 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Generate Record Type suffix
-  function genRecordType(_recordType: string) {
-    // return suffixes of filenames
-    return constants.files[constants.types.indexOf(_recordType)]
+  function genSignerType() {
+    let _signer: string
+    if (_Manager_) {
+      // bytes4(keccak256('recordhash(bytes32)'))
+      _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("recordhash(bytes32)")).substring(0,8)
+    } else {
+      // bytes4(keccak256('approved(bytes32, address)'))
+      _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("approved(bytes32, address)")).substring(0,8)
+    }
+    return _signer
   }
 
   // Generate extradata
-  function genExtradata(_recordType: string) {
-    // TODO : Add extradata routine
-    // return bytesToHexString(abi.encodePacked(keccak256(result)))
-    return '0x0'
+  function genExtradata(_recordValue: string) {
+    // returns bytesToHexString(abi.encodePacked(keccak256(result)))
+    const toPack = ethers.utils.keccak256(_recordValue)
+    const _extradata = ethers.utils.hexlify(abi.solidityPack(["bytes"], [toPack]))
+    console.log(_extradata)
+    return _extradata
   }
 
   // Signature S2 with K0
@@ -284,6 +298,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const __signature = await _signer.signMessage(input.message) 
         if (__signature) return __signature
       }
+      setQuery(
+        abi.solidityKeccak256(
+        // ["manager", node, owner, signer]
+        ["string", "bytes32", "address", "address"], 
+        ["manager", ethers.utils.namehash(_ENS_), getOwner(), keypair ? `0x${keypair[1][1]}` : zeroAddress]
+      ))
       const _signature = SignS2() 
       return _signature
     }
@@ -299,8 +319,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   };
 
   /// Preview Domain Metadata
-  // Read ENS Registry for ENS domain Controller
-  const { data: controller } = useContractRead(
+  // Read Legacy ENS Registry for ENS domain Controller
+  const { data: _Controller_ } = useContractRead(
     constants.ensConfig[1],
     'getApproved',
     {
@@ -309,8 +329,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     }
   )
-  // Read ENS Registry for ENS domain Owner
-  const { data: owner } = useContractRead(
+  // Read Legacy ENS Registry for ENS domain Owner
+  const { data: _Owner_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
@@ -319,8 +339,75 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     }
   )
+  // Read CCIP2 for ENS domain on-chain manager
+  const { data: _Manager_ } = useContractRead(
+    constants.ccip2Config[0],
+    'manager',
+    {
+      args: [
+        query
+      ]
+    }
+  )
 
-  // Send data to Homepage and trigger update
+  // Returns Owner of wrapped/legacy ENS Domain
+  function getOwner() {
+    // If name is wrapped, return owner of token (in new contract) as the controller
+    if (_Owner_?.toString() === constants.ensContracts[3]) {
+      const { data: _owner } = useContractRead(
+        constants.ensConfig[3], // ENS Wrapper
+        'ownerOf',
+        {
+          args: [
+            tokenID
+          ]
+        }
+      )
+      return _owner ? _owner.toString() : zeroAddress
+    } else {
+      // If name is unwrapped, return owner of token (in legacy contract) as the controller
+      return _Owner_ ? _Owner_.toString() : zeroAddress
+    }
+  }
+
+  // Returns Controller of wrapped/legacy ENS Domain
+  function getController() {
+    // If name is wrapped, return manager of token (in new contract) as the controller
+    if (_Owner_?.toString() === constants.ensContracts[3]) {
+      const { data: _controller } = useContractRead(
+        constants.ensConfig[3], // ENS Wrapper
+        'getApproved',
+        {
+          args: [
+            tokenID
+          ]
+        }
+      )
+      return _controller ? _controller.toString() : zeroAddress
+    } else {
+      // If name is unwrapped, return manager of token (in legacy contract) as the controller
+      return _Controller_ ? _Controller_.toString() : zeroAddress
+    }
+  }
+
+  // Sets in-app ENS domain manager
+  React.useEffect(() => {
+    if (accountData?.address) {
+      let _owner = getOwner()
+      let _controller = getController()
+      // Set Managers
+      if (_Manager_ && _Manager_.toString() === 'true') {
+        // Set connected account as in-app manager if it is authorised
+        setManagers([accountData.address])
+      } else {
+        // Set owner and controller as in-app managers if no on-chain manager exists
+        setManagers([_owner, _controller])
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenID, _Controller_, _Owner_, _Manager_])
+
+  // Send data to Home/Account-page and trigger update
   const handleSuccess = () => {
     handleParentModalData(true);
     handleParentTrigger(true);
@@ -345,7 +432,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
  
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (modalState.trigger && !getch) {
+    if (modalState.trigger && !update) {
       signMessage({ message: statementIPNSKey() })
       setKeygen(true)
     }
@@ -384,17 +471,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypair]);
 
-  // Sets in-app ENS domain manager
-  // TODO: Extend to Wrapper
-  React.useEffect(() => {
-    if (controller && controller?.toString() !== zeroAddress) {
-      setManager(controller.toString())
-    } else if (owner && controller?.toString() === zeroAddress) {
-      setManager(owner.toString())
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenID, controller, owner])
-
   // Sets signature from Wagmi signMessage() as S1(K1)
   React.useEffect(() => {
     if (signature) {
@@ -406,7 +482,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Sets new ENS Resolver
   // TODO: Extend to Wrapper
   const {
-    data: response,
+    data: response1,
     write: migrate,
     isLoading: isMigrateLoading,
     isSuccess: isMigrateSuccess,
@@ -422,8 +498,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   );
 
   // Sets Recordhash in CCIP2 Resolver
+  // TODO
   const {
-    data: response_,
+    data: response2,
     write: setRecordhash,
     isLoading: isSetRecordhashLoading_,
     isSuccess: isSetRecordhashSuccess_,
@@ -446,8 +523,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       error: _error 
     } = usePrepareContractWrite(
       {
-        address: `0x${constants.ensConfig[2].addressOrName.substring(2)}`,
-        abi: constants.ensConfig[2].contractInterface,
+        address: `0x${constants.ensConfig[4].addressOrName.substring(2)}`,
+        abi: constants.ensConfig[4].contractInterface,
         functionName: 'setText',
         args: [ethers.utils.namehash(_ENS_), key, value]
       }
@@ -463,8 +540,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function getGas(key: string, value: string) {
     const getGasAmountForContractCall = async () => {
       const contract = new web3.eth.Contract(
-        constants.ensConfig[2].contractInterface as AbiItem[], 
-        constants.ensConfig[2].addressOrName
+        constants.ensConfig[4].contractInterface as AbiItem[], 
+        constants.ensConfig[4].addressOrName
       );
       let gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address });
       return gasAmount
@@ -531,7 +608,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Finish query for ENS domain records
   function finishQuery(data: React.SetStateAction<any[]> | undefined) {
-    if ( data ) { // TODO: Second condition probably not needed; check later
+    if ( data ) {
       setList(data)
       setLoading(false)
     }
@@ -604,7 +681,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Get Name for ENS domain last & finish
-  // TODO: getName() routine for both registrars
+  // TODO: getName() routine for both ENS contract versions
   async function getName() {
     if ( resolver?.address !== constants.ccip2 ) {
       setName(_ENS_)
@@ -726,10 +803,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Get records from history on NameSys backend
+  // Must get Revision for IPNS update
   async function getUpdate() {
-    // @TODO: this is for beta testing only; in alpha, 
-    // query should be made to the CCIP2 Resolver instead 
-    // of CCIP2 backend
     const request = {
       type: 'read',
       ens: _ENS_,
@@ -775,8 +850,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }, [finish]);
 
   // Wagmi hook for awaiting transaction processing
-  const { isSuccess: txSuccess, isError: txError, isLoading: txLoading } = useWaitForTransaction({
-    hash: response?.hash,
+  const { isSuccess: txSuccess1, isError: txError1, isLoading: txLoading1 } = useWaitForTransaction({
+    hash: response1?.hash,
+  });
+  const { isSuccess: txSuccess2, isError: txError2, isLoading: txLoading2 } = useWaitForTransaction({
+    hash: response2?.hash,
   });
 
   // Internal state handling of editable/active records during updates by user
@@ -809,22 +887,24 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles password prompt for S1(K1)
   React.useEffect(() => {
-    if (getch) { // Check for false → true
+    if (update) { // Check for false → true
       if (!keypair || !CID) {
         setSalt(true) // Start K0 keygen if it doesn't exist in local storage
-        setGetch(false) // Reset
+        setUpdate(false) // Reset
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getch]);
+  }, [update]);
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
     // Handle Signature (S2) to add as extradata
     if (write && keypair) {
       let __signatures: string[] = []
-      states.forEach(async (recordType) => {
-        const _signature = await _signMessage({ message: statementRecords(genRecordType(recordType), genExtradata(recordType)) }) // Sign with K0
+      states.forEach(async (_recordType) => {
+        const _signature = await _signMessage({ 
+          message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(newValues[_recordType])) 
+        }) // Sign with K0
         if (_signature) __signatures.push(_signature)
       });
       setSignatures(__signatures)
@@ -963,14 +1043,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     // Handle exception
     if (!write) {
-      setGetch(false)
+      setUpdate(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signatures]);
 
   // Handles migration of Resolver to CCIP2
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess && migration) {
+    if (isMigrateSuccess && txSuccess1 && migration) {
       setResolver(constants.ccip2)
       const _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
@@ -1002,18 +1082,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess, migration]);
+  }, [isMigrateSuccess, txSuccess1, migration]);
 
   // Sets migration state to true upon successful transaction receipt
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess) {
+    if (isMigrateSuccess && txSuccess1) {
       const pin = async () => {
         console.log('Resolver Migration Successful')
         setMigration(true)
       }
       pin()
     }
-  }, [isMigrateSuccess, txSuccess]);
+  }, [isMigrateSuccess, txSuccess1]);
 
   // Handles transaction wait
   React.useEffect(() => {
@@ -1025,16 +1105,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles transaction loading and error
   React.useEffect(() => {
-    if (txLoading && !txError) {
+    if (txLoading1 && !txError1) {
       setMessage('Waiting for Transaction')
       setCrash(false)
     }
-    if (txError && !txLoading) {
+    if (txError1 && !txLoading1) {
       setMessage('Transaction Failed')
       setCrash(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading, txError]);
+  }, [txLoading1, txError1]);
 
   // Handles signature loading and error
   React.useEffect(() => {
@@ -1319,7 +1399,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           !legit[item.type] ||
                           item.state ||
                           !accountData ||
-                          accountData?.address !== manager
+                          !managers.includes(accountData?.address ? accountData.address : '0x0c0cac01ac0ffeecafe')
                         }
                         style={{
                           alignSelf: 'flex-end',
@@ -1330,7 +1410,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         onClick={() => { 
                           setTrigger(item.key),
                           setMessage('Waiting for Signature'),
-                          ['resolver'].includes(item.type) ? setSalt(true) : setGetch(true), // Prompt password for Resolver; derive S2(K0) for Records
+                          ['resolver'].includes(item.type) ? setSalt(true) : setUpdate(true), // Prompt password for Resolver; derive S2(K0) for Records
                           ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger write for Records
                           ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
                         }}
