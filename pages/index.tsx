@@ -192,9 +192,21 @@ const Home: NextPage = () => {
           items.push({
             'key': 1, // Redundant [?]
             'name': query.split('.eth')[0],
-            'migrated': response?.address === constants.ccip2
+            'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
           })
-          if (items) {
+          if (items.length > 0) {
+            const { data: _recordhash } = useContractRead(
+              constants.ccip2Config[0], // CCIP2 Resolver
+              'recordhash',
+              {
+                args: [
+                  ethers.utils.namehash(query)
+                ]
+              }
+            )
+            if (_recordhash) {
+              items[0].migrated = '1'
+            }
             setMeta(items)
             setSuccess(true)
             console.log('You are owner/manager')

@@ -129,7 +129,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
   const [loading, setLoading] = React.useState(true); // Loading process indicator
-  const [migration, setMigration] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
+  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [crash, setCrash] = React.useState(false);  // Signature fail indicator
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
@@ -141,6 +141,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
+  const [recordhash, setRecordhash] = React.useState(''); // Recordhash for CCIP2 Resolver
   const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
@@ -151,6 +152,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
+  const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
   const [keypair, setKeypair] = React.useState<[[string, string], [string, string]]>(); // Sets generated K0 and K2 keys
   const [update, setUpdate] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
@@ -158,7 +160,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
-  const [message, setMessage] = React.useState('Loading Records'); // Sets message for the loading state
+  const [message, setMessage] = React.useState(['Loading Records','']); // Sets message for the loading state
   const [signatures, setSignatures] = React.useState<string[]>([]); // Contains S2(K0) signatures of active records in the modal
   const [query, setQuery] = React.useState(''); // CCIP2 Query for on-chain manager
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
@@ -215,7 +217,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         type: 'resolver',
         value: resolver,
         editable: false,
-        active: resolver !== constants.ccip2,
+        active: resolver !== constants.ccip2[0],
         state: false,
         label: 'migrate',
         help: 'please migrate resolver to enjoy off-chain records'
@@ -224,7 +226,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 2,
         type: 'avatar',
         value: avatar,
-        editable: resolver === constants.ccip2,
+        editable: resolver === constants.ccip2[0],
         active: isAvatar(avatar),
         state: false,
         label: 'edit',
@@ -234,7 +236,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 3,
         type: 'addr',
         value: addr,
-        editable: resolver === constants.ccip2,
+        editable: resolver === constants.ccip2[0],
         active: isAddr(addr),
         state: false,
         label: 'edit',
@@ -244,7 +246,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 4,
         type: 'contenthash',
         value: contenthash,
-        editable: resolver === constants.ccip2,
+        editable: resolver === constants.ccip2[0],
         active: isContenthash(contenthash),
         state: false,
         label: 'edit',
@@ -276,7 +278,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("recordhash(bytes32)")).substring(0,8)
     } else {
       // bytes4(keccak256('approved(bytes32, address)'))
-      _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("approved(bytes32, address)")).substring(0,8)
+      _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("approved(bytes32,address)")).substring(0,8)
     }
     return _signer
   }
@@ -284,9 +286,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Generate extradata
   function genExtradata(_recordValue: string) {
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
-    const toPack = ethers.utils.keccak256(_recordValue)
+    const toPack = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_recordValue))
     const _extradata = ethers.utils.hexlify(abi.solidityPack(["bytes"], [toPack]))
-    console.log(_extradata)
+    //console.log(_extradata)
     return _extradata
   }
 
@@ -407,6 +409,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenID, _Controller_, _Owner_, _Manager_])
 
+  // Sets Wrapper status of ENS Domain
+  React.useEffect(() => {
+    if (_Owner_?.toString() === constants.ensContracts[3]) {
+      setWrapped(true)
+    } else {
+      setWrapped(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_Owner_])
+
   // Send data to Home/Account-page and trigger update
   const handleSuccess = () => {
     handleParentModalData(true);
@@ -443,15 +455,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     setLoading(true)
     if (sigIPNS && !keypair) {
-      setMessage('Generating IPNS Key')
+      setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
         const __keypair = await _KEYGEN(_ENS_, caip10, sigIPNS, modalState.modalData)
         setKeypair(__keypair)
-        setMessage('IPNS Key Generated')
+        setMessage(['IPNS Key Generated', ''])
       };
       keygen()
     } else {
-      setMessage('IPNS Key/CID Exists')
+      setMessage(['IPNS Key/CID Exists', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, sigIPNS]);
@@ -464,7 +476,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
-        setMessage('IPNS CID Generated')
+        setMessage(['IPNS CID Generated', ''])
       }
       CIDGen()
     }
@@ -480,30 +492,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }, [signature])
 
   // Sets new ENS Resolver
-  // TODO: Extend to Wrapper
   const {
-    data: response1,
+    data: response1of2,
     write: migrate,
     isLoading: isMigrateLoading,
     isSuccess: isMigrateSuccess,
   } = useContractWrite(
-    constants.ensConfig[0],
+    !wrapped ? constants.ensConfig[0] : constants.ensConfig[3],
     'setResolver',
     {
       args: [
         ethers.utils.namehash(_ENS_), 
-        constants.ccip2
+        constants.ccip2[0]
       ]
     }
   );
 
   // Sets Recordhash in CCIP2 Resolver
-  // TODO
   const {
-    data: response2,
-    write: setRecordhash,
-    isLoading: isSetRecordhashLoading_,
-    isSuccess: isSetRecordhashSuccess_,
+    data: response2of2,
+    write: initRecordhash,
+    isLoading: isSetRecordhashLoading,
+    isSuccess: isSetRecordhashSuccess,
   } = useContractWrite(
     constants.ccip2Config[0],
     'setRecordhash',
@@ -543,7 +553,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         constants.ensConfig[4].contractInterface as AbiItem[], 
         constants.ensConfig[4].addressOrName
       );
-      let gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address });
+      let gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address })
       return gasAmount
     }
     const gas = await getGasAmountForContractCall()
@@ -594,7 +604,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     const _updatedList = list.map((item) => {
       return { 
         ...item,  
-        active: resolver !== constants.ccip2
+        active: resolver !== constants.ccip2[0]
       };
     })
     setList(_updatedList)
@@ -616,7 +626,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Contenthash for ENS domain first
   async function getContenthash(resolver: ethers.providers.Resolver | null) {
-    if ( resolver?.address !== constants.ccip2 ) {
+    if ( resolver?.address !== constants.ccip2[0] ) {
       await resolver!.getContentHash()
         .then((response: React.SetStateAction<string>) => {
           if (!response) {
@@ -631,6 +641,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           getAvatar()
         });
     } else {
+      // TODO : Fix this
       setContenthash('')
       getAvatar()
     }
@@ -638,7 +649,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Avatar for ENS domain second
   async function getAvatar() {
-    if ( resolver?.address !== constants.ccip2 ) {
+    if ( resolver?.address !== constants.ccip2[0] ) {
       await provider.getAvatar(_ENS_)
         .then(response => {
           if (!response) {
@@ -653,6 +664,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           getRecord()
         });
     } else {
+      // TODO : Fix this
       setAvatar('')
       getRecord()
     }
@@ -660,7 +672,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Addr for ENS domain third
   async function getRecord() {
-    if ( resolver?.address !== constants.ccip2 ) {
+    if ( resolver?.address !== constants.ccip2[0] ) {
       await provider.resolveName(_ENS_)
         .then(response => {
           if (!response) {
@@ -675,6 +687,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           getName()
         });
     } else {
+      // TODO : Fix this
       setAddr('')
       getName()
     }
@@ -683,7 +696,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Get Name for ENS domain last & finish
   // TODO: getName() routine for both ENS contract versions
   async function getName() {
-    if ( resolver?.address !== constants.ccip2 ) {
+    if ( resolver?.address !== constants.ccip2[0] ) {
       setName(_ENS_)
     } else {
       setName(_ENS_)
@@ -696,7 +709,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     await provider.getResolver(_ENS_)
       .then(response => {
         setResolver(response?.address);
-        getContenthash(response!)
+        if (response?.address) {
+          if (resolver === constants.ccip2Config[0]) {
+            // Get Recordhash from CCIP2 Resolver
+            const { data: _recordhash } = useContractRead(
+              constants.ccip2Config[0], // CCIP2 Resolver
+              'recordhash',
+              {
+                args: [
+                  ethers.utils.namehash(_ENS_)
+                ]
+              }
+            )
+            setRecordhash(_recordhash!.toString())
+          }
+          getContenthash(response!)
+        }
       });
   }
 
@@ -733,7 +761,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         })
     } catch(error) {
       console.log('Failed to write Revision to CCIP2 backend')
-      setMessage('Record Update Failed')
+      setMessage(['Record Update Failed', ''])
       setCrash(true)
     }
   }
@@ -850,11 +878,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }, [finish]);
 
   // Wagmi hook for awaiting transaction processing
-  const { isSuccess: txSuccess1, isError: txError1, isLoading: txLoading1 } = useWaitForTransaction({
-    hash: response1?.hash,
+  const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
+    hash: response1of2?.hash,
   });
-  const { isSuccess: txSuccess2, isError: txError2, isLoading: txLoading2 } = useWaitForTransaction({
-    hash: response2?.hash,
+  const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
+    hash: response2of2?.hash,
   });
 
   // Internal state handling of editable/active records during updates by user
@@ -899,7 +927,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
     // Handle Signature (S2) to add as extradata
-    if (write && keypair) {
+    if (write && keypair && newValues) {
       let __signatures: string[] = []
       states.forEach(async (_recordType) => {
         const _signature = await _signMessage({ 
@@ -933,7 +961,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
       //console.log(request)
       const editRecord = async () => {
-        setMessage('Writing Records')
+        setMessage(['Writing Records', ''])
         try {
           await fetch(
             "https://sshmatrix.club:3003/write",
@@ -946,7 +974,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
             .then(response => response.json())
             .then(async data => {
-              setMessage('Publishing to IPNS')
+              setMessage(['Publishing to IPNS', ''])
               if (keypair && data.response) {	
                 // Get gas consumption estimate
                 let gas = {}	
@@ -983,7 +1011,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 const keygen = async () => {
                   w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
                   const pin = async () => {
-                    if (data.response.ipfs && w3name) {
+                    if (data.response.ipfs && w3name && gas) {
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
                       // @W3Name broadcast
                       let _revision: Name.Revision;
@@ -1034,7 +1062,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
         } catch(error) {
           console.log('Failed to write to CCIP2 backend')
-          setMessage('Record Update Failed')
+          setMessage(['Record Update Failed', ''])
           setCrash(true)
         }
       }
@@ -1048,10 +1076,24 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signatures]);
 
-  // Handles migration of Resolver to CCIP2
+  // Handles setting Recordhash on CCIP2 Resolver
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1 && migration) {
-      setResolver(constants.ccip2)
+    if (isMigrateSuccess && txSuccess1of2 && migrated) {
+      initRecordhash()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMigrateSuccess, txSuccess1of2, migrated]);
+
+  // Handles finishing migration of Resolver to CCIP2
+  React.useEffect(() => {
+    if (
+      isMigrateSuccess && 
+      txSuccess1of2 && 
+      migrated &&
+      isSetRecordhashSuccess &&
+      txSuccess2of2
+    ) {
+      setResolver(constants.ccip2[0])
       const _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
           return { 
@@ -1073,7 +1115,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLegit(EMPTY_BOOL())
       setStates([])
       getResolver()
-      setSuccess('Resolver Migration Successful')
+      setSuccess('Resolver is migrated and Recordhash is set. Enjoy!')
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
@@ -1082,48 +1124,65 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1, migration]);
+  }, [isSetRecordhashSuccess, txSuccess2of2]);
 
   // Sets migration state to true upon successful transaction receipt
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1) {
+    if (isMigrateSuccess && txSuccess1of2) {
       const pin = async () => {
         console.log('Resolver Migration Successful')
-        setMigration(true)
+        setMigrated(true)
       }
       pin()
     }
-  }, [isMigrateSuccess, txSuccess1]);
+  }, [isMigrateSuccess, txSuccess1of2]);
 
   // Handles transaction wait
   React.useEffect(() => {
-    if (isMigrateLoading) {
+    if (isMigrateLoading && !isSetRecordhashLoading) {
       setFinish(false)
-      setMessage('Waiting for Confirmation')
+      setMessage(['Waiting for Confirmation', '1'])
     }
-  }, [isMigrateLoading]);
+    if (!isMigrateLoading && isSetRecordhashLoading) {
+      setFinish(false)
+      setMessage(['Waiting for Confirmation', '2'])
+    }
+  }, [isMigrateLoading, isSetRecordhashLoading]);
 
-  // Handles transaction loading and error
+  // Handles first transaction loading and error
   React.useEffect(() => {
-    if (txLoading1 && !txError1) {
-      setMessage('Waiting for Transaction')
+    if (txLoading1of2 && !txError1of2) {
+      setMessage(['Waiting for Transaction', '1'])
       setCrash(false)
     }
-    if (txError1 && !txLoading1) {
-      setMessage('Transaction Failed')
+    if (!txLoading1of2 && txError1of2) {
+      setMessage(['Transaction Failed', '1'])
       setCrash(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading1, txError1]);
+  }, [txLoading1of2, txError1of2]);
+
+  // Handles second transaction loading and error
+  React.useEffect(() => {
+    if (txLoading2of2 && !txError2of2) {
+      setMessage(['Waiting for Transaction', '2'])
+      setCrash(false)
+    }
+    if (!txLoading2of2 && txError2of2) {
+      setMessage(['Transaction Failed', '2'])
+      setCrash(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading2of2, txError2of2]);
 
   // Handles signature loading and error
   React.useEffect(() => {
     if (signLoading && !signError) {
-      setMessage('Waiting for Signature')
+      setMessage(['Waiting for Signature', ''])
       setCrash(false)
     }
     if (signError && !signLoading) {
-      setMessage('Signature Failed')
+      setMessage(['Signature Failed', ''])
       setCrash(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1163,7 +1222,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         {_ENS_ && avatar && imageLoaded && !loading && list.length > 0 &&
           <StyledModalTitle>
             <img 
-              // @TODO: async wait for resolution across multiple public gateways 
+              // TODO: async-await for resolution across multiple public gateways 
               //src={ avatar.replace('ipfs.io','pinata.cloud') } 
               src={ avatar }
               width={ '100px' }
@@ -1214,9 +1273,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     fontWeight: '700'
                   }}
                 >
-                  { message }
+                  { message[0] }
                 </span>
               </div>
+              { message[1] && (
+                <div
+                  style={{
+                    marginTop: '10px'
+                  }}
+                >
+                  <span 
+                    style={{
+                      color: 'white',
+                      fontSize: '18px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{message[1]}</span>
+                    <span>{' Of '}</span>
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{'2'}</span>
+                  </span>
+                </div>
+              )}
             </div>
           </StyledModalBody>
         }
@@ -1319,7 +1397,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         }}
                       >
                         { item.type }
-                        { item.type !== 'resolver' &&
+                        { item.type !== 'resolver' && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
@@ -1338,8 +1416,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               info_outline
                             </div>
                           </button>
-                        }
-                        { item.state &&
+                        )}
+                        { item.state && (
                           <div 
                             className="material-icons smol"
                             style={{ 
@@ -1348,16 +1426,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           >
                             task_alt
                           </div>
-                        }
-                        { ['resolver'].includes(item.type) && resolver === constants.ccip2  &&
+                        )}
+
+                        { // Set Badge if Resolver is migrated and Recordhash is set
+                        ['resolver'].includes(item.type) && resolver === constants.ccip2[0] && recordhash && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('lightgreen'),
-                              setHelp('Resolver is migrated')
+                              setHelp('Resolver is migrated and Recordhash is set. Enjoy!')
                             }}
+                            data-tooltip={ 'Ready For Off-chain Use' }
                           >
                             <div 
                               className="material-icons smol"
@@ -1369,16 +1450,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               gpp_good
                             </div>
                           </button>
-                        }
-                        { ['resolver'].includes(item.type) && resolver !== constants.ccip2  &&
+                        )}
+                        { // Set Badge if Resolver is migrated and no Recordhash is set
+                        ['resolver'].includes(item.type) && resolver === constants.ccip2[0] && !recordhash && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setHelpModal(true),
-                              setIcon('gpp_maybe'),
+                              setIcon('gpp_good'),
                               setColor('orange'),
-                              setHelp(item.help)
+                              setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
                             }}
+                            data-tooltip={ 'No Recordhash Found' }
                           >
                             <div 
                               className="material-icons smol"
@@ -1387,10 +1470,33 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 marginLeft: '5px'
                               }}
                             >
+                              gpp_good
+                            </div>
+                          </button>
+                        )}
+                        { // Set Badge if Resolver is not migrated
+                        ['resolver'].includes(item.type) && resolver !== constants.ccip2[0] && !recordhash && (
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setHelpModal(true),
+                              setIcon('gpp_maybe'),
+                              setColor('orangered'),
+                              setHelp(item.help)
+                            }}
+                            data-tooltip={ 'Resolver Not Migrated' }
+                          >
+                            <div 
+                              className="material-icons smol"
+                              style={{
+                                color: 'orangered',
+                                marginLeft: '5px'
+                              }}
+                            >
                               gpp_maybe
                             </div>
                           </button>
-                        }
+                        )}
                       </span>
                       <button
                         className="button"
@@ -1409,7 +1515,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         }}
                         onClick={() => { 
                           setTrigger(item.key),
-                          setMessage('Waiting for Signature'),
+                          setMessage(['Waiting for Signature', '']),
                           ['resolver'].includes(item.type) ? setSalt(true) : setUpdate(true), // Prompt password for Resolver; derive S2(K0) for Records
                           ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger write for Records
                           ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
