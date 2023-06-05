@@ -19,12 +19,14 @@ export const alchemyConfig = {
 }
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
-export const ccip2 = '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec' // CCIP2 Resolver
 export const zeroAddress = '0x' + '0'.repeat(40)
+export const ccip2 = [
+  '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec' // CCIP2 Resolver
+ ]
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry
-  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar
-  "0x0000000000000000000000000000000000000000", // Legacy Resolver
+  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar 
+  "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329", // Legacy Resolver
   "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper
   "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750" // Universal Resolver
 ]
@@ -46,30 +48,30 @@ export const ccip2Interface = [
   iCCIP2
 ]
 export const ensConfig = [
-  {
+  { // Legacy Registry
     addressOrName: ensContracts[0],
     contractInterface: ensInterface[0]
   },
-  {
+  { // Legacy Registrar (never used)
     addressOrName: ensContracts[1],
     contractInterface: ensInterface[1]
   },
-  {
+  { // Legacy Resolver (never used)
     addressOrName: ensContracts[2],
     contractInterface: ensInterface[2]
   },
-  {
+  { // Name Wrapper
     addressOrName: ensContracts[3],
     contractInterface: ensInterface[3]
   },
-  {
+  { // Universal Resolver (used for gas simulations)
     addressOrName: ensContracts[4],
     contractInterface: ensInterface[4]
   }
 ]
 export const ccip2Config = [
-  {
-    addressOrName: ccip2,
+  { // CCIP2 Resolver
+    addressOrName: ccip2[0],
     contractInterface: ccip2Interface[0]
   }
 ]

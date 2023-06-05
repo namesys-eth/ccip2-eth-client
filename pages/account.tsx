@@ -138,7 +138,7 @@ const Account: NextPage = () => {
         items.push({
           'key': count,
           'name': allTokens[i].title.split('.eth')[0],
-          'migrated': response?.address === constants.ccip2
+          'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
         })
       }
     }
@@ -235,9 +235,9 @@ const Account: NextPage = () => {
             items.push({
               'key': 1,
               'name': query.split('.eth')[0],
-              'migrated': response?.address === constants.ccip2
+              'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
             })
-            if (items) {
+            if (items.length > 0) {
               setMeta(items)
               setSuccess(true)
               console.log('You are owner/manager')

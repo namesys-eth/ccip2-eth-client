@@ -5,7 +5,7 @@ import * as lang from '../utils/languages'
 interface ListItem {
   key: number;
   name: string;
-  migrated: boolean;
+  migrated: string;
 }
 
 interface ListProps {
@@ -28,7 +28,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
   const [help, setHelp] = React.useState('');
   const [color, setColor] = React.useState('');
   const [modal, setModal] = React.useState(false)
-
+ 
   return (
     <ul
       style={{
@@ -130,16 +130,16 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                 >
                   ETH
                 </span>
-                { item.migrated &&
+                { item.migrated === '1' &&
                   <button 
                     className="button-tiny"
                     onClick={() => { 
                       setModal(true),
                       setIcon('gpp_good'),
                       setColor('lightgreen'),
-                      setHelp('Resolver is migrated')
+                      setHelp('Ready For Off-chain Use')
                     }}
-                    data-tooltip={ 'Resolver is migrated' }
+                    data-tooltip={ 'Ready For Off-chain Use' }
                   >
                     <div 
                       className="material-icons smol"
@@ -151,21 +151,42 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     </div>
                   </button>
                 }
-                { !item.migrated &&
+                { item.migrated === '1/2' &&
                   <button 
                     className="button-tiny"
                     onClick={() => { 
                       setModal(true),
-                      setIcon('gpp_maybe'),
+                      setIcon('gpp_good'),
                       setColor('orange'),
-                      setHelp('Resolver is not migrated')
+                      setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
                     }}
-                    data-tooltip={ 'Resolver is not migrated' }
+                    data-tooltip={ 'No Recordhash Found' }
                   >
                     <div 
                       className="material-icons smol"
                       style={{
                         color: 'orange'
+                      }}
+                    >
+                      gpp_good
+                    </div>
+                  </button>
+                }
+                { item.migrated === '0' &&
+                  <button 
+                    className="button-tiny"
+                    onClick={() => { 
+                      setModal(true),
+                      setIcon('gpp_maybe'),
+                      setColor('orangered'),
+                      setHelp('Resolver not migrated. Please \'Migrate\' to enable off-chain records')
+                    }}
+                    data-tooltip={ 'Resolver Not Migrated' }
+                  >
+                    <div 
+                      className="material-icons smol"
+                      style={{
+                        color: 'orangered'
                       }}
                     >
                       gpp_maybe
