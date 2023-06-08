@@ -11,7 +11,7 @@ import { BiError } from 'react-icons/bi'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
 import Gas from '../components/Gas'
-import Loading from '../components/Loading'
+import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
 import * as constants from '../utils/constants'
 import { _KEYGEN } from '../utils/keygen'
@@ -71,7 +71,6 @@ function EMPTY_BOOL() {
 
 // History object with empty strings
 const EMPTY_HISTORY = {
-  name: '',
   addr: '',
   contenthash: '',
   avatar: '',
@@ -129,7 +128,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
   const [loading, setLoading] = React.useState(true); // Loading process indicator
-  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
+  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + newRecordhash setting
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [crash, setCrash] = React.useState(false);  // Signature fail indicator
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
@@ -141,11 +140,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [recordhash, setRecordhash] = React.useState(''); // Recordhash for CCIP2 Resolver
+  const [recordhash, setRecordhash] = React.useState(''); // newRecordhash for CCIP2 Resolver
   const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
-  const [name, setName] = React.useState(''); // Name record (Reverse Record) for ENS Domain
+  const [newRecordhash, setNewRecordhash] = React.useState(''); // Name record (Reverse Record) for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
   const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
   const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
@@ -204,13 +203,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _LIST = [
       {
         key: 0,
-        type: 'name',
-        value: name,
-        editable: false,
-        active: false,
+        type: 'recordhash',
+        value: recordhash,
+        editable: resolver === constants.ccip2[0],
+        active: isContenthash(recordhash),
         state: false,
-        label: 'edit',
-        help: 'off-chain reverse record feature not available'
+        label: 'set new',
+        help: 'on-chain recordhash'
       },
       {
         key: 1,
@@ -273,7 +272,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Generate Record Type suffix
   function genSignerType() {
     let _signer: string
-    if (_Manager_) {
+    if (_CCIP2Manager_) {
       // bytes4(keccak256('recordhash(bytes32)'))
       _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("recordhash(bytes32)")).substring(0,8)
     } else {
@@ -322,7 +321,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   /// Preview Domain Metadata
   // Read Legacy ENS Registry for ENS domain Controller
-  const { data: _Controller_ } = useContractRead(
+  const { data: _ControllerLegacy_ } = useContractRead(
     constants.ensConfig[1],
     'getApproved',
     {
@@ -332,7 +331,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   )
   // Read Legacy ENS Registry for ENS domain Owner
-  const { data: _Owner_ } = useContractRead(
+  const { data: _OwnerLegacy_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
@@ -342,7 +341,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   )
   // Read CCIP2 for ENS domain on-chain manager
-  const { data: _Manager_ } = useContractRead(
+  const { data: _CCIP2Manager_ } = useContractRead(
     constants.ccip2Config[0],
     'manager',
     {
@@ -351,73 +350,86 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     }
   )
+  // Read ownership of a domain from ENS Wrapper
+  const { data: _OwnerWrapped_ } = useContractRead(
+    constants.ensConfig[3], // ENS Wrapper
+    'ownerOf',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
+  // Get newRecordhash from CCIP2 Resolver
+  const { data: _Recordhash_ } = useContractRead(
+    constants.ccip2Config[0], // CCIP2 Resolver
+    'recordhash',
+    {
+      args: [
+        ethers.utils.namehash(_ENS_)
+      ]
+    }
+  )
+  // Get Manager from ENS Wrapper
+  const { data: _ManagerWrapped_ } = useContractRead(
+    constants.ensConfig[3], // ENS Wrapper
+    'getApproved',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
 
   // Returns Owner of wrapped/legacy ENS Domain
   function getOwner() {
-    // If name is wrapped, return owner of token (in new contract) as the controller
-    if (_Owner_?.toString() === constants.ensContracts[3]) {
-      const { data: _owner } = useContractRead(
-        constants.ensConfig[3], // ENS Wrapper
-        'ownerOf',
-        {
-          args: [
-            tokenID
-          ]
-        }
-      )
-      return _owner ? _owner.toString() : zeroAddress
+    // If domain is wrapped, return owner of token (in new contract) as the controller
+    if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
+      return _OwnerWrapped_ ? _OwnerWrapped_.toString() : zeroAddress
     } else {
-      // If name is unwrapped, return owner of token (in legacy contract) as the controller
-      return _Owner_ ? _Owner_.toString() : zeroAddress
+      // If domain is unwrapped, return owner of token (in legacy contract) as the controller
+      return _OwnerLegacy_ ? _OwnerLegacy_.toString() : zeroAddress
     }
   }
 
   // Returns Controller of wrapped/legacy ENS Domain
   function getController() {
-    // If name is wrapped, return manager of token (in new contract) as the controller
-    if (_Owner_?.toString() === constants.ensContracts[3]) {
-      const { data: _controller } = useContractRead(
-        constants.ensConfig[3], // ENS Wrapper
-        'getApproved',
-        {
-          args: [
-            tokenID
-          ]
-        }
-      )
-      return _controller ? _controller.toString() : zeroAddress
+    // If domain is wrapped, return manager of token (in new contract) as the controller
+    if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
+      
+      return _ManagerWrapped_ ? _ManagerWrapped_.toString() : zeroAddress
     } else {
-      // If name is unwrapped, return manager of token (in legacy contract) as the controller
-      return _Controller_ ? _Controller_.toString() : zeroAddress
+      // If domain is unwrapped, return manager of token (in legacy contract) as the controller
+      return _ControllerLegacy_ ? _ControllerLegacy_.toString() : zeroAddress
     }
   }
 
   // Sets in-app ENS domain manager
   React.useEffect(() => {
     if (accountData?.address) {
-      let _owner = getOwner()
-      let _controller = getController()
+      let _OwnerWrapped_ = getOwner()
+      let _ManagerWrapped_ = getController()
       // Set Managers
-      if (_Manager_ && _Manager_.toString() === 'true') {
+      if (_CCIP2Manager_ && _CCIP2Manager_.toString() === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([accountData.address])
       } else {
         // Set owner and controller as in-app managers if no on-chain manager exists
-        setManagers([_owner, _controller])
+        setManagers([_OwnerWrapped_, _ManagerWrapped_])
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenID, _Controller_, _Owner_, _Manager_])
+  }, [tokenID, _ControllerLegacy_, _OwnerLegacy_, _CCIP2Manager_])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
-    if (_Owner_?.toString() === constants.ensContracts[3]) {
+    if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
       setWrapped(true)
     } else {
       setWrapped(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Owner_])
+  }, [_OwnerLegacy_])
 
   // Send data to Home/Account-page and trigger update
   const handleSuccess = () => {
@@ -508,7 +520,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   );
 
-  // Sets Recordhash in CCIP2 Resolver
+  // Sets newRecordhash in CCIP2 Resolver
+  // FIXME : NOT TRIGGERING !!!
   const {
     data: response2of2,
     write: initRecordhash,
@@ -697,9 +710,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // TODO: getName() routine for both ENS contract versions
   async function getName() {
     if ( resolver?.address !== constants.ccip2[0] ) {
-      setName(_ENS_)
+      setNewRecordhash(_ENS_)
     } else {
-      setName(_ENS_)
+      setNewRecordhash(_ENS_)
     }
     setFinish(true)
   }
@@ -711,17 +724,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setResolver(response?.address);
         if (response?.address) {
           if (resolver === constants.ccip2Config[0]) {
-            // Get Recordhash from CCIP2 Resolver
-            const { data: _recordhash } = useContractRead(
-              constants.ccip2Config[0], // CCIP2 Resolver
-              'recordhash',
-              {
-                args: [
-                  ethers.utils.namehash(_ENS_)
-                ]
-              }
-            )
-            setRecordhash(_recordhash!.toString())
+            setRecordhash(_Recordhash_!.toString())
           }
           getContenthash(response!)
         }
@@ -792,7 +795,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function setValues(key: string, value: string) {
     let __THIS = legit
     __THIS['resolver'] = false
-    if (key === 'name') {
+    if (key === 'recordhash') {
       //__THIS[key] = isName(value)
       __THIS[key] = false
     } else if (key === 'addr') {
@@ -855,7 +858,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         .then(data => {
           let _history = {
             type: data.type,
-            name: data.name,
             addr: data.addr,
             avatar: data.avatar,
             contenthash: data.contenthash,
@@ -900,7 +902,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           editable: false, 
           active: false
         };
-      } else if (['name'].includes(item.type)) {
+      } else if (['recordhash'].includes(item.type)) {
         return { 
           ...item, 
           editable: false, 
@@ -1076,7 +1078,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signatures]);
 
-  // Handles setting Recordhash on CCIP2 Resolver
+  // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess1of2 && migrated) {
       initRecordhash()
@@ -1115,7 +1117,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLegit(EMPTY_BOOL())
       setStates([])
       getResolver()
-      setSuccess('Resolver is migrated and Recordhash is set. Enjoy!')
+      setSuccess('Resolver is migrated and setRecordhash is set. Enjoy!')
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
@@ -1251,7 +1253,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                marginTop: '-60px',
+                marginTop: '-10px',
                 marginBottom: '80px'
               }}
             >
@@ -1403,14 +1405,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('info'),
-                              setColor(['name'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'),
+                              setColor(['recordhash'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'),
                               setHelp(item.help)
                             }}
                           >
                             <div 
                               className="material-icons smol"
                               style={{ 
-                                color: ['name'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'
+                                color: ['recordhash'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'
                               }}
                             >
                               info_outline
@@ -1428,7 +1430,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           </div>
                         )}
 
-                        { // Set Badge if Resolver is migrated and Recordhash is set
+                        { // Set Badge if Resolver is migrated and newRecordhash is set
                         ['resolver'].includes(item.type) && resolver === constants.ccip2[0] && recordhash && (
                           <button 
                             className="button-tiny"
@@ -1436,7 +1438,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('lightgreen'),
-                              setHelp('Resolver is migrated and Recordhash is set. Enjoy!')
+                              setHelp('Resolver is migrated and newRecordhash is set. Enjoy!')
                             }}
                             data-tooltip={ 'Ready For Off-chain Use' }
                           >
@@ -1451,7 +1453,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </div>
                           </button>
                         )}
-                        { // Set Badge if Resolver is migrated and no Recordhash is set
+                        { // Set Badge if Resolver is migrated and no newRecordhash is set
                         ['resolver'].includes(item.type) && resolver === constants.ccip2[0] && !recordhash && (
                           <button 
                             className="button-tiny"
@@ -1459,9 +1461,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('orange'),
-                              setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
+                              setHelp('Resolver migrated but no newRecordhash found. Set it by pressing \'Edit\'')
                             }}
-                            data-tooltip={ 'No Recordhash Found' }
+                            data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                           >
                             <div 
                               className="material-icons smol"
@@ -1553,7 +1555,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         textAlign: 'left',
                         marginBottom: '-5px',
                         color: ['resolver'].includes(item.type) ? 'skyblue' : (
-                          ['name'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'rgb(255, 255, 255, 0.75)'
+                          ['recordhash'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'rgb(255, 255, 255, 0.75)'
                           ),
                         cursor: 'copy'
                       }}

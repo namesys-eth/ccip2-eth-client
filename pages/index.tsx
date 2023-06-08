@@ -17,7 +17,7 @@ import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
-import Loading from '../components/Loading'
+import Loading from '../components/LoadingColors'
 import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
 
@@ -50,8 +50,6 @@ const Home: NextPage = () => {
     modalData: false,
     trigger: false
   });
-
-  let metadata: React.SetStateAction<any[]>
 
   // Handle Preview modal data return
   const handleParentModalData = (data: boolean) => {
@@ -129,7 +127,6 @@ const Home: NextPage = () => {
   // Preserve metadata across pageloads
   React.useEffect(() => {
     const handleBeforeUnload = () => {
-      metadata = meta
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
@@ -166,6 +163,17 @@ const Home: NextPage = () => {
     }
   )
 
+  // Read Recordhash from CCIP2 Resolver
+  const { data: recordhash } = useContractRead(
+    constants.ccip2Config[0], // CCIP2 Resolver
+    'recordhash',
+    {
+      args: [
+        ethers.utils.namehash(query)
+      ]
+    }
+  )
+
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
     if (controller && controller?.toString() !== '0x' + '0'.repeat(40)) {
@@ -195,16 +203,7 @@ const Home: NextPage = () => {
             'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
           })
           if (items.length > 0) {
-            const { data: _recordhash } = useContractRead(
-              constants.ccip2Config[0], // CCIP2 Resolver
-              'recordhash',
-              {
-                args: [
-                  ethers.utils.namehash(query)
-                ]
-              }
-            )
-            if (_recordhash) {
+            if (recordhash) {
               items[0].migrated = '1'
             }
             setMeta(items)
@@ -409,6 +408,7 @@ const Home: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden
                   />
                   <h4
                     style={{
@@ -435,6 +435,7 @@ const Home: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden
                   />
                   <h4
                     style={{
