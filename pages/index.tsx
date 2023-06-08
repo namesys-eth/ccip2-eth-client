@@ -395,16 +395,18 @@ const Home: NextPage = () => {
           marginTop: onSearch ? '0px' : '40px'
         }}>
         {/* Content */}
-        <div style={{ flex: '1 1 auto' }}>
-          <div style={{ marginTop: '-40px' }}>
+        <div className={ !isMobile ? 'heading' : 'none' } style={{ flex: '1 1 auto' }}>
+          <div style={{ marginTop: '-120px' }}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'center',
-                textAlign: 'center'
-              }}>
+                textAlign: 'center',
+                paddingTop: '100px'
+              }}
+            >
               {!isMobile && (
-                <div style={{ marginTop: '30px' }}>
+                <div>
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
@@ -414,7 +416,7 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: onSearch ? '46px' : '50px',
-                      marginTop: onSearch ? '20px' : '0px',
+                      marginTop: onSearch ? '20px' : '5px',
                       color: '#fc6603',
                       marginBottom: '10px'
                     }}
@@ -432,22 +434,21 @@ const Home: NextPage = () => {
                 </div>
               )}
               {isMobile && (
-                <div style={{ marginTop: '30px' }}>
+                <div>
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
-                    hidden
                   />
                   <h4
                     style={{
-                      fontSize: onSearch ? '28px' : '40px',
-                      marginTop: onSearch ? '10px' : '0px',
+                      fontSize: onSearch ? '36px' : '44px',
+                      marginTop: onSearch ? '12px' : '10px',
                       color: '#fc6603'
                     }}
                   >
                     NameSys
-                  </h4>
+                  </h4> 
                   <div
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
