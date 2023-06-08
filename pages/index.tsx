@@ -218,10 +218,11 @@ const Home: NextPage = () => {
         })
     }
     setMetadata()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 
   // Sets tokenID for ENS domain search result
-  React.useEffect(() => {
+  React.useEffect(() => { 
     if (query) {
       try {
         let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
@@ -403,7 +404,7 @@ const Home: NextPage = () => {
                 textAlign: 'center'
               }}>
               {!isMobile && (
-                <div style={{ marginTop: '-20px' }}>
+                <div style={{ marginTop: '30px' }}>
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
@@ -412,7 +413,8 @@ const Home: NextPage = () => {
                   />
                   <h4
                     style={{
-                      fontSize: onSearch ? '40px' : '70px',
+                      fontSize: onSearch ? '46px' : '50px',
+                      marginTop: onSearch ? '20px' : '0px',
                       color: '#fc6603',
                       marginBottom: '10px'
                     }}
@@ -421,8 +423,8 @@ const Home: NextPage = () => {
                   </h4>
                   <h4
                     style={{
-                      fontSize: onSearch ? '28px' : '36px',
-                      color: '#fc6603'
+                      fontSize: onSearch ? '24px' : '28px',
+                      color: '#eb8634'
                     }}
                   >
                     Off-chain Records Manager
@@ -430,7 +432,7 @@ const Home: NextPage = () => {
                 </div>
               )}
               {isMobile && (
-                <div>
+                <div style={{ marginTop: '30px' }}>
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
@@ -440,6 +442,7 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: onSearch ? '28px' : '40px',
+                      marginTop: onSearch ? '10px' : '0px',
                       color: '#fc6603'
                     }}
                   >
@@ -449,7 +452,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
                       fontWeight: 700,
-                      color: '#fc6603'
+                      color: '#eb8634'
                     }}
                   >
                     Off-chain Records Manager
@@ -498,7 +501,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   flexDirection: 'column',
-                  marginTop: '-50px',
+                  marginTop: '-10px',
                   marginBottom: '200px'
                 }}
               >
@@ -511,8 +514,8 @@ const Home: NextPage = () => {
                   }}
                 >
                   <Loading 
-                    height={60}
-                    width={60}
+                    height={50}
+                    width={50}
                   />
                 </div>
                 <div
