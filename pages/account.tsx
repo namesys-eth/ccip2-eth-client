@@ -504,7 +504,9 @@ const Account: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
-                    hidden
+                    style={{
+                      marginBottom: '7px' 
+                    }}
                   />
                   <h4
                     style={{
@@ -527,7 +529,7 @@ const Account: NextPage = () => {
               {isMobile && isConnected && (
                 <div 
                   style={{ 
-                    marginTop: '0px',
+                    marginTop: '-15px',
                     marginBottom: '20px' 
                   }}
                 >
@@ -535,7 +537,9 @@ const Account: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
-                    hidden
+                    style={{
+                      marginBottom: '7px' 
+                    }}
                   />
                   <h4
                     style={{
