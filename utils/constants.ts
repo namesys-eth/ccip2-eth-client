@@ -78,13 +78,11 @@ export const ccip2Config = [
 
 // Uneditable records in Preview modal
 export const forbidden = [
-  'resolver',
-  'name'
+  'resolver'
 ]
 // Record types in Preview modal
 export const types = [
-  'resolver',
-	'name',
+  'resolver', // Exception: Not a Record type
 	'addr',
 	'contenthash',
 	'avatar',
@@ -93,8 +91,7 @@ export const types = [
 ] 
 // Record filenames corresponding to record types
 export const files = [
-  '',
-	'name',
+  '', // No associated record file because not a Record
 	'_address/60',
 	'contenthash',
 	'text/avatar',

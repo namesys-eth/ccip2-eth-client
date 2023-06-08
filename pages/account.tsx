@@ -18,7 +18,7 @@ import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
-import Loading from '../components/Loading'
+import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
 
@@ -309,7 +309,7 @@ const Account: NextPage = () => {
         </div>
       )}
       <Head>
-        <title>CCIP2 - Off-chain Records Manager</title>
+        <title>NameSys - Off-chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width, user-scalable=no" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" as="style" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
@@ -447,6 +447,7 @@ const Account: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden
                   />
                   <h4
                     style={{
@@ -469,7 +470,7 @@ const Account: NextPage = () => {
               {!isMobile && isConnected && (
                 <div 
                   style={{ 
-                    marginTop: '-50px',
+                    marginTop: '0px',
                     marginBottom: '20px' 
                   }}
                 >
@@ -477,6 +478,7 @@ const Account: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden
                   />
                   <h4
                     style={{
@@ -502,6 +504,7 @@ const Account: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden
                   />
                   <h4
                     style={{
@@ -524,7 +527,7 @@ const Account: NextPage = () => {
               {isMobile && isConnected && (
                 <div 
                   style={{ 
-                    marginTop: '-50px',
+                    marginTop: '0px',
                     marginBottom: '20px' 
                   }}
                 >
@@ -532,6 +535,7 @@ const Account: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden
                   />
                   <h4
                     style={{
