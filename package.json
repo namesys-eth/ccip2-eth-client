@@ -10,7 +10,7 @@
     "lint": "next lint",
     "purge": "purgecss --css ./**/*.css --content ./**/*.ts* --output ./postbuild/purgecss/",
     "eth-deploy": "node postbuild/replacerNamesys.js",
-    "ghp-deploy": "touch out/.nojekyll && node postbuild/replacerGithubPages.js && git add out && git commit -m 'gh-pages' && git subtree push --prefix out origin gh-pages"
+    "ghp-deploy": "touch out/.nojekyll && node postbuild/replacerGithubPages.js && git add out && git commit -S -m 'auto-commit: gh-pages' && git subtree push --prefix out origin gh-pages"
   },
   "dependencies": {
     "@alch/alchemy-web3": "^1.4.7",

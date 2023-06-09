@@ -6,8 +6,8 @@ const optionsCss = {
 };
 const optionsJs = {
   files: ['./out/_next/static/chunks/*.js', './out/_next/static/chunks/pages/*.js'],
-  from: [/_next\//g, /ens-white.png/g, /href=\"\//g],
-  to: ['ccip2-eth-client/_next/', 'ccip2-eth-client/ens-white.png', 'href="/ccip2-eth-client/'],
+  from: [/_next\//g, /ens-red.png/g, /href=\"\//g],
+  to: ['ccip2-eth-client/_next/', 'ccip2-eth-client/ens-red.png', 'href="/ccip2-eth-client/'],
 };
 const optionsHtml = {
   files: './out/*.html',
