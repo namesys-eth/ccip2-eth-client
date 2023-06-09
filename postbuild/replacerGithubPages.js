@@ -1,8 +1,8 @@
 const replace = require('replace-in-file')
 const optionsCss = {
   files: './out/_next/static/css/*.css',
-  from: [/webpack:\/\/\/mini-css-extract-plugin\/_next\//g],
-  to: ['https://namesys-eth.github.io/ccip2-eth-client/_next/'],
+  from: [/webpack:\/\/\/mini-css-extract-plugin\/_next\//g, /shadow.svg/g],
+  to: ['https://namesys-eth.github.io/ccip2-eth-client/_next/', 'ccip2-eth-client/shadow.svg'],
 };
 const optionsJs = {
   files: ['./out/_next/static/chunks/*.js', './out/_next/static/chunks/pages/*.js'],
