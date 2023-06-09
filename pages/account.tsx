@@ -433,13 +433,14 @@ const Account: NextPage = () => {
           margin: '50px 0 0 0'
         }}>
         {/* Content */}
-        <div style={{ flex: '1 1 auto' }}>
-          <div style={{ marginTop: '-20px' }}>
+        <div className={ !isMobile && !searchType ? 'headingAlt' : 'none' } style={{ flex: '1 1 auto' }}>
+          <div style={{ marginTop: '-120px' }}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'center',
-                textAlign: 'center'
+                textAlign: 'center',
+                paddingTop: '100px'
               }}>
               {!isMobile && !isConnected && (
                 <div>
@@ -461,7 +462,7 @@ const Account: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 26,
-                      color: '#fc6603'
+                      color: '#eb8634'
                     }}>
                     Off-chain Records Manager
                   </h4>
@@ -492,7 +493,7 @@ const Account: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 22,
-                      color: '#fc6603'
+                      color: '#eb8634'
                     }}>
                     Your Names
                   </h4>
@@ -520,7 +521,7 @@ const Account: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 26,
-                      color: '#fc6603'
+                      color: '#eb8634'
                     }}>
                     Off-chain Records Manager
                   </h4>
@@ -553,7 +554,7 @@ const Account: NextPage = () => {
                   <h4
                     style={{
                       fontSize: 18,
-                      color: '#fc6603'
+                      color: '#eb8634'
                     }}>
                     Your Names
                   </h4>

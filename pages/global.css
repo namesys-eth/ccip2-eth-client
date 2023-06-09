@@ -83,8 +83,21 @@ body {
   background-position-x: 50%;
   background-position-y: 8%;
 }
-@media screen and (max-width: 1200px) {
+@media screen and (max-width: 1300px) {
   .heading {
+    background-size: 0%;
+  }
+}
+
+.headingAlt {
+  background-image: url('/shadow.svg');
+  background-size: 4%;
+  background-repeat: no-repeat;
+  background-position-x: 50%;
+  background-position-y: 4.5%;
+}
+@media screen and (max-width: 1300px) {
+  .headingAlt {
     background-size: 0%;
   }
 }
@@ -171,13 +184,13 @@ input[type="text"] {
   justify-content: center;
   width: 80.55px;
   height: 90px;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 }
 @media screen and (max-width: 800px) {
   .icon-ens {
     margin-top: 10px;
-    width: 44.75px;
-    height: 50px;
+    width: 71.6px;
+    height: 80px;
   }
 }
 
