@@ -395,7 +395,7 @@ const Home: NextPage = () => {
           marginTop: onSearch ? '0px' : '40px'
         }}>
         {/* Content */}
-        <div className={ !isMobile ? 'heading' : 'none' } style={{ flex: '1 1 auto' }}>
+        <div className={ !isMobile && !onSearch ? 'heading' : 'none' } style={{ flex: '1 1 auto' }}>
           <div style={{ marginTop: '-120px' }}>
             <div
               style={{
