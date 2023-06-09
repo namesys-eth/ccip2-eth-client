@@ -117,11 +117,13 @@ const Home: NextPage = () => {
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
+    showOverlay(5);
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
     }
     getSaving()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Preserve metadata across pageloads
@@ -243,6 +245,24 @@ const Home: NextPage = () => {
     console.log(`Searching for ${query}`)
   }
 
+  // Overlay 
+  function showOverlay(durationInSeconds: number) {
+    const overlay = document.getElementById('overlay');
+    if (overlay) {
+      overlay.style.display = 'block';
+      setTimeout(() => {
+        hideOverlay();
+      }, durationInSeconds * 1000);
+    }
+  }
+  
+  function hideOverlay() {
+    const overlay = document.getElementById('overlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
+
   return (
     <div
       className="page"
@@ -274,9 +294,32 @@ const Home: NextPage = () => {
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
-        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
-        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
+        <link rel="preload" href="SF-Mono.woff2"  as="font" type="font/woff2" crossOrigin="anonymous"  />
+        <link rel="preload" href="Spotnik.woff2"  as="font" type="font/woff2" crossOrigin="anonymous"  />
+        <link rel="preload" href="Rajdhani.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
       </Head>
+      {/* Preload */}
+      <div style={{ fontFamily: 'Rajdhani' }}></div> 
+      <div style={{ fontFamily:  'SF Mono' }}></div> 
+      <div style={{ fontFamily:  'Spotnik' }}></div> 
+      {/* Overlay */}
+      <div id="overlay" className="overlay">
+        <div className="overlay-content">
+          <Loading 
+            height={75}
+            width={75}
+          />
+          <div
+            style={{
+              marginTop: '20px'
+            }}
+          >
+            <span>
+              PLEASE WAIT
+            </span>
+          </div>
+        </div>
+      </div>
       {/* Buttons */}
       <div>
         <div

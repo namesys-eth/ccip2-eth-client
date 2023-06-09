@@ -316,6 +316,28 @@ const Account: NextPage = () => {
         <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </Head>
+      {/* Preload */}
+      <div style={{ fontFamily: 'Rajdhani' }}></div> 
+      <div style={{ fontFamily:  'SF Mono' }}></div> 
+      <div style={{ fontFamily:  'Spotnik' }}></div> 
+      {/* Overlay */}
+      <div id="overlay" className="overlay">
+        <div className="overlay-content overlay-content-alt">
+          <Loading 
+            height={75}
+            width={75}
+          />
+          <div
+            style={{
+              marginTop: '20px'
+            }}
+          >
+            <span>
+              PLEASE WAIT
+            </span>
+          </div>
+        </div>
+      </div>
       {/* buttons */}
       <div>
         <div
@@ -433,7 +455,7 @@ const Account: NextPage = () => {
           margin: '50px 0 0 0'
         }}>
         {/* Content */}
-        <div className={ !isMobile && !searchType ? 'headingAlt' : 'none' } style={{ flex: '1 1 auto' }}>
+        <div className={ !isMobile && !searchType ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
           <div style={{ marginTop: '-120px' }}>
             <div
               style={{
