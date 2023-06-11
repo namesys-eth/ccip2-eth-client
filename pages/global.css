@@ -81,7 +81,7 @@ body {
   background-size: 4%;
   background-repeat: no-repeat;
   background-position-x: 50%;
-  background-position-y: 8%;
+  background-position-y: 10%;
 }
 @media screen and (max-width: 1300px) {
   .heading {
@@ -309,7 +309,7 @@ input[type="text"] {
   font-weight: 700;
 }
 .overlay-content-alt {
-  margin-top: 0px;
+  margin-top: 220px;
 }
 
 .search-container {

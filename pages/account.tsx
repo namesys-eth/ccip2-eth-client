@@ -116,11 +116,13 @@ const Account: NextPage = () => {
   }
 
   React.useEffect(() => {
+    constants.showOverlay(5);
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
     }
     getSaving()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const logTokens = useCallback(async () => {

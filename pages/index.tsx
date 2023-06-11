@@ -117,7 +117,7 @@ const Home: NextPage = () => {
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
-    showOverlay(5);
+    constants.showOverlay(5);
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
@@ -243,24 +243,6 @@ const Home: NextPage = () => {
     setQuery(query)
     setOnSearch(true)
     console.log(`Searching for ${query}`)
-  }
-
-  // Overlay 
-  function showOverlay(durationInSeconds: number) {
-    const overlay = document.getElementById('overlay');
-    if (overlay) {
-      overlay.style.display = 'block';
-      setTimeout(() => {
-        hideOverlay();
-      }, durationInSeconds * 1000);
-    }
-  }
-  
-  function hideOverlay() {
-    const overlay = document.getElementById('overlay');
-    if (overlay) {
-      overlay.style.display = 'none';
-    }
   }
 
   return (
@@ -459,7 +441,7 @@ const Home: NextPage = () => {
                   <h4
                     style={{
                       fontSize: onSearch ? '46px' : '50px',
-                      marginTop: onSearch ? '20px' : '5px',
+                      marginTop: onSearch ? '20px' : '25px',
                       color: '#fc6603',
                       marginBottom: '10px'
                     }}
