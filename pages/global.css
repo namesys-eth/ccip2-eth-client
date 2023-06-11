@@ -81,7 +81,7 @@ body {
   background-size: 4%;
   background-repeat: no-repeat;
   background-position-x: 50%;
-  background-position-y: 8%;
+  background-position-y: 10%;
 }
 @media screen and (max-width: 1300px) {
   .heading {
@@ -89,7 +89,7 @@ body {
   }
 }
 
-.headingAlt {
+.heading-alt {
   background-image: url('/shadow.svg');
   background-size: 4%;
   background-repeat: no-repeat;
@@ -97,7 +97,7 @@ body {
   background-position-y: 4.5%;
 }
 @media screen and (max-width: 1300px) {
-  .headingAlt {
+  .heading-alt {
     background-size: 0%;
   }
 }
@@ -283,6 +283,33 @@ input[type="text"] {
     margin-left: 2.5%;
     padding: 15px 15px 15px 15px;
   }
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.overlay-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin-top: 220px;
+  color: #fc6603;
+  font-size: 30px;
+  font-weight: 700;
+}
+.overlay-content-alt {
+  margin-top: 220px;
 }
 
 .search-container {
@@ -531,7 +558,7 @@ a:visited {
   padding-top: 10px;
   border-radius: 6px;
   font-size: 30px;
-  color: white;
+  color: #eb8634;
   font-weight: 700;
   font-family: 'Spotnik';
 }
@@ -1058,7 +1085,7 @@ button:not(:disabled),
 }
 
 .modal .modal-inner {
-  --cui-modal-zindex: 1055;
+  --cui-modal-zindex: 5;
   --cui-modal-width: 500px;
   --cui-modal-padding: 1rem;
   --cui-modal-margin: 0.5rem;

@@ -99,4 +99,20 @@ export const files = [
 	'revision'
 ] 
 
+// Overlay 
+export function showOverlay(durationInSeconds: number) {
+  const overlay = document.getElementById('overlay');
+  if (overlay) {
+    overlay.style.display = 'block';
+    setTimeout(() => {
+      hideOverlay();
+    }, durationInSeconds * 1000);
+  }
+}
 
+export function hideOverlay() {
+  const overlay = document.getElementById('overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+}
