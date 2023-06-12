@@ -2,7 +2,7 @@
 
 const nextConfig = {
   reactStrictMode: true,
-  assetPrefix: "#",
+  assetPrefix: "",
   images: {
     loader: 'akamai',
     path: '',
@@ -13,10 +13,6 @@ const nextConfig = {
       '/account': { page: '/account' },
     }
   },
-};
-module.exports = nextConfig;
-module.exports = {
-  reactStrictMode: true,
   externals: {
     FileReader: "FileReader"
   },
@@ -26,5 +22,7 @@ module.exports = {
       config.resolve.fallback = { fs: false };
     }
     return config;
-  },
+  }
 };
+
+module.exports = nextConfig;

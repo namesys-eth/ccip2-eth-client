@@ -242,7 +242,7 @@ const Account: NextPage = () => {
             if (items.length > 0) {
               setMeta(items)
               setSuccess(true)
-              console.log('You are owner/manager')
+              console.log('You are Owner/Manager')
               setErrorModal(false)
               setLoading(false)
             } else {
@@ -305,7 +305,7 @@ const Account: NextPage = () => {
           }}>
           <img
             className="avatar"
-            alt="sample"
+            alt="corner-account"
             src="logo.png"
           />
         </div>

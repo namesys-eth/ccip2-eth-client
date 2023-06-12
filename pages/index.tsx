@@ -266,7 +266,7 @@ const Home: NextPage = () => {
           }}>
           <img
             className="avatar"
-            alt="sample"
+            alt="corner-index"
             src="logo.png"
           />
         </div>
