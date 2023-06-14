@@ -30,6 +30,7 @@ const Home: NextPage = () => {
   const [modal, setModal] = React.useState(false)
   const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState('')
   const [previewModal, setPreviewModal] = React.useState(false)
   const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
@@ -144,7 +145,7 @@ const Home: NextPage = () => {
 
   /// ENS Domain Search Functionality
   // Read ENS Legacy Registry for Controller record of ENS domain
-  const { data: controller } = useContractRead(
+  const { data: _Controller_ } = useContractRead(
     constants.ensConfig[1],
     'getApproved',
     {
@@ -155,7 +156,7 @@ const Home: NextPage = () => {
   )
 
   // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: owner } = useContractRead(
+  const { data: _Owner_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
@@ -166,7 +167,7 @@ const Home: NextPage = () => {
   )
 
   // Read Recordhash from CCIP2 Resolver
-  const { data: recordhash } = useContractRead(
+  const { data: _Recordhash_ } = useContractRead(
     constants.ccip2Config[0], // CCIP2 Resolver
     'recordhash',
     {
@@ -178,17 +179,17 @@ const Home: NextPage = () => {
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (controller && controller?.toString() !== '0x' + '0'.repeat(40)) {
-      setManager(controller.toString())
-    } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
-      setManager(owner.toString())
+    if (_Controller_ && _Controller_?.toString() !== '0x' + '0'.repeat(40)) {
+      setManager(_Controller_.toString())
+    } else if (_Controller_?.toString() === '0x' + '0'.repeat(40) && _Owner_) {
+      setManager(_Owner_.toString())
     } else {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner])
+  }, [tokenID, _Controller_, _Owner_])
 
   // Shows search result for ENS domain search
   React.useEffect(() => {
@@ -204,13 +205,13 @@ const Home: NextPage = () => {
             'name': query.split('.eth')[0],
             'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
           })
-          if (items.length > 0) {
-            if (recordhash) {
+          if (items.length > 0 && response?.address) {
+            if (_Recordhash_) {
               items[0].migrated = '1'
             }
             setMeta(items)
             setSuccess(true)
-            console.log('You are owner/manager')
+            console.log('You are Owner/Manager')
             setErrorModal(false)
             setLoading(false)
           } else {
@@ -219,9 +220,18 @@ const Home: NextPage = () => {
           }
         })
     }
-    setMetadata()
+    if (query.length > 0) {
+      if (_Owner_ && _Owner_.toString() !== constants.zeroAddress) {
+        setMetadata()
+      } else {
+        console.log('Name not Registered')
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query])
+  }, [_Owner_])
 
   // Sets tokenID for ENS domain search result
   React.useEffect(() => { 
@@ -668,10 +678,10 @@ const Home: NextPage = () => {
                   setQuery(''),
                   setManager('')
               }}
-              show={errorModal && searchType === 'search' && manager && !loading}
+              show={errorModal && searchType === 'search' && !loading}
               title={'block'}
             >
-              {'Not Owner or Manager'}
+              { errorMessage }
             </Error>
             <Help
                 color={ color }

@@ -32,6 +32,7 @@ const Account: NextPage = () => {
   const [modal, setModal] = React.useState(false)
   const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState('')
   const [previewModal, setPreviewModal] = React.useState(false)
   const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
@@ -239,7 +240,7 @@ const Account: NextPage = () => {
               'name': query.split('.eth')[0],
               'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
             })
-            if (items.length > 0) {
+            if (items.length > 0 && response?.address) {
               setMeta(items)
               setSuccess(true)
               console.log('You are Owner/Manager')
@@ -251,10 +252,19 @@ const Account: NextPage = () => {
             }
           })
       }
-      setMetadata()
+      if (owner && owner?.toString() !== constants.zeroAddress) {
+        setMetadata()
+      } else {
+        console.log('Name not Registered')
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+      }
     } else {
+      setErrorMessage('You are not Manager')
       setErrorModal(true)
       setSuccess(false)
+      setLoading(false)
     }
   }, [manager, accountData?.address, query])
 
@@ -1043,7 +1053,7 @@ const Account: NextPage = () => {
               show={errorModal && searchType === 'manager' && manager && !loading}
               title={'block'}
             >
-              {'you are not manager'}
+              { errorMessage }
             </Error>
             <Error
               onClose={() => {

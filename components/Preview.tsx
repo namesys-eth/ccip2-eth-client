@@ -170,8 +170,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }); // Child modal state
   const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
-  const [sigRecord, setSigRecord] = React.useState(''); // Signature S2(K0) for Record update
-  const [sigApproved, setApproved] = React.useState(''); // Signature S3(K1) for Records Manager
+  //const [sigRecord, setSigRecord] = React.useState(''); // Signature S2(K0) for Record update
+  //const [sigApproved, setApproved] = React.useState(''); // Signature S3(K1) for Records Manager
 
   const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
@@ -1461,7 +1461,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('orange'),
-                              setHelp('Resolver migrated but no newRecordhash found. Set it by pressing \'Edit\'')
+                              setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
                             }}
                             data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                           >
