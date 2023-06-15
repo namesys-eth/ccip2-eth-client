@@ -207,7 +207,7 @@ const Home: NextPage = () => {
               'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
             })
             if (items.length > 0 && response?.address) {
-              if (_Recordhash_) {
+              if (_Recordhash_?.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               }
               setMeta(items)
@@ -254,6 +254,9 @@ const Home: NextPage = () => {
 
   // Triggers search of ENS domain
   const handleNameSearch = (query: string) => {
+    setMeta([])
+    setTokenID('')
+    setManager('')
     setLoading(true)
     setSearchType('search')
     setQuery(query)
