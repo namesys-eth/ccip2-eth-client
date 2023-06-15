@@ -193,45 +193,51 @@ const Home: NextPage = () => {
 
   // Shows search result for ENS domain search
   React.useEffect(() => {
-    setResponse(true)
-    var allEns: string[] = []
-    var items: any[] = []
-    allEns.push(query.split('.eth')[0])
-    const setMetadata = async () => {
-      constants.provider.getResolver(query)
-        .then((response) => {
-          items.push({
-            'key': 1, // Redundant [?]
-            'name': query.split('.eth')[0],
-            'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
-          })
-          if (items.length > 0 && response?.address) {
-            if (_Recordhash_) {
-              items[0].migrated = '1'
-            }
-            setMeta(items)
-            setSuccess(true)
-            console.log('You are Owner/Manager')
-            setErrorModal(false)
-            setLoading(false)
-          } else {
-            setSuccess(false)
-            setEmpty(true)
-          }
-        })
-    }
     if (query.length > 0) {
-      if (_Owner_ && _Owner_.toString() !== constants.zeroAddress) {
-        setMetadata()
-      } else {
-        console.log('Name not Registered')
-        setErrorMessage('Name not Registered')
-        setErrorModal(true)
-        setLoading(false)
+      setResponse(true)
+      var allEns: string[] = []
+      var items: any[] = []
+      allEns.push(query.split('.eth')[0])
+      const setMetadata = async () => {
+        constants.provider.getResolver(query)
+          .then((response) => {
+            items.push({
+              'key': 1, // Redundant [?]
+              'name': query.split('.eth')[0],
+              'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
+            })
+            if (items.length > 0 && response?.address) {
+              if (_Recordhash_) {
+                items[0].migrated = '1'
+              }
+              setMeta(items)
+              setSuccess(true)
+            } else {
+              setSuccess(false)
+            }
+          })
       }
+      setMetadata()
+      }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
+
+  React.useEffect(() => {
+    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
+      console.log('Name is Registered')
+      setErrorModal(false)
+      setLoading(false)
+      setEmpty(false)
+    } else {
+      console.log('Name not Registered')
+      setErrorMessage('Name not Registered')
+      setErrorModal(true)
+      setLoading(false)
+      setEmpty(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Owner_])
+  }, [success])
+
 
   // Sets tokenID for ENS domain search result
   React.useEffect(() => { 
