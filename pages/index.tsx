@@ -44,10 +44,9 @@ const Home: NextPage = () => {
   const [color, setColor] = React.useState('');
   const [help, setHelp] = React.useState('');
   const [searchType, setSearchType] = React.useState('')
-  const [cache, setCache] = React.useState<any[]>([])
-  const [response, setResponse] = React.useState(false)
+  //const [cache, setCache] = React.useState<any[]>([])
   const [onSearch, setOnSearch] = React.useState(false)
-  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+  const [modalState_, setModalState] = React.useState<constants.MainBodyState>({
     modalData: false,
     trigger: false
   });
@@ -98,7 +97,7 @@ const Home: NextPage = () => {
       type: 'gas'
     };
     try {
-      const response = await fetch(
+      const _RESPONSE = await fetch(
         "https://sshmatrix.club:3003/gas",
         {
           method: "post",
@@ -108,7 +107,7 @@ const Home: NextPage = () => {
           body: JSON.stringify(request)
         }
       );
-      const data = await response.json();
+      const data = await _RESPONSE.json();
       return data.response.gas;
     } catch (error) {
       console.log('Failed to get gas data from NameSys backend')
@@ -186,7 +185,6 @@ const Home: NextPage = () => {
     } else {
       setTimeout(() => {
         setLoading(false)
-        setResponse(false)
       }, 2000);
     }
   }, [tokenID, _Controller_, _Owner_])
@@ -194,19 +192,18 @@ const Home: NextPage = () => {
   // Shows search result for ENS domain search
   React.useEffect(() => {
     if (query.length > 0) {
-      setResponse(true)
       var allEns: string[] = []
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
       const setMetadata = async () => {
         constants.provider.getResolver(query)
-          .then((response) => {
+          .then((_RESPONSE) => {
             items.push({
               'key': 1, // Redundant [?]
               'name': query.split('.eth')[0],
-              'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
+              'migrated': _RESPONSE?.address === constants.ccip2[0] ? '1/2' : '0'
             })
-            if (items.length > 0 && response?.address) {
+            if (items.length > 0 && _RESPONSE?.address) {
               if (_Recordhash_?.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               }
@@ -218,7 +215,7 @@ const Home: NextPage = () => {
           })
       }
       setMetadata()
-      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 
