@@ -21,6 +21,7 @@ import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
+import * as recordhash from '../utils/recordhash'
 
 const Account: NextPage = () => {
   const { data: accountData } = useAccount()
@@ -45,7 +46,8 @@ const Account: NextPage = () => {
   const [color, setColor] = React.useState('')
   const [help, setHelp] = React.useState('')
   const [searchType, setSearchType] = React.useState('')
-  const [process, setProcess] = React.useState('')
+  const [process, setProcess] = React.useState('') // Stores name under process
+  const [progress, setProgress] = React.useState(0) // Stores progress
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
   const [response, setResponse] = React.useState(false) // Tracks response of search query
@@ -172,7 +174,7 @@ const Account: NextPage = () => {
     var items: any[] = []
     var count = 0
     for (var i = 0; i < allTokens.length; i++) {
-      // FIXME: ENS Metadata service is broken and not showing all the names
+      // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
@@ -182,6 +184,9 @@ const Account: NextPage = () => {
           'name': allTokens[i].title.split('.eth')[0],
           'migrated': _Resolver?.address === constants.ccip2[0] ? '1/2' : '0'
         })
+        setProcess(allTokens[i].title)
+        const flag = await recordhash.verifyRecordhash(allTokens[i].title)
+        items[count - 1].migrated = flag ? '1' : items[count - 1].migrated
       }
     }
     setMeta(items)
@@ -193,13 +198,13 @@ const Account: NextPage = () => {
       setLoading(false)
     }, 2000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData])
+  }, [])
   const getTokens = useCallback(async () => {
     if (accountData) {
       await logTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData])
+  }, [])
   React.useEffect(() => {
     setLoading(true)
     const setMetadata = async () => {
@@ -212,10 +217,9 @@ const Account: NextPage = () => {
     }
     setMetadata()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, isConnected, modalState])
+  }, [accountData, modalState])
 
-
-  // Preserve metadata across pageloads
+  // Preserve metadata across tabs
   React.useEffect(() => {
     const handleBeforeUnload = () => {
     }
@@ -259,7 +263,7 @@ const Account: NextPage = () => {
               'migrated': _RESPONSE?.address === constants.ccip2[0] ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (_Recordhash_?.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               }
               setFlash(meta)
@@ -684,7 +688,7 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  tab === 'SEARCH' ? console.log(cache) : setCache(flash),
+                  tab === 'SEARCH' ? '' : setCache(flash),
                   setMeta([]),
                   setTab('MANAGER'),
                   setSuccess(false),
@@ -714,7 +718,7 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  tab === 'MANAGER' ? console.log(cache) : setCache(flash),
+                  tab === 'MANAGER' ? '' : setCache(flash),
                   setMeta([]),
                   setTab('SEARCH'),
                   setSuccess(false),
@@ -781,7 +785,7 @@ const Account: NextPage = () => {
                   }}
                 >
                   { tab !== 'OWNER' ? 'Please Wait' :
-                    (modalState.modalData ? 'Please wait' : 'Loading Names')
+                    (modalState.modalData ? 'Please wait' : `Loading Names`)
                   }
                 </span>
               </div>

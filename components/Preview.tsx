@@ -720,8 +720,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .then(response => {
         setResolver(response?.address);
         if (response?.address) {
-          if (resolver === constants.ccip2Config[0]) {
-            setRecordhash(_Recordhash_!.toString())
+          if (response?.address === constants.ccip2[0]) {
+            setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
           }
           getContenthash(response!)
         }
