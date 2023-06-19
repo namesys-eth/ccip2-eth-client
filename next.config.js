@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 const nextConfig = {
   reactStrictMode: true,
   assetPrefix: "",
@@ -10,7 +12,7 @@ const nextConfig = {
   exportPathMap: async function (defaultPathMap) {
     return {
       '/': { page: '/' },
-      '/account': { page: '/account' },
+      '/account': { page: isProduction ? '/account.html' : '/account' },
     }
   },
   externals: {
@@ -19,10 +21,10 @@ const nextConfig = {
   webpack5: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.fallback = { fs: false };
+      config.resolve.fallback = { fs: false }
     }
-    return config;
+    return config
   }
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

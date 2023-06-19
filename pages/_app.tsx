@@ -1,24 +1,24 @@
-import React from 'react';
-import './global.css';
-import '@rainbow-me/rainbowkit/styles.css';
-import type { AppProps } from 'next/app';
+import React from 'react'
+import './global.css'
+import '@rainbow-me/rainbowkit/styles.css'
+import type { AppProps } from 'next/app'
 import {
   RainbowKitProvider,
   getDefaultWallets
-} from '@rainbow-me/rainbowkit';
+} from '@rainbow-me/rainbowkit'
 import type {
   Theme
-} from '@rainbow-me/rainbowkit';
-import { alchemyProvider } from 'wagmi/providers/alchemy';
-import { publicProvider } from 'wagmi/providers/public';
-import { chain, configureChains, createClient, WagmiConfig } from 'wagmi';
-import { isMobile } from 'react-device-detect';
+} from '@rainbow-me/rainbowkit'
+import { alchemyProvider } from 'wagmi/providers/alchemy'
+import { publicProvider } from 'wagmi/providers/public'
+import { chain, configureChains, createClient, WagmiConfig } from 'wagmi'
+import { isMobile } from 'react-device-detect'
 
-let rainbowFont = '';
+let rainbowFont = ''
 if (isMobile) {
-  rainbowFont = 'Spotnik';
+  rainbowFont = 'Spotnik'
 } else {
-  rainbowFont = 'Spotnik';
+  rainbowFont = 'Spotnik'
 }
 
 const customTheme: Theme = {
@@ -73,7 +73,7 @@ const customTheme: Theme = {
     selectedWallet: '',
     walletLogo: '',
   }
-};
+}
 
 const { chains, provider } = configureChains(
   [
@@ -83,27 +83,26 @@ const { chains, provider } = configureChains(
     alchemyProvider({ alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID }),
     publicProvider()
   ]
-);
+)
 
 const { connectors } = getDefaultWallets({
   appName: 'NameSys',
   chains,
-});
+})
 
 const appInfo = {
   appName: 'NameSys: Off-chain ENS Records Manager',
-};
+}
 
 const wagmiClient = createClient({
   autoConnect: true,
   connectors,
   provider
-});
+})
 
 function MyApp({ Component, pageProps }: AppProps) {
 
   return (
-    <>
       <WagmiConfig client={wagmiClient}>
         <RainbowKitProvider
           appInfo={appInfo}
@@ -113,8 +112,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           <Component {...pageProps} />
         </RainbowKitProvider>
       </WagmiConfig>
-    </>
-  );
+  )
 }
 
-export default MyApp;
+export default MyApp
