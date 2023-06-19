@@ -17,7 +17,7 @@ import * as constants from '../utils/constants'
 import { _KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
-import * as ensHash from '@ensdomains/content-hash'
+import * as ensContent from '../utils/contenthash'
 import {
   useAccount,
   useFeeData,
@@ -80,6 +80,8 @@ const EMPTY_HISTORY = {
 
 // Init ABI Encoder
 const abi = ethers.utils
+// Set Recordhash type
+const contentType = 'ipns://'
 
 /// Library
 // Check if image URL resolves
@@ -103,16 +105,11 @@ function formatkey(keypair: [[string, string], [string, string]]) {
 
 // Encode ENS contenthash
 function encodeContenthash(contenthash: string) {
-  const matched = contenthash.match(/^(ipfs|sia|ipns|bzz|onion|onion3|arweave):\/\/(.*)/)
-    || contenthash.match(/\/(ipfs)\/(.*)/)  
-    || contenthash.match(/\/(ipns)\/(.*)/)
-    if (matched) {
-      const contentType = matched[1]
-      const content = matched![2]
-      const ensContentHash = ensHash.contentHash.encode(`${contentType}-ns`, content)
-      return ensContentHash
-    }
-    return ''
+  if (contenthash) {
+    const ensContentHash = ensContent.encodeContenthash(`ipns://${contenthash}`)
+    return ensContentHash.encoded
+  }
+  return ''
 }
 
 /**
@@ -170,8 +167,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }); // Child modal state
   const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
-  const [sigRecord, setSigRecord] = React.useState(''); // Signature S2(K0) for Record update
-  const [sigApproved, setApproved] = React.useState(''); // Signature S3(K1) for Records Manager
+  //const [sigRecord, setSigRecord] = React.useState(''); // Signature S2(K0) for Record update
+  //const [sigApproved, setApproved] = React.useState(''); // Signature S3(K1) for Records Manager
 
   const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
@@ -723,8 +720,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .then(response => {
         setResolver(response?.address);
         if (response?.address) {
-          if (resolver === constants.ccip2Config[0]) {
-            setRecordhash(_Recordhash_!.toString())
+          if (response?.address === constants.ccip2[0]) {
+            setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
           }
           getContenthash(response!)
         }
@@ -1117,7 +1114,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLegit(EMPTY_BOOL())
       setStates([])
       getResolver()
-      setSuccess('Resolver is migrated and setRecordhash is set. Enjoy!')
+      setLoading(false)
+      setSuccess('Off-chain Setup Complete. Enjoy!')
       setIcon('check_circle_outline')
       setColor('lightgreen')
       setSuccessModal(true)
@@ -1128,7 +1126,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetRecordhashSuccess, txSuccess2of2]);
 
-  // Sets migration state to true upon successful transaction receipt
+  // Sets migration state to true upon successful transaction 1 receipt
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess1of2) {
       const pin = async () => {
@@ -1155,7 +1153,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (txLoading1of2 && !txError1of2) {
       setMessage(['Waiting for Transaction', '1'])
-      setCrash(false)
     }
     if (!txLoading1of2 && txError1of2) {
       setMessage(['Transaction Failed', '1'])
@@ -1168,7 +1165,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (txLoading2of2 && !txError2of2) {
       setMessage(['Waiting for Transaction', '2'])
-      setCrash(false)
     }
     if (!txLoading2of2 && txError2of2) {
       setMessage(['Transaction Failed', '2'])
@@ -1181,7 +1177,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (signLoading && !signError) {
       setMessage(['Waiting for Signature', ''])
-      setCrash(false)
     }
     if (signError && !signLoading) {
       setMessage(['Signature Failed', ''])
@@ -1461,7 +1456,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('orange'),
-                              setHelp('Resolver migrated but no newRecordhash found. Set it by pressing \'Edit\'')
+                              setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
                             }}
                             data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                           >

@@ -15,7 +15,11 @@
     "jsx": "preserve",
     "incremental": true,
     "types": ["scheduler"],
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./typings"
+    ]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]

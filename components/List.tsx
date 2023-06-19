@@ -28,7 +28,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
   const [help, setHelp] = React.useState('');
   const [color, setColor] = React.useState('');
   const [modal, setModal] = React.useState(false)
- 
+
   return (
     <ul
       style={{

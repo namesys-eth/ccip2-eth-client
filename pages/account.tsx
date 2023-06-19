@@ -21,8 +21,7 @@ import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
-
-let metadata: React.SetStateAction<any[]>
+import * as recordhash from '../utils/recordhash'
 
 const Account: NextPage = () => {
   const { data: accountData } = useAccount()
@@ -32,33 +31,39 @@ const Account: NextPage = () => {
   const [modal, setModal] = React.useState(false)
   const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState('')
   const [previewModal, setPreviewModal] = React.useState(false)
   const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [tab, setTab] = React.useState('owner')
+  const [tab, setTab] = React.useState('OWNER')
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
   const [savings, setSavings] = React.useState('')
-  const [icon, setIcon] = React.useState('');
-  const [color, setColor] = React.useState('');
-  const [help, setHelp] = React.useState('');
+  const [icon, setIcon] = React.useState('')
+  const [color, setColor] = React.useState('')
+  const [help, setHelp] = React.useState('')
   const [searchType, setSearchType] = React.useState('')
-  const [cache, setCache] = React.useState<any[]>([])
-  const [response, setResponse] = React.useState(false)
+  const [process, setProcess] = React.useState('') // Stores name under process
+  const [progress, setProgress] = React.useState(0) // Stores progress
+  const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
+  const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
+  const [response, setResponse] = React.useState(false) // Tracks response of search query
   const [modalState, setModalState] = React.useState<constants.MainBodyState>({
     modalData: false,
     trigger: false
-  });
+  }) // Child modal state
 
+  // Handle Preview modal data return
   const handleParentModalData = (data: boolean) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
-  };
+  }
+  // Handle Preview modal trigger return
   const handleParentTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
-  };
+  }
 
   /* @dev : GraphQL Instance
   /// we need our own subgraph for this
@@ -92,12 +97,47 @@ const Account: NextPage = () => {
   }, [accountData])
   */
 
+  /// ENS Domain Config
+  // Read ENS Legacy Registry for Controller record of ENS domain
+  const { data: _Controller_ } = useContractRead(
+    constants.ensConfig[1],
+    'getApproved',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
+
+  // Read ENS Legacy Registry for Owner record of ENS domain
+  const { data: _Owner_ } = useContractRead(
+    constants.ensConfig[1],
+    'ownerOf',
+    {
+      args: [
+        tokenID
+      ]
+    }
+  )
+
+  // Read Recordhash from CCIP2 Resolver
+  const { data: _Recordhash_ } = useContractRead(
+    constants.ccip2Config[0], // CCIP2 Resolver
+    'recordhash',
+    {
+      args: [
+        ethers.utils.namehash(process)
+      ]
+    }
+  )
+
+  // Get historical gas savings
   async function getSavings() {
     const request = {
       type: 'gas'
     };
     try {
-      const response = await fetch(
+      const _RESPONSE = await fetch(
         "https://sshmatrix.club:3003/gas",
         {
           method: "post",
@@ -107,7 +147,7 @@ const Account: NextPage = () => {
           body: JSON.stringify(request)
         }
       );
-      const data = await response.json();
+      const data = await _RESPONSE.json();
       return data.response.gas;
     } catch (error) {
       console.log('Failed to get gas data from CCIP2 backend')
@@ -115,6 +155,7 @@ const Account: NextPage = () => {
     }
   }
 
+  // Load historical gas savings on pageload
   React.useEffect(() => {
     constants.showOverlay(5);
     const getSaving = async () => {
@@ -125,6 +166,7 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Get all tokens for an address
   const logTokens = useCallback(async () => {
     const nfts = await constants.alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
     const allTokens = nfts.ownedNfts
@@ -132,54 +174,54 @@ const Account: NextPage = () => {
     var items: any[] = []
     var count = 0
     for (var i = 0; i < allTokens.length; i++) {
-      // @TODO : ENS Metadata service is broken and not showing all the names
+      // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
         allEns.push(allTokens[i].title.split('.eth')[0])
-        const response = await constants.provider.getResolver(allTokens[i].title)
+        const _Resolver = await constants.provider.getResolver(allTokens[i].title)
         items.push({
           'key': count,
           'name': allTokens[i].title.split('.eth')[0],
-          'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
+          'migrated': _Resolver?.address === constants.ccip2[0] ? '1/2' : '0'
         })
+        setProcess(allTokens[i].title)
+        const flag = await recordhash.verifyRecordhash(allTokens[i].title)
+        items[count - 1].migrated = flag ? '1' : items[count - 1].migrated
       }
     }
     setMeta(items)
+    setFlash(items)
     if (count === 0) {
       setEmpty(true)
-    } else {
-      setEmpty(false)
     }
     setTimeout(() => {
       setLoading(false)
     }, 2000);
-  }, [accountData])
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const getTokens = useCallback(async () => {
     if (accountData) {
       await logTokens()
     }
-  }, [accountData, logTokens])
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   React.useEffect(() => {
     setLoading(true)
     const setMetadata = async () => {
       await getTokens()
         .then(() => {
-          if (metadata) {
-            setMeta(metadata)
-            setTimeout(() => {
-              setLoading(false)
-            }, 2000);
-          }
+          setTimeout(() => {
+            setLoading(false)
+          }, 2000);
         })
     }
     setMetadata()
-  }, [accountData, isConnected, getTokens, modalState])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData, modalState])
 
+  // Preserve metadata across tabs
   React.useEffect(() => {
     const handleBeforeUnload = () => {
-      metadata = meta
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
@@ -187,76 +229,71 @@ const Account: NextPage = () => {
     }
   }, [meta])
 
+  // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
     setPreviewModal(true);
     setNameToPreview(name);
   }
 
-  const { data: controller } = useContractRead(
-    constants.ensConfig[1],
-    'getApproved',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
-
-  const { data: owner } = useContractRead(
-    constants.ensConfig[1],
-    'ownerOf',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
-
   React.useEffect(() => {
-    if (controller && controller?.toString() !== constants.zeroAddress) {
-      setManager(controller.toString())
-    } else if (owner && controller?.toString() === constants.zeroAddress) {
-      setManager(owner.toString())
-    } else if (tab !== 'owner') {
+    if (_Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
+      setManager(_Controller_.toString())
+    } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
+      setManager(_Owner_.toString())
+    } else if (tab !== 'OWNER') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner, tab])
+  }, [tokenID, _Controller_, _Owner_, tab])
 
   React.useEffect(() => {
-    if (manager === accountData?.address) {
+    if (manager && manager === accountData?.address && query.length > 0) {
       setResponse(true)
       var allEns: string[] = []
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
       const setMetadata = async () => {
         constants.provider.getResolver(query)
-          .then((response) => {
+          .then((_RESPONSE) => {
             items.push({
               'key': 1,
               'name': query.split('.eth')[0],
-              'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
+              'migrated': _RESPONSE?.address === constants.ccip2[0] ? '1/2' : '0'
             })
-            if (items.length > 0) {
+            if (items.length > 0 && _RESPONSE?.address) {
+              if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
+                items[0].migrated = '1'
+              }
+              setFlash(meta)
               setMeta(items)
               setSuccess(true)
-              console.log('You are owner/manager')
-              setErrorModal(false)
-              setLoading(false)
             } else {
               setSuccess(false)
-              setEmpty(true)
+              setErrorMessage('Name not Registered')
+              setErrorModal(true)
             }
           })
       }
       setMetadata()
-    } else {
-      setErrorModal(true)
+    } else if (manager && manager !== accountData?.address)  {
       setSuccess(false)
+      setErrorMessage('You are not Owner or Manager')
+      setErrorModal(true)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, accountData?.address, query])
+
+  React.useEffect(() => {
+    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
+      setErrorModal(false)
+      setLoading(false)
+    } else {
+      setLoading(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [success])
 
   React.useEffect(() => {
     if (query) {
@@ -272,14 +309,16 @@ const Account: NextPage = () => {
 
   const handleManagerSearch = (query: string) => {
     setLoading(true)
-    setSearchType('manager')
+    setSearchType('MANAGER')
+    setProcess(query)
     setQuery(query)
     console.log(`Searching Manager for ${query}`)
   }
 
   const handleNameSearch = (query: string) => {
     setLoading(true)
-    setSearchType('search')
+    setSearchType('SEARCH')
+    setProcess(query)
     setQuery(query)
     console.log(`Searching for ${query}`)
   }
@@ -305,7 +344,7 @@ const Account: NextPage = () => {
           }}>
           <img
             className="avatar"
-            alt="sample"
+            alt="corner-account"
             src="logo.png"
           />
         </div>
@@ -619,19 +658,20 @@ const Account: NextPage = () => {
               }}>
               <button
                 onClick={() => {
-                  setTab('owner'),
-                    setMeta(cache),
-                    setTokenID(''),
-                    setQuery(''),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setTimeout(() => {
-                      setLoading(false)
-                    }, 2000)
+                  setTab('OWNER'),
+                  setMeta(cache),
+                  setTokenID(''),
+                  setQuery(''),
+                  setSuccess(false),
+                  setManager(''),
+                  setLoading(true),
+                  setErrorModal(false),
+                  setTimeout(() => {
+                    setLoading(false)
+                  }, 2000)
                 }}
                 className='button-header'
-                disabled={tab === 'owner'}
+                disabled={tab === 'OWNER'}
                 data-tooltip='Show names you own'
               >
                 <div
@@ -642,24 +682,26 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'owned'}&nbsp;
+                  {'OWNED'}&nbsp;
                   <span className="material-icons">manage_accounts</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  tab === 'search' ? console.log(cache) : setCache(meta),
-                    setMeta([]),
-                    setTab('manager'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setTimeout(() => {
-                      setLoading(false)
-                    }, 2000)
+                  tab === 'SEARCH' ? '' : setCache(flash),
+                  setMeta([]),
+                  setTab('MANAGER'),
+                  setSuccess(false),
+                  setManager(''),
+                  setLoading(true),
+                  setQuery(''),
+                  setErrorModal(false),
+                  setTimeout(() => {
+                    setLoading(false)
+                  }, 2000)
                 }}
                 className='button-header'
-                disabled={tab === 'manager' || loading}
+                disabled={tab === 'MANAGER' || loading}
                 data-tooltip='Search for a name that you manage'
               >
                 <div
@@ -670,24 +712,26 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'managed'}&nbsp;
+                  {'MANAGED'}&nbsp;
                   <span className="material-icons">supervised_user_circle</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  tab === 'manager' ? console.log(cache) : setCache(meta),
-                    setMeta([]),
-                    setTab('search'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setTimeout(() => {
-                      setLoading(false)
-                    }, 2000)
+                  tab === 'MANAGER' ? '' : setCache(flash),
+                  setMeta([]),
+                  setTab('SEARCH'),
+                  setSuccess(false),
+                  setManager(''),
+                  setLoading(true),
+                  setQuery(''),
+                  setErrorModal(false),
+                  setTimeout(() => {
+                    setLoading(false)
+                  }, 2000)
                 }}
                 className='button-header'
-                disabled={tab === 'search' || loading}
+                disabled={tab === 'SEARCH' || loading}
                 data-tooltip='Search for an ENS name'
               >
                 <div
@@ -698,7 +742,7 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'search'}&nbsp;
+                  {'SEARCH'}&nbsp;
                   <span className="material-icons">search</span>
                 </div>
               </button>
@@ -740,8 +784,8 @@ const Account: NextPage = () => {
                     fontWeight: '700'
                   }}
                 >
-                  { tab !== 'owner' ? 'Please Wait' :
-                    (modalState.modalData ? 'Please wait' : 'Loading Names')
+                  { tab !== 'OWNER' ? 'Please Wait' :
+                    (modalState.modalData ? 'Please wait' : `Loading Names`)
                   }
                 </span>
               </div>
@@ -749,7 +793,7 @@ const Account: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'owner' && meta.length > 0 && isConnected && !empty && (
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -804,7 +848,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && (tab === 'manager' || tab === 'search') && meta.length > 0 && isConnected && !empty && (
+          {!loading && (tab === 'MANAGER' || tab === 'SEARCH') && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -835,7 +879,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && tab === 'manager' && !success && meta && isConnected && (
+          {!loading && tab === 'MANAGER' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -888,7 +932,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && tab === 'search' && !success && meta && isConnected && (
+          {!loading && tab === 'SEARCH' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -940,7 +984,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && empty && tab === 'owner' && (
+          {!loading && empty && tab === 'OWNER' && (
             <div>
               <div
                 style={{
@@ -964,7 +1008,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!response && !manager && query && tab !== 'owner' && !loading && (
+          {!response && !manager && query && tab !== 'OWNER' && !loading && (
             <div>
               <div
                 style={{
@@ -1040,10 +1084,10 @@ const Account: NextPage = () => {
                   setQuery(''),
                   setManager('')
               }}
-              show={errorModal && searchType === 'manager' && manager && !loading}
+              show={errorModal && searchType === 'MANAGER' && manager && !loading}
               title={'block'}
             >
-              {'you are not manager'}
+              { errorMessage }
             </Error>
             <Error
               onClose={() => {
@@ -1052,10 +1096,10 @@ const Account: NextPage = () => {
                   setQuery(''),
                   setManager('')
               }}
-              show={errorModal && searchType === 'search' && manager && !loading}
+              show={errorModal && searchType === 'SEARCH' && manager && !loading}
               title={'block'}
             >
-              {'not owner or manager'}
+              {'Not Owner or Manager'}
             </Error>
             <Help
                 color={ color }

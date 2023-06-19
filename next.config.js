@@ -2,7 +2,7 @@
 
 const nextConfig = {
   reactStrictMode: true,
-  assetPrefix: "#",
+  assetPrefix: "",
   images: {
     loader: 'akamai',
     path: '',
@@ -10,21 +10,19 @@ const nextConfig = {
   exportPathMap: async function (defaultPathMap) {
     return {
       '/': { page: '/' },
-      '/account': { page: '/account' },
+      '/account': { page: '/account' }
     }
   },
-};
-module.exports = nextConfig;
-module.exports = {
-  reactStrictMode: true,
   externals: {
     FileReader: "FileReader"
   },
   webpack5: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.fallback = { fs: false };
+      config.resolve.fallback = { fs: false }
     }
-    return config;
-  },
-};
+    return config
+  }
+}
+
+module.exports = nextConfig

@@ -30,6 +30,7 @@ const Home: NextPage = () => {
   const [modal, setModal] = React.useState(false)
   const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState('')
   const [previewModal, setPreviewModal] = React.useState(false)
   const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
@@ -43,10 +44,9 @@ const Home: NextPage = () => {
   const [color, setColor] = React.useState('');
   const [help, setHelp] = React.useState('');
   const [searchType, setSearchType] = React.useState('')
-  const [cache, setCache] = React.useState<any[]>([])
-  const [response, setResponse] = React.useState(false)
+  //const [cache, setCache] = React.useState<any[]>([])
   const [onSearch, setOnSearch] = React.useState(false)
-  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+  const [modalState_, setModalState] = React.useState<constants.MainBodyState>({
     modalData: false,
     trigger: false
   });
@@ -59,6 +59,8 @@ const Home: NextPage = () => {
   const handleParentTrigger = (trigger: boolean) => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
+
+  const isProduction = process.env.NODE_ENV === 'production'
 
   /* GraphQL instance; need subgraph for this
   const logNames = useCallback(async () => {
@@ -97,7 +99,7 @@ const Home: NextPage = () => {
       type: 'gas'
     };
     try {
-      const response = await fetch(
+      const _RESPONSE = await fetch(
         "https://sshmatrix.club:3003/gas",
         {
           method: "post",
@@ -107,7 +109,7 @@ const Home: NextPage = () => {
           body: JSON.stringify(request)
         }
       );
-      const data = await response.json();
+      const data = await _RESPONSE.json();
       return data.response.gas;
     } catch (error) {
       console.log('Failed to get gas data from NameSys backend')
@@ -144,7 +146,7 @@ const Home: NextPage = () => {
 
   /// ENS Domain Search Functionality
   // Read ENS Legacy Registry for Controller record of ENS domain
-  const { data: controller } = useContractRead(
+  const { data: _Controller_ } = useContractRead(
     constants.ensConfig[1],
     'getApproved',
     {
@@ -155,7 +157,7 @@ const Home: NextPage = () => {
   )
 
   // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: owner } = useContractRead(
+  const { data: _Owner_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
@@ -166,7 +168,7 @@ const Home: NextPage = () => {
   )
 
   // Read Recordhash from CCIP2 Resolver
-  const { data: recordhash } = useContractRead(
+  const { data: _Recordhash_ } = useContractRead(
     constants.ccip2Config[0], // CCIP2 Resolver
     'recordhash',
     {
@@ -178,50 +180,63 @@ const Home: NextPage = () => {
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (controller && controller?.toString() !== '0x' + '0'.repeat(40)) {
-      setManager(controller.toString())
-    } else if (controller?.toString() === '0x' + '0'.repeat(40) && owner) {
-      setManager(owner.toString())
+    if (_Controller_ && _Controller_?.toString() !== '0x' + '0'.repeat(40)) {
+      setManager(_Controller_.toString())
+    } else if (_Controller_?.toString() === '0x' + '0'.repeat(40) && _Owner_) {
+      setManager(_Owner_.toString())
     } else {
       setTimeout(() => {
         setLoading(false)
-        setResponse(false)
       }, 2000);
     }
-  }, [tokenID, controller, owner])
+  }, [tokenID, _Controller_, _Owner_])
 
   // Shows search result for ENS domain search
   React.useEffect(() => {
-    setResponse(true)
-    var allEns: string[] = []
-    var items: any[] = []
-    allEns.push(query.split('.eth')[0])
-    const setMetadata = async () => {
-      constants.provider.getResolver(query)
-        .then((response) => {
-          items.push({
-            'key': 1, // Redundant [?]
-            'name': query.split('.eth')[0],
-            'migrated': response?.address === constants.ccip2[0] ? '1/2' : '0'
-          })
-          if (items.length > 0) {
-            if (recordhash) {
-              items[0].migrated = '1'
+    if (query.length > 0) {
+      var allEns: string[] = []
+      var items: any[] = []
+      allEns.push(query.split('.eth')[0])
+      const setMetadata = async () => {
+        constants.provider.getResolver(query)
+          .then((_RESPONSE) => {
+            items.push({
+              'key': 1, // Redundant [?]
+              'name': query.split('.eth')[0],
+              'migrated': _RESPONSE?.address === constants.ccip2[0] ? '1/2' : '0'
+            })
+            if (items.length > 0 && _RESPONSE?.address) {
+              if (_Recordhash_?.toString() !== '0x' && items[0].migrated === '1/2') {
+                items[0].migrated = '1'
+              }
+              setMeta(items)
+              setSuccess(true)
+            } else {
+              setSuccess(false)
             }
-            setMeta(items)
-            setSuccess(true)
-            console.log('You are owner/manager')
-            setErrorModal(false)
-            setLoading(false)
-          } else {
-            setSuccess(false)
-            setEmpty(true)
-          }
-        })
+          })
+      }
+      setMetadata()
     }
-    setMetadata()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
+
+  React.useEffect(() => {
+    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
+      console.log('Name is Registered')
+      setErrorModal(false)
+      setLoading(false)
+      setEmpty(false)
+    } else {
+      console.log('Name not Registered')
+      setErrorMessage('Name not Registered')
+      setErrorModal(true)
+      setLoading(false)
+      setEmpty(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [success])
+
 
   // Sets tokenID for ENS domain search result
   React.useEffect(() => { 
@@ -238,6 +253,9 @@ const Home: NextPage = () => {
 
   // Triggers search of ENS domain
   const handleNameSearch = (query: string) => {
+    setMeta([])
+    setTokenID('')
+    setManager('')
     setLoading(true)
     setSearchType('search')
     setQuery(query)
@@ -266,7 +284,7 @@ const Home: NextPage = () => {
           }}>
           <img
             className="avatar"
-            alt="sample"
+            alt="corner-index"
             src="logo.png"
           />
         </div>
@@ -328,7 +346,7 @@ const Home: NextPage = () => {
             >
               <button
                 className='button'
-                onClick={() => { window.location.href = '/account' }}
+                onClick={() => { window.location.href = isProduction ? '/account.html' : '/account' }}
                 data-tooltip='My Names'
                 disabled={!isConnected}
               >
@@ -668,10 +686,10 @@ const Home: NextPage = () => {
                   setQuery(''),
                   setManager('')
               }}
-              show={errorModal && searchType === 'search' && manager && !loading}
+              show={errorModal && searchType === 'search' && !loading}
               title={'block'}
             >
-              {'Not Owner or Manager'}
+              { errorMessage }
             </Error>
             <Help
                 color={ color }
