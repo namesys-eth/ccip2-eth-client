@@ -60,6 +60,8 @@ const Home: NextPage = () => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
+  const isProduction = process.env.NODE_ENV === 'production'
+
   /* GraphQL instance; need subgraph for this
   const logNames = useCallback(async () => {
     let EnsQuery = await fetch(EnsGraphApi, {
@@ -344,7 +346,7 @@ const Home: NextPage = () => {
             >
               <button
                 className='button'
-                onClick={() => { window.location.href = '/account' }}
+                onClick={() => { window.location.href = isProduction ? '/account.html' : '/account' }}
                 data-tooltip='My Names'
                 disabled={!isConnected}
               >
