@@ -62,9 +62,9 @@ function EMPTY_STRING() {
 
 // Types object with empty bools
 function EMPTY_BOOL() {
-  const EMPTY_BOOL = {};
+  const EMPTY_BOOL = {}
   for (const key of constants.types) {
-    EMPTY_BOOL[key] = ['resolver'].includes(key) ? true : false;
+    EMPTY_BOOL[key] = ['resolver','recordhash'].includes(key) ? true : false
   }
   return EMPTY_BOOL
 }
@@ -200,8 +200,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 0,
         type: 'recordhash',
         value: recordhash,
-        editable: resolver === constants.ccip2[0],
-        active: isContenthash(recordhash),
+        editable: false,
+        active: resolver === constants.ccip2[0],
         state: false,
         label: 'set',
         help: 'on-chain recordhash'
@@ -576,6 +576,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (CID.startsWith('k5')) {
         migrate()
       }
+    } else if (states.includes('recordhash')) {
+      if (CID.startsWith('k5')) {
+        initRecordhash()
+      }
     } else {
       setMessage(message)
     }
@@ -786,8 +790,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let __THIS = legit
     __THIS['resolver'] = false
     if (key === 'recordhash') {
-      //__THIS[key] = isName(value)
-      __THIS[key] = false
+      __THIS[key] = true
     } else if (key === 'addr') {
       __THIS[key] = isAddr(value)
     } else if (key === 'avatar') {
@@ -896,7 +899,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         return { 
           ...item, 
           editable: false, 
-          active: false
+          active: true
         };
       }
       return item;
@@ -1079,13 +1082,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles setting Recordhash after transaction 2 
   React.useEffect(() => {
-    if (
-      isMigrateSuccess && 
-      txSuccess1of2 && 
-      migrated &&
-      isSetRecordhashSuccess &&
-      txSuccess2of2
-    ) {
+    if (isSetRecordhashSuccess && txSuccess2of2) {
       setRecordhash(`ipns://${CID}`)
       setENS(_ENS_)
     }
@@ -1094,14 +1091,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles finishing migration of Resolver to CCIP2
   React.useEffect(() => {
-    if (
-      recordhash &&
-      isMigrateSuccess && 
-      txSuccess1of2 && 
-      migrated &&
-      isSetRecordhashSuccess &&
-      txSuccess2of2
-    ) {
+    if (recordhash) {
       const _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
           return { 
@@ -1558,7 +1548,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           !legit[item.type] ||
                           item.state ||
                           !accountData ||
-                          !managers.includes(accountData?.address ? accountData.address : '0x0c0cac01ac0ffeecafe')
+                          !managers.includes(accountData?.address ? accountData.address : '0x0c0cac01ac0ffeecafeNOTHEX')
                         }
                         style={{
                           alignSelf: 'flex-end',
@@ -1569,9 +1559,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         onClick={() => { 
                           setTrigger(item.key),
                           setMessage(['Waiting for Signature', '']),
-                          ['resolver'].includes(item.type) ? setSalt(true) : setUpdate(true), // Prompt password for Resolver; derive S2(K0) for Records
-                          ['resolver'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger write for Records
-                          ['resolver'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
+                          ['resolver','recordhash'].includes(item.type) ? setSalt(true) : setUpdate(true), // Prompt password for Resolver; derive S2(K0) for Records
+                          ['resolver','recordhash'].includes(item.type) ? setWrite(false) : setWrite(true), // Trigger write for Records
+                          ['resolver','recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
                         }}
                         data-tooltip={ item.help }
                       >

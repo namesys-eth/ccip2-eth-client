@@ -44,6 +44,8 @@ const Account: NextPage = () => {
   const [savings, setSavings] = React.useState('')
   const [icon, setIcon] = React.useState('')
   const [color, setColor] = React.useState('')
+  const [getting, setGetting] = React.useState(0)
+  const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('')
   const [searchType, setSearchType] = React.useState('')
   const [process, setProcess] = React.useState('') // Stores name under process
@@ -173,10 +175,18 @@ const Account: NextPage = () => {
     var allEns: string[] = []
     var items: any[] = []
     var count = 0
+    var _Cache: string[] = []
+    for (var i = 0; i < allTokens.length; i++) {
+      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
+        _Cache.push(allTokens[i].title)
+      }
+    }
+    setLength(_Cache.length)
     for (var i = 0; i < allTokens.length; i++) {
       // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
+        setGetting(count)
         allEns.push(allTokens[i].title.split('.eth')[0])
         const _Resolver = await constants.provider.getResolver(allTokens[i].title)
         items.push({
@@ -236,6 +246,12 @@ const Account: NextPage = () => {
   }
 
   React.useEffect(() => {
+    if (getting > progress) {
+      setProgress(getting);
+    }
+  }, [getting]);
+
+  React.useEffect(() => {
     if (_Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
       setManager(_Controller_.toString())
     } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
@@ -278,6 +294,7 @@ const Account: NextPage = () => {
       }
       setMetadata()
     } else if (manager && manager !== accountData?.address)  {
+      setLoading(false)
       setSuccess(false)
       setErrorMessage('You are not Owner or Manager')
       setErrorModal(true)
@@ -774,21 +791,36 @@ const Account: NextPage = () => {
                   />
                 </div>
                 <div
-                style={{
-                  marginTop: '40px'
-                }}
-              >
-                <span
                   style={{
-                    color: '#fc6603',
-                    fontWeight: '700'
+                    marginTop: '40px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
-                  { tab !== 'OWNER' ? 'Please Wait' :
-                    (modalState.modalData ? 'Please wait' : `Loading Names`)
-                  }
-                </span>
-              </div>
+                  <div
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700'
+                    }}
+                  >
+                    { tab !== 'OWNER' ? 'Please Wait' :
+                      (modalState.modalData ? 'Please wait' : 'Loading Names ')
+                    }
+                  </div>
+                  <div
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700',
+                      fontFamily: 'SF Mono'
+                    }}
+                  >
+                    { tab !== 'OWNER' ? '' :
+                      (modalState.modalData ? '' : `${progress}/${length}`)
+                    }
+                  </div>
+                </div>
               </div>
               <h1>please wait</h1>
             </div>

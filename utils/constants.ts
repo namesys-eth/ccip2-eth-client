@@ -82,6 +82,7 @@ export const forbidden = [
 ]
 // Record types in Preview modal
 export const types = [
+  'recordhash', // On-Chain Record
   'resolver', // Exception: Not a Record type
 	'addr',
 	'contenthash',
