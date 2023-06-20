@@ -80,8 +80,6 @@ const EMPTY_HISTORY = {
 
 // Init ABI Encoder
 const abi = ethers.utils
-// Set Recordhash type
-const contentType = 'ipns://'
 
 /// Library
 // Check if image URL resolves
@@ -125,10 +123,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
   const [loading, setLoading] = React.useState(true); // Loading process indicator
-  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + newRecordhash setting
+  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [crash, setCrash] = React.useState(false);  // Signature fail indicator
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
+  const [ENS, setENS] = React.useState(''); // ENS name; used to trigger useContractRead()
   const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
   const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
   const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
@@ -137,11 +136,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [recordhash, setRecordhash] = React.useState(''); // newRecordhash for CCIP2 Resolver
+  const [recordhash, setRecordhash] = React.useState(''); // Recordhash for CCIP2 Resolver
   const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
-  const [newRecordhash, setNewRecordhash] = React.useState(''); // Name record (Reverse Record) for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
   const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
   const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
@@ -205,7 +203,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         editable: resolver === constants.ccip2[0],
         active: isContenthash(recordhash),
         state: false,
-        label: 'set new',
+        label: 'set',
         help: 'on-chain recordhash'
       },
       {
@@ -357,13 +355,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     }
   )
-  // Get newRecordhash from CCIP2 Resolver
+  // Get Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead(
     constants.ccip2Config[0], // CCIP2 Resolver
     'recordhash',
     {
       args: [
-        ethers.utils.namehash(_ENS_)
+        ethers.utils.namehash(ENS)
       ]
     }
   )
@@ -445,6 +443,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     setBrowser(true) 
     if (browser) {
+      setENS(_ENS_)
       setTokenID(token.toString())
       getResolver()
     }
@@ -506,6 +505,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     write: migrate,
     isLoading: isMigrateLoading,
     isSuccess: isMigrateSuccess,
+    isError: isMigrateError
   } = useContractWrite(
     !wrapped ? constants.ensConfig[0] : constants.ensConfig[3],
     'setResolver',
@@ -517,13 +517,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   );
 
-  // Sets newRecordhash in CCIP2 Resolver
-  // FIXME : NOT TRIGGERING !!!
+  // Sets Recordhash in CCIP2 Resolver
   const {
     data: response2of2,
     write: initRecordhash,
     isLoading: isSetRecordhashLoading,
     isSuccess: isSetRecordhashSuccess,
+    isError: isSetRecordhashError
   } = useContractWrite(
     constants.ccip2Config[0],
     'setRecordhash',
@@ -690,28 +690,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           } else {
             setAddr(response)
           }
-          getName()
+          setFinish(true)
         })
         .catch(() => {
           setAddr('')
-          getName()
+          setFinish(true)
         });
     } else {
-      // TODO : Fix this
       setAddr('')
-      getName()
+      setFinish(true)
     }
-  }
-
-  // Get Name for ENS domain last & finish
-  // TODO: getName() routine for both ENS contract versions
-  async function getName() {
-    if ( resolver?.address !== constants.ccip2[0] ) {
-      setNewRecordhash(_ENS_)
-    } else {
-      setNewRecordhash(_ENS_)
-    }
-    setFinish(true)
   }
 
   // Get Resolver for ENS domain
@@ -720,10 +708,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .then(response => {
         setResolver(response?.address);
         if (response?.address) {
-          if (response?.address === constants.ccip2[0]) {
+          if (response?.address === constants.ccip2[0] && _Recordhash_!.toString() !== '0x') {
             setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
           }
           getContenthash(response!)
+        } else {
+          if (_Recordhash_!.toString() !== '0x') {
+            setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
+          }
         }
       });
   }
@@ -784,8 +776,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
   // Check if value is a valid Contenthash
   function isContenthash(value: string) {
+    const prefix = value.substring(7)
     const ipfsRegex = /^[a-z0-9]{62}$/;
-    return ipfsRegex.test(value)
+    return prefix === 'ipns://' && ipfsRegex.test(value)
   }
 
   // Upates new record values in local storage before pushing updates
@@ -1037,7 +1030,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         setLegit(EMPTY_BOOL())
                       }, 2000);
                       const _updatedList = list.map((item) => {
-                        if (item.type !== 'resolver' && data.response.meta[item.type]) {
+                        if (!['resolver','recordhash'].includes(item.type) && data.response.meta[item.type]) {
                           return { 
                             ...item,  
                             value: data.response[item.type],
@@ -1078,12 +1071,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess1of2 && migrated) {
+      setResolver(constants.ccip2[0])
       initRecordhash()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateSuccess, txSuccess1of2, migrated]);
 
-  // Handles finishing migration of Resolver to CCIP2
+  // Handles setting Recordhash after transaction 2 
   React.useEffect(() => {
     if (
       isMigrateSuccess && 
@@ -1092,23 +1086,49 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       isSetRecordhashSuccess &&
       txSuccess2of2
     ) {
-      setResolver(constants.ccip2[0])
+      setRecordhash(`ipns://${CID}`)
+      setENS(_ENS_)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSetRecordhashSuccess, txSuccess2of2]);
+
+  // Handles finishing migration of Resolver to CCIP2
+  React.useEffect(() => {
+    if (
+      recordhash &&
+      isMigrateSuccess && 
+      txSuccess1of2 && 
+      migrated &&
+      isSetRecordhashSuccess &&
+      txSuccess2of2
+    ) {
       const _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
           return { 
             ...item, 
             editable: false, 
             active: false
-          };
+          }
         } else {
-          return { 
+          const Clause = {
             ...item, 
-            value: '',
             editable: true, 
-            active: true 
-          };
+            active: true
+          }
+          if (item.type === 'recordhash') {
+            return { 
+              ...Clause, 
+              value: recordhash,
+            }
+          } else {
+            // TODO : Need to fix this; return should not 
+            // return null value but read from the records
+            return { 
+              ...Clause, 
+              value: '',
+            }
+          }
         }
-        return item;
       });
       setList(_updatedList)
       setLegit(EMPTY_BOOL())
@@ -1124,7 +1144,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetRecordhashSuccess, txSuccess2of2]);
+  }, [recordhash]);
 
   // Sets migration state to true upon successful transaction 1 receipt
   React.useEffect(() => {
@@ -1142,12 +1162,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (isMigrateLoading && !isSetRecordhashLoading) {
       setFinish(false)
       setMessage(['Waiting for Confirmation', '1'])
-    }
+    } 
+    if (isMigrateError && !isSetRecordhashLoading) {
+      setMessage(['Transaction Declined by User', ''])
+      setCrash(true)
+    } 
     if (!isMigrateLoading && isSetRecordhashLoading) {
       setFinish(false)
       setMessage(['Waiting for Confirmation', '2'])
     }
-  }, [isMigrateLoading, isSetRecordhashLoading]);
+    if (isSetRecordhashError && !isSetRecordhashLoading) {
+      setMessage(['Transaction Declined by User', ''])
+      setCrash(true)
+    } 
+  }, [isMigrateLoading, isSetRecordhashLoading, isMigrateError, isSetRecordhashError]);
 
   // Handles first transaction loading and error
   React.useEffect(() => {
@@ -1393,28 +1421,33 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           marginRight: '15px'
                         }}
                       >
-                        { item.type }
-                        { item.type !== 'resolver' && (
+                        { // Label
+                        item.type }
+
+                        { // Help icons
+                        item.type !== 'resolver' && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('info'),
-                              setColor(['recordhash'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'),
+                              setColor('skyblue'),
                               setHelp(item.help)
                             }}
                           >
                             <div 
                               className="material-icons smol"
                               style={{ 
-                                color: ['recordhash'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'skyblue'
+                                color: 'skyblue'
                               }}
                             >
                               info_outline
                             </div>
                           </button>
                         )}
-                        { item.state && (
+
+                        { // Updated State marker
+                        item.state && (
                           <div 
                             className="material-icons smol"
                             style={{ 
@@ -1424,73 +1457,96 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             task_alt
                           </div>
                         )}
-
-                        { // Set Badge if Resolver is migrated and newRecordhash is set
-                        ['resolver'].includes(item.type) && resolver === constants.ccip2[0] && recordhash && (
+                        
+                        { // Set Badge if Resolver is migrated and Recordhash is set
+                        ['resolver','recordhash'].includes(item.type) && resolver === constants.ccip2[0] && recordhash && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('lightgreen'),
-                              setHelp('Resolver is migrated and newRecordhash is set. Enjoy!')
+                              setHelp(item.type === 'resolver' ? 'Resolver is migrated' : 'Recordhash is set')
                             }}
-                            data-tooltip={ 'Ready For Off-chain Use' }
+                            data-tooltip={ 'Ready For Off-Chain Use' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
                                 color: 'lightgreen',
-                                marginLeft: '5px'
+                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
                               }}
                             >
                               gpp_good
                             </div>
                           </button>
                         )}
-                        { // Set Badge if Resolver is migrated and no newRecordhash is set
-                        ['resolver'].includes(item.type) && resolver === constants.ccip2[0] && !recordhash && (
+                        { // Set Badge if Resolver is migrated and no Recordhash is set
+                        ['resolver','recordhash'].includes(item.type) && resolver === constants.ccip2[0] && !recordhash && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setHelpModal(true),
-                              setIcon('gpp_good'),
-                              setColor('orange'),
-                              setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
+                              setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
+                              setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
+                              setHelp(item.type === 'resolver' ? 'Resolver is migrated' : 'Recordhash not set')
                             }}
                             data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: 'orange',
-                                marginLeft: '5px'
+                                color: item.type === 'resolver' ? 'orange' : 'orangered',
+                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
                               }}
                             >
-                              gpp_good
+                              { item.type === 'resolver' ? 'gpp_good' : 'cancel' }
                             </div>
                           </button>
                         )}
-                        { // Set Badge if Resolver is not migrated
-                        ['resolver'].includes(item.type) && resolver !== constants.ccip2[0] && !recordhash && (
+                        { // Set Badge if Resolver is not migrated and no Recordhash has been set in the past
+                        ['resolver','recordhash'].includes(item.type) && resolver !== constants.ccip2[0] && !recordhash && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
                               setHelpModal(true),
-                              setIcon('gpp_maybe'),
+                              setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
                               setColor('orangered'),
-                              setHelp(item.help)
+                              setHelp(item.type === 'resolver' ? 'Resolver not migrated' : 'Recordhash not set')
                             }}
-                            data-tooltip={ 'Resolver Not Migrated' }
+                            data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
                                 color: 'orangered',
-                                marginLeft: '5px'
+                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
                               }}
                             >
-                              gpp_maybe
+                              { item.type === 'resolver' ? 'gpp_bad' : 'cancel' }
+                            </div>
+                          </button>
+                        )}
+                        { // Resolver is not migrated but Recordhash has been set in the past
+                        ['resolver','recordhash'].includes(item.type) && resolver !== constants.ccip2[0] && recordhash && (
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setHelpModal(true),
+                              setIcon(item.type === 'resolver' ? 'gpp_bad' : 'check_circle'),
+                              setColor(item.type === 'resolver' ? 'orangered' : 'orange'),
+                              setHelp(item.type === 'resolver' ? 'Resolver not migrated' : 'Recordhash is set')
+                            }}
+                            data-tooltip={ 'Resolver Not Migrated But Recordhash Has Been Set' }
+                          >
+                            <div 
+                              className="material-icons smol"
+                              style={{
+                                color: item.type === 'resolver' ? 'orangered' : 'orange',
+                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
+                              }}
+                            >
+                              { item.type === 'resolver' ? 'gpp_bad' : 'check_circle' }
                             </div>
                           </button>
                         )}

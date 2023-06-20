@@ -186,7 +186,7 @@ const Account: NextPage = () => {
         })
         setProcess(allTokens[i].title)
         const flag = await recordhash.verifyRecordhash(allTokens[i].title)
-        items[count - 1].migrated = flag ? '1' : items[count - 1].migrated
+        items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
       }
     }
     setMeta(items)
