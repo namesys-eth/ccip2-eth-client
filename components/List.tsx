@@ -14,9 +14,9 @@ interface ListProps {
   onItemClick: (value: string) => void;
 }
 
-const alphabets: string[] = [];
+const alphabets: string[] = []; // List of all alphabets except 'x'
 for (let i = 65; i <= 90; i++) {
-  if (String.fromCharCode(i).toLocaleLowerCase() !== 'x') {
+  if (String.fromCharCode(i).toLocaleLowerCase() !== 'x') { // Ignore 'x'
     alphabets.push(String.fromCharCode(i).toLocaleLowerCase());
   }
 }
@@ -97,6 +97,20 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     { ['x'].includes(char) &&
                       numbers.includes(item.name.charAt(index - 1)) &&
                       numbers.includes(item.name.charAt(index + 1)) && (
+                      <span
+                        style={{ 
+                          fontFamily: 'Rajdhani',
+                          letterSpacing: '0.3px',
+                          fontWeight: '700',
+                          fontSize: '24px'
+                        }}
+                      >
+                        { char }
+                      </span>
+                    )}
+                    { ['x'].includes(char) &&
+                      numbers.includes(item.name.charAt(index - 1)) &&
+                      index === item.name.length - 1 && (
                       <span
                         style={{ 
                           fontFamily: 'Rajdhani',
