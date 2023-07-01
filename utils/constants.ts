@@ -21,7 +21,7 @@ export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 export const zeroAddress = '0x' + '0'.repeat(40)
 export const ccip2 = [
-  '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec' // CCIP2 Resolver
+  '0x326fD6b070FE062CCeA590314c6Fe249FFd91385' // CCIP2 Resolver
  ]
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry
@@ -88,16 +88,17 @@ export const types = [
 	'contenthash',
 	'avatar',
   'zonehash',
-	'revision'
+	'revision' // Extra local history; Not a Record type
 ] 
 // Record filenames corresponding to record types
 export const files = [
-  '', // No associated record file because not a Record
-	'_address/60',
+  '', // No associated record file; Not a Record
+  '', // No associated record file; Not a Record
+	'address/60',
 	'contenthash',
 	'text/avatar',
-	'_dnsrecord/zonehash',
-	'revision'
+	'dnsrecord/zonehash',
+	'revision' // No associated record file; Not a Record
 ] 
 
 // Overlay 

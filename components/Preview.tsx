@@ -127,7 +127,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [crash, setCrash] = React.useState(false);  // Signature fail indicator
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
-  const [ENS, setENS] = React.useState(''); // ENS name; used to trigger useContractRead()
+  const [ENS, setENS] = React.useState(_ENS_); // ENS name; used to trigger useContractRead()
   const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
   const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
   const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
@@ -443,7 +443,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     setBrowser(true) 
     if (browser) {
-      setENS(_ENS_)
       setTokenID(token.toString())
       getResolver()
     }
@@ -485,6 +484,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
         setMessage(['IPNS CID Generated', ''])
+        if (CID_IPNS) console.log(CID_IPNS)
       }
       CIDGen()
     }
@@ -1091,7 +1091,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles finishing migration of Resolver to CCIP2
   React.useEffect(() => {
-    if (recordhash) {
+    if (recordhash && txSuccess2of2) {
       const _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
           return { 
@@ -1112,7 +1112,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           } else {
             // TODO : Need to fix this; return should not 
-            // return null value but read from the records
+            // return null value but read from the historical 
+            // records
             return { 
               ...Clause, 
               value: '',
@@ -1414,28 +1415,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         { // Label
                         item.type }
 
-                        { // Help icons
-                        item.type !== 'resolver' && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon('info'),
-                              setColor('skyblue'),
-                              setHelp(item.help)
-                            }}
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{ 
-                                color: 'skyblue'
-                              }}
-                            >
-                              info_outline
-                            </div>
-                          </button>
-                        )}
-
                         { // Updated State marker
                         item.state && (
                           <div 
@@ -1464,7 +1443,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               className="material-icons smol"
                               style={{
                                 color: 'lightgreen',
-                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
+                                marginLeft: item.type === 'resolver' ? '5px' : '6px'
                               }}
                             >
                               gpp_good
@@ -1487,7 +1466,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               className="material-icons smol"
                               style={{
                                 color: item.type === 'resolver' ? 'orange' : 'orangered',
-                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
+                                marginLeft: item.type === 'resolver' ? '5px' : '6px'
                               }}
                             >
                               { item.type === 'resolver' ? 'gpp_good' : 'cancel' }
@@ -1510,7 +1489,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               className="material-icons smol"
                               style={{
                                 color: 'orangered',
-                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
+                                marginLeft: item.type === 'resolver' ? '5px' : '6px'
                               }}
                             >
                               { item.type === 'resolver' ? 'gpp_bad' : 'cancel' }
@@ -1533,13 +1512,37 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               className="material-icons smol"
                               style={{
                                 color: item.type === 'resolver' ? 'orangered' : 'orange',
-                                marginLeft: item.type === 'resolver' ? '5px' : '-6px'
+                                marginLeft: item.type === 'resolver' ? '5px' : '6px'
                               }}
                             >
                               { item.type === 'resolver' ? 'gpp_bad' : 'check_circle' }
                             </div>
                           </button>
                         )}
+
+                        { // Help icons
+                        item.type !== 'resolver' && (
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setHelpModal(true),
+                              setIcon('info'),
+                              setColor('skyblue'),
+                              setHelp(item.help)
+                            }}
+                            data-tooltip={ 'Click to Expand' }
+                          >
+                            <div 
+                              className="material-icons smol"
+                              style={{ 
+                                color: 'skyblue',
+                                marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
+                              }}
+                            >
+                              info_outline
+                            </div>
+                          </button>
+                        )}      
                       </span>
                       <button
                         className="button"
