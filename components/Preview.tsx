@@ -484,7 +484,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
         setMessage(['IPNS CID Generated', ''])
-        if (CID_IPNS) console.log(CID_IPNS)
+        if (CID_IPNS) console.log('IPNS:', CID_IPNS)
       }
       CIDGen()
     }
@@ -1008,6 +1008,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   const pin = async () => {
                     if (data.response.ipfs && w3name && gas) {
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
+                      console.log('IPFS:', data.response.ipfs)
                       // @W3Name broadcast
                       let _revision: Name.Revision;
                       if (!history.revision) {
