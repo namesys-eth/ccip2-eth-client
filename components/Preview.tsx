@@ -10,6 +10,7 @@ import { verifyMessage } from 'ethers/lib/utils'
 import { BiError } from 'react-icons/bi'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
+import Error from '../components/Error'
 import Gas from '../components/Gas'
 import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
@@ -759,6 +760,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       console.log('Failed to write Revision to CCIP2 backend')
       setMessage(['Record Update Failed', ''])
       setCrash(true)
+      setLoading(false)
     }
   }
 
@@ -914,6 +916,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (!keypair || !CID) {
         setSalt(true) // Start K0 keygen if it doesn't exist in local storage
         setUpdate(false) // Reset
+      } else {
+        setLoading(true)
+        setMessage(['Setting Record', ''])
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1047,6 +1052,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       })
                       setList(_updatedList)
                       setNewValues(EMPTY_STRING())
+                      setUpdate(false) // Reset
                     }
                   }
                   if (Object.keys(gas).length > 0) {
@@ -1060,6 +1066,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           console.log('Failed to write to CCIP2 backend')
           setMessage(['Record Update Failed', ''])
           setCrash(true)
+          setLoading(false)
         }
       }
       editRecord()
@@ -1158,6 +1165,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (isMigrateError && !isSetRecordhashLoading) {
       setMessage(['Transaction Declined by User', ''])
       setCrash(true)
+      setLoading(false)
     } 
     if (!isMigrateLoading && isSetRecordhashLoading) {
       setFinish(false)
@@ -1166,6 +1174,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (isSetRecordhashError && !isSetRecordhashLoading) {
       setMessage(['Transaction Declined by User', ''])
       setCrash(true)
+      setLoading(false)
     } 
   }, [isMigrateLoading, isSetRecordhashLoading, isMigrateError, isSetRecordhashError]);
 
@@ -1177,6 +1186,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (!txLoading1of2 && txError1of2) {
       setMessage(['Transaction Failed', '1'])
       setCrash(true)
+      setLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading1of2, txError1of2]);
@@ -1189,6 +1199,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (!txLoading2of2 && txError2of2) {
       setMessage(['Transaction Failed', '2'])
       setCrash(true)
+      setLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading2of2, txError2of2]);
@@ -1201,6 +1212,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (signError && !signLoading) {
       setMessage(['Signature Failed', ''])
       setCrash(true)
+      setLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError]);
@@ -1210,7 +1222,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     <StyledModalOverlay>
       <StyledModal
         style={{
-          background: crash ? 'red' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+          background: 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
         }}
       >
         <StyledModalHeader>
@@ -1225,7 +1237,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             </span>
           </a>
         </StyledModalHeader>
-        {_ENS_ && !crash && loading && 
+        {_ENS_ && loading && 
           <StyledModalTitle>
             <span 
               className="material-icons miui-small"
@@ -1260,7 +1272,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             </span>
           </StyledModalTitle>
         }
-        {loading && !crash && 
+        {loading && 
           <StyledModalBody>
             <div
               style={{
@@ -1312,40 +1324,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   </span>
                 </div>
               )}
-            </div>
-          </StyledModalBody>
-        }
-        {crash && 
-          <StyledModalBody>
-            <div
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                marginTop: '-20px',
-                marginBottom: '20px',
-                color: 'white',
-                fontSize: '150px',
-                backgroundColor: 'red'
-              }}
-            >
-              <BiError />
-              <div
-                style={{
-                  marginTop: '-70px'
-                }}
-              >
-                <span 
-                  style={{
-                    color: 'white',
-                    fontSize: '18px',
-                    fontWeight: '700'
-                  }}
-                >
-                  { message }
-                </span>
-              </div>
             </div>
           </StyledModalBody>
         }
@@ -1629,6 +1607,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 show={salt}
               >
               </Salt>
+              <Error
+                onClose={() => {
+                  setCrash(false)
+                }}
+                show={crash && !loading}
+                title={'cancel'}
+              >
+                { message[0] }
+            </Error>
             </div>
           </StyledModalBody>
         }
