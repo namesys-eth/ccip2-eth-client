@@ -55,12 +55,23 @@ function toEthereumAddress(signer: string) {
   return address
 }
 
+// Get latest timestamp from all records
+function latestTimestamp(list: string[]) {
+  var _Timestamps: number[] = []
+  for (const key in list) {
+    if (list.hasOwnProperty(key) && list[key] !== '') {
+      _Timestamps.push(Number(list[key]))
+    }
+  }
+  return Math.max(..._Timestamps)
+}
+
 /// Init 
 // Types object with empty strings
 function EMPTY_STRING() {
   const EMPTY_STRING = {};
   for (const key of constants.types) {
-    if (['resolver','recordhash'].includes(key)) {
+    if (!['resolver','recordhash'].includes(key)) {
       EMPTY_STRING[key] = '';
     }
   }
@@ -82,12 +93,15 @@ const EMPTY_HISTORY = {
   contenthash: '',
   avatar: '',
   revision: '',
-  type: ''
+  type: '',
+  timestamp: {...EMPTY_STRING()},
+  queue: 0
 }
 
 // Init ABI Encoder
 const abi = ethers.utils
-
+// Waiting period between updates
+const limit = 5 * 60
 /// Library
 // Check if image URL resolves
 function checkImageURL(url: string) {
@@ -175,6 +189,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature S3(K1) for Records Manager
+  const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
 
   const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
@@ -277,7 +292,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Signature S3 statement; S3(K1)
   function statementManager(signer: string) {
-    let address = toEthereumAddress(signer)
+    let address = toEthereumAddress(signer) // Convert secp256k1 pubkey to ETH address
     return `Requesting Signature To Approve ENS Records Signer\n\nENS Domain: ${_ENS_}\nApproved Signer: ${address}\nOwner: ${caip10}`
   }
 
@@ -904,14 +919,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         })
         .then(response => response.json())
         .then(data => {
-          let _history = {
-            type: data.type,
-            addr: data.addr,
-            avatar: data.avatar,
-            contenthash: data.contenthash,
-            revision: data.revision
+          let _HISTORY = {
+            type: data.response.type,
+            addr: data.response.addr,
+            avatar: data.response.avatar,
+            contenthash: data.response.contenthash,
+            revision: data.response.revision,
+            timestamp: data.response.timestamp,
+            queue: latestTimestamp(data.response.timestamp)
           }
-          setHistory(_history)
+          setHistory(_HISTORY)
+          setQueue(latestTimestamp(data.response.timestamp))
         })
     } catch(error) {
       console.log('Failed to read from CCIP2 backend')
@@ -941,8 +959,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (states.includes(item.type) && !constants.forbidden.includes(item.type)) {
         return { 
           ...item, 
-          editable: true, 
-          active: true 
+          editable: queue < limit, // allow updates only after 30 mins after previous updates
+          active: queue < limit 
         };
       } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
         return { 
@@ -1605,6 +1623,32 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </div>
                           </button>
                         )}      
+
+                        { // Countdown
+                        !['resolver','recordhash'].includes(item.type) && resolver === constants.ccip2[0] && recordhash && (
+                          <button 
+                            className="button-tiny"
+                            onClick={() => { 
+                              setHelpModal(true),
+                              setIcon('timer'),
+                              setColor(Math.round(Date.now()/1000) - queue - limit < 0 ? 'orange' : 'lightgreen'),
+                              setHelp( Math.round(Date.now()/1000) - queue - limit < 0 ? 'Too Soon To Update. Please Wait' : 'Ready For Next Record Update')
+                            }}
+                            data-tooltip={ 
+                              Math.round(Date.now()/1000) - queue - limit < 0 ? 'Please Wait For Next Update' : 'Ready For Next Update'
+                            }
+                          >
+                            <div 
+                              className="material-icons smol"
+                              style={{
+                                color: Math.round(Date.now()/1000) - queue - limit < 0 ? 'orange' : 'lightgreen',
+                                marginLeft: '-7px'
+                              }}
+                            >
+                              timer
+                            </div>
+                          </button>
+                        )}
                       </span>
                       <button
                         className="button"
