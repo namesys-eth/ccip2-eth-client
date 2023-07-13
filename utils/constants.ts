@@ -7,6 +7,9 @@ import iEnsUniversalResolver from '../abi/contract-abi-ensUniversalResolver.json
 import iEnsWrapper from '../abi/contract-abi-ensWrapper.json'
 import iCCIP2 from '../abi/contract-abi-ccip2.json'
 
+export const signedRecord = 'function signedRecord(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
+export const signedRedirect = 'function signedRedirect(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
+
 export interface MainBodyState {
   modalData: boolean;
   trigger: boolean;

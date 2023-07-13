@@ -6,8 +6,6 @@ import { ethers } from 'ethers'
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import { verifyMessage } from 'ethers/lib/utils'
-//import LoadingIcons from 'react-loading-icons'
-import { BiError } from 'react-icons/bi'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
 import Error from '../components/Error'
@@ -49,12 +47,20 @@ interface ModalProps {
   handleParentTrigger: (data: boolean) => void;
 }
 
+// Convert secp256k1 public key to ethereum address
+function toEthereumAddress(signer: string) {
+  let keyhash = ethers.utils.keccak256(Buffer.from(signer, 'hex'))
+  let bytes = Buffer.from(keyhash.substring(2), 'hex').subarray(-20)
+  let address = ethers.utils.getAddress(ethers.utils.hexlify(bytes).toLowerCase())
+  return address
+}
+
 /// Init 
 // Types object with empty strings
 function EMPTY_STRING() {
   const EMPTY_STRING = {};
   for (const key of constants.types) {
-    if (key !== 'resolver') {
+    if (['resolver','recordhash'].includes(key)) {
       EMPTY_STRING[key] = '';
     }
   }
@@ -65,7 +71,7 @@ function EMPTY_STRING() {
 function EMPTY_BOOL() {
   const EMPTY_BOOL = {}
   for (const key of constants.types) {
-    EMPTY_BOOL[key] = ['resolver','recordhash'].includes(key) ? true : false
+    EMPTY_BOOL[key] = ['resolver','recordhash','revision'].includes(key) ? true : false
   }
   return EMPTY_BOOL
 }
@@ -97,7 +103,7 @@ function checkImageURL(url: string) {
   });
 }
 
-// Returns ed25519/IPNS keypair formatted for sure
+// Returns formatted ed25519/IPNS keypair
 function formatkey(keypair: [[string, string], [string, string]]) {
   return '08011240' + keypair[0][0] + keypair[0][1] // ed25519 keypair = keypair[0]
 }
@@ -117,8 +123,8 @@ function encodeContenthash(contenthash: string) {
 * @param onClose : Close modal trigger
 * @param _ENS_ : Native ENS domain for modal
 * @param chain : Chain ID
-* @interface handleParentModalData : Send modal data to Home/Account-page
-* @interface handleParentTrigger : Send modal state to Home/Account-page
+* @interface handleParentModalData : Send modal data to Home/Account page
+* @interface handleParentTrigger : Send modal state to Home/Account page
 **/
 const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
@@ -156,9 +162,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['Loading Records','']); // Sets message for the loading state
-  const [signatures, setSignatures] = React.useState<string[]>([]); // Contains S2(K0) signatures of active records in the modal
-  const [query, setQuery] = React.useState(''); // CCIP2 Query for on-chain manager
+  const [signatures, setSignatures] = React.useState(EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
+  const [query, setQuery] = React.useState<string[]>(['','','']); // CCIP2 Query for on-chain manager
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
+  const [timestamp, setTimestamp] = React.useState(''); // Whether record edit is legitimate
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [modalState, setModalState] = React.useState<MainBodyState>({
     modalData: undefined,
@@ -166,8 +173,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }); // Child modal state
   const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
-  //const [sigRecord, setSigRecord] = React.useState(''); // Signature S2(K0) for Record update
-  //const [sigApproved, setApproved] = React.useState(''); // Signature S3(K1) for Records Manager
+  const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
+  const [sigCount, setSigCount] = React.useState(0); // Signature S3(K1) for Records Manager
 
   const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
@@ -251,31 +258,59 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     finishQuery(_LIST) // Assign _LIST
   }
 
+  /// Keys & Signature Definitions
+  /* K0 = Generated secp256k1 Keypair 
+   * K1 = Wallet secp256k1 Keypair 
+   * K2 = Generated ed25519 Keypair
+   * S1 = Signature for K0 & K2 Generation (Signed by K1)
+   * S2 = Signature for Records (Signed by K0)
+   * S3 = Signature for Manager Approval (Signed by K1)
+   */
   // Signature S1 statement; S1(K1)
   function statementIPNSKey() {
     return `Requesting Signature For IPNS Key Generation\n\nUsername: ${_ENS_}\nSigned By: ${caip10}`
   }
   // Signature S2 statement; S2(K0)
   function statementRecords(recordType: string, extradata: string) {
-    return `Requesting Signature To Update Off-Chain ENS Record\n\nENS Domain: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    return `Requesting Signature To Update ENS Record\n\nENS Domain: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${caip10}`
   }
 
   // Signature S3 statement; S3(K1)
-  function statementManager(manageFor: string) {
-    return `Requesting Signature To Approve Off-Chain ENS Records Manager Key\n\nENS Domain: ${_ENS_}\nApproved For: ${manageFor}\nSigned By: ${caip10}`
+  function statementManager(signer: string) {
+    let address = toEthereumAddress(signer)
+    return `Requesting Signature To Approve ENS Records Signer\n\nENS Domain: ${_ENS_}\nApproved Signer: ${address}\nOwner: ${caip10}`
   }
 
-  // Generate Record Type suffix
-  function genSignerType() {
-    let _signer: string
-    if (_CCIP2Manager_) {
-      // bytes4(keccak256('recordhash(bytes32)'))
-      _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("recordhash(bytes32)")).substring(0,8)
-    } else {
-      // bytes4(keccak256('approved(bytes32, address)'))
-      _signer = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("approved(bytes32,address)")).substring(0,8)
-    }
-    return _signer
+  /// Encode string values of records
+  // returns abi.encodeWithSelector(iCallbackType.signedRecord.selector, _signer, _recordSignature, _approvedSignature, result)
+  function encodeValue(key: string, value: string) {
+    let encoded: string
+    let type: string = ''
+    if (key === 'avatar') type = 'string'
+    if (key === 'contenthash') type = 'string'
+    if (key === 'addr') type = 'address'
+    let _result = ethers.utils.defaultAbiCoder.encode([type], [value]); // <result> must be DNS-encoded
+    let _ABI = [constants.signedRecord]
+    let _iface = new ethers.utils.Interface(_ABI);
+    console.log('Record:', key)
+    console.log('Value:', value)
+    console.log('Encoded Result:', _result)
+    console.log('Wallet:', accountData?.address)
+    console.log('Signer:', keypair ? keypair[1][1] : zeroAddress)
+    console.log('Record Signature:', signatures[key])
+    console.log('Manager Signature:', sigApproved)
+    let _encodedWithSelector = _iface.encodeFunctionData(
+      "signedRecord", 
+      [
+        accountData ? accountData?.address : zeroAddress, 
+        signatures[key],
+        sigApproved,
+        _result
+      ]
+    )
+    encoded = _encodedWithSelector
+    console.log('CCIP Return Value:', encoded)
+    return encoded
   }
 
   // Generate extradata
@@ -287,22 +322,30 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return _extradata
   }
 
-  // Signature S2 with K0
+  // Signature S2 with K0 
+  // K0 = keypair[1]; secp256k1
+  // K2 = keypair[0]; ed25519
   async function _signMessage(input: any) {
+    
     if (keypair) {
       const SignS2 = async () => {
         const _signer = new ethers.Wallet('0x' + keypair[1][0], provider)
         const __signature = await _signer.signMessage(input.message) 
         if (__signature) return __signature
       }
-      setQuery(
-        abi.solidityKeccak256(
-        // ["manager", node, owner, signer]
-        ["string", "bytes32", "address", "address"], 
-        ["manager", ethers.utils.namehash(_ENS_), getOwner(), keypair ? `0x${keypair[1][1]}` : zeroAddress]
-      ))
       const _signature = SignS2() 
       return _signature
+    }
+  }
+
+  // Signature S3 with K1
+  async function __signMessage() {
+    setSigCount(2) // Trigger S3(K1)
+    if (keypair) {
+      const SignS3 = async () => {
+        signMessage({ message: statementManager(`eip155:${chain}:${keypair[1][1]}`) })
+      }
+      SignS3()
     }
   }
       
@@ -339,11 +382,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Read CCIP2 for ENS domain on-chain manager
   const { data: _CCIP2Manager_ } = useContractRead(
     constants.ccip2Config[0],
-    'manager',
+    'isAuthorized',
     {
-      args: [
-        query
-      ]
+      args: query
     }
   )
   // Read ownership of a domain from ENS Wrapper
@@ -453,6 +494,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
     if (modalState.trigger && !update) {
+      setSigCount(1)
       signMessage({ message: statementIPNSKey() })
       setKeygen(true)
     }
@@ -488,17 +530,27 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (CID_IPNS) console.log('IPNS:', CID_IPNS)
       }
       CIDGen()
+      setQuery(
+        [
+          ethers.utils.namehash(ENS),
+          accountData?.address ? accountData.address : zeroAddress,
+          keypair ? keypair[1][1] : zeroAddress
+        ]
+      ) // Checks if connected wallet is on-chain manager
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypair]);
 
   // Sets signature from Wagmi signMessage() as S1(K1)
   React.useEffect(() => {
-    if (signature) {
+    if (signature && sigCount === 1) {
       setSigIPNS(signature)
+    } else if (signature && sigCount === 2) {
+      setSigApproved(signature)
+      console.log('S3(K1):', signature)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature])
+  }, [signature, sigCount])
 
   // Sets new ENS Resolver
   const {
@@ -736,7 +788,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       gas: JSON.stringify(gas), 
       version: JSON.stringify(revision, (key, value) => {
         return typeof value === 'bigint' ? value.toString() : value;
-      })
+      }),
+      timestamp: timestamp
     }
     try {
       await fetch(
@@ -806,7 +859,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     setLegit(__THIS)
     const _THIS = newValues;
-    _THIS[key] = value;
+    _THIS[key] = value
     setNewValues(_THIS)
     const priorState = states
     if (!priorState.includes(key) && newValues[key]) {
@@ -926,28 +979,53 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
-    // Handle Signature (S2) to add as extradata
+    // Handle Signature S2(K0) to add as extradata
     if (write && keypair && newValues) {
-      let __signatures: string[] = []
+      let __signatures = EMPTY_STRING()
       states.forEach(async (_recordType) => {
-        const _signature = await _signMessage({ 
+        let _signature: any
+        _signature = await _signMessage({ 
           message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(newValues[_recordType])) 
         }) // Sign with K0
-        if (_signature) __signatures.push(_signature)
+        if (_signature) __signatures[_recordType] = _signature
       });
       setSignatures(__signatures)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [write, keypair]);
 
+  // Handles generating signatures for off-chain manager
+  React.useEffect(() => {
+    // Handle Signature S3(K1) 
+    if (write && keypair && !_CCIP2Manager_ && !sigApproved) {
+      __signMessage() // Sign with K1
+    } else if (write && keypair && _CCIP2Manager_) {
+      setSigApproved('0x')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [write, _CCIP2Manager_, signatures]);
+
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
+    let count = 0
+    for (const key in signatures) {
+      if (signatures.hasOwnProperty(key) && signatures[key] !== '') {
+        count++
+      }
+    }
     if (
       write && 
       keypair && 
-      signatures.length === states.length && 
-      signatures.length > 0
+      count === states.length && 
+      count > 0 && 
+      sigApproved
     ) {
+      let _encodedValues = EMPTY_STRING()
+      for (const key in newValues) {
+        if (newValues.hasOwnProperty(key) && newValues[key] !== '') {
+          _encodedValues[key] = encodeValue(key, newValues[key])
+        }
+      }
       // Generate POST request for writing records
       const request = {
         signatures: signatures,
@@ -955,7 +1033,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         address: recoveredAddress.current,
         ipns: CID,
         recordsTypes: states,
-        recordsValues: newValues,
+        recordsValues: _encodedValues,
+        recordsRaw: newValues,
         revision: history.revision,
         chain: chain
       }
@@ -1038,8 +1117,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         })
                         setLegit(EMPTY_BOOL())
                       }, 2000);
+                      // Update values in the modal to new ones
                       const _updatedList = list.map((item) => {
                         if (!['resolver','recordhash'].includes(item.type) && data.response.meta[item.type]) {
+                          setTimestamp(data.response.timestamp)
                           return { 
                             ...item,  
                             value: data.response[item.type],
@@ -1052,6 +1133,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       })
                       setList(_updatedList)
                       setNewValues(EMPTY_STRING())
+                      setSignatures(EMPTY_STRING())
+                      setSigCount(0)
                       setUpdate(false) // Reset
                     }
                   }
@@ -1077,7 +1160,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setUpdate(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signatures]);
+  }, [signatures, sigApproved]);
 
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
@@ -1207,10 +1290,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles signature loading and error
   React.useEffect(() => {
     if (signLoading && !signError) {
-      setMessage(['Waiting for Signature', ''])
+      setMessage(['Waiting for Signature', sigCount.toString()])
     }
     if (signError && !signLoading) {
-      setMessage(['Signature Failed', ''])
+      setMessage(['Signature Failed', sigCount.toString()])
       setCrash(true)
       setLoading(false)
     }
