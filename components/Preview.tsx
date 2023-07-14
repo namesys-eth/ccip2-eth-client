@@ -59,7 +59,7 @@ function toEthereumAddress(signer: string) {
 function latestTimestamp(list: string[]) {
   var _Timestamps: number[] = []
   for (const key in list) {
-    if (list.hasOwnProperty(key) && list[key] !== '') {
+    if (list.hasOwnProperty(key) && list[key] !== '' && list[key]) {
       _Timestamps.push(Number(list[key]))
     }
   }
@@ -98,10 +98,9 @@ const EMPTY_HISTORY = {
   queue: 0
 }
 
-// Init ABI Encoder
-const abi = ethers.utils
 // Waiting period between updates
-const limit = 5 * 60
+const waitingPeriod = 1 * 60 // 60 mins
+
 /// Library
 // Check if image URL resolves
 function checkImageURL(url: string) {
@@ -243,8 +242,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 2,
         type: 'avatar',
         value: avatar,
-        editable: resolver === constants.ccip2[0],
-        active: isAvatar(avatar),
+        editable: resolver === constants.ccip2[0] && queue > 0,
+        active: isAvatar(avatar) && queue > 0,
         state: false,
         label: 'edit',
         help: 'set your avatar'
@@ -253,8 +252,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 3,
         type: 'addr',
         value: addr,
-        editable: resolver === constants.ccip2[0],
-        active: isAddr(addr),
+        editable: resolver === constants.ccip2[0] && queue > 0,
+        active: isAddr(addr) && queue > 0,
         state: false,
         label: 'edit',
         help: 'set your default address'
@@ -263,8 +262,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 4,
         type: 'contenthash',
         value: contenthash,
-        editable: resolver === constants.ccip2[0],
-        active: isContenthash(contenthash),
+        editable: resolver === constants.ccip2[0] && queue > 0,
+        active: isContenthash(contenthash) && queue > 0,
         state: false,
         label: 'edit',
         help: 'set your web contenthash'
@@ -332,7 +331,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function genExtradata(_recordValue: string) {
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     const toPack = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_recordValue))
-    const _extradata = ethers.utils.hexlify(abi.solidityPack(["bytes"], [toPack]))
+    const _extradata = ethers.utils.hexlify(ethers.utils.solidityPack(["bytes"], [toPack]))
     //console.log(_extradata)
     return _extradata
   }
@@ -358,7 +357,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSigCount(2) // Trigger S3(K1)
     if (keypair) {
       const SignS3 = async () => {
-        signMessage({ message: statementManager(`eip155:${chain}:${keypair[1][1]}`) })
+        signMessage({ message: statementManager(keypair[1][1]) })
       }
       SignS3()
     }
@@ -796,8 +795,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function writeRevision(revision: Name.Revision, gas: {}) {
     const request = {
       ens: _ENS_,
-      address: accountData?.address,
-      signature: sigIPNS,
+      owner: accountData?.address,
+      manager: keypair ? toEthereumAddress(keypair[1][1]) : zeroAddress,
+      managerSignature: sigApproved,
       revision: Revision.encode(revision),
       chain: chain,
       gas: JSON.stringify(gas), 
@@ -929,7 +929,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             queue: latestTimestamp(data.response.timestamp)
           }
           setHistory(_HISTORY)
-          setQueue(latestTimestamp(data.response.timestamp))
+          setQueue(Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod)
         })
     } catch(error) {
       console.log('Failed to read from CCIP2 backend')
@@ -940,10 +940,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (finish) {
       getUpdate()
-      setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish]);
+  React.useEffect(() => {
+    if (history && queue) {
+      setMetadata()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, queue]);
 
   // Wagmi hook for awaiting transaction processing
   const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
@@ -959,8 +964,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (states.includes(item.type) && !constants.forbidden.includes(item.type)) {
         return { 
           ...item, 
-          editable: queue < limit, // allow updates only after 30 mins after previous updates
-          active: queue < limit 
+          editable: queue > 0, // allow updates only after the waiting period
+          active: queue > 0
         };
       } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
         return { 
@@ -1047,8 +1052,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       // Generate POST request for writing records
       const request = {
         signatures: signatures,
+        manager: keypair ? toEthereumAddress(keypair[1][1]) : zeroAddress,
+        managerSignature: sigApproved,
         ens: _ENS_,
-        address: recoveredAddress.current,
+        owner: accountData?.address ? accountData?.address : zeroAddress,
         ipns: CID,
         recordsTypes: states,
         recordsValues: _encodedValues,
@@ -1137,14 +1144,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       }, 2000);
                       // Update values in the modal to new ones
                       const _updatedList = list.map((item) => {
-                        if (!['resolver','recordhash'].includes(item.type) && data.response.meta[item.type]) {
+                        if (!['resolver','recordhash'].includes(item.type)) {
                           setTimestamp(data.response.timestamp)
-                          return { 
-                            ...item,  
-                            value: data.response[item.type],
-                            state: true,
-                            label: 'edit'
-                          };
+                          let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
+                          setQueue(_queue)
+                          if (data.response.meta[item.type]) {
+                            return { 
+                              ...item,  
+                              value: data.response[item.type],
+                              state: true,
+                              label: 'edit',
+                              active: _queue > 0,
+                              editable: _queue > 0
+                            };
+                          } else {
+                            return { 
+                              ...item,  
+                              active: _queue > 0,
+                              editable: _queue > 0
+                            };
+                          } 
                         } else {
                           return item
                         }
@@ -1631,18 +1650,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('timer'),
-                              setColor(Math.round(Date.now()/1000) - queue - limit < 0 ? 'orange' : 'lightgreen'),
-                              setHelp( Math.round(Date.now()/1000) - queue - limit < 0 ? 'Too Soon To Update. Please Wait' : 'Ready For Next Record Update')
+                              setColor(queue < 0 ? 'orange' : 'lightgreen'),
+                              setHelp(queue < 0 ? 'Too Soon To Update. Please Wait' : 'Ready For Next Record Update')
                             }}
                             data-tooltip={ 
-                              Math.round(Date.now()/1000) - queue - limit < 0 ? 'Please Wait For Next Update' : 'Ready For Next Update'
+                              queue < 0 ? 'Please Wait For Next Update' : 'Ready For Next Update'
                             }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: Math.round(Date.now()/1000) - queue - limit < 0 ? 'orange' : 'lightgreen',
-                                marginLeft: '-7px'
+                                color: queue < 0 ? 'orange' : 'lightgreen',
+                                marginLeft: '-5px'
                               }}
                             >
                               timer
