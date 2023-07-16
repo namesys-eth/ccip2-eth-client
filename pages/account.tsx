@@ -248,7 +248,6 @@ const Account: NextPage = () => {
       // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
-        console.log(count)
         setGetting(count)
         allEns.push(allTokens[i].title.split('.eth')[0])
         const _Resolver = await constants.provider.getResolver(allTokens[i].title)
@@ -284,6 +283,7 @@ const Account: NextPage = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta])
 
   // Open Preview modal for chosen ENS domain
@@ -296,6 +296,7 @@ const Account: NextPage = () => {
     if (getting > progress && getting > 0) {
       setProgress(getting);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getting]);
 
   React.useEffect(() => {
