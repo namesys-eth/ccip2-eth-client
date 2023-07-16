@@ -9,6 +9,9 @@ import iCCIP2 from '../abi/contract-abi-ccip2.json'
 
 export const signedRecord = 'function signedRecord(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
 export const signedRedirect = 'function signedRedirect(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
+export const zeroAddress = '0x' + '0'.repeat(40)
+export const zeroKey = '0x' + '0'.repeat(64)
+export const buffer = "\x19Ethereum Signed Message:\n"
 
 export interface MainBodyState {
   modalData: boolean;
@@ -22,7 +25,6 @@ export const alchemyConfig = {
 }
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
-export const zeroAddress = '0x' + '0'.repeat(40)
 export const ccip2 = [
   '0x326fD6b070FE062CCeA590314c6Fe249FFd91385' // CCIP2 Resolver
  ]

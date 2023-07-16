@@ -53,6 +53,9 @@ const Account: NextPage = () => {
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
   const [response, setResponse] = React.useState(false) // Tracks response of search query
+  const [finish, setFinish] = React.useState(true) // Tracks NFT query processing
+  const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
+  const [wallet, setWallet] = React.useState('') // Tracks wallet changes
   const [modalState, setModalState] = React.useState<constants.MainBodyState>({
     modalData: false,
     trigger: false
@@ -152,14 +155,14 @@ const Account: NextPage = () => {
       const data = await _RESPONSE.json();
       return data.response.gas;
     } catch (error) {
-      console.log('Failed to get gas data from CCIP2 backend')
+      console.error('Error:', 'Failed to get gas data from CCIP2 backend')
       return '';
     }
   }
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
-    constants.showOverlay(5);
+    constants.showOverlay(5)
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
@@ -168,9 +171,49 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Get all tokens for an address
-  const logTokens = useCallback(async () => {
-    const nfts = await constants.alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
+  // Handle wallet change by the user
+  React.useEffect(() => {
+    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    if (!loading) setLoading(true)
+    if (!finish && process && _wallet === wallet) { // Prohibit wallet change when names are loading
+      setMessage('Loading Names')
+    } else {
+      setMessage('Please be Patient') // Print message on bad wallet change
+      setWallet(constants.zeroAddress)
+    }
+    if (!finish && !process) { // Print message on load
+      setWallet(constants.zeroAddress)
+      setMessage('Loading Names')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData, modalState, finish])
+
+  // Get all tokens for connected wallet
+  React.useEffect(() => {
+    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    if (finish && length === 0 && _wallet !== wallet) { // Prohibit update when previous update is in process
+      const setMetadata = async () => {
+        await getTokens(_wallet)
+          .then(() => {
+            setTimeout(() => {
+              if (finish) setLoading(false)
+            }, 1000);
+          }) 
+      }
+      setMetadata()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData, finish])
+  const getTokens = useCallback(async (_wallet: string) => {
+    if (_wallet) {
+      setWallet(_wallet)
+      setFinish(false)
+      await logTokens(_wallet)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const logTokens = useCallback(async (_wallet: string) => {
+    const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet)
     const allTokens = nfts.ownedNfts
     var allEns: string[] = []
     var items: any[] = []
@@ -198,36 +241,20 @@ const Account: NextPage = () => {
         const flag = await recordhash.verifyRecordhash(allTokens[i].title)
         items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
       }
+      if (i === allTokens.length - 1) {
+        setFinish(true) // Flag finish of process
+        setLength(0)
+        setProgress(0)
+        setMessage('Showing Names')
+        setMeta(items)
+        setFlash(items)
+      }
     }
-    setMeta(items)
-    setFlash(items)
     if (count === 0) {
       setEmpty(true)
     }
-    setTimeout(() => {
-      setLoading(false)
-    }, 2000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const getTokens = useCallback(async () => {
-    if (accountData) {
-      await logTokens()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  React.useEffect(() => {
-    setLoading(true)
-    const setMetadata = async () => {
-      await getTokens()
-        .then(() => {
-          setTimeout(() => {
-            setLoading(false)
-          }, 2000);
-        })
-    }
-    setMetadata()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, modalState])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -246,7 +273,7 @@ const Account: NextPage = () => {
   }
 
   React.useEffect(() => {
-    if (getting > progress) {
+    if (getting > progress && getting > 0) {
       setProgress(getting);
     }
   }, [getting]);
@@ -319,7 +346,7 @@ const Account: NextPage = () => {
         let token = ethers.BigNumber.from(labelhash)
         setTokenID(token.toString())
       } catch (error) {
-        console.log('BigNumberWarning')
+        //console.log('BigNumberWarning')
       }
     }
   }, [query])
@@ -329,7 +356,7 @@ const Account: NextPage = () => {
     setSearchType('MANAGER')
     setProcess(query)
     setQuery(query)
-    console.log(`Searching Manager for ${query}`)
+    console.log('Query:', `Searching Manager for ${query}`)
   }
 
   const handleNameSearch = (query: string) => {
@@ -337,7 +364,7 @@ const Account: NextPage = () => {
     setSearchType('SEARCH')
     setProcess(query)
     setQuery(query)
-    console.log(`Searching for ${query}`)
+    console.log('Query:', `Searching for ${query}`)
   }
 
   return (
@@ -806,7 +833,7 @@ const Account: NextPage = () => {
                     }}
                   >
                     { tab !== 'OWNER' ? 'Please Wait' :
-                      (modalState.modalData ? 'Please wait' : 'Loading Names ')
+                      (modalState.modalData ? 'Please wait' : `${message}`)
                     }
                   </div>
                   <div
@@ -816,7 +843,7 @@ const Account: NextPage = () => {
                       fontFamily: 'SF Mono'
                     }}
                   >
-                    { tab !== 'OWNER' ? '' :
+                    { tab !== 'OWNER' || length < 3 ? '' :
                       (modalState.modalData ? '' : `${progress}/${length}`)
                     }
                   </div>
@@ -825,7 +852,54 @@ const Account: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && (
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && wallet === accountData?.address && !finish && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginTop: '50px',
+                  marginBottom: '200px'
+                }}
+              >
+                <div
+                  style={{
+                    paddingBottom: '10px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex'
+                  }}
+                >
+                  <Loading 
+                    height={60}
+                    width={60}
+                  />
+                </div>
+                <div
+                  style={{
+                    marginTop: '40px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700'
+                    }}
+                  >
+                    { 'Please Wait' }
+                  </div>
+                </div>
+              </div>
+              <h1>please wait</h1>
+            </div>
+          )}
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && wallet !== accountData?.address && (
             <div>
               <div
                 style={{
@@ -1096,7 +1170,7 @@ const Account: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
-                chain={constants.alchemyConfig.chainId}
+                chain={'1'}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
               />
