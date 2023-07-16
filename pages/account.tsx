@@ -311,6 +311,7 @@ const Account: NextPage = () => {
     }
   }, [tokenID, _Controller_, _Owner_, tab])
 
+  // Handle search for a name
   React.useEffect(() => {
     if (manager && manager === accountData?.address && query.length > 0) {
       setResponse(true)

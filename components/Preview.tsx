@@ -344,7 +344,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     )
     encoded = _encodedWithSelector
-    console.log('CCIP Return Value:', encoded)
+    //console.log('CCIP Return Value:', encoded)
     return encoded
   }
 
@@ -532,7 +532,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
  
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (modalState.trigger && !update) {
+    if (modalState.trigger && !update && !keypair) {
       setSigCount(1)
       signMessage({ message: statementIPNSKey() })
       setKeygen(true)
@@ -1052,7 +1052,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setSigApproved('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, _CCIP2Manager_, signatures]);
+  }, [_CCIP2Manager_, signatures]);
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
