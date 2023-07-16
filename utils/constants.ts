@@ -7,8 +7,14 @@ import iEnsUniversalResolver from '../abi/contract-abi-ensUniversalResolver.json
 import iEnsWrapper from '../abi/contract-abi-ensWrapper.json'
 import iCCIP2 from '../abi/contract-abi-ccip2.json'
 
+export const signedRecord = 'function signedRecord(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
+export const signedRedirect = 'function signedRedirect(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
+export const zeroAddress = '0x' + '0'.repeat(40)
+export const zeroKey = '0x' + '0'.repeat(64)
+export const buffer = "\x19Ethereum Signed Message:\n"
+
 export interface MainBodyState {
-  modalData: boolean;
+  modalData: string;
   trigger: boolean;
 }
 export const network = process.env.NEXT_PUBLIC_NETWORK
@@ -19,9 +25,8 @@ export const alchemyConfig = {
 }
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
-export const zeroAddress = '0x' + '0'.repeat(40)
 export const ccip2 = [
-  '0xBbee991706505b4c0c7A2e1A897bE7975CD285Ec' // CCIP2 Resolver
+  '0x326fD6b070FE062CCeA590314c6Fe249FFd91385' // CCIP2 Resolver
  ]
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry
@@ -82,21 +87,23 @@ export const forbidden = [
 ]
 // Record types in Preview modal
 export const types = [
+  'recordhash', // On-Chain Record
   'resolver', // Exception: Not a Record type
 	'addr',
 	'contenthash',
 	'avatar',
   'zonehash',
-	'revision'
+	'revision' // Extra local history; Not a Record type
 ] 
 // Record filenames corresponding to record types
 export const files = [
-  '', // No associated record file because not a Record
-	'_address/60',
+  '', // No associated record file; Not a Record
+  '', // No associated record file; Not a Record
+	'address/60',
 	'contenthash',
 	'text/avatar',
-	'_dnsrecord/zonehash',
-	'revision'
+	'dnsrecord/zonehash',
+	'revision' // No associated record file; Not a Record
 ] 
 
 // Overlay 

@@ -44,6 +44,8 @@ const Account: NextPage = () => {
   const [savings, setSavings] = React.useState('')
   const [icon, setIcon] = React.useState('')
   const [color, setColor] = React.useState('')
+  const [getting, setGetting] = React.useState(0)
+  const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('')
   const [searchType, setSearchType] = React.useState('')
   const [process, setProcess] = React.useState('') // Stores name under process
@@ -51,13 +53,16 @@ const Account: NextPage = () => {
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
   const [response, setResponse] = React.useState(false) // Tracks response of search query
+  const [finish, setFinish] = React.useState(true) // Tracks NFT query processing
+  const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
+  const [wallet, setWallet] = React.useState('') // Tracks wallet changes
   const [modalState, setModalState] = React.useState<constants.MainBodyState>({
-    modalData: false,
+    modalData: '',
     trigger: false
   }) // Child modal state
 
   // Handle Preview modal data return
-  const handleParentModalData = (data: boolean) => {
+  const handleParentModalData = (data: string) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
   }
   // Handle Preview modal trigger return
@@ -150,14 +155,14 @@ const Account: NextPage = () => {
       const data = await _RESPONSE.json();
       return data.response.gas;
     } catch (error) {
-      console.log('Failed to get gas data from CCIP2 backend')
+      console.error('Error:', 'Failed to get gas data from CCIP2 backend')
       return '';
     }
   }
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
-    constants.showOverlay(5);
+    constants.showOverlay(5)
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
@@ -166,17 +171,84 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Get all tokens for an address
-  const logTokens = useCallback(async () => {
-    const nfts = await constants.alchemy.nft.getNftsForOwner(accountData?.address ? accountData.address : '')
+  // Handle migration from Preview modal
+  React.useEffect(() => {
+    if (modalState.trigger) { // Trigger update when one of the names is migrated
+      let _LIST = meta
+      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const _update = async () => {
+        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
+        const flag = await recordhash.verifyRecordhash(modalState.modalData) // Get updated Recordhash
+        _LIST[index].migrated = _Resolver?.address === constants.ccip2[0] && flag ? '1' : (
+          _Resolver?.address === constants.ccip2[0] && !flag ? '1/2' : '0' // Set new flag
+        )
+      }
+      _update()
+      setMeta(_LIST)
+      setFlash(_LIST)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalState])
+
+  // Handle wallet change by the user
+  React.useEffect(() => {
+    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    if (!loading) setLoading(true)
+    if (!finish && process && _wallet === wallet) { // Prohibit wallet change when names are loading
+      setMessage('Loading Names')
+    } else {
+      setMessage('Please be Patient') // Print message on bad wallet change
+      setWallet(constants.zeroAddress)
+    }
+    if (!finish && !process) { // Print message on load
+      setWallet(constants.zeroAddress)
+      setMessage('Loading Names')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData, finish])
+
+  // Get all tokens for connected wallet
+  React.useEffect(() => {
+    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    const setMetadata = async () => {
+      await getTokens(_wallet)
+        .then(() => {
+          setTimeout(() => {
+            if (finish) setLoading(false)
+          }, 1000);
+        }) 
+    }
+    if (finish && length === 0 && _wallet !== wallet) { // Prohibit update when previous update is in process
+      setMetadata()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData, finish])
+  const getTokens = useCallback(async (_wallet: string) => {
+    if (_wallet) {
+      setWallet(_wallet)
+      setFinish(false)
+      await logTokens(_wallet)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const logTokens = useCallback(async (_wallet: string) => {
+    const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet)
     const allTokens = nfts.ownedNfts
     var allEns: string[] = []
     var items: any[] = []
     var count = 0
+    var _Cache: string[] = []
+    for (var i = 0; i < allTokens.length; i++) {
+      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
+        _Cache.push(allTokens[i].title)
+      }
+    }
+    setLength(_Cache.length)
     for (var i = 0; i < allTokens.length; i++) {
       // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
+        setGetting(count)
         allEns.push(allTokens[i].title.split('.eth')[0])
         const _Resolver = await constants.provider.getResolver(allTokens[i].title)
         items.push({
@@ -186,38 +258,22 @@ const Account: NextPage = () => {
         })
         setProcess(allTokens[i].title)
         const flag = await recordhash.verifyRecordhash(allTokens[i].title)
-        items[count - 1].migrated = flag ? '1' : items[count - 1].migrated
+        items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
+      }
+      if (i === allTokens.length - 1) {
+        setFinish(true) // Flag finish of process
+        setLength(0)
+        setProgress(0)
+        setMessage('Showing Names')
+        setMeta(items)
+        setFlash(items)
       }
     }
-    setMeta(items)
-    setFlash(items)
     if (count === 0) {
       setEmpty(true)
     }
-    setTimeout(() => {
-      setLoading(false)
-    }, 2000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const getTokens = useCallback(async () => {
-    if (accountData) {
-      await logTokens()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  React.useEffect(() => {
-    setLoading(true)
-    const setMetadata = async () => {
-      await getTokens()
-        .then(() => {
-          setTimeout(() => {
-            setLoading(false)
-          }, 2000);
-        })
-    }
-    setMetadata()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, modalState])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -227,6 +283,7 @@ const Account: NextPage = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta])
 
   // Open Preview modal for chosen ENS domain
@@ -234,6 +291,13 @@ const Account: NextPage = () => {
     setPreviewModal(true);
     setNameToPreview(name);
   }
+
+  React.useEffect(() => {
+    if (getting > progress && getting > 0) {
+      setProgress(getting);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getting]);
 
   React.useEffect(() => {
     if (_Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
@@ -248,6 +312,7 @@ const Account: NextPage = () => {
     }
   }, [tokenID, _Controller_, _Owner_, tab])
 
+  // Handle search for a name
   React.useEffect(() => {
     if (manager && manager === accountData?.address && query.length > 0) {
       setResponse(true)
@@ -278,6 +343,7 @@ const Account: NextPage = () => {
       }
       setMetadata()
     } else if (manager && manager !== accountData?.address)  {
+      setLoading(false)
       setSuccess(false)
       setErrorMessage('You are not Owner or Manager')
       setErrorModal(true)
@@ -302,7 +368,7 @@ const Account: NextPage = () => {
         let token = ethers.BigNumber.from(labelhash)
         setTokenID(token.toString())
       } catch (error) {
-        console.log('BigNumberWarning')
+        //console.log('BigNumberWarning')
       }
     }
   }, [query])
@@ -312,7 +378,7 @@ const Account: NextPage = () => {
     setSearchType('MANAGER')
     setProcess(query)
     setQuery(query)
-    console.log(`Searching Manager for ${query}`)
+    console.log('Query:', `Searching Manager for ${query}`)
   }
 
   const handleNameSearch = (query: string) => {
@@ -320,7 +386,7 @@ const Account: NextPage = () => {
     setSearchType('SEARCH')
     setProcess(query)
     setQuery(query)
-    console.log(`Searching for ${query}`)
+    console.log('Query:', `Searching for ${query}`)
   }
 
   return (
@@ -774,26 +840,90 @@ const Account: NextPage = () => {
                   />
                 </div>
                 <div
-                style={{
-                  marginTop: '40px'
-                }}
-              >
-                <span
                   style={{
-                    color: '#fc6603',
-                    fontWeight: '700'
+                    marginTop: '40px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
-                  { tab !== 'OWNER' ? 'Please Wait' :
-                    (modalState.modalData ? 'Please wait' : `Loading Names`)
-                  }
-                </span>
-              </div>
+                  <div
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700'
+                    }}
+                  >
+                    { tab !== 'OWNER' ? 'Please Wait' :
+                      (modalState.modalData ? 'Please wait' : `${message}`)
+                    }
+                  </div>
+                  <div
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700',
+                      fontFamily: 'SF Mono'
+                    }}
+                  >
+                    { tab !== 'OWNER' || length < 3 ? '' :
+                      (modalState.modalData ? '' : `${progress}/${length}`)
+                    }
+                  </div>
+                </div>
               </div>
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && (
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && 
+           !empty && wallet === accountData?.address && !finish && (
+            <div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginTop: '50px',
+                  marginBottom: '200px'
+                }}
+              >
+                <div
+                  style={{
+                    paddingBottom: '10px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex'
+                  }}
+                >
+                  <Loading 
+                    height={60}
+                    width={60}
+                  />
+                </div>
+                <div
+                  style={{
+                    marginTop: '40px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      color: '#fc6603',
+                      fontWeight: '700'
+                    }}
+                  >
+                    { 'Please Wait' }
+                  </div>
+                </div>
+              </div>
+              <h1>please wait</h1>
+            </div>
+          )}
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected &&
+           !empty && wallet !== accountData?.address && (
             <div>
               <div
                 style={{
@@ -1064,7 +1194,7 @@ const Account: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
-                chain={constants.alchemyConfig.chainId}
+                chain={'1'}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
               />
