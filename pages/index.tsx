@@ -20,6 +20,7 @@ import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
+import * as recordhash from '../utils/recordhash'
 
 /// Homepage
 const Home: NextPage = () => {
@@ -46,13 +47,13 @@ const Home: NextPage = () => {
   const [searchType, setSearchType] = React.useState('')
   //const [cache, setCache] = React.useState<any[]>([])
   const [onSearch, setOnSearch] = React.useState(false)
-  const [modalState_, setModalState] = React.useState<constants.MainBodyState>({
-    modalData: false,
+  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+    modalData: '',
     trigger: false
   });
 
   // Handle Preview modal data return
-  const handleParentModalData = (data: boolean) => {
+  const handleParentModalData = (data: string) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
   };
   // Handle Preview modal trigger return
@@ -128,6 +129,24 @@ const Home: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handle migration from Preview modal
+  React.useEffect(() => {
+    if (modalState.trigger) { // Trigger update when one of the names is migrated
+      let _LIST = meta
+      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const _update = async () => {
+        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
+        const flag = await recordhash.verifyRecordhash(modalState.modalData) // Get updated Recordhash
+        _LIST[index].migrated = _Resolver?.address === constants.ccip2[0] && flag ? '1' : (
+          _Resolver?.address === constants.ccip2[0] && !flag ? '1/2' : '0' // Set new flag
+        )
+      }
+      _update()
+      setMeta(_LIST)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalState])
+
   // Preserve metadata across pageloads
   React.useEffect(() => {
     const handleBeforeUnload = () => {
@@ -198,6 +217,7 @@ const Home: NextPage = () => {
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
       const setMetadata = async () => {
+        console.log(query)
         constants.provider.getResolver(query)
           .then((_RESPONSE) => {
             items.push({

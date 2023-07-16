@@ -14,7 +14,7 @@ export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
 
 export interface MainBodyState {
-  modalData: boolean;
+  modalData: string;
   trigger: boolean;
 }
 export const network = process.env.NEXT_PUBLIC_NETWORK

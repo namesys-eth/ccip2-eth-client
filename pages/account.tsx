@@ -57,12 +57,12 @@ const Account: NextPage = () => {
   const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
   const [wallet, setWallet] = React.useState('') // Tracks wallet changes
   const [modalState, setModalState] = React.useState<constants.MainBodyState>({
-    modalData: false,
+    modalData: '',
     trigger: false
   }) // Child modal state
 
   // Handle Preview modal data return
-  const handleParentModalData = (data: boolean) => {
+  const handleParentModalData = (data: string) => {
     setModalState(prevState => ({ ...prevState, modalData: data }));
   }
   // Handle Preview modal trigger return
@@ -171,6 +171,25 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handle migration from Preview modal
+  React.useEffect(() => {
+    if (modalState.trigger) { // Trigger update when one of the names is migrated
+      let _LIST = meta
+      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const _update = async () => {
+        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
+        const flag = await recordhash.verifyRecordhash(modalState.modalData) // Get updated Recordhash
+        _LIST[index].migrated = _Resolver?.address === constants.ccip2[0] && flag ? '1' : (
+          _Resolver?.address === constants.ccip2[0] && !flag ? '1/2' : '0' // Set new flag
+        )
+      }
+      _update()
+      setMeta(_LIST)
+      setFlash(_LIST)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalState])
+
   // Handle wallet change by the user
   React.useEffect(() => {
     let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
@@ -186,20 +205,20 @@ const Account: NextPage = () => {
       setMessage('Loading Names')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, modalState, finish])
+  }, [accountData, finish])
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
     let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    const setMetadata = async () => {
+      await getTokens(_wallet)
+        .then(() => {
+          setTimeout(() => {
+            if (finish) setLoading(false)
+          }, 1000);
+        }) 
+    }
     if (finish && length === 0 && _wallet !== wallet) { // Prohibit update when previous update is in process
-      const setMetadata = async () => {
-        await getTokens(_wallet)
-          .then(() => {
-            setTimeout(() => {
-              if (finish) setLoading(false)
-            }, 1000);
-          }) 
-      }
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,6 +248,7 @@ const Account: NextPage = () => {
       // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
+        console.log(count)
         setGetting(count)
         allEns.push(allTokens[i].title.split('.eth')[0])
         const _Resolver = await constants.provider.getResolver(allTokens[i].title)
@@ -852,7 +872,8 @@ const Account: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && wallet === accountData?.address && !finish && (
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && 
+           !empty && wallet === accountData?.address && !finish && (
             <div>
               <div
                 style={{
@@ -899,7 +920,8 @@ const Account: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && !empty && wallet !== accountData?.address && (
+          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected &&
+           !empty && wallet !== accountData?.address && (
             <div>
               <div
                 style={{

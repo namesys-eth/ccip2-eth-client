@@ -43,7 +43,7 @@ interface ModalProps {
   chain: string,
   show: boolean;
   onClose: any;
-  handleParentModalData: (data: boolean) => void;
+  handleParentModalData: (data: string) => void;
   handleParentTrigger: (data: boolean) => void;
 }
 
@@ -509,7 +509,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Send data to Home/Account-page and trigger update
   const handleSuccess = () => {
-    handleParentModalData(true);
+    handleParentModalData(_ENS_);
     handleParentTrigger(true);
   };
 
