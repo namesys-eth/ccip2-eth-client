@@ -189,6 +189,25 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "bytes4",
+        "name": "sig",
+        "type": "bytes4"
+      },
+      {
+        "indexed": true,
+        "internalType": "bool",
+        "name": "status",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdateSupportedInterface",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "address",
         "name": "newAddr",
         "type": "address"
@@ -247,6 +266,30 @@
   {
     "inputs": [
       {
+        "internalType": "bytes",
+        "name": "response",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "extradata",
+        "type": "bytes"
+      }
+    ],
+    "name": "__callback2",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes32",
         "name": "_node",
         "type": "bytes32"
@@ -295,7 +338,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_owner",
+        "name": "",
         "type": "address"
       },
       {
@@ -303,6 +346,30 @@
         "name": "_approvedSigner",
         "type": "address"
       },
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "isApprovedFor",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "bytes32",
         "name": "_node",
@@ -471,6 +538,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -592,7 +672,25 @@
       },
       {
         "internalType": "bytes",
-        "name": "_contenthash",
+        "name": "_recordhash",
+        "type": "bytes"
+      }
+    ],
+    "name": "setDeepRecordhash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_node",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_recordhash",
         "type": "bytes"
       }
     ],
