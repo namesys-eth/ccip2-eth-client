@@ -6,7 +6,8 @@ import type { NextPage } from 'next'
 import {
   useConnect,
   useAccount,
-  useContractRead
+  useContractRead,
+  useNetwork
 } from 'wagmi'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
@@ -24,6 +25,7 @@ import * as recordhash from '../utils/recordhash'
 
 /// Homepage
 const Home: NextPage = () => {
+  const { activeChain, } = useNetwork()
   const { data: accountData } = useAccount()
   const { isConnected } = useConnect()
   const [meta, setMeta] = React.useState<any[]>([])
@@ -61,7 +63,10 @@ const Home: NextPage = () => {
     setModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
-  const isProduction = process.env.NODE_ENV === 'production'
+  const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
+  const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
+  const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
+  const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
   /* GraphQL instance; need subgraph for this
   const logNames = useCallback(async () => {
@@ -113,7 +118,7 @@ const Home: NextPage = () => {
       const data = await _RESPONSE.json();
       return data.response.gas;
     } catch (error) {
-      console.log('Failed to get gas data from NameSys backend')
+      console.error('Error:', 'Failed to get gas data from NameSys backend')
       return '';
     }
   }
@@ -136,9 +141,9 @@ const Home: NextPage = () => {
       const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
       const _update = async () => {
         const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await recordhash.verifyRecordhash(modalState.modalData) // Get updated Recordhash
-        _LIST[index].migrated = _Resolver?.address === constants.ccip2[0] && flag ? '1' : (
-          _Resolver?.address === constants.ccip2[0] && !flag ? '1/2' : '0' // Set new flag
+        const flag = await recordhash.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
+        _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
+          _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
         )
       }
       _update()
@@ -188,7 +193,7 @@ const Home: NextPage = () => {
 
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead(
-    constants.ccip2Config[0], // CCIP2 Resolver
+    ccip2Config, // CCIP2 Resolver
     'recordhash',
     {
       args: [
@@ -217,16 +222,16 @@ const Home: NextPage = () => {
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
       const setMetadata = async () => {
-        console.log(query)
+        console.log('Query:', query)
         constants.provider.getResolver(query)
           .then((_RESPONSE) => {
             items.push({
               'key': 1, // Redundant [?]
               'name': query.split('.eth')[0],
-              'migrated': _RESPONSE?.address === constants.ccip2[0] ? '1/2' : '0'
+              'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (_Recordhash_?.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               }
               setMeta(items)
@@ -243,12 +248,12 @@ const Home: NextPage = () => {
 
   React.useEffect(() => {
     if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
-      console.log('Name is Registered')
+      //console.log('Name is Registered')
       setErrorModal(false)
       setLoading(false)
       setEmpty(false)
     } else {
-      console.log('Name not Registered')
+      //console.log('Name not Registered')
       setErrorMessage('Name not Registered')
       setErrorModal(true)
       setLoading(false)
@@ -266,7 +271,7 @@ const Home: NextPage = () => {
         let token = ethers.BigNumber.from(labelhash)
         setTokenID(token.toString())
       } catch (error) {
-        console.log('BigNumberWarning')
+        console.log('Warning:', 'BigNumberWarning')
       }
     }
   }, [query])
@@ -280,7 +285,7 @@ const Home: NextPage = () => {
     setSearchType('search')
     setQuery(query)
     setOnSearch(true)
-    console.log(`Searching for ${query}`)
+    console.log('Searching for:', query)
   }
 
   return (
@@ -402,7 +407,7 @@ const Home: NextPage = () => {
             <button
               className='button clear'
               onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
-              style={{ marginRight: 10 }}
+              style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Learn more'
             >
               <div
@@ -419,7 +424,7 @@ const Home: NextPage = () => {
             <button
               className='button clear'
               onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
-              style={{ marginRight: 10 }}
+              style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Terms of Use'
             >
               <div

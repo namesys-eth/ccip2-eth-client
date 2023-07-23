@@ -13,39 +13,12 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
-        "name": "node",
-        "type": "bytes32"
-      }
-    ],
-    "name": "ContenthashNotSet",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "string",
         "name": "message",
         "type": "string"
       }
     ],
     "name": "InvalidSignature",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "addr",
-        "type": "address"
-      }
-    ],
-    "name": "NotAuthorized",
     "type": "error"
   },
   {
@@ -107,7 +80,26 @@
         "type": "bool"
       }
     ],
-    "name": "Approved",
+    "name": "ApprovedSigner",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "contenthash",
+        "type": "bytes"
+      }
+    ],
+    "name": "OwnerhashChanged",
     "type": "event"
   },
   {
@@ -170,7 +162,7 @@
         "type": "address"
       }
     ],
-    "name": "UpdateGatewayManager",
+    "name": "UpdatedGatewayManager",
     "type": "event"
   },
   {
@@ -189,7 +181,7 @@
         "type": "bool"
       }
     ],
-    "name": "UpdateSupportedInterface",
+    "name": "UpdatedSupportedInterface",
     "type": "event"
   },
   {
@@ -208,7 +200,7 @@
         "type": "bool"
       }
     ],
-    "name": "UpdateWrapper",
+    "name": "UpdatedWrapper",
     "type": "event"
   },
   {
@@ -246,30 +238,6 @@
       {
         "internalType": "bytes",
         "name": "result",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "response",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "extradata",
-        "type": "bytes"
-      }
-    ],
-    "name": "__callback2",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
         "type": "bytes"
       }
     ],
@@ -324,6 +292,45 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_approvedSigner",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_node",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_signature",
+        "type": "bytes"
+      },
+      {
+        "internalType": "string",
+        "name": "_domain",
+        "type": "string"
+      }
+    ],
+    "name": "approvedSigner",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "gateway",
     "outputs": [
@@ -337,36 +344,24 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "immolate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "string",
+        "name": "signRequest",
+        "type": "string"
       },
       {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
       }
     ],
-    "name": "isApprovedFor",
+    "name": "getSigner",
     "outputs": [
       {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -375,22 +370,22 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
         "internalType": "bytes32",
-        "name": "_node",
+        "name": "",
         "type": "bytes32"
       },
       {
         "internalType": "address",
-        "name": "_owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_manager",
+        "name": "",
         "type": "address"
       }
     ],
-    "name": "isAuthorized",
+    "name": "isApprovedSigner",
     "outputs": [
       {
         "internalType": "bool",
@@ -444,45 +439,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_approvedSigner",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_node",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_signature",
-        "type": "bytes"
-      },
-      {
-        "internalType": "string",
-        "name": "_domain",
-        "type": "string"
-      }
-    ],
-    "name": "offchainApproved",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -490,6 +446,25 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ownerhash",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
       }
     ],
     "stateMutability": "view",
@@ -518,7 +493,7 @@
     "inputs": [
       {
         "internalType": "bytes",
-        "name": "_encodedName",
+        "name": "_encoded",
         "type": "bytes"
       },
       {
@@ -527,7 +502,7 @@
         "type": "bytes"
       }
     ],
-    "name": "redirectDAppService",
+    "name": "redirectService",
     "outputs": [
       {
         "internalType": "bytes4",
@@ -570,7 +545,7 @@
     "outputs": [
       {
         "internalType": "bytes",
-        "name": "result",
+        "name": "",
         "type": "bytes"
       }
     ],
@@ -581,12 +556,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_token",
+        "name": "_tokenContract",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_id",
+        "name": "_tokenID",
         "type": "uint256"
       }
     ],
@@ -598,22 +573,12 @@
   {
     "inputs": [
       {
-        "internalType": "string[]",
-        "name": "_subs",
-        "type": "string[]"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_node",
-        "type": "bytes32"
-      },
-      {
         "internalType": "bytes",
-        "name": "_recordhash",
+        "name": "_contenthash",
         "type": "bytes"
       }
     ],
-    "name": "setDeepRecordhash",
+    "name": "setOwnerhash",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -627,7 +592,7 @@
       },
       {
         "internalType": "bytes",
-        "name": "_recordhash",
+        "name": "_contenthash",
         "type": "bytes"
       }
     ],
@@ -639,9 +604,9 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_sub",
-        "type": "string"
+        "internalType": "string[]",
+        "name": "_subdomain",
+        "type": "string[]"
       },
       {
         "internalType": "bytes32",
@@ -650,37 +615,13 @@
       },
       {
         "internalType": "bytes",
-        "name": "_recordhash",
+        "name": "_contenthash",
         "type": "bytes"
       }
     ],
     "name": "setSubRecordhash",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "signRequest",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      }
-    ],
-    "name": "signedBy",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -762,7 +703,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_token",
+        "name": "_tokenContract",
         "type": "address"
       },
       {

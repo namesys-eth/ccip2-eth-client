@@ -62,6 +62,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
             >
               <div
               >
+                {/*
                 {item.name.split('').map((char, index) => (
                   <span key={index}>
                     { !alphabets.includes(char) &&
@@ -110,6 +111,34 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     )}
                     { ['x'].includes(char) &&
                       numbers.includes(item.name.charAt(index - 1)) &&
+                      alphabets.includes(item.name.charAt(index + 1)) && (
+                      <span
+                        style={{ 
+                          fontFamily: 'Rajdhani',
+                          letterSpacing: '0.3px',
+                          fontWeight: '700',
+                          fontSize: '26px'
+                        }}
+                      >
+                        { char }
+                      </span>
+                    )}
+                    { ['x'].includes(char) &&
+                      alphabets.includes(item.name.charAt(index - 1)) &&
+                      numbers.includes(item.name.charAt(index + 1)) && (
+                      <span
+                        style={{ 
+                          fontFamily: 'Rajdhani',
+                          letterSpacing: '0.3px',
+                          fontWeight: '700',
+                          fontSize: '26px'
+                        }}
+                      >
+                        { char }
+                      </span>
+                    )}
+                    { ['x'].includes(char) &&
+                      numbers.includes(item.name.charAt(index - 1)) &&
                       index === item.name.length - 1 && (
                       <span
                         style={{ 
@@ -122,6 +151,25 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                         { char }
                       </span>
                     )}
+                  </span>
+                ))}
+                */}
+                {item.name.split('').map((char, index) => (
+                  <span 
+                    key={index}
+                    style={{ 
+                      fontFamily: 'SF Mono',
+                      letterSpacing: '-0.5px',
+                      fontWeight: '600',
+                      fontSize: lang.arabic.includes(char) ||
+                        lang.hindi.includes(char) || 
+                        lang.persian.includes(char) ||
+                        lang.chinese.includes(char) || 
+                        lang.korean.includes(char)
+                        ? '24px' : '21px'
+                    }}
+                  >
+                    { char }
                   </span>
                 ))}
                 <span 
