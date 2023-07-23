@@ -77,7 +77,7 @@ const customTheme: Theme = {
 
 const { chains, provider } = configureChains(
   [
-    chain.goerli
+    chain[`${process.env.NEXT_PUBLIC_NETWORK}`]
   ],
   [
     alchemyProvider({ alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID }),

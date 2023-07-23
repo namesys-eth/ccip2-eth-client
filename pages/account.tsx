@@ -7,7 +7,8 @@ import type { NextPage } from 'next'
 import {
   useConnect,
   useAccount,
-  useContractRead
+  useContractRead,
+  useNetwork
 } from 'wagmi'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
@@ -24,6 +25,7 @@ import * as constants from '../utils/constants'
 import * as recordhash from '../utils/recordhash'
 
 const Account: NextPage = () => {
+  const { activeChain, } = useNetwork()
   const { data: accountData } = useAccount()
   const { isConnected } = useConnect()
   const [meta, setMeta] = React.useState<any[]>([])
@@ -48,12 +50,12 @@ const Account: NextPage = () => {
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('')
   const [searchType, setSearchType] = React.useState('')
-  const [process, setProcess] = React.useState('') // Stores name under process
+  const [process, setProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
   const [progress, setProgress] = React.useState(0) // Stores progress
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
   const [response, setResponse] = React.useState(false) // Tracks response of search query
-  const [finish, setFinish] = React.useState(true) // Tracks NFT query processing
+  const [finish, setFinish] = React.useState(false) // Tracks NFT query processing
   const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
   const [wallet, setWallet] = React.useState('') // Tracks wallet changes
   const [modalState, setModalState] = React.useState<constants.MainBodyState>({
@@ -102,6 +104,10 @@ const Account: NextPage = () => {
   }, [accountData])
   */
 
+  const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
+  const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
+  const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
+
   /// ENS Domain Config
   // Read ENS Legacy Registry for Controller record of ENS domain
   const { data: _Controller_ } = useContractRead(
@@ -127,7 +133,7 @@ const Account: NextPage = () => {
 
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead(
-    constants.ccip2Config[0], // CCIP2 Resolver
+    ccip2Config, // CCIP2 Resolver
     'recordhash',
     {
       args: [
@@ -178,9 +184,9 @@ const Account: NextPage = () => {
       const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
       const _update = async () => {
         const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await recordhash.verifyRecordhash(modalState.modalData) // Get updated Recordhash
-        _LIST[index].migrated = _Resolver?.address === constants.ccip2[0] && flag ? '1' : (
-          _Resolver?.address === constants.ccip2[0] && !flag ? '1/2' : '0' // Set new flag
+        const flag = await recordhash.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
+        _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
+          _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
         )
       }
       _update()
@@ -209,16 +215,70 @@ const Account: NextPage = () => {
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
-    const setMetadata = async () => {
-      await getTokens(_wallet)
-        .then(() => {
-          setTimeout(() => {
-            if (finish) setLoading(false)
-          }, 1000);
-        }) 
+    const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress;
+    if (!finish && length === 0 && _wallet !== wallet) {
+      setLoading(true); // Show loading state when calling logTokens
+      setWallet(_wallet);
+      // Call logTokens directly here
+      const loadTokens = async () => {
+        const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet);
+        const allTokens = nfts.ownedNfts
+        var allEns: string[] = []
+        var items: any[] = []
+        var count = 0
+        var _Cache: string[] = []
+        for (var i = 0; i < allTokens.length; i++) {
+          if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
+            _Cache.push(allTokens[i].title)
+          }
+        }
+        setLength(_Cache.length)
+        for (var i = 0; i < allTokens.length; i++) {
+          // ISSUE: ENS Metadata service is broken and not showing all the names
+          if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
+            count = count + 1
+            //console.log('Count:', count)
+            setGetting(count)
+            allEns.push(allTokens[i].title.split('.eth')[0])
+            const _Resolver = await constants.provider.getResolver(allTokens[i].title)
+            items.push({
+              'key': count,
+              'name': allTokens[i].title.split('.eth')[0],
+              'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
+            })
+            setProcess(allTokens[i].title)
+            const flag = await recordhash.verifyRecordhash(allTokens[i].title, ccip2Config)
+            items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
+          }
+          if (i === allTokens.length - 1) {
+            setFinish(true) // Flag finish of process
+            setLength(0)
+            setProgress(0)
+            setMessage('Showing Names')
+            setMeta(items)
+            setFlash(items)
+            setLoading(false)
+          }
+        }
+      };
+      loadTokens();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData]);
+
+  {/*
+  // Get all tokens for connected wallet
+  React.useEffect(() => {
+    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
     if (finish && length === 0 && _wallet !== wallet) { // Prohibit update when previous update is in process
+      const setMetadata = async () => {
+        await getTokens(_wallet)
+          .then(() => {
+            setTimeout(() => {
+              if (finish) setLoading(false)
+            }, 1000);
+          }) 
+      }
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,13 +308,14 @@ const Account: NextPage = () => {
       // ISSUE: ENS Metadata service is broken and not showing all the names
       if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
         count = count + 1
+        console.log('Count:', count)
         setGetting(count)
         allEns.push(allTokens[i].title.split('.eth')[0])
         const _Resolver = await constants.provider.getResolver(allTokens[i].title)
         items.push({
           'key': count,
           'name': allTokens[i].title.split('.eth')[0],
-          'migrated': _Resolver?.address === constants.ccip2[0] ? '1/2' : '0'
+          'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
         })
         setProcess(allTokens[i].title)
         const flag = await recordhash.verifyRecordhash(allTokens[i].title)
@@ -274,6 +335,7 @@ const Account: NextPage = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  */}
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -325,7 +387,7 @@ const Account: NextPage = () => {
             items.push({
               'key': 1,
               'name': query.split('.eth')[0],
-              'migrated': _RESPONSE?.address === constants.ccip2[0] ? '1/2' : '0'
+              'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
               if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
@@ -506,7 +568,7 @@ const Account: NextPage = () => {
             <button
               className='button clear'
               onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
-              style={{ marginRight: 10 }}
+              style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Learn more'
             >
               <div
@@ -523,7 +585,7 @@ const Account: NextPage = () => {
             <button
               className='button clear'
               onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
-              style={{ marginRight: 10 }}
+              style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Terms of Use'
             >
               <div
@@ -767,7 +829,8 @@ const Account: NextPage = () => {
                   }, 2000)
                 }}
                 className='button-header'
-                disabled={tab === 'MANAGER' || loading}
+                //disabled={tab === 'MANAGER' || loading}
+                disabled={ true }
                 data-tooltip='Search for a name that you manage'
               >
                 <div
@@ -949,7 +1012,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('if a name that you own is not listed, please use the search 🔎 tab')
+                    setHelp('use search tab for missing names')
                   }}
                 >
                   <div
@@ -1035,7 +1098,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('search for an ENS name that you manage (or own)')
+                    setHelp('search names that you manage')
                   }}
                 >
                   <div
@@ -1194,7 +1257,7 @@ const Account: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
-                chain={'1'}
+                chain={_Chain_}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
               />
