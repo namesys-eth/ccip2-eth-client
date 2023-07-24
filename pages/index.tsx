@@ -38,7 +38,7 @@ const Home: NextPage = () => {
   const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
-  const [success, setSuccess] = React.useState(true)
+  const [success, setSuccess] = React.useState(false)
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
@@ -247,20 +247,23 @@ const Home: NextPage = () => {
   }, [query])
 
   React.useEffect(() => {
-    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
-      //console.log('Name is Registered')
-      setErrorModal(false)
-      setLoading(false)
-      setEmpty(false)
+    if (_Owner_ && _Owner_.toString() !== constants.zeroAddress) {
+      if (success) {
+        //console.log('Name is Registered')
+        setErrorModal(false)
+        setLoading(false)
+        setEmpty(false)
+      }
     } else {
-      //console.log('Name not Registered')
-      setErrorMessage('Name not Registered')
-      setErrorModal(true)
-      setLoading(false)
-      setEmpty(true)
+      if (_Owner_ !== undefined ) {
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+        setEmpty(true)
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success])
+  }, [success, _Owner_])
 
 
   // Sets tokenID for ENS domain search result
