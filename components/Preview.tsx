@@ -319,11 +319,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // returns abi.encodeWithSelector(iCallbackType.signedRecord.selector, _signer, _recordSignature, _approvedSignature, result)
   function encodeValue(key: string, value: string) {
     let encoded: string
+    let _value: string = ''
     let type: string = ''
-    if (key === 'avatar') type = 'string'
-    if (key === 'contenthash') type = 'string'
-    if (key === 'addr') type = 'address'
-    let _result = ethers.utils.defaultAbiCoder.encode([type], [value]);
+    if (key === 'avatar') {
+      type = 'string'
+      _value = value
+    }
+    if (key === 'contenthash') {
+      type = 'string'
+      _value = ensContent.encodeContenthash(value).encoded
+    }
+    if (key === 'addr') {
+      type = 'address'
+      _value = value
+    }
+    let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
     let _ABI = [constants.signedRecord]
     let _interface = new ethers.utils.Interface(_ABI);
     {/* 
