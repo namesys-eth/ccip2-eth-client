@@ -38,7 +38,7 @@ const Home: NextPage = () => {
   const [nameToPreviewModal, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
-  const [success, setSuccess] = React.useState(false)
+  const [success, setSuccess] = React.useState(true)
   const [tokenID, setTokenID] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
