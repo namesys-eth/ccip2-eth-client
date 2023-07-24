@@ -1696,7 +1696,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
                               }}
                             >
-                              info_outline
+                              info_outline 
                             </div>
                           </button>
                         )}      
