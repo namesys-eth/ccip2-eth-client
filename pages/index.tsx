@@ -64,9 +64,9 @@ const Home: NextPage = () => {
   };
 
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
-  const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
-  const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
-  const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
+  const _Chain_ = activeChain && activeChain.name.toLowerCase() === 'goerli' ? '5' : '1'
+  const ccip2Contract = constants.ccip2[_Chain_ === '5' ? 0 : 1]
+  const ccip2Config = constants.ccip2Config[_Chain_ === '5' ? 0 : 1]
 
   /* GraphQL instance; need subgraph for this
   const logNames = useCallback(async () => {

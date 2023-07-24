@@ -1201,9 +1201,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         setLegit(EMPTY_BOOL())
                       }, 2000);
                       // Update values in the modal to new ones
+                      setTimestamp(data.response.timestamp)
                       const _updatedList = list.map((item) => {
                         if (!['resolver','recordhash'].includes(item.type)) {
-                          setTimestamp(data.response.timestamp)
                           let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
                           setQueue(_queue)
                           if (data.response.meta[item.type]) {
@@ -1684,15 +1684,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('info'),
-                              setColor('skyblue'),
-                              setHelp(item.help)
+                              setColor(constants.forbidden.includes(item.type) ? 'orange' : 'skyblue'),
+                              setHelp(constants.forbidden.includes(item.type) ? 'In Process of Bug Fixing' : item.help)
                             }}
-                            data-tooltip={ 'Click to Expand' }
+                            data-tooltip={ constants.forbidden.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{ 
-                                color: 'skyblue',
+                                color: constants.forbidden.includes(item.type) ? 'orange' : 'skyblue',
                                 marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
                               }}
                             >
