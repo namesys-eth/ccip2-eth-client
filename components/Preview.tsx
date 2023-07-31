@@ -456,7 +456,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     ccip2Config,
     'isApprovedSigner',
     {
-      args: query
+      args: [getOwner(), ethers.utils.namehash(ENS), keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress]
     }
   )
   // Read ownership of a domain from ENS Wrapper
