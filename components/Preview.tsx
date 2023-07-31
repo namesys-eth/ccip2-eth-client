@@ -149,12 +149,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [recordhash, setRecordhash] = React.useState(''); // Recordhash for CCIP2 Resolver
+  const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
   const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
   const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
+  const [preCache, setPreCache] = React.useState<any[]>([]); // Copy of LIST[] object
   const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
   const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
@@ -215,7 +216,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 0,
         type: 'recordhash',
-        value: recordhash !== 'null' ? recordhash : '',
+        value: recordhash ? recordhash : '',
         editable: false,
         active: resolver === ccip2Contract,
         state: false,
@@ -737,7 +738,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           };
         }
       });
-      setList(_updatedList)
+      setPreCache(_updatedList)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [states]);
@@ -752,7 +753,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: resolver !== ccip2Contract
       };
     })
-    setList(_updatedList)
+    setPreCache(_updatedList)
     setStates([])
     setCID('')
     setKeypair(undefined) // Purge keypairs from local storage 
@@ -848,15 +849,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             if (_Recordhash_ && _Recordhash_!.toString() !== '0x') {
               setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
             } else {
-              setRecordhash('null')
+              setRecordhash(undefined)
             }
+            getContenthash(response!)
+          } else {
+            setContenthash('')
+            setAvatar('')
+            setAddr('')
+            setFinish(true)
           }
-          getContenthash(response!)
         } else {
           if (_Recordhash_ && _Recordhash_!.toString() !== '0x') {
             setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
           } else {
-            setRecordhash('null')
+            setRecordhash(undefined)
           }
         }
       });
@@ -977,7 +983,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
       return item;
     });
-    setList(_updatedList)
+    setPreCache(_updatedList)
   }
 
   // Get records from history on NameSys backend
@@ -1027,8 +1033,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish]);
+
+  // Triggers setting metadata
   React.useEffect(() => {
-    if (history && queue && resolver && recordhash) {
+    if (history && queue && resolver) {
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1066,7 +1074,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
       return item;
     });
-    setList(_updatedList)
+    setPreCache(_updatedList)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
@@ -1236,11 +1244,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         if (!['resolver','recordhash'].includes(item.type)) {
                           let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
                           setQueue(_queue)
-                          console.log(data.response)
+                          //console.log(data.response)
                           if (data.response.meta[item.type]) {
                             return { 
                               ...item,  
-                              value: item.type === 'contenthash' ? ensContent.decodeContenthash(data.response[item.type]).decoded : data.response[item.type],
+                              value: data.response[item.type],
                               state: true,
                               label: 'edit',
                               active: _queue > 0,
@@ -1257,7 +1265,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           return item
                         }
                       })
-                      setList(_updatedList)
+                      setPreCache(_updatedList)
                       setNewValues(EMPTY_STRING())
                       setSignatures(EMPTY_STRING())
                       setSigCount(0)
@@ -1296,6 +1304,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateSuccess, txSuccess1of2, migrated]);
+
+  // Handles setting setRecordhash on CCIP2 Resolver
+  React.useEffect(() => {
+    if (preCache) {
+      setList(preCache)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preCache]);
 
   // Handles setting Recordhash after transaction 2 
   React.useEffect(() => {
@@ -1338,10 +1354,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
         }
       });
-      setList(_updatedList)
+      setPreCache(_updatedList)
       setLegit(EMPTY_BOOL())
       setStates([])
-      getResolver()
+      //getResolver()
       setLoading(false)
       setSuccess('Off-chain Setup Complete. Enjoy!')
       setIcon('check_circle_outline')
@@ -1368,6 +1384,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles transaction wait
   React.useEffect(() => {
     if (isMigrateLoading && !isSetRecordhashLoading) {
+      setLoading(true) // 
       setFinish(false)
       setMessage(['Waiting for Confirmation', '1'])
     } 
@@ -1377,6 +1394,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLoading(false)
     } 
     if (!isMigrateLoading && isSetRecordhashLoading) {
+      setLoading(true) //
       setFinish(false)
       setMessage(['Waiting for Confirmation', '2'])
     }
@@ -1390,6 +1408,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles first transaction loading and error
   React.useEffect(() => {
     if (txLoading1of2 && !txError1of2) {
+      setLoading(true)
       setMessage(['Waiting for Transaction', '1'])
     }
     if (!txLoading1of2 && txError1of2) {
@@ -1403,6 +1422,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles second transaction loading and error
   React.useEffect(() => {
     if (txLoading2of2 && !txError2of2) {
+      setLoading(true)
       setMessage(['Waiting for Transaction', '2'])
     }
     if (!txLoading2of2 && txError2of2) {
@@ -1416,6 +1436,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles signature loading and error
   React.useEffect(() => {
     if (signLoading && !signError) {
+      setLoading(true)
       setMessage(['Waiting for Signature', sigCount.toString()])
     }
     if (signError && !signLoading) {
@@ -1719,21 +1740,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </div>
                           </button>
                         )}    
-                        { // De-bugger
-                        item.state && (
-                          <></>
-                        )} 
-                        { // Updated State marker
-                        item.state && (
-                          <div 
-                            className="material-icons smol"
-                            style={{ 
-                              color: 'lightgreen'
-                            }}
-                          >
-                            task_alt
-                          </div>
-                        )}
+
                         { // Countdown
                         !['resolver','recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
                         && resolver === ccip2Contract && 
@@ -1760,6 +1767,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               timer
                             </div>
                           </button>
+                        )}
+
+                        { // Updated State marker
+                        item.state && (
+                          <div 
+                            className="material-icons smol"
+                            style={{ 
+                              color: 'lightgreen',
+                              marginLeft: '-5px'
+                            }}
+                          >
+                            task_alt
+                          </div>
                         )}
                       </span>
                       <button

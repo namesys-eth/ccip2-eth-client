@@ -238,14 +238,17 @@ const Home: NextPage = () => {
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
-    let _Owner: string = ''
-    let _Recordhash: string = ''
     if (!accountData?.address && tokenID && tokenID !== '0x' && query && query !== '') {
       const _setOrigins = async () => {
-        _Owner = await getOwner(constants.provider, tokenID)
-        _Recordhash = await getRecordhash(constants.provider, query)
-        setOwner(_Owner)
-        setRecordhash(_Recordhash)
+        let _Owner = await getOwner(constants.provider, tokenID)
+        let _Recordhash = await getRecordhash(constants.provider, query)
+        if (_Owner && _Recordhash) {
+          setOwner(_Owner)
+          setRecordhash(_Recordhash)
+        } else {
+          setOwner('')
+          setSuccess(false)
+        }
       }
       _setOrigins()
     }
@@ -301,6 +304,15 @@ const Home: NextPage = () => {
         setErrorModal(true)
         setLoading(false)
         setEmpty(true)
+        setQuery('')
+      }
+    } else {
+      if (!owner || owner === null || owner === constants.zeroAddress) {
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+        setEmpty(true)
+        setQuery('')
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
