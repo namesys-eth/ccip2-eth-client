@@ -249,6 +249,7 @@ const Home: NextPage = () => {
       }
       _setOrigins()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, tokenID])
 
   // Shows search result for ENS domain search
