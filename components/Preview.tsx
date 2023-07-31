@@ -328,7 +328,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       _value = value
     }
     if (key === 'contenthash') {
-      type = 'string'
+      type = 'bytes'
       _value = ensContent.encodeContenthash(value).encoded
     }
     if (key === 'addr') {
@@ -367,10 +367,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function genExtradata(key: string, _recordValue: string) {
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     let type: string = ''
-    if (key === 'avatar') type = 'string'
-    if (key === 'contenthash') type = 'string'
-    if (key === 'addr') type = 'address'
-    let _result = ethers.utils.defaultAbiCoder.encode([type], [_recordValue]);
+    let _value: string = ''
+    if (key === 'avatar') {
+      type = 'string'
+      _value = _recordValue
+    }
+    if (key === 'contenthash') {
+      type = 'bytes'
+      _value = ensContent.encodeContenthash(_recordValue).encoded
+    }
+    if (key === 'addr') {
+      type = 'address'
+      _value = _recordValue
+    }
+    let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
     const toPack = ethers.utils.keccak256(_result)
     const _extradata = ethers.utils.hexlify(ethers.utils.solidityPack(["bytes"], [toPack]))
     //console.log('S2 Extradata:', _extradata)
@@ -771,71 +781,54 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Get Contenthash for ENS domain first
-  async function getContenthash(resolver: ethers.providers.Resolver | null) {
-    if ( resolver?.address !== ccip2Contract ) {
-      await resolver!.getContentHash()
-        .then((response: React.SetStateAction<string>) => {
-          if (!response) {
-            setContenthash('')
-          } else {
-            setContenthash(response)
-          }
-          getAvatar()
-        })
-        .catch(() => {
+  async function getContenthash(resolver: ethers.providers.Resolver) {
+    await resolver.getContentHash()
+      .then((response: React.SetStateAction<string>) => {
+        if (!response) {
           setContenthash('')
-          getAvatar()
-        });
-    } else {
-      // TODO : Fix this
-      setContenthash('')
-      getAvatar()
-    }
+        } else {
+          setContenthash(response)
+        }
+        getAvatar()
+      })
+      .catch(() => {
+        setContenthash('')
+        getAvatar()
+      });
   }
 
   // Get Avatar for ENS domain second
   async function getAvatar() {
-    if ( resolver?.address !== ccip2Contract ) {
-      await provider.getAvatar(_ENS_)
-        .then(response => {
-          if (!response) {
-            setAvatar('')
-          } else {
-            setAvatar(response)
-          }
-          getRecord()
-        })
-        .catch(() => {
+    await provider.getAvatar(_ENS_)
+      .then(response => {
+        if (!response) {
           setAvatar('')
-          getRecord()
-        });
-    } else {
-      // TODO : Fix this
-      setAvatar('')
-      getRecord()
-    }
+        } else {
+          setAvatar(response)
+        }
+        getRecord()
+      })
+      .catch(() => {
+        setAvatar('')
+        getRecord()
+      });
   }
 
   // Get Addr for ENS domain third
   async function getRecord() {
-    if ( resolver?.address !== ccip2Contract ) {
-      await provider.resolveName(_ENS_)
-        .then(response => {
-          if (!response) {
-            setAddr('')
-          } else {
-            setAddr(response)
-          }
-          setFinish(true)
-        })
-        .catch(() => {
+    await provider.resolveName(_ENS_)
+      .then(response => {
+        if (!response) {
           setAddr('')
-          setFinish(true)
-        });
-    } else {
-      setAddr('')
-      setFinish(true)
-    }
+        } else {
+          setAddr(response)
+        }
+        setFinish(true)
+      })
+      .catch(() => {
+        setAddr('')
+        setFinish(true)
+      });
   }
 
   // Get Resolver for ENS domain
@@ -851,7 +844,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             } else {
               setRecordhash(undefined)
             }
-            getContenthash(response!)
+            getContenthash(response)
           } else {
             setContenthash('')
             setAvatar('')
