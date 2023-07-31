@@ -169,7 +169,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                         ? '24px' : '21px'
                     }}
                   >
-                    { char }
+                    { char.toLowerCase() }
                   </span>
                 ))}
                 <span 

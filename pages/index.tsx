@@ -9,7 +9,7 @@ import {
   useContractRead,
   useNetwork
 } from 'wagmi'
-import { ethers } from 'ethers'
+import { ethers, providers } from 'ethers'
 import { isMobile } from 'react-device-detect'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
@@ -21,7 +21,7 @@ import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
-import * as recordhash from '../utils/recordhash'
+import * as verifier from '../utils/verifier'
 
 /// Homepage
 const Home: NextPage = () => {
@@ -47,7 +47,9 @@ const Home: NextPage = () => {
   const [color, setColor] = React.useState('');
   const [help, setHelp] = React.useState('');
   const [searchType, setSearchType] = React.useState('')
-  //const [cache, setCache] = React.useState<any[]>([])
+  const [recordhash, setRecordhash] = React.useState('')
+  const [owner, setOwner] = React.useState('')
+  const [controller, setController] = React.useState('')
   const [onSearch, setOnSearch] = React.useState(false)
   const [modalState, setModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
@@ -99,6 +101,22 @@ const Home: NextPage = () => {
   }, [accountData])
   */
 
+  // Get Owner with ethers.js
+  async function getOwner(provider: any, _tokenID: string) {
+    const contract = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider);
+    const _addr = await contract.ownerOf(_tokenID);
+    if (_addr === ethers.constants.AddressZero) { return '0x' }
+    return _addr
+  }
+
+  // Get Recordhash with ethers.js
+  async function getRecordhash(provider: any, name: string) {
+    const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider);
+    const _recordhash = await contract.recordhash(ethers.utils.namehash(name));
+    if (_recordhash === null) { return '0x' }
+    return _recordhash
+  }
+
   // Get historical gas savings
   async function getSavings() {
     const request = {
@@ -141,7 +159,7 @@ const Home: NextPage = () => {
       const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
       const _update = async () => {
         const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await recordhash.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
+        const flag = await verifier.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
         _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
           _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
         )
@@ -204,10 +222,13 @@ const Home: NextPage = () => {
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (_Controller_ && _Controller_?.toString() !== '0x' + '0'.repeat(40)) {
+    if (_Owner_ && _Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
       setManager(_Controller_.toString())
-    } else if (_Controller_?.toString() === '0x' + '0'.repeat(40) && _Owner_) {
+      setController(_Controller_.toString())
+      setOwner(_Owner_.toString())
+    } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
       setManager(_Owner_.toString())
+      setOwner(_Owner_.toString())
     } else {
       setTimeout(() => {
         setLoading(false)
@@ -215,14 +236,32 @@ const Home: NextPage = () => {
     }
   }, [tokenID, _Controller_, _Owner_])
 
+  // Get data from Ethers.JS if wallet is not connected
+  React.useEffect(() => {
+    if (!accountData?.address && tokenID && tokenID !== '0x' && query && query !== '') {
+      const _setOrigins = async () => {
+        let _Owner = await getOwner(constants.provider, tokenID)
+        let _Recordhash = await getRecordhash(constants.provider, query)
+        if (_Owner && _Recordhash) {
+          setOwner(_Owner)
+          setRecordhash(_Recordhash)
+        } else {
+          setOwner('')
+          setSuccess(false)
+        }
+      }
+      _setOrigins()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, tokenID])
+
   // Shows search result for ENS domain search
   React.useEffect(() => {
-    if (query.length > 0) {
+    if (query.length > 0 && recordhash) {
       var allEns: string[] = []
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
       const setMetadata = async () => {
-        console.log('Query:', query)
         constants.provider.getResolver(query)
           .then((_RESPONSE) => {
             items.push({
@@ -231,7 +270,7 @@ const Home: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               }
               setMeta(items)
@@ -244,23 +283,40 @@ const Home: NextPage = () => {
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query])
+  }, [query, recordhash])
+
+  // Captures recordhash hook
+  React.useEffect(() => {
+    if (_Recordhash_) {
+      setRecordhash(_Recordhash_.toString())
+    }
+  }, [_Recordhash_])
 
   React.useEffect(() => {
-    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
-      //console.log('Name is Registered')
-      setErrorModal(false)
-      setLoading(false)
-      setEmpty(false)
+    if (success) {
+      if (owner && owner !== null && owner !== constants.zeroAddress) {
+        //console.log('Name is Registered')
+        setErrorModal(false)
+        setLoading(false)
+        setEmpty(false)
+      } else {
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+        setEmpty(true)
+        setQuery('')
+      }
     } else {
-      //console.log('Name not Registered')
-      setErrorMessage('Name not Registered')
-      setErrorModal(true)
-      setLoading(false)
-      setEmpty(true)
+      if (!owner || owner === null || owner === constants.zeroAddress) {
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+        setEmpty(true)
+        setQuery('')
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success])
+  }, [success, owner])
 
 
   // Sets tokenID for ENS domain search result
@@ -285,7 +341,11 @@ const Home: NextPage = () => {
     setSearchType('search')
     setQuery(query)
     setOnSearch(true)
-    console.log('Searching for:', query)
+    if (accountData?.address) {
+      console.log('WAGMI QUERY:', query)
+    } else {
+      console.log('ETHERS QUERY:', query)
+    }  
   }
 
   return (

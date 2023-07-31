@@ -22,7 +22,7 @@ import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
-import * as recordhash from '../utils/recordhash'
+import * as verifier from '../utils/verifier'
 
 const Account: NextPage = () => {
   const { activeChain, } = useNetwork()
@@ -184,7 +184,7 @@ const Account: NextPage = () => {
       const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
       const _update = async () => {
         const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await recordhash.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
+        const flag = await verifier.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
         _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
           _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
         )
@@ -247,7 +247,7 @@ const Account: NextPage = () => {
               'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
             })
             setProcess(allTokens[i].title)
-            const flag = await recordhash.verifyRecordhash(allTokens[i].title, ccip2Config)
+            const flag = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config)
             items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
           }
           if (i === allTokens.length - 1) {

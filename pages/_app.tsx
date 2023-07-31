@@ -91,7 +91,7 @@ const { connectors } = getDefaultWallets({
 })
 
 const appInfo = {
-  appName: 'NameSys: Off-chain ENS Records Manager',
+  appName: 'NameSys: Off-Chain ENS Records Manager',
 }
 
 const wagmiClient = createClient({
