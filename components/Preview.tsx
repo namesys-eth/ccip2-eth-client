@@ -182,6 +182,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature S3(K1) for Records Manager
   const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
+  const [manager, setManager] = React.useState(''); // Sets CCIP2 Manager
 
   const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
@@ -214,7 +215,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 0,
         type: 'recordhash',
-        value: recordhash,
+        value: recordhash !== 'null' ? recordhash : '',
         editable: false,
         active: resolver === ccip2Contract,
         state: false,
@@ -398,7 +399,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         signMessage({ message: 
           statementManager(
             keypair[1][0], 
-            ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'address'], [accountData?.address, ethers.utils.computeAddress(`0x${keypair[1][0]}`)]))
+            ethers.utils.keccak256(ethers.utils.solidityPack(
+              ['address', 'address'], 
+              [accountData?.address, ethers.utils.computeAddress(`0x${keypair[1][0]}`)]
+            ))
           ) 
         })
       }
@@ -441,7 +445,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     ccip2Config,
     'isApprovedSigner',
     {
-      args: [getOwner(), ethers.utils.namehash(ENS), keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress]
+      args: query
     }
   )
   // Read ownership of a domain from ENS Wrapper
@@ -475,6 +479,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   )
 
+  // Captures on-chain manager hook
+  React.useEffect(() => {
+    if (_CCIP2Manager_) {
+      setManager(_CCIP2Manager_.toString())
+    }
+  }, [_CCIP2Manager_])
+
   // Returns Owner of wrapped/legacy ENS Domain
   function getOwner() {
     // If domain is wrapped, return owner of token (in new contract) as the controller
@@ -490,7 +501,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function getController() {
     // If domain is wrapped, return manager of token (in new contract) as the controller
     if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
-      
       return _ManagerWrapped_ ? _ManagerWrapped_.toString() : constants.zeroAddress
     } else {
       // If domain is unwrapped, return manager of token (in legacy contract) as the controller
@@ -504,7 +514,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       let _OwnerWrapped_ = getOwner()
       let _ManagerWrapped_ = getController()
       // Set Managers
-      if (_CCIP2Manager_ && _CCIP2Manager_.toString() === 'true') {
+      if (manager && manager.toString() === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([accountData.address])
       } else {
@@ -513,7 +523,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenID, _ControllerLegacy_, _OwnerLegacy_, _CCIP2Manager_])
+  }, [tokenID, _ControllerLegacy_, _OwnerLegacy_, manager])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
@@ -597,11 +607,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (CID_IPNS) console.log('IPNS:', CID_IPNS)
       }
       CIDGen()
+      // Set query for on-chain manager [v2]
       setQuery(
         [
+          getOwner(),
           ethers.utils.namehash(ENS),
-          accountData?.address ? accountData.address : constants.zeroAddress,
-          keypair ? keypair[1][1] : constants.zeroAddress
+          keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress
         ]
       ) // Checks if connected wallet is on-chain manager
     }
@@ -830,16 +841,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function getResolver() {
     await provider.getResolver(_ENS_)
       .then(response => {
-        setResolver(response?.address);
+        setResolver(response?.address)
+        setMessage(['This May Take a While', ''])
         if (response?.address) {
-          if (response?.address === ccip2Contract && _Recordhash_ && _Recordhash_!.toString() !== '0x') {
-            setMessage(['This May Take a While', ''])
-            setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
+          if (response?.address === ccip2Contract) {
+            if (_Recordhash_ && _Recordhash_!.toString() !== '0x') {
+              setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
+            } else {
+              setRecordhash('null')
+            }
           }
           getContenthash(response!)
         } else {
           if (_Recordhash_ && _Recordhash_!.toString() !== '0x') {
             setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
+          } else {
+            setRecordhash('null')
           }
         }
       });
@@ -904,9 +921,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
   // Check if value is a valid Contenthash
   function isContenthash(value: string) {
-    const prefix = value.substring(7)
-    const ipfsRegex = /^[a-z0-9]{62}$/;
-    return prefix === 'ipns://' && ipfsRegex.test(value)
+    const prefix = value.substring(0, 7)
+    const ipnsRegex = /^[a-z0-9]{62}$/
+    const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
+    const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{56}$/
+    return true
+    /*
+    return (
+      (prefix === 'ipns://') ||
+      (prefix === 'ipfs://')
+    )
+    return (
+      (prefix === 'ipns://' && ipnsRegex.test(value)) || // Check IPNS
+      (prefix === 'ipfs://' && ipfsRegexCID0.test(value)) || // Check IPFS CIDv0
+      (prefix === 'ipfs://' && ipfsRegexCID1.test(value)) // Check IPFS CIDv1
+    )
+    */
   }
 
   // Upates new record values in local storage before pushing updates
@@ -998,11 +1028,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish]);
   React.useEffect(() => {
-    if (history && queue) {
+    if (history && queue && resolver && recordhash) {
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue]);
+  }, [history, queue, resolver, recordhash]);
 
   // Wagmi hook for awaiting transaction processing
   const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
@@ -1075,13 +1105,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles generating signatures for off-chain manager
   React.useEffect(() => {
     // Handle Signature S3(K1) 
-    if (write && keypair && !_CCIP2Manager_ && !sigApproved) {
+    if (write && keypair && !manager && !sigApproved) {
       __signMessage() // Sign with K1
-    } else if (write && keypair && _CCIP2Manager_) {
+    } else if (write && keypair && manager) {
       setSigApproved('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_CCIP2Manager_, signatures]);
+  }, [manager, signatures]);
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
@@ -1206,10 +1236,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         if (!['resolver','recordhash'].includes(item.type)) {
                           let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
                           setQueue(_queue)
+                          console.log(data.response)
                           if (data.response.meta[item.type]) {
                             return { 
                               ...item,  
-                              value: data.response[item.type],
+                              value: item.type === 'contenthash' ? ensContent.decodeContenthash(data.response[item.type]).decoded : data.response[item.type],
                               state: true,
                               label: 'edit',
                               active: _queue > 0,
@@ -1565,24 +1596,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           fontFamily: 'Spotnik',
                           fontWeight: '700',
                           fontSize: '15px',
-                          color: 'skyblue',
+                          color: constants.blocked.includes(item.type) ? 'orange' : 'skyblue',
                           marginRight: '15px'
                         }}
                       >
                         { // Label
                         item.type }
-
-                        { // Updated State marker
-                        item.state && (
-                          <div 
-                            className="material-icons smol"
-                            style={{ 
-                              color: 'lightgreen'
-                            }}
-                          >
-                            task_alt
-                          </div>
-                        )}
                         
                         { // Set Badge if Resolver is migrated and Recordhash is set
                         ['resolver','recordhash'].includes(item.type) && resolver === ccip2Contract && recordhash && (
@@ -1684,25 +1703,41 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('info'),
-                              setColor(constants.forbidden.includes(item.type) ? 'orange' : 'skyblue'),
-                              setHelp(constants.forbidden.includes(item.type) ? 'In Process of Bug Fixing' : item.help)
+                              setColor(constants.blocked.includes(item.type) ? 'orange' : 'skyblue'),
+                              setHelp(constants.blocked.includes(item.type) ? 'In Process of Bug Fixing' : item.help)
                             }}
-                            data-tooltip={ constants.forbidden.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
+                            data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{ 
-                                color: constants.forbidden.includes(item.type) ? 'orange' : 'skyblue',
+                                color: constants.blocked.includes(item.type) ? 'orange' : 'skyblue',
                                 marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
                               }}
                             >
                               info_outline 
                             </div>
                           </button>
-                        )}      
-
+                        )}    
+                        { // De-bugger
+                        item.state && (
+                          <></>
+                        )} 
+                        { // Updated State marker
+                        item.state && (
+                          <div 
+                            className="material-icons smol"
+                            style={{ 
+                              color: 'lightgreen'
+                            }}
+                          >
+                            task_alt
+                          </div>
+                        )}
                         { // Countdown
-                        !['resolver','recordhash'].includes(item.type) && resolver === ccip2Contract && recordhash && (
+                        !['resolver','recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
+                        && resolver === ccip2Contract && 
+                        recordhash && (
                           <button 
                             className="button-tiny"
                             onClick={() => { 
@@ -1730,6 +1765,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       <button
                         className="button"
                         disabled={ 
+                          constants.blocked.includes(item.type) ||
                           !list[item.key].active ||
                           !legit[item.type] ||
                           item.state ||
@@ -1767,10 +1803,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     <input 
                       id={ item.key }
                       key={ item.key }
-                      placeholder={ item.value }
+                      placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
                       type='text'
                       disabled={ 
-                        !item.editable
+                        !item.editable || constants.blocked.includes(item.type)
                       }
                       style={{ 
                         fontFamily: 'SF Mono',
@@ -1781,9 +1817,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         wordWrap: 'break-word',
                         textAlign: 'left',
                         marginBottom: '-5px',
-                        color: ['resolver'].includes(item.type) ? 'skyblue' : (
-                          ['recordhash'].includes(item.type) ? 'rgb(255, 255, 255, 0.60)' : 'rgb(255, 255, 255, 0.75)'
-                          ),
+                        color: 'rgb(255, 255, 255, 0.75)',
                         cursor: 'copy'
                       }}
                       onChange={(e) => {

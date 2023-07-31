@@ -10,8 +10,8 @@ import iEnsWrapper from '../ABI/Contract-ABI-ensWrapper.json'
 import iCCIP2Goerli from '../ABI/Contract-ABI-ccip2Goerli.json'
 import iCCIP2Mainnet from '../ABI/Contract-ABI-ccip2Mainnet.json'
 
-export const signedRecord = 'function signedRecord(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
-export const signedRedirect = 'function signedRedirect(address recordSigner,bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
+export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
+export const signedRedirect = 'function signedRedirect(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
 export const zeroAddress = '0x' + '0'.repeat(40)
 export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
@@ -29,14 +29,14 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 export const ccip2 = [
-  '0x2297F150E7Fd0e9DB2b26022F3780C9c20Dd4836', // CCIP2 Resolver Goerli
+  '0x27f083d29237b90E6bb262DF0708cEacb2f2e478', // CCIP2 Resolver Goerli
   '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
  ]
-export const waitingPeriod = 1 * 60 * 60 // 60 mins
+export const waitingPeriod = 1 * 15 * 60 // 60 mins
 export const ensContracts = [
-  "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry
-  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar 
-  "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329", // Legacy Resolver
+  "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
+  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar [!!!] Redundant
+  "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329", // Legacy Resolver [!!!] Redundant
   "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper
   "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750", // Universal Resolver Goerli
   "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41", // Public Resolver Mainnet
@@ -67,11 +67,11 @@ export const ensConfig = [
     addressOrName: ensContracts[0],
     contractInterface: ensInterface[0]
   },
-  { // Legacy Registrar (never used)
+  { // Legacy Registrar [!!!] Redundant
     addressOrName: ensContracts[1],
     contractInterface: ensInterface[1]
   },
-  { // Legacy Resolver (never used)
+  { // Legacy Resolver [!!!] Redundant
     addressOrName: ensContracts[2],
     contractInterface: ensInterface[2]
   },
@@ -107,7 +107,12 @@ export const ccip2Config = [
 // Uneditable records in Preview modal
 export const forbidden = [
   'resolver',
-  'avatar'
+]
+// Blocked records in Preview modal
+export const blocked = [
+  //'avatar',
+  //'contenthash'
+  'none'
 ]
 // Record types in Preview modal
 export const types = [
