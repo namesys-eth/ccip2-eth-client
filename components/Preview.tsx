@@ -1236,8 +1236,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       setTimeout(() => {
                         setGasModal(true)
                         setLoading(false)
-                        //setCID('')
-                        //setKeypair(undefined)
                         states.map((_state) => {
                           setStates(prevState => prevState.filter(item => item !== _state))
                         })
@@ -1249,7 +1247,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         if (!['resolver', 'recordhash'].includes(item.type)) {
                           let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
                           setQueue(_queue)
-                          //console.log(data.response)
                           if (data.response.meta[item.type]) {
                             return { 
                               ...item,  
@@ -1315,7 +1312,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               ...item, 
               editable: false, 
               active: false,
-              value: resolver // Update Resolver
+              value: resolver // Update Resolver [!]
             }
           } else {
             const Clause = {
@@ -1418,6 +1415,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
       pin()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateSuccess, txSuccess1of2]);
 
   // Handles transaction wait

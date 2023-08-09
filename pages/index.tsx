@@ -173,7 +173,7 @@ const Home: NextPage = () => {
   )
 
   // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _Owner_ } = useContractRead(
+  const { data: _Owner_, isLoading: ownerLoading, isError: ownerError } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
@@ -287,13 +287,20 @@ const Home: NextPage = () => {
 
   React.useEffect(() => {
     if (success) {
-      if (owner && owner !== null && owner !== constants.zeroAddress) {
-        //console.log('Name is Registered')
-        setErrorModal(false)
-        setLoading(false)
-        setEmpty(false)
-      } else {
-        setErrorMessage('Name not Registered')
+      if (!ownerLoading && !ownerError) {
+        if (owner && owner !== null && owner !== constants.zeroAddress) {
+          setErrorModal(false)
+          setLoading(false)
+          setEmpty(false)
+        } else {
+          setErrorMessage('Name not Registered')
+          setErrorModal(true)
+          setLoading(false)
+          setEmpty(true)
+          setQuery('')
+        }
+      } else if (ownerError) {
+        setErrorMessage('Failed to Fetch')
         setErrorModal(true)
         setLoading(false)
         setEmpty(true)
