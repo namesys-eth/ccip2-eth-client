@@ -213,6 +213,27 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     </div>
                   </button>
                 }
+                { item.migrated === '3/4' &&
+                  <button 
+                    className="button-tiny"
+                    onClick={() => { 
+                      setModal(true),
+                      setIcon('gpp_good'),
+                      setColor('white'),
+                      setHelp('Ready For Off-chain Use')
+                    }}
+                    data-tooltip={ 'Ready For Off-chain Use' }
+                  >
+                    <div 
+                      className="material-icons smol"
+                      style={{
+                        color: 'white'
+                      }}
+                    >
+                      gpp_good
+                    </div>
+                  </button>
+                }
                 { item.migrated === '1/2' &&
                   <button 
                     className="button-tiny"

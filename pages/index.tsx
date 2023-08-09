@@ -48,6 +48,7 @@ const Home: NextPage = () => {
   const [help, setHelp] = React.useState('');
   const [searchType, setSearchType] = React.useState('')
   const [recordhash, setRecordhash] = React.useState('')
+  const [ownerhash, setOwnerhash] = React.useState('')
   const [owner, setOwner] = React.useState('')
   const [controller, setController] = React.useState('')
   const [onSearch, setOnSearch] = React.useState(false)
@@ -125,13 +126,15 @@ const Home: NextPage = () => {
   React.useEffect(() => {
     if (previewModalState.trigger) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData?.split(':')[0])
       const _update = async () => {
         if (previewModalState.modalData) {
-          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
-          const flag = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config) // Get updated Recordhash
-          _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
-            _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData.split(':')[0]) // Get updated Resolver
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.split(':')[0], ccip2Config) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Ownerhash
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
+            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
+            _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
           )
         }
       }
@@ -191,6 +194,17 @@ const Home: NextPage = () => {
     }
   )
 
+  // Read Ownerhash from CCIP2 Resolver
+  const { data: _Ownerhash_ } = useContractRead(
+    ccip2Config, // CCIP2 Resolver
+    'ownerhash',
+    {
+      args: [
+        ethers.utils.keccak256(ethers.utils.solidityPack(['address'], [accountData?.address ? accountData?.address : constants.zeroAddress]))
+      ]
+    }
+  )
+
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
     if (_Owner_ && _Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
@@ -241,8 +255,10 @@ const Home: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash && recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
+              } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
+                items[0].migrated = '3/4'
               }
               setMeta(items)
               setSuccess(true)
@@ -254,14 +270,20 @@ const Home: NextPage = () => {
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, recordhash])
+  }, [query, recordhash, ownerhash])
 
-  // Captures recordhash hook
+  // Captures Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_) {
       setRecordhash(_Recordhash_.toString())
     }
   }, [_Recordhash_])
+  // Captures Oecordhash hook
+  React.useEffect(() => {
+    if (_Ownerhash_) {
+      setOwnerhash(_Ownerhash_.toString())
+    }
+  }, [_Ownerhash_])
 
   React.useEffect(() => {
     if (success) {
