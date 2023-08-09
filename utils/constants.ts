@@ -9,6 +9,7 @@ import iEnsUniversalResolverMainnet from '../ABI/contract-ABI-ensUniversalResolv
 import iEnsWrapper from '../ABI/Contract-ABI-ensWrapper.json'
 import iCCIP2Goerli from '../ABI/Contract-ABI-ccip2Goerli.json'
 import iCCIP2Mainnet from '../ABI/Contract-ABI-ccip2Mainnet.json'
+import * as ensContent from '../utils/contenthash'
 
 export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
 export const signedRedirect = 'function signedRedirect(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
@@ -17,7 +18,7 @@ export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
 
 export interface MainBodyState {
-  modalData: string;
+  modalData: string | undefined;
   trigger: boolean;
 }
 let network = process.env.NEXT_PUBLIC_NETWORK
@@ -29,7 +30,7 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 export const ccip2 = [
-  '0x27f083d29237b90E6bb262DF0708cEacb2f2e478', // CCIP2 Resolver Goerli
+  '0x39BeB2f8B21659D0B22e5A6488a03933e8170939', // CCIP2 Resolver Goerli
   '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
  ]
 export const waitingPeriod = 1 * 15 * 60 // 60 mins
@@ -151,4 +152,18 @@ export function hideOverlay() {
   if (overlay) {
     overlay.style.display = 'none';
   }
+}
+// Returns formatted ed25519/IPNS keypair
+export function formatkey(keypair: [[string, string], [string, string]]) {
+  return '08011240' + keypair[0][0] + keypair[0][1] // ed25519 keypair = keypair[0]
+}
+
+// Encode ENS contenthash
+export function encodeContenthash(contenthash: string) {
+  if (contenthash) {
+    const ensContentHash = ensContent.encodeContenthash(`ipns://${contenthash}`)
+    //console.log('Encoded CID:', ensContentHash.encoded)
+    return ensContentHash.encoded
+  }
+  return ''
 }

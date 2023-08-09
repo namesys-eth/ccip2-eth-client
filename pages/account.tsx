@@ -8,14 +8,19 @@ import {
   useConnect,
   useAccount,
   useContractRead,
-  useNetwork
+  useNetwork,
+  useSignMessage,
+  useContractWrite,
+  useWaitForTransaction
 } from 'wagmi'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
+import { verifyMessage } from 'ethers/lib/utils'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
 import Preview from '../components/Preview'
 import Faq from '../components/FAQ'
+import Salt from '../components/Salt'
 import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
@@ -23,6 +28,9 @@ import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
+import { _KEYGEN } from '../utils/keygen'
+import * as Name from 'w3name'
+import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 
 const Account: NextPage = () => {
   const { activeChain, } = useNetwork()
@@ -45,81 +53,94 @@ const Account: NextPage = () => {
   const [query, setQuery] = React.useState('')
   const [savings, setSavings] = React.useState('')
   const [icon, setIcon] = React.useState('')
-  const [color, setColor] = React.useState('')
+  const [color, setColor] = React.useState('skyblue')
   const [getting, setGetting] = React.useState(0)
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('')
-  const [searchType, setSearchType] = React.useState('')
+  const [isSearch, setIsSearch] = React.useState(false)
+  const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [process, setProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
   const [progress, setProgress] = React.useState(0) // Stores progress
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
   const [response, setResponse] = React.useState(false) // Tracks response of search query
   const [finish, setFinish] = React.useState(false) // Tracks NFT query processing
+  const [crash, setCrash] = React.useState(false) // Tracks transactions failures
   const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
   const [wallet, setWallet] = React.useState('') // Tracks wallet changes
-  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+  const [recordhash, setRecordhash] = React.useState('') // Recordhash
+  const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
+  const [keypair, setKeypair] = React.useState<string[]>(['', '', '']) // Exported keypairs [ed25519-priv, secp256k1, ed25519-pub]
+  const [salt, setSalt] = React.useState(false) // Trigger signature for key export
+  const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
+  const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
     trigger: false
-  }) // Child modal state
+  }) // Preview modal state
+  const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }) // Salt modal state
+  const recoveredAddress = React.useRef<string>()
+
+
+  // Copy text
+  function copyToClipboard(element: string) {
+    const copyText = document.getElementById(element) as HTMLInputElement
+    copyText.select()
+    copyText.setSelectionRange(0, 99999)
+    
+    navigator.clipboard.writeText(copyText.value).then(() => {
+        console.log('LOG:', 'Copied!')
+    }).catch((error) => {
+        console.error('ERROR:', error)
+    })
+  }
+
+  // Handle Salt modal data return
+  const handleSaltModalData = (data: string | undefined) => {
+    setSaltModalState(prevState => ({ ...prevState, modalData: data }));
+  };
+  // Handle Salt modal trigger
+  const handleSaltTrigger = (trigger: boolean) => {
+    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }));
+  };
 
   // Handle Preview modal data return
-  const handleParentModalData = (data: string) => {
-    setModalState(prevState => ({ ...prevState, modalData: data }));
+  const handlePreviewModalData = (data: string) => {
+    setPreviewModalState(prevState => ({ ...prevState, modalData: data }))
   }
   // Handle Preview modal trigger return
-  const handleParentTrigger = (trigger: boolean) => {
-    setModalState(prevState => ({ ...prevState, trigger: trigger }));
+  const handlePreviewTrigger = (trigger: boolean) => {
+    setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
-
-  /* @dev : GraphQL Instance
-  /// we need our own subgraph for this
-  const logNames = useCallback(async () => {
-    let EnsQuery = await fetch(EnsGraphApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        query: `
-        query {
-          {
-            account(id: "${accountData?.address?.toLowerCase()}") {
-              domains(first: 1000) {
-                id
-                name
-              }
-              registrations(first: 1000) {
-                id
-                labelName
-              }
-            }
-          }
-        }`,
-      })
-    })
-    const { data } = await EnsQuery.json()
-    setMeta(data)
-  }, [accountData])
-  */
 
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
-  /// ENS Domain Config
-  // Read ENS Legacy Registry for Controller record of ENS domain
-  const { data: _Controller_ } = useContractRead(
-    constants.ensConfig[1],
-    'getApproved',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
+  // Signature S1 statement; S1(K1) [IPNS Keygen]
+  // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  function statementIPNSKey(source: string, caip10: string, extradata: string) {
+    let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    //console.log('S1 Message/Digest:', _digest)
+    return _digest
+  }
 
+  const { 
+    data: signature, 
+    error: signError, 
+    isLoading: signLoading, 
+    signMessage 
+  } = useSignMessage({
+    onSuccess(data, variables) {
+      const address = verifyMessage(variables.message, data)
+      recoveredAddress.current = address
+    },
+  })  // Wagmi Signature hook
+
+  /// ENS Domain Config
   // Read ENS Legacy Registry for Owner record of ENS domain
   const { data: _Owner_ } = useContractRead(
     constants.ensConfig[1],
@@ -127,6 +148,17 @@ const Account: NextPage = () => {
     {
       args: [
         tokenID
+      ]
+    }
+  )
+
+  // Read Ownerhash from CCIP2 Resolver
+  const { data: _Ownerhash_ } = useContractRead(
+    ccip2Config, // CCIP2 Resolver
+    'ownerhash',
+    {
+      args: [
+        accountData?.address
       ]
     }
   )
@@ -142,11 +174,28 @@ const Account: NextPage = () => {
     }
   )
 
+  // Sets Ownerhash in CCIP2 Resolver
+  const {
+    data: response2of2,
+    write: initOwnerhash,
+    isLoading: isSetOwnerhashLoading,
+    isSuccess: isSetOwnerhashSuccess,
+    isError: isSetOwnerhashError
+  } = useContractWrite(
+    ccip2Config,
+    'setOwnerhash',
+    {
+      args: [ 
+        constants.encodeContenthash(CID)
+      ]
+    }
+  );
+
   // Get historical gas savings
   async function getSavings() {
     const request = {
       type: 'gas'
-    };
+    }
     try {
       const _RESPONSE = await fetch(
         "https://sshmatrix.club:3003/gas",
@@ -157,12 +206,12 @@ const Account: NextPage = () => {
           },
           body: JSON.stringify(request)
         }
-      );
-      const data = await _RESPONSE.json();
-      return data.response.gas;
+      )
+      const data = await _RESPONSE.json()
+      return data.response.gas
     } catch (error) {
       console.error('Error:', 'Failed to get gas data from CCIP2 backend')
-      return '';
+      return ''
     }
   }
 
@@ -175,26 +224,94 @@ const Account: NextPage = () => {
     }
     getSaving()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (modalState.trigger) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger && previewModalState.modalData) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
       const _update = async () => {
-        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await verifier.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
-        _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
-          _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
-        )
+        if (previewModalState.modalData) {
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
+          const flag = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config) // Get updated Recordhash
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
+            _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
+          )
+        }
       }
       _update()
       setMeta(_LIST)
       setFlash(_LIST)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState])
+  }, [previewModalState])
+
+  // Triggers S1(K1) after password is set
+  React.useEffect(() => {
+    if (saltModalState.trigger && !keypair[0] && !keypair[1]) {
+      let _origin = 'eth:' + accountData?.address
+      let _caip10 = `eip155:${_Chain_}:${accountData?.address}`  // CAIP-10
+      signMessage({ 
+        message: statementIPNSKey(
+          _origin,
+          _caip10,
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'], 
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
+              accountData?.address
+            ]
+          ))
+        ) 
+      })
+      setKeygen(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState]);
+
+  // Triggers S1(K1) after password is set
+  React.useEffect(() => {
+    if (!keypair[0] && !keypair[1] && signature) {
+      //setLoading(true)
+      //setMessage('Generating IPNS Key')
+      const keygen = async () => {
+        let _origin = 'eth:' + accountData?.address
+        let _caip10 = `eip155:${_Chain_}`  // CAIP-10
+        const __keypair = await _KEYGEN(_origin, _caip10, signature, saltModalState.modalData)
+        setKeypair([__keypair[0][0], __keypair[1][0], __keypair[0][1]])
+        //setMessage('IPNS Key Generated')
+        //setLoading(false)
+      };
+      keygen()
+    } else {
+      //setMessage('IPNS Key/CID Exists')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keygen, signature]);
+
+  // Triggers IPNS CID derivation with new S1(K1)
+  React.useEffect(() => {
+    if (keypair[0] && keypair[2]) {
+      const CIDGen = async () => {
+        let key = constants.formatkey([[keypair[0], keypair[2]], ['', '']])
+        const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
+        const CID_IPNS = w3name.toString()
+        setCID(CID_IPNS)
+        //setMessage('IPNS CID Generated')
+      }
+      CIDGen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypair]);
+
+  // Triggers setting Ownerhash
+  React.useEffect(() => {
+    if (CID.startsWith('k5')) {
+      initOwnerhash();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [CID]);
 
   // Handle wallet change by the user
   React.useEffect(() => {
@@ -215,13 +332,13 @@ const Account: NextPage = () => {
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress;
+    const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
     if (!finish && length === 0 && _wallet !== wallet) {
       setLoading(true); // Show loading state when calling logTokens
-      setWallet(_wallet);
+      setWallet(_wallet)
       // Call logTokens directly here
       const loadTokens = async () => {
-        const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet);
+        const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet)
         const allTokens = nfts.ownedNfts
         var allEns: string[] = []
         var items: any[] = []
@@ -233,109 +350,42 @@ const Account: NextPage = () => {
           }
         }
         setLength(_Cache.length)
-        for (var i = 0; i < allTokens.length; i++) {
-          // ISSUE: ENS Metadata service is broken and not showing all the names
-          if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-            count = count + 1
-            //console.log('Count:', count)
-            setGetting(count)
-            allEns.push(allTokens[i].title.split('.eth')[0])
-            const _Resolver = await constants.provider.getResolver(allTokens[i].title)
-            items.push({
-              'key': count,
-              'name': allTokens[i].title.split('.eth')[0],
-              'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
-            })
-            setProcess(allTokens[i].title)
-            const flag = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config)
-            items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
+        if (_Cache.length === 0) {
+          setEmpty(true)
+        } else {
+          for (var i = 0; i < allTokens.length; i++) {
+            // ISSUE: ENS Metadata service is broken and not showing all the names
+            if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
+              count = count + 1
+              //console.log('Count:', count)
+              setGetting(count)
+              allEns.push(allTokens[i].title.split('.eth')[0])
+              const _Resolver = await constants.provider.getResolver(allTokens[i].title)
+              items.push({
+                'key': count,
+                'name': allTokens[i].title.split('.eth')[0],
+                'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
+              })
+              setProcess(allTokens[i].title)
+              const flag = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config)
+              items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
+            }
+            if (i === allTokens.length - 1) {
+              setFinish(true) // Flag finish of process
+              setLength(0)
+              setProgress(0)
+              setMessage('Showing Names')
+              setMeta(items)
+              setFlash(items)
+              setLoading(false)
+            }
           }
-          if (i === allTokens.length - 1) {
-            setFinish(true) // Flag finish of process
-            setLength(0)
-            setProgress(0)
-            setMessage('Showing Names')
-            setMeta(items)
-            setFlash(items)
-            setLoading(false)
-          }
-        }
-      };
-      loadTokens();
+        } 
+      }
+      loadTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData]);
-
-  {/*
-  // Get all tokens for connected wallet
-  React.useEffect(() => {
-    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
-    if (finish && length === 0 && _wallet !== wallet) { // Prohibit update when previous update is in process
-      const setMetadata = async () => {
-        await getTokens(_wallet)
-          .then(() => {
-            setTimeout(() => {
-              if (finish) setLoading(false)
-            }, 1000);
-          }) 
-      }
-      setMetadata()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, finish])
-  const getTokens = useCallback(async (_wallet: string) => {
-    if (_wallet) {
-      setWallet(_wallet)
-      setFinish(false)
-      await logTokens(_wallet)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  const logTokens = useCallback(async (_wallet: string) => {
-    const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet)
-    const allTokens = nfts.ownedNfts
-    var allEns: string[] = []
-    var items: any[] = []
-    var count = 0
-    var _Cache: string[] = []
-    for (var i = 0; i < allTokens.length; i++) {
-      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        _Cache.push(allTokens[i].title)
-      }
-    }
-    setLength(_Cache.length)
-    for (var i = 0; i < allTokens.length; i++) {
-      // ISSUE: ENS Metadata service is broken and not showing all the names
-      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        count = count + 1
-        console.log('Count:', count)
-        setGetting(count)
-        allEns.push(allTokens[i].title.split('.eth')[0])
-        const _Resolver = await constants.provider.getResolver(allTokens[i].title)
-        items.push({
-          'key': count,
-          'name': allTokens[i].title.split('.eth')[0],
-          'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
-        })
-        setProcess(allTokens[i].title)
-        const flag = await recordhash.verifyRecordhash(allTokens[i].title)
-        items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
-      }
-      if (i === allTokens.length - 1) {
-        setFinish(true) // Flag finish of process
-        setLength(0)
-        setProgress(0)
-        setMessage('Showing Names')
-        setMeta(items)
-        setFlash(items)
-      }
-    }
-    if (count === 0) {
-      setEmpty(true)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  */}
+  }, [accountData])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -350,29 +400,27 @@ const Account: NextPage = () => {
 
   // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
-    setPreviewModal(true);
-    setNameToPreview(name);
+    setPreviewModal(true)
+    setNameToPreview(name)
   }
 
   React.useEffect(() => {
     if (getting > progress && getting > 0) {
-      setProgress(getting);
+      setProgress(getting)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getting]);
+  }, [getting])
 
   React.useEffect(() => {
-    if (_Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
-      setManager(_Controller_.toString())
-    } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
+    if (_Owner_ && _Owner_?.toString() !== constants.zeroAddress) {
       setManager(_Owner_.toString())
     } else if (tab !== 'OWNER') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
-      }, 2000);
+      }, 2000)
     }
-  }, [tokenID, _Controller_, _Owner_, tab])
+  }, [tokenID, _Owner_, tab])
 
   // Handle search for a name
   React.useEffect(() => {
@@ -390,8 +438,10 @@ const Account: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash && recordhash !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
+              } else if (ownerhash && ownerhash !== '0x' && items[0].migrated === '1/2') {
+                items[0].migrated = '3/4'
               }
               setFlash(meta)
               setMeta(items)
@@ -411,7 +461,7 @@ const Account: NextPage = () => {
       setErrorModal(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, accountData?.address, query])
+  }, [manager, accountData?.address, query, recordhash, ownerhash])
 
   React.useEffect(() => {
     if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
@@ -423,6 +473,21 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [success])
 
+  // Capture Recordhash hook
+  React.useEffect(() => {
+    if (_Recordhash_) {
+      setRecordhash(_Recordhash_.toString())
+    }
+  }, [_Recordhash_])
+
+  // Capture Ownerhash hook
+  React.useEffect(() => {
+    if (_Ownerhash_) {
+      setOwnerhash(_Ownerhash_.toString())
+    }
+  }, [_Ownerhash_])
+
+  // Format query to ENS name and get tokenID
   React.useEffect(() => {
     if (query) {
       try {
@@ -435,21 +500,39 @@ const Account: NextPage = () => {
     }
   }, [query])
 
-  const handleManagerSearch = (query: string) => {
-    setLoading(true)
-    setSearchType('MANAGER')
-    setProcess(query)
-    setQuery(query)
-    console.log('Query:', `Searching Manager for ${query}`)
-  }
-
   const handleNameSearch = (query: string) => {
     setLoading(true)
-    setSearchType('SEARCH')
+    setIsSearch(true)
     setProcess(query)
     setQuery(query)
     console.log('Query:', `Searching for ${query}`)
   }
+
+  const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
+    hash: response2of2?.hash,
+  });
+
+  // Handles setting Recordhash after transaction 2 
+  React.useEffect(() => {
+    if (isSetOwnerhashSuccess && txSuccess2of2) {
+      setOwnerhash(`ipns://${CID}`)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSetOwnerhashSuccess, txSuccess2of2]);
+
+  // Handles Ownerhash transaction loading and error
+  React.useEffect(() => {
+    if (txLoading2of2 && !txError2of2) {
+      setLoading(true)
+      setMessage('Waiting for Transaction')
+    }
+    if (!txLoading2of2 && txError2of2) {
+      setMessage('Transaction Failed')
+      setCrash(true)
+      setLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [txLoading2of2, txError2of2]);
 
   return (
     <div
@@ -533,7 +616,7 @@ const Account: NextPage = () => {
             >
               <button
                 className='button'
-                onClick={() => { window.location.href = '/' }}
+                onClick={() => { window.location.href = '/', setKeypair(['', '', '']) }}
                 data-tooltip='Homepage'
               >
                 <div
@@ -544,7 +627,8 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {!isMobile ? 'Home' : 'Home'}&nbsp;<span className="material-icons">home</span>
+                  {!isMobile ? 'Home' : 'Home'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>home</span>
                 </div>
               </button>
             </div>
@@ -567,7 +651,7 @@ const Account: NextPage = () => {
           >
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true), setKeypair(['', '', '']) }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Learn more'
             >
@@ -579,12 +663,13 @@ const Account: NextPage = () => {
                   alignItems: 'center'
                 }}
               >
-                {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
+                {'about'}
+                <span className="material-icons" style={{ marginLeft: '3px' }}>info</span>
               </div>
             </button>
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true), setKeypair(['', '', '']) }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Terms of Use'
             >
@@ -596,7 +681,7 @@ const Account: NextPage = () => {
                   alignItems: 'center'
                 }}
               >
-                {'terms'}&nbsp;<span className="material-icons">gavel</span>
+                {'terms'}<span>&nbsp;</span><span className="material-icons">gavel</span>
               </div>
             </button>
             {!isMobile && (
@@ -624,7 +709,7 @@ const Account: NextPage = () => {
           margin: '50px 0 0 0'
         }}>
         {/* Content */}
-        <div className={ !isMobile && !searchType ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
+        <div className={ !isMobile && !isSearch ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
           <div style={{ marginTop: '-120px' }}>
             <div
               style={{
@@ -796,7 +881,8 @@ const Account: NextPage = () => {
                   setErrorModal(false),
                   setTimeout(() => {
                     setLoading(false)
-                  }, 2000)
+                  }, 2000),
+                  setKeypair(['', '', ''])
                 }}
                 className='button-header'
                 disabled={tab === 'OWNER'}
@@ -810,15 +896,15 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'OWNED'}&nbsp;
-                  <span className="material-icons">manage_accounts</span>
+                  {'OWNED'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>manage_accounts</span>
                 </div>
               </button>
               <button
                 onClick={() => {
                   tab === 'SEARCH' ? '' : setCache(flash),
                   setMeta([]),
-                  setTab('MANAGER'),
+                  setTab('UTILS'),
                   setSuccess(false),
                   setManager(''),
                   setLoading(true),
@@ -826,11 +912,11 @@ const Account: NextPage = () => {
                   setErrorModal(false),
                   setTimeout(() => {
                     setLoading(false)
-                  }, 2000)
+                  }, 2000),
+                  setKeypair(['', '', ''])
                 }}
                 className='button-header'
-                //disabled={tab === 'MANAGER' || loading}
-                disabled={ true }
+                disabled={tab === 'UTILS' || loading}
                 data-tooltip='Search for a name that you manage'
               >
                 <div
@@ -841,13 +927,13 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'MANAGED'}&nbsp;
-                  <span className="material-icons">supervised_user_circle</span>
+                  {'UTILS'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  tab === 'MANAGER' ? '' : setCache(flash),
+                  tab === 'UTILS' ? '' : setCache(flash),
                   setMeta([]),
                   setTab('SEARCH'),
                   setSuccess(false),
@@ -871,8 +957,8 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'SEARCH'}&nbsp;
-                  <span className="material-icons">search</span>
+                  {'SEARCH'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>search</span>
                 </div>
               </button>
             </div>
@@ -918,7 +1004,7 @@ const Account: NextPage = () => {
                     }}
                   >
                     { tab !== 'OWNER' ? 'Please Wait' :
-                      (modalState.modalData ? 'Please wait' : `${message}`)
+                      (previewModalState.modalData ? 'Please wait' : `${message}`)
                     }
                   </div>
                   <div
@@ -929,7 +1015,7 @@ const Account: NextPage = () => {
                     }}
                   >
                     { tab !== 'OWNER' || length < 3 ? '' :
-                      (modalState.modalData ? '' : `${progress}/${length}`)
+                      (previewModalState.modalData ? '' : `${progress}/${length}`)
                     }
                   </div>
                 </div>
@@ -1041,7 +1127,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && (tab === 'MANAGER' || tab === 'SEARCH') && meta.length > 0 && isConnected && !empty && (
+          {!loading && tab === 'SEARCH' && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -1072,7 +1158,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && tab === 'MANAGER' && !success && meta && isConnected && (
+          {!loading && tab === 'UTILS' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -1090,7 +1176,7 @@ const Account: NextPage = () => {
                     marginRight: '5px'
                   }}
                 >
-                  names you manage
+                  NameSys Utilities
                 </span>
                 <button
                   className="button-tiny"
@@ -1098,7 +1184,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('search names that you manage')
+                    setHelp('Global Settings and Exports')
                   }}
                 >
                   <div
@@ -1112,16 +1198,280 @@ const Account: NextPage = () => {
                 </button>
               </div>
               <div
-                className='search-container'
+                className='export-container'
                 style={{
                   maxHeight: '520px',
                   overflowY: 'auto',
-                  marginBottom: '50px',
+                  marginBottom: '30px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
               >
-                <SearchBox
-                  onSearch={handleManagerSearch}
+                <div
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    fontSize: '18px',
+                    color: 'skyblue',
+                    marginBottom: '25px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: '5px'
+                    }}
+                  >
+                    Ownerhash Setter
+                  </span>
+                  <button
+                    className="button-tiny"
+                    onClick={() => {
+                      setModal(true),
+                      setIcon('info'),
+                      setColor('skyblue'),
+                      setHelp('Sets Ownerhash For Wallet')
+                    }}
+                  >
+                    <div
+                      className="material-icons smol"
+                      style={{
+                        color: 'skyblue'
+                      }}
+                    >
+                      info_outline
+                    </div>
+                  </button>
+                </div>
+                <input
+                  style={{
+                    width: '90%'
+                  }}
+                  type="text"
+                  placeholder={"ipns://"}
+                  disabled
+                  value={ownerhash}
+                  id="owner-hash"
                 />
+                <button 
+                  className="button"
+                  style={{
+                    height: '38px',
+                    width: '80px',
+                    marginTop: '15px',
+                    marginLeft: '15px',
+                    color: 'rgb(255, 255, 255, 0.75)'
+                  }}
+                  type="submit"
+                  data-tooltip='Set New Ownerhash'
+                  onClick={() => { 
+                    setSalt(true)
+                  }}
+                >
+                  <div
+                    style={{
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'row'
+                    }}
+                  >
+                    <span>{'SET'}</span>
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700',
+                        marginLeft: '3px'
+                      }}
+                    >
+                      settings
+                    </span>
+                  </div>
+                </button>
+              </div>
+              <div
+                className='hash-container'
+                style={{
+                  maxHeight: '520px',
+                  overflowY: 'auto',
+                  marginBottom: '70px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <div
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    fontSize: '18px',
+                    color: 'skyblue',
+                    marginBottom: '25px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: '5px'
+                    }}
+                  >
+                    Private Key Exporter
+                  </span>
+                  <button
+                    className="button-tiny"
+                    onClick={() => {
+                      setModal(true),
+                      setIcon('info'),
+                      setColor('skyblue'),
+                      setHelp('Exports IPNS and Manager Keys')
+                    }}
+                  >
+                    <div
+                      className="material-icons smol"
+                      style={{
+                        color: 'skyblue'
+                      }}
+                    >
+                      info_outline
+                    </div>
+                  </button>
+                </div>
+                <div
+                  style={{
+                    width: '90%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'row'
+                  }}
+                >
+                  <input
+                    style={{
+                      width: '100%',
+                      paddingRight: '32px',
+                      fontWeight: '400',
+                      textAlign: 'left',
+                      color: 'rgb(255, 255, 255, 0.75)'
+                    }}
+                    type="text"
+                    placeholder={"IPNS Private Key"}
+                    value={keypair[0]}
+                    id="export-ipns"
+                    disabled
+                  />
+                  <button 
+                    className="button-empty"
+                    onClick={() => {
+                      copyToClipboard('export-ipns'),
+                      setColor('lightgreen'),
+                      setKeypair(['', keypair[1], keypair[2]])
+                    }} 
+                    data-tooltip='Copy IPNS Key'
+                    style={{
+                      marginLeft: '-25px',
+                      color: color && !keypair[0] ? color : 'skyblue'   
+                    }}
+                  >
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700'
+                      }}
+                    >
+                      content_copy
+                    </span>
+                  </button>
+                </div>
+                <div
+                  style={{
+                    marginTop: '10px',
+                    width: '90%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'row'
+                  }}
+                >
+                  <input
+                    style={{
+                      width: '100%',
+                      paddingRight: '32px',
+                      fontWeight: '400',
+                      textAlign: 'left',
+                      color: 'rgb(255, 255, 255, 0.75)'
+                    }}
+                    type="text"
+                    placeholder={"CCIP Manager Key"}
+                    value={keypair[1]}
+                    id="export-ccip"
+                    disabled
+                  />
+                  <button 
+                    className="button-empty"
+                    onClick={() => {
+                      copyToClipboard('export-ccip'),
+                      setColor('lightgreen'),
+                      setKeypair([keypair[0], '', keypair[2]])
+                    }} 
+                    data-tooltip='Copy Manager Key'
+                    style={{
+                      marginLeft: '-25px',
+                      color: color && !keypair[1] ? color : 'skyblue'   
+                    }}
+                  >
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700'
+                      }}
+                    >
+                      content_copy
+                    </span>
+                  </button>
+                </div>
+                <button 
+                  className="button"
+                  style={{
+                    height: '38px',
+                    width: '115px',
+                    marginLeft: '15px',
+                    marginTop: '15px'
+                  }}
+                  type="submit"
+                  data-tooltip='Export Keys'
+                  onClick={() => { 
+                    setSalt(true)
+                  }}
+                >
+                  <div
+                    style={{
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'row'
+                    }}
+                  >
+                    <span>{'EXPORT'}</span>
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700',
+                        marginLeft: '5px'
+                      }}
+                    >
+                      file_download
+                    </span>
+                  </div>
+                </button>
               </div>
             </div>
           )}
@@ -1240,7 +1590,8 @@ const Account: NextPage = () => {
             }}>
             <span
               className="material-icons">folder_open
-            </span>&nbsp;
+            </span>
+            &nbsp;
             <a
               href="https://github.com/namesys-eth/ccip2-eth-client"
               className="footer-text"
@@ -1258,8 +1609,8 @@ const Account: NextPage = () => {
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
                 chain={_Chain_}
-                handleParentTrigger={handleParentTrigger}
-                handleParentModalData={handleParentModalData}
+                handleParentTrigger={handlePreviewTrigger}
+                handleParentModalData={handlePreviewModalData}
               />
             )}
             <Faq
@@ -1271,13 +1622,22 @@ const Account: NextPage = () => {
               show={termsModal}
             />
             <Error
+                onClose={() => {
+                  setCrash(false)
+                }}
+                show={crash && !loading}
+                title={'cancel'}
+              >
+                { message[0] }
+            </Error>
+            <Error
               onClose={() => {
                 setErrorModal(false),
-                  setTokenID(''),
-                  setQuery(''),
-                  setManager('')
+                setTokenID(''),
+                setQuery(''),
+                setManager('')
               }}
-              show={errorModal && searchType === 'MANAGER' && manager && !loading}
+              show={errorModal && !isSearch && manager && !loading}
               title={'block'}
             >
               { errorMessage }
@@ -1285,15 +1645,22 @@ const Account: NextPage = () => {
             <Error
               onClose={() => {
                 setErrorModal(false),
-                  setTokenID(''),
-                  setQuery(''),
-                  setManager('')
+                setTokenID(''),
+                setQuery(''),
+                setManager('')
               }}
-              show={errorModal && searchType === 'SEARCH' && manager && !loading}
+              show={errorModal && isSearch && manager && !loading}
               title={'block'}
             >
-              {'Not Owner or Manager'}
+              {'Not Owned By You'}
             </Error>
+            <Salt
+                handleTrigger={handleSaltTrigger}
+                handleModalData={handleSaltModalData}
+                onClose={() => setSalt(false)}
+                show={salt}
+              >
+            </Salt>
             <Help
                 color={ color }
                 _ENS_={ icon }

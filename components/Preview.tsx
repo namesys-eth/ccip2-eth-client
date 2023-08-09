@@ -31,12 +31,6 @@ import {
 } from 'wagmi2' // New Wagmi 2.0.0
 */ 
 
-// State to pass back to homepage
-interface MainBodyState {
-  modalData: string | undefined;
-  trigger: boolean;
-}
-
 // Modal data to pass back to homepage
 interface ModalProps {
   _ENS_: string,
@@ -108,21 +102,6 @@ function checkImageURL(url: string) {
   });
 }
 
-// Returns formatted ed25519/IPNS keypair
-function formatkey(keypair: [[string, string], [string, string]]) {
-  return '08011240' + keypair[0][0] + keypair[0][1] // ed25519 keypair = keypair[0]
-}
-
-// Encode ENS contenthash
-function encodeContenthash(contenthash: string) {
-  if (contenthash) {
-    const ensContentHash = ensContent.encodeContenthash(`ipns://${contenthash}`)
-    //console.log('Encoded CID:', ensContentHash.encoded)
-    return ensContentHash.encoded
-  }
-  return ''
-}
-
 /**
 * Preview Modal
 * @param show : Show modal trigger
@@ -174,10 +153,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(''); // Whether record edit is legitimate
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
-  const [modalState, setModalState] = React.useState<MainBodyState>({
+  const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Child modal state
+  }); // Salt modal state
   const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
@@ -423,11 +402,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       
   // Handle secondary modal data return
   const handleModalData = (data: string | undefined) => {
-    setModalState(prevState => ({ ...prevState, modalData: data }));
+    setSaltModalState(prevState => ({ ...prevState, modalData: data }));
   };
   // Handle secondary modal trigger
   const handleTrigger = (trigger: boolean) => {
-    setModalState(prevState => ({ ...prevState, trigger: trigger }));
+    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
   /// Preview Domain Metadata
@@ -571,14 +550,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
  
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (modalState.trigger && !update && !keypair) {
+    if (saltModalState.trigger && !update && !keypair) {
       setSigCount(1)
       signMessage({ 
         message: statementIPNSKey(
           ethers.utils.keccak256(ethers.utils.solidityPack(
             ['bytes32', 'address'], 
             [
-              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [modalState.modalData])), 
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
               accountData?.address
             ]
           ))
@@ -587,7 +566,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState]);
+  }, [saltModalState]);
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -595,7 +574,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (sigIPNS && !keypair) {
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
-        const __keypair = await _KEYGEN(_ENS_, caip10, sigIPNS, modalState.modalData)
+        const __keypair = await _KEYGEN(_ENS_, caip10, sigIPNS, saltModalState.modalData)
         setKeypair(__keypair)
         setMessage(['IPNS Key Generated', ''])
       };
@@ -610,7 +589,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (keypair) {
       const CIDGen = async () => {
-        let key = formatkey(keypair)
+        let key = constants.formatkey(keypair)
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
@@ -672,31 +651,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     {
       args: [
         ethers.utils.namehash(_ENS_), 
-        encodeContenthash(CID)
+        constants.encodeContenthash(CID)
       ]
     }
   );
-
-
-  /* → 
-  async function getGas(key: string, value: string) {
-    const { 
-      config: config, 
-      error: _error 
-    } = usePrepareContractWrite(
-      {
-        address: `0x${constants.ensConfig[4].addressOrName.substring(2)}`,
-        abi: constants.ensConfig[4].contractInterface,
-        functionName: 'setText',
-        args: [ethers.utils.namehash(_ENS_), key, value]
-      }
-    )
-    return {
-      config,
-       _error
-    }
-  }
-  */
 
   // Get gas cost estimate for hypothetical on-chain record update
   async function getGas(key: string, value: string) {
@@ -1199,7 +1157,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   checkGas()
                 })
                 // Handle W3Name publish 
-                let key = formatkey(keypair)
+                let key = constants.formatkey(keypair)
                 let w3name: Name.WritableName
                 const keygen = async () => {
                   w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
@@ -1823,7 +1781,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       }
                       style={{ 
                         fontFamily: 'SF Mono',
-                        letterSpacing: '-0.5px',
                         fontWeight: '400',
                         fontSize: '14px',
                         width: '100%',

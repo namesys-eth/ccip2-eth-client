@@ -51,55 +51,24 @@ const Home: NextPage = () => {
   const [owner, setOwner] = React.useState('')
   const [controller, setController] = React.useState('')
   const [onSearch, setOnSearch] = React.useState(false)
-  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+  const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
     trigger: false
   });
 
   // Handle Preview modal data return
   const handleParentModalData = (data: string) => {
-    setModalState(prevState => ({ ...prevState, modalData: data }));
+    setPreviewModalState(prevState => ({ ...prevState, modalData: data }));
   };
   // Handle Preview modal trigger return
   const handleParentTrigger = (trigger: boolean) => {
-    setModalState(prevState => ({ ...prevState, trigger: trigger }));
+    setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }));
   };
 
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
-
-  /* GraphQL instance; need subgraph for this
-  const logNames = useCallback(async () => {
-    let EnsQuery = await fetch(EnsGraphApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        query: `
-        query {
-          {
-            account(id: "${accountData?.address?.toLowerCase()}") {
-              domains(first: 1000) {
-                id
-                name
-              }
-              registrations(first: 1000) {
-                id
-                labelName
-              }
-            }
-          }
-        }`,
-      })
-    })
-    const { data } = await EnsQuery.json()
-    setMeta(data)
-  }, [accountData])
-  */
 
   // Get Owner with ethers.js
   async function getOwner(provider: any, _tokenID: string) {
@@ -154,21 +123,23 @@ const Home: NextPage = () => {
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (modalState.trigger) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
       const _update = async () => {
-        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await verifier.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
-        _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
-          _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
-        )
+        if (previewModalState.modalData) {
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
+          const flag = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config) // Get updated Recordhash
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
+            _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
+          )
+        }
       }
       _update()
       setMeta(_LIST)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState])
+  }, [previewModalState])
 
   // Preserve metadata across pageloads
   React.useEffect(() => {
@@ -464,6 +435,37 @@ const Home: NextPage = () => {
               marginTop: !isMobile ? '-7%': '25px',
             }}
           >
+            <div
+              style={{
+                marginRight: !isMobile ? '15px' : '10px',
+                marginTop: !isMobile ? '8px' : '10px',
+                color: '#fc6603',
+                fontFamily: 'SF Mono',
+                fontSize: !isMobile ? '18px' : '15px',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'Spotnik',
+                  fontSize: !isMobile ? '12px' : '10px',
+                  fontWeight: '700',
+                  marginRight: '2px'
+                }}
+              >
+                { 'v' } 
+              </span>
+                { '1.0.0' } 
+              <span
+                style={{
+                  fontFamily: 'Spotnik',
+                  fontSize: !isMobile ? '15px' : '12px',
+                  fontWeight: '700',
+                  marginLeft: '2px'
+                }}
+              >
+                { '-beta' } 
+              </span>
+            </div>
             <button
               className='button clear'
               onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
