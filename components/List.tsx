@@ -198,15 +198,15 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     onClick={() => { 
                       setModal(true),
                       setIcon('gpp_good'),
-                      setColor('lightgreen'),
-                      setHelp('Ready For Off-chain Use')
+                      setColor('lime'),
+                      setHelp('Ready For Off-chain Use. Domain-specific Recordhash is Set.')
                     }}
-                    data-tooltip={ 'Ready For Off-chain Use' }
+                    data-tooltip={ 'Ready For Off-chain Use With Recordhash' }
                   >
                     <div 
                       className="material-icons smol"
                       style={{
-                        color: 'lightgreen'
+                        color: 'lime'
                       }}
                     >
                       gpp_good
@@ -219,15 +219,15 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     onClick={() => { 
                       setModal(true),
                       setIcon('gpp_good'),
-                      setColor('white'),
-                      setHelp('Ready For Off-chain Use')
+                      setColor('cyan'),
+                      setHelp('Ready For Off-chain Use. Global Ownerhash is Set.')
                     }}
-                    data-tooltip={ 'Ready For Off-chain Use' }
+                    data-tooltip={ 'Ready For Off-chain Use With Ownerhash' }
                   >
                     <div 
                       className="material-icons smol"
                       style={{
-                        color: 'white'
+                        color: 'cyan'
                       }}
                     >
                       gpp_good
@@ -241,7 +241,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                       setModal(true),
                       setIcon('gpp_good'),
                       setColor('orange'),
-                      setHelp('Resolver migrated but no Recordhash found. Set it by pressing \'Edit\'')
+                      setHelp('Resolver is migrated but no Recordhash or Ownerhash is Set. You can set Recordhash by pressing \'Set\' or set Ownerhash in \'Utils\'')
                     }}
                     data-tooltip={ 'No Recordhash Found' }
                   >
@@ -261,15 +261,15 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     onClick={() => { 
                       setModal(true),
                       setIcon('gpp_maybe'),
-                      setColor('orangered'),
-                      setHelp('Resolver not migrated. Please \'Migrate\' to enable off-chain records')
+                      setColor('tomato'),
+                      setHelp('Resolver is not migrated. Please \'Migrate\' to enable off-chain Records')
                     }}
                     data-tooltip={ 'Resolver Not Migrated' }
                   >
                     <div 
                       className="material-icons smol"
                       style={{
-                        color: 'orangered'
+                        color: 'tomato'
                       }}
                     >
                       gpp_maybe

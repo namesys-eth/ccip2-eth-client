@@ -916,7 +916,7 @@ const Account: NextPage = () => {
                     alignItems: 'center'
                   }}
                 >
-                  {'OWNED'}
+                  {'NAMES'}
                   <span className="material-icons" style={{ marginLeft: '3px' }}>manage_accounts</span>
                 </div>
               </button>
@@ -1114,7 +1114,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('use search tab for missing names')
+                    setHelp('Please use the search tab if any names are missing in the list')
                   }}
                 >
                   <div
@@ -1202,7 +1202,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('Global Settings and Exports')
+                    setHelp('NameSys Utility Functions to set Ownerhash and Export Keys')
                   }}
                 >
                   <div
@@ -1251,7 +1251,7 @@ const Account: NextPage = () => {
                       setModal(true),
                       setIcon('info'),
                       setColor('skyblue'),
-                      setHelp('Sets Ownerhash For Wallet')
+                      setHelp('Sets Ownerhash For All Names in a Wallet')
                     }}
                     data-tooltip='Set New Ownerhash'
                   >
@@ -1349,7 +1349,7 @@ const Account: NextPage = () => {
                       setModal(true),
                       setIcon('info'),
                       setColor('skyblue'),
-                      setHelp('Exports IPNS and Manager Keys')
+                      setHelp('Export your IPNS and/or Records Signer Keys')
                     }}
                     data-tooltip='Export Keys'
                   >
@@ -1390,7 +1390,7 @@ const Account: NextPage = () => {
                     className="button-empty"
                     onClick={() => {
                       copyToClipboard('export-ipns'),
-                      setColor('lightgreen'),
+                      setColor('lime'),
                       setKeypair(['', keypair[1], keypair[2]])
                     }} 
                     data-tooltip='Copy IPNS Key'
@@ -1438,7 +1438,7 @@ const Account: NextPage = () => {
                     className="button-empty"
                     onClick={() => {
                       copyToClipboard('export-ccip'),
-                      setColor('lightgreen'),
+                      setColor('lime'),
                       setKeypair([keypair[0], '', keypair[2]])
                     }} 
                     data-tooltip='Copy Manager Key'
@@ -1522,7 +1522,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('search for a name')
+                    setHelp('Search for a name that you own')
                   }}
                 >
                   <div

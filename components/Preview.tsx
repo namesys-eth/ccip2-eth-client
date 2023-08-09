@@ -207,7 +207,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: resolver === ccip2Contract,
         state: false,
         label: 'set',
-        help: 'on-chain recordhash'
+        help: 'On-chain IPNS storage'
       },
       {
         key: 1,
@@ -217,7 +217,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: resolver !== ccip2Contract,
         state: false,
         label: 'migrate',
-        help: 'please migrate resolver to enjoy off-chain records'
+        help: 'Please migrate resolver to enjoy off-chain records'
       },
       {
         key: 2,
@@ -227,7 +227,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: isAvatar(avatar) && queue > 0,
         state: false,
         label: 'edit',
-        help: 'set your avatar'
+        help: 'Set your avatar'
       },
       {
         key: 3,
@@ -237,7 +237,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: isAddr(addr) && queue > 0,
         state: false,
         label: 'edit',
-        help: 'set your default address'
+        help: 'Set your default address'
       },
       {
         key: 4,
@@ -247,7 +247,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: isContenthash(contenthash) && queue > 0,
         state: false,
         label: 'edit',
-        help: 'set your web contenthash'
+        help: 'Set your web contenthash'
       }
     ]
     finishQuery(_LIST) // Assign _LIST
@@ -989,14 +989,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get records from history on NameSys backend
   // Must get Revision for IPNS update
-  async function getUpdate() {
+  async function getUpdate(_ownerhash: string) {
     const request = {
       type: 'read',
       ens: _ENS_,
       address: accountData?.address,
       recordsTypes: 'all',
       recordsValues: 'all',
-      chain: chain
+      chain: chain,
+      ownerhash: _ownerhash
     }
     try{
       await fetch(
@@ -1017,10 +1018,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             contenthash: data.response.contenthash,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
-            queue: latestTimestamp(data.response.timestamp)
+            queue: latestTimestamp(data.response.timestamp),
+            ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
-          setQueue(Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod)
+          var _Ownerstamps: number[] = []
+          if (_HISTORY.ownerstamp.length > 0) {
+            for (const key in _HISTORY.ownerstamp) {
+              _Ownerstamps.push(Number(_HISTORY.ownerstamp[key]))
+            }
+          }
+          if (_ownerhash !== '0x0' && _Ownerstamps.length > 0) {
+            setQueue(Math.round(Date.now()/1000) - Math.max(..._Ownerstamps) - waitingPeriod)
+          } else {
+            setQueue(Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod)
+          }
         })
     } catch(error) {
       console.error('ERROR:', 'Failed to read from CCIP2 backend')
@@ -1030,10 +1042,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers fetching history from NameSys backend
   React.useEffect(() => {
     if (finish) {
-      getUpdate()
+      getUpdate(ownerhash ? ownerhash : '0x0')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finish]);
+  }, [finish, ownerhash]);
 
   // Triggers setting metadata
   React.useEffect(() => {
@@ -1338,7 +1350,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setLoading(false)
         setSuccess('Off-chain Setup Complete. Enjoy!')
         setIcon('check_circle_outline')
-        setColor('lightgreen')
+        setColor('lime')
         setSuccessModal(true)
         handleSuccess()
       }
@@ -1398,7 +1410,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLoading(false)
       setSuccess('Off-chain Setup Complete. Enjoy!')
       setIcon('check_circle_outline')
-      setColor('lightgreen')
+      setColor('lime')
       setSuccessModal(true)
       handleSuccess()
     }
@@ -1667,15 +1679,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('gpp_good'),
-                              setColor(item.type === 'resolver' ? 'lightgreen' : 'white'),
-                              setHelp(item.type === 'resolver' ? 'Resolver is migrated' : 'Ownerhash is set')
+                              setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
+                              setHelp(item.type === 'resolver' ? 'Resolver is Migrated' : 'Global Ownerhash is Set')
                             }}
-                            data-tooltip={ 'Ready For Off-Chain Use' }
+                            data-tooltip={ 'Ready For Off-Chain Use With Ownerhash' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: item.type === 'resolver' ? 'lightgreen' : 'white'
+                                color: item.type === 'resolver' ? 'lime' : 'cyan'
                               }}
                             >
                               gpp_good
@@ -1689,15 +1701,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('gpp_good'),
-                              setColor('lightgreen'),
-                              setHelp(item.type === 'resolver' ? 'Resolver is migrated' : 'Recordhash is set')
+                              setColor('lime'),
+                              setHelp(item.type === 'resolver' ? 'Resolver is Migrated' : 'Domain-specific Recordhash is Set')
                             }}
-                            data-tooltip={ 'Ready For Off-Chain Use' }
+                            data-tooltip={ 'Ready For Off-Chain Use With Recordhash' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: 'lightgreen',
+                                color: 'lime',
                                 marginLeft: item.type === 'resolver' ? '5px' : '5px'
                               }}
                             >
@@ -1712,7 +1724,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
-                              setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
+                              setColor(item.type === 'resolver' ? 'orange' : 'tomato'),
                               setHelp(item.type === 'resolver' ? 'Resolver is migrated' : 'Recordhash not set')
                             }}
                             data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
@@ -1720,7 +1732,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: item.type === 'resolver' ? 'orange' : 'orangered',
+                                color: item.type === 'resolver' ? 'orange' : 'tomato',
                                 marginLeft: item.type === 'resolver' ? '5px' : '5px'
                               }}
                             >
@@ -1735,15 +1747,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
-                              setColor('orangered'),
-                              setHelp(item.type === 'resolver' ? 'Resolver not migrated' : 'Recordhash not set')
+                              setColor('tomato'),
+                              setHelp(item.type === 'resolver' ? 'Resolver is not Migrated' : 'No Recordhash or Ownerhash is Set')
                             }}
                             data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: 'orangered',
+                                color: 'tomato',
                                 marginLeft: item.type === 'resolver' ? '5px' : '5px'
                               }}
                             >
@@ -1758,7 +1770,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                              setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'white')),
+                              setColor(item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan')),
                               setHelp(item.type === 'resolver' ? 'Resolver not migrated' : (recordhash ? 'Recordhash Is Set' : 'Ownerhash Is Set'))
                             }}
                             data-tooltip={ recordhash ? 'Resolver Not Migrated But Recordhash Is Set' : 'Resolver Not Migrated But Ownerhash Is Set' }
@@ -1766,7 +1778,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'white'),
+                                color: item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan'),
                                 marginLeft: item.type === 'resolver' ? '5px' : '5px'
                               }}
                             >
@@ -1808,17 +1820,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setHelpModal(true),
                               setIcon('timer'),
-                              setColor(queue < 0 ? 'orange' : 'lightgreen'),
-                              setHelp(queue < 0 ? 'Too Soon To Update. Please Wait' : 'Ready For Next Record Update')
+                              setColor(queue < 0 ? 'orange' : 'lime'),
+                              setHelp(queue < 0 ? 'Too Soon To Update. Please wait at least one hour between updates' : 'Ready For Next Record Update')
                             }}
                             data-tooltip={ 
-                              queue < 0 ? 'Please Wait For Next Update' : 'Ready For Next Update'
+                              queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
                             }
                           >
                             <div 
                               className="material-icons smol"
                               style={{
-                                color: queue < 0 ? 'orange' : 'lightgreen',
+                                color: queue < 0 ? 'orange' : 'lime',
                                 marginLeft: '-5px'
                               }}
                             >
@@ -1832,7 +1844,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           <div 
                             className="material-icons smol"
                             style={{ 
-                              color: 'lightgreen',
+                              color: 'lime',
                               marginLeft: '-5px'
                             }}
                           >
@@ -1908,7 +1920,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         <div id="modal-inner">
           <Gas
-            color={ 'lightgreen' }
+            color={ 'lime' }
             _ENS_={ 'check_circle_outline' }
             onClose={() => {
               setGasModal(false),
@@ -1933,6 +1945,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               }}
             show={options && trigger === 'resolver'}
           >
+            { ownerhash ? true :  false }
           </Options>
           <Error
             onClose={() => {

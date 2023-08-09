@@ -98,7 +98,6 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: 60%;
-  height: 170px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;

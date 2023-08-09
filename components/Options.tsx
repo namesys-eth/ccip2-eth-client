@@ -60,7 +60,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
             </div>
             <div
               style={{
-                marginTop: '10px'
+                marginTop: '15px'
               }}
             >
               Please choose your IPNS storage
@@ -68,51 +68,50 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
           </StyledModalTitle>}
         <StyledModalBody>
         <button 
-            className="button"
+            className="button-option"
             style={{
-              height: '28px',
-              width: '150px',
+              height: '35px',
+              width: '160px',
               marginTop: '15px',
-              fontSize: '14px'
+              fontSize: '15px',
+              fontWeight: '700'
             }}
             onClick={ handleOwnerhashSubmit }
-            data-tooltip='Proceed'
+            data-tooltip={ children ? 'Use Preset Global Ownerhash' : 'No Global Ownerhash Found' }
+            disabled={ !children }
           >
             <div 
               style={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: '13px',
-                fontWeight: '700'
+                alignItems: 'center'
               }}
             >
-              { 'Ownerhash' }&nbsp;<span className="material-icons smoller">recycling</span>
+              { 'Ownerhash' }&nbsp;<span className="material-icons chonk">recycling</span>
             </div>
           </button>
           <button 
-            className="button"
+            className="button-option"
             style={{
-              height: '28px',
-              width: '150px',
-              marginTop: '15px',
-              fontSize: '14px'
+              height: '35px',
+              width: '160px',
+              marginTop: '20px',
+              fontSize: '15px',
+              fontWeight: '700'
             }}
             onClick={ handleRecordhashSubmit }
-            data-tooltip='Proceed'
+            data-tooltip='Set New On-chain Recordhash'
           >
             <div 
               style={{
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: '13px',
-                fontWeight: '700'
+                alignItems: 'center'              
               }}
             >
-              { 'Recordhash' }&nbsp;<span className="material-icons smoller">create</span>
+              { 'Recordhash' }&nbsp;<span className="material-icons chonk">create</span>
             </div>
           </button>
         </StyledModalBody>
@@ -131,9 +130,9 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
 };
 
 const StyledModalBody = styled.div`
-  padding-top: 0px;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-top: 10px;
+  padding-left: 50px;
+  padding-right: 50px;
   padding-bottom: 25px;
   display: flex;
   justify-content: center;
@@ -148,13 +147,13 @@ const StyledModalBody = styled.div`
 `;
 
 const StyledModalTitle = styled.div`
-  margin-top: -15px;
-  font-size: 14px;
+  margin-top: -10px;
+  font-size: 17px;
   display: flex;
   justify-content: center;
   flex-direction: column;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
   color: white;
   padding-left: 20px;
   padding-right: 20px;
@@ -169,9 +168,7 @@ const StyledModalHeader = styled.div`
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
-  width: auto;
-  max-width: 100%;
-  height: 208px;
+  width: 450px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;

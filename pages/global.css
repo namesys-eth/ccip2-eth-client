@@ -258,6 +258,10 @@ input[type="text"] {
   font-size: 18px;
 }
 
+.chonk{
+  font-size: 20px;
+}
+
 .label {
     font-family: "SF Mono";
     font-size: 15px;
@@ -438,7 +442,7 @@ input[type="text"] {
   padding: 4px;
   border-radius: 2px;
   position: absolute;
-  top: -40%;
+  top: -50%;
   left: -25%;
   transform: translateX(-50%);
   white-space: nowrap;
@@ -448,6 +452,46 @@ input[type="text"] {
   transition: opacity 0.2s ease-in-out;
 }
 .button:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
+.button-option {
+  appearance: none;
+  border: none;
+  font-family: "Spotnik";
+  background-image: linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%);
+  font-size: 15px;
+  font-weight: 800;
+  height: 40px;
+  padding: 1px 12px;
+  border-radius: 6px;
+  align-items: left;
+  color: white;
+  transition: all ease 100ms;
+}
+.button-option:disabled {
+  background: rgb(255, 255, 255, 0.2);
+  color: white;
+  cursor: not-allowed;
+}
+.button-option::after {
+  content: attr(data-tooltip);
+  background-color: black;
+  color: white;
+  padding: 4px;
+  border-radius: 2px;
+  position: absolute;
+  top: -50%;
+  left: 5%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  visibility: visible;
+  opacity: 0;
+  font-size: 10px;
+  transition: opacity 0.2s ease-in-out;
+}
+.button-option:hover::after {
   visibility: visible;
   opacity: 1;
 }
