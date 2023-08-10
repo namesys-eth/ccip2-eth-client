@@ -327,7 +327,6 @@ const Home: NextPage = () => {
         let token = ethers.BigNumber.from(labelhash)
         setTokenID(token.toString())
       } catch (error) {
-        console.log('Warning:', 'BigNumberWarning')
       }
     }
   }, [query])
@@ -342,9 +341,7 @@ const Home: NextPage = () => {
     setQuery(query)
     setOnSearch(true)
     if (accountData?.address) {
-      console.log('WAGMI QUERY:', query)
     } else {
-      console.log('ETHERS QUERY:', query)
     }  
   }
 

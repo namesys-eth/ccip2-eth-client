@@ -93,7 +93,6 @@ const Account: NextPage = () => {
     copyText.setSelectionRange(0, 99999)
     
     navigator.clipboard.writeText(copyText.value).then(() => {
-        console.log('LOG:', 'Copied!')
     }).catch((error) => {
         console.error('ERROR:', error)
     })
@@ -126,7 +125,6 @@ const Account: NextPage = () => {
   function statementIPNSKey(source: string, caip10: string, extradata: string) {
     let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
-    //console.log('S1 Message/Digest:', _digest)
     return _digest
   }
 
@@ -275,19 +273,13 @@ const Account: NextPage = () => {
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
     if (!keypair[0] && !keypair[1] && signature) {
-      //setLoading(true)
-      //setMessage('Generating IPNS Key')
       const keygen = async () => {
         let _origin = 'eth:' + accountData?.address
         let _caip10 = `eip155:${_Chain_}`  // CAIP-10
         const __keypair = await _KEYGEN(_origin, _caip10, signature, saltModalState.modalData)
         setKeypair([__keypair[0][0], __keypair[1][0], __keypair[0][1]])
-        //setMessage('IPNS Key Generated')
-        //setLoading(false)
       };
       keygen()
-    } else {
-      //setMessage('IPNS Key/CID Exists')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, signature]);
@@ -300,7 +292,6 @@ const Account: NextPage = () => {
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
-        //setMessage('IPNS CID Generated')
       }
       CIDGen()
     }
@@ -361,7 +352,6 @@ const Account: NextPage = () => {
             // ISSUE: ENS Metadata service is broken and not showing all the names
             if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
               count = count + 1
-              //console.log('Count:', count)
               setGetting(count)
               allEns.push(allTokens[i].title.split('.eth')[0])
               const _Resolver = await constants.provider.getResolver(allTokens[i].title)
@@ -449,7 +439,6 @@ const Account: NextPage = () => {
               if (recordhash && recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
-                console.log('here')
                 items[0].migrated = '3/4'
               }
               setFlash(meta)
@@ -504,7 +493,6 @@ const Account: NextPage = () => {
         let token = ethers.BigNumber.from(labelhash)
         setTokenID(token.toString())
       } catch (error) {
-        //console.log('BigNumberWarning')
       }
     }
   }, [query])
@@ -514,7 +502,6 @@ const Account: NextPage = () => {
     setIsSearch(true)
     setProcess(query)
     setQuery(query)
-    console.log('Query:', `Searching for ${query}`)
   }
 
   const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({

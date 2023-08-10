@@ -162,7 +162,6 @@ export function formatkey(keypair: [[string, string], [string, string]]) {
 export function encodeContenthash(contenthash: string) {
   if (contenthash) {
     const ensContentHash = ensContent.encodeContenthash(`ipns://${contenthash}`)
-    //console.log('Encoded CID:', ensContentHash.encoded)
     return ensContentHash.encoded
   }
   return ''

@@ -266,7 +266,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _origin = `eth:${accountData?.address ? accountData?.address : constants.zeroAddress}`
     let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${type === 'recordhash' ? _ENS_ : _origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
-    //console.log('S1 Message/Digest:', _digest)
     return _digest
   }
   // Signature S2 statement; S2(K0) [Record Signature]
@@ -275,14 +274,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
     let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`)
     let _toSign = `Requesting Signature To Update ENS Record\n\nOrigin: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
-    {/*
-    let _digest = ethers.utils.solidityPack(
-      ['string', 'string', 'string'],
-      [constants.buffer, _toSign.length.toString(), _toSign]
-    )
-    console.log('S2 Message:', _toSign)
-    console.log('S2 Digest:', ethers.utils.keccak256(_digest))
-    */}
     return _toSign
   }
 
@@ -292,14 +283,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
     let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
     let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${_ENS_}\nApproved Signer: ${_signer}\nExtradata: ${extradata}\nSigned By: ${caip10}`
-    {/*
-    let _digest = ethers.utils.solidityPack(
-      ['string', 'string', 'string'],
-      [constants.buffer, _toSign.length.toString(), _toSign]
-    )
-    console.log('S3 Message:', _toSign)
-    console.log('S3 Digest:', ethers.utils.keccak256(_digest))
-    */}
     return _toSign
   }
 
@@ -324,17 +307,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
     let _ABI = [constants.signedRecord]
     let _interface = new ethers.utils.Interface(_ABI);
-    {/* 
-    console.log('Record Type:', key.toUpperCase())
-    console.log('Raw Value:', value)
-    console.log('Encoded Result:', _result)
-    console.log('Wallet:', accountData?.address)
-    console.log('Manager PubKey:', keypair ? `0x${keypair[1][1]}` : '0x0')
-    console.log('Manager Address:', keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress)
-    console.log('Record Signature:', signatures[key])
-    console.log('Manager Signature:', sigApproved)
-    console.log('Manager PrivKey [❗ WARNING]:', keypair ? `0x${keypair[1][0]}` : constants.zeroKey)
-    */}
     let _encodedWithSelector = _interface.encodeFunctionData(
       "signedRecord", 
       [
@@ -345,7 +317,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     )
     encoded = _encodedWithSelector
-    //console.log('CCIP Return Value:', encoded)
     return encoded
   }
 
@@ -369,7 +340,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
     const toPack = ethers.utils.keccak256(_result)
     const _extradata = ethers.utils.hexlify(ethers.utils.solidityPack(["bytes"], [toPack]))
-    //console.log('S2 Extradata:', _extradata)
     return _extradata
   }
 
@@ -658,7 +628,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
         setMessage(['IPNS CID Generated', ''])
-        if (CID_IPNS) console.log('IPNS:', CID_IPNS)
       }
       CIDGen()
       // Set query for on-chain manager [v2]
@@ -679,7 +648,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setSigIPNS(signature)
     } else if (signature && sigCount === 2) {
       setSigApproved(signature)
-      //console.log('Signature S3(K1):', signature)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, sigCount])
@@ -1121,7 +1089,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (_signature) __signatures[_recordType] = _signature
       });
       setSignatures(__signatures)
-      //console.log('Signatures S2(K1):', __signatures)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [write, keypair]);
@@ -1172,7 +1139,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         revision: history.revision,
         chain: chain
       }
-      //console.log(request)
       const editRecord = async () => {
         setMessage(['Writing Records', ''])
         try {
@@ -1229,7 +1195,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   const pin = async () => {
                     if (data.response.ipfs && w3name && gas) {
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
-                      console.log('IPFS:', data.response.ipfs)
                       // @W3Name broadcast
                       let _revision: Name.Revision;
                       if (!history.revision) {
@@ -1420,7 +1385,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess1of2) {
       const pin = async () => {
-        console.log('Migration:', 'Resolver Migration Successful')
         setResolver(ccip2Contract)
         setMigrated(true)
       }
