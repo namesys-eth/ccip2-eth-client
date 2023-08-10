@@ -1,14 +1,14 @@
 import { Alchemy, Network } from "alchemy-sdk"
 import { ethers } from 'ethers'
-import iEnsLegacyRegistry from '../ABI/Contract-ABI-ensLegacyRegistry.json'
-import iEnsLegacyRegistrar from '../ABI/Contract-ABI-ensLegacyRegistrar.json'
-import iEnsLegacyResolver from '../ABI/Contract-ABI-ensLegacyResolver.json'
-import iEnsUniversalResolverGoerli from '../ABI/contract-ABI-ensUniversalResolverGoerli.json'
-import iEnsPublicResolverMainnet from '../ABI/contract-ABI-ensPublicResolverMainnet.json'
-import iEnsUniversalResolverMainnet from '../ABI/contract-ABI-ensUniversalResolverMainnet.json'
-import iEnsWrapper from '../ABI/Contract-ABI-ensWrapper.json'
-import iCCIP2Goerli from '../ABI/Contract-ABI-ccip2Goerli.json'
-import iCCIP2Mainnet from '../ABI/Contract-ABI-ccip2Mainnet.json'
+import iEnsLegacyRegistry from '../ABI/Contract-ABI-ENSLegacyRegistry.json'
+import iEnsLegacyRegistrar from '../ABI/Contract-ABI-ENSLegacyRegistrar.json'
+import iEnsLegacyResolver from '../ABI/Contract-ABI-ENSLegacyResolver.json'
+import iEnsUniversalResolverGoerli from '../ABI/contract-ABI-ENSUniversalResolverGoerli.json'
+import iEnsPublicResolverMainnet from '../ABI/contract-ABI-ENSPublicResolverMainnet.json'
+import iEnsUniversalResolverMainnet from '../ABI/contract-ABI-ENSUniversalResolverMainnet.json'
+import iEnsWrapper from '../ABI/Contract-ABI-ENSWrapper.json'
+import iCCIP2Goerli from '../ABI/Contract-ABI-CCIP2Goerli.json'
+import iCCIP2Mainnet from '../ABI/Contract-ABI-CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
 
 export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
@@ -30,7 +30,7 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 export const ccip2 = [
-  '0x39BeB2f8B21659D0B22e5A6488a03933e8170939', // CCIP2 Resolver Goerli
+  '0x58fa11A12B083B0A87ae719CB44A5d3C55a38750', // CCIP2 Resolver Goerli
   '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
  ]
 export const waitingPeriod = 1 * 15 * 60 // 60 mins

@@ -127,7 +127,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [finish, setFinish] = React.useState(false); // Indicates when all records have finished fetching
   const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
-  //const [addr60, setAddr60] = React.useState('');
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
   const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
@@ -254,13 +253,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   /// Keys & Signature Definitions
-  /* K0 = Generated secp256k1 Keypair 
-   * K1 = Wallet secp256k1 Keypair 
-   * K2 = Generated ed25519 Keypair
-   * S1 = Signature for K0 & K2 Generation (Signed by K1)
-   * S2 = Signature for Records (Signed by K0)
-   * S3 = Signature for Manager Approval (Signed by K1)
-   */
+   /* K0 = Generated secp256k1 Keypair 
+    * K1 = Wallet secp256k1 Keypair 
+    * K2 = Generated ed25519 Keypair
+    * S1 = Signature for K0 & K2 Generation (Signed by K1)
+    * S2 = Signature for Records (Signed by K0)
+    * S3 = Signature for Manager Approval (Signed by K1)
+    */
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
@@ -275,7 +274,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function statementRecords(recordType: string, extradata: string, signer: string) {
     let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
     let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`)
-    let _toSign = `Requesting Signature To Update ENS Record\n\nENS Domain: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
+    let _toSign = `Requesting Signature To Update ENS Record\n\nOrigin: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
     {/*
     let _digest = ethers.utils.solidityPack(
       ['string', 'string', 'string'],
@@ -292,7 +291,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function statementManager(signer: string, extradata: string) {
     let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
     let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
-    let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nENS Domain: ${_ENS_}\nApproved Signer: ${_signer}\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${_ENS_}\nApproved Signer: ${_signer}\nExtradata: ${extradata}\nSigned By: ${caip10}`
     {/*
     let _digest = ethers.utils.solidityPack(
       ['string', 'string', 'string'],
