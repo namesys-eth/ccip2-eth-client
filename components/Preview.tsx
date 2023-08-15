@@ -142,7 +142,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
   const [keypair, setKeypair] = React.useState<[[string, string], [string, string]]>(); // Sets generated K0 and K2 keys
-  const [update, setUpdate] = React.useState(false); // Triggers signature for record update
+  const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
   const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in {a:b} format
@@ -151,9 +151,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [message, setMessage] = React.useState(['Loading Records', '']); // Sets message for the loading state
   const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
   const [signatures, setSignatures] = React.useState(EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
-  const [query, setQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
+  const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(''); // Whether record edit is legitimate
+  const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
@@ -168,7 +169,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature S3(K1) for Records Manager
   const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
-  const [manager, setManager] = React.useState(''); // Sets CCIP2 Manager
+  const [onChainManager, setOnChainManager] = React.useState(''); // Sets CCIP2 Manager
 
   const { Revision } = Name // W3Name Revision object
   const { data: accountData } = useAccount()
@@ -206,7 +207,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: resolver === ccip2Contract,
         state: false,
         label: 'set',
-        help: 'On-chain IPNS storage'
+        help: '<span>On-chain <span style="color: skyblue">IPNS</span> storage</span>',
+        tooltip: 'On-chain IPNS Storage'
       },
       {
         key: 1,
@@ -216,7 +218,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: resolver !== ccip2Contract,
         state: false,
         label: 'migrate',
-        help: 'Please migrate resolver to enjoy off-chain records'
+        help: '<span>Please <span style="color: skyblue">migrate resolver</span> to enjoy off-chain records</span>',
+        tooltip: 'Please migrate resolver'
       },
       {
         key: 2,
@@ -226,7 +229,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: isAvatar(avatar) && queue > 0,
         state: false,
         label: 'edit',
-        help: 'Set your avatar'
+        help: '<span>Set your <span style="color: skyblue">avatar</span></span>',
+        tooltip: 'Set Avatar'
       },
       {
         key: 3,
@@ -236,7 +240,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: isAddr(addr) && queue > 0,
         state: false,
         label: 'edit',
-        help: 'Set your default address'
+        help: '<span>Set your default <span style="color: skyblue">address</span></span>',
+        tooltip: 'Set Address'
       },
       {
         key: 4,
@@ -246,7 +251,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         active: isContenthash(contenthash) && queue > 0,
         state: false,
         label: 'edit',
-        help: 'Set your web contenthash'
+        help: '<span>Set your <span style="color: skyblue">web contenthash</span></span>',
+        tooltip: 'Set Contenthash'
       }
     ]
     finishQuery(_LIST) // Assign _LIST
@@ -282,7 +288,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function statementManager(signer: string, extradata: string) {
     let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
     let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
-    let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${_ENS_}\nApproved Signer: ${_signer}\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${_ENS_}\nApproved Signer: ${_signer}\nApproved By: ${caip10}`
     return _toSign
   }
 
@@ -366,10 +372,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         signMessage({ message: 
           statementManager(
             keypair[1][0], 
-            ethers.utils.keccak256(ethers.utils.solidityPack(
-              ['address', 'address'], 
-              [accountData?.address, ethers.utils.computeAddress(`0x${keypair[1][0]}`)]
-            ))
+            ''
           ) 
         })
       }
@@ -434,23 +437,23 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ]
     }
   )
-  // Get Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead(
+  // Read Ownerhash from CCIP2 Resolver
+  const { data: _Ownerhash_ } = useContractRead(
     ccip2Config, // CCIP2 Resolver
-    'recordhash',
+    'getRecordhash',
     {
       args: [
-        ethers.utils.namehash(ENS)
+        ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase()
       ]
     }
   )
-  // Get Ownerhash from CCIP2 Resolver
-  const { data: _Ownerhash_ } = useContractRead(
+  // Read Recordhash from CCIP2 Resolver
+  const { data: _Recordhash_ } = useContractRead(
     ccip2Config, // CCIP2 Resolver
-    'ownerhash',
+    'getRecordhash',
     {
       args: [
-        ethers.utils.keccak256(ethers.utils.solidityPack(['address'], [accountData?.address ? accountData?.address : constants.zeroAddress]))
+        ethers.utils.namehash(ENS)
       ]
     }
   )
@@ -468,7 +471,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Captures on-chain manager hook
   React.useEffect(() => {
     if (_CCIP2Manager_) {
-      setManager(_CCIP2Manager_.toString())
+      setOnChainManager(_CCIP2Manager_.toString())
     }
   }, [_CCIP2Manager_])
   // Capture Ownerhash hook
@@ -483,13 +486,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }, [_Ownerhash_])
   React.useEffect(() => {
     if (_Recordhash_) {
-      if (_Recordhash_.toString().length > 2) {
+      if (_Recordhash_.toString().length > 2  && (_Recordhash_ !== _Ownerhash_)) {
         setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
       } else {
         setRecordhash(undefined)
       }
     }
-  }, [_Recordhash_])
+  }, [_Recordhash_, _Ownerhash_])
 
   // Returns Owner of wrapped/legacy ENS Domain
   function getOwner() {
@@ -519,14 +522,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (trigger !== 'resolver') {
         if (trigger === 'recordhash') {
           setSalt(true)
-        } else {
-          setUpdate(true)
         }
       } else {
         if (optionsModalState.trigger) {
           migrate()
         }
       }
+    } else if (trigger && write) {
+      if (recordhash) {
+        setHashType('recordhash')
+      } 
+      if (ownerhash && !recordhash) {
+        setHashType('ownerhash')
+      }
+      setUpdateRecords(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, optionsModalState, write])
@@ -535,18 +544,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (accountData?.address) {
       let _OwnerWrapped_ = getOwner()
-      let _ManagerWrapped_ = getController()
+      //let _ManagerWrapped_ = getController()
       // Set Managers
-      if (manager && manager.toString() === 'true') {
+      if (onChainManager && onChainManager.toString() === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([accountData.address])
       } else {
         // Set owner and controller as in-app managers if no on-chain manager exists
-        setManagers([_OwnerWrapped_, _ManagerWrapped_])
+        setManagers([_OwnerWrapped_])
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenID, _ControllerLegacy_, _OwnerLegacy_, manager])
+  }, [tokenID, _OwnerLegacy_, onChainManager])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
@@ -583,7 +592,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
  
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !update && !keypair && trigger) {
+    if (saltModalState.trigger && !updateRecords && !keypair && trigger) {
       setSigCount(1)
       signMessage({ 
         message: statementIPNSKey(
@@ -594,7 +603,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               accountData?.address
             ]
           )),
-          ['recordhash', 'resolver'].includes(trigger) ? 'recordhash' : 'ownerhash'
+          hashType
         ) 
       })
       setKeygen(true)
@@ -631,7 +640,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
       CIDGen()
       // Set query for on-chain manager [v2]
-      setQuery(
+      setOnChainManagerQuery(
         [
           getOwner(),
           ethers.utils.namehash(ENS),
@@ -1021,6 +1030,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setMetadata(recordhash)
       } else if (ownerhash) {
         setMetadata(ownerhash)
+      } else {
+        setMetadata('')
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1064,17 +1075,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles password prompt for S1(K1)
   React.useEffect(() => {
-    if (update) { // Check for false → true
+    if (updateRecords) { // Check for false → true
       if (!keypair || !CID) {
         setSalt(true) // Start K0 keygen if it doesn't exist in local storage
-        setUpdate(false) // Reset
+        setUpdateRecords(false) // Reset
       } else {
         setLoading(true)
         setMessage(['Setting Record', ''])
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [update]);
+  }, [updateRecords]);
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
@@ -1096,13 +1107,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles generating signatures for off-chain manager
   React.useEffect(() => {
     // Handle Signature S3(K1) 
-    if (write && keypair && !manager && !sigApproved) {
+    if (write && keypair && !onChainManager && !sigApproved) {
       __signMessage() // Sign with K1
-    } else if (write && keypair && manager) {
+    } else if (write && keypair && onChainManager) {
       setSigApproved('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, signatures]);
+  }, [onChainManager, signatures]);
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
@@ -1137,7 +1148,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         recordsValues: _encodedValues,
         recordsRaw: newValues,
         revision: history.revision,
-        chain: chain
+        chain: chain,
+        hashType: hashType,
       }
       const editRecord = async () => {
         setMessage(['Writing Records', ''])
@@ -1247,7 +1259,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       setNewValues(EMPTY_STRING())
                       setSignatures(EMPTY_STRING())
                       setSigCount(0)
-                      setUpdate(false) // Reset
+                      setUpdateRecords(false) // Reset
                     }
                   }
                   if (Object.keys(gas).length > 0) {
@@ -1269,7 +1281,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     // Handle exception
     if (!write) {
-      setUpdate(false)
+      setUpdateRecords(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signatures, sigApproved]);
@@ -1312,7 +1324,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setLegit(EMPTY_BOOL())
         setStates([])
         setLoading(false)
-        setSuccess('Off-chain Setup Complete. Enjoy!')
+        setSuccess('Off-chain Setup Complete with Ownerhash. Enjoy!')
         setIcon('check_circle_outline')
         setColor('lime')
         setSuccessModal(true)
@@ -1372,7 +1384,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLegit(EMPTY_BOOL())
       setStates([])
       setLoading(false)
-      setSuccess('Off-chain Setup Complete. Enjoy!')
+      setSuccess('Off-chain Setup Complete With Recordhash. Enjoy!')
       setIcon('check_circle_outline')
       setColor('lime')
       setSuccessModal(true)
@@ -1598,7 +1610,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       onClose={() => setHelpModal(false)}
                       show={helpModal}
                     >
-                      <span>{ help }</span>
+                      { help }
                     </Help>
                     <Success
                       color={ color }
@@ -1643,7 +1655,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
-                              setHelp(item.type === 'resolver' ? 'Resolver is Migrated' : 'Global Ownerhash is Set')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lightgreen">Migrated</span><span>' : 'Global <span style="color: skyblue">Ownerhash</span> is Set')
                             }}
                             data-tooltip={ 'Ready For Off-Chain Use With Ownerhash' }
                           >
@@ -1665,7 +1677,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('lime'),
-                              setHelp(item.type === 'resolver' ? 'Resolver is Migrated' : 'Domain-specific Recordhash is Set')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lightgreen">Migrated</span><span>' : '<span>Domain-specific <span style="color: skyblue">Recordhash</span> is Set<span>')
                             }}
                             data-tooltip={ 'Ready For Off-Chain Use With Recordhash' }
                           >
@@ -1680,7 +1692,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </div>
                           </button>
                         )}
-                        { // Set Badge if Resolver is migrated and no Recordhash is set
+                        { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash is set
                         ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
                           <button 
                             className="button-tiny"
@@ -1688,7 +1700,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
                               setColor(item.type === 'resolver' ? 'orange' : 'tomato'),
-                              setHelp(item.type === 'resolver' ? 'Resolver is migrated' : 'Recordhash not set')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lightgreen">Migrated</span><span>' : '<span style="color: skyblue">Recordhash</span> Or <span style="color: skyblue">Ownerhash</span> <span style="color: orange">not Set</span>')
                             }}
                             data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                           >
@@ -1703,7 +1715,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </div>
                           </button>
                         )}
-                        { // Set Badge if Resolver is not migrated and no Recordhash has been set in the past
+                        { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
                         ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
                           <button 
                             className="button-tiny"
@@ -1711,7 +1723,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
                               setColor('tomato'),
-                              setHelp(item.type === 'resolver' ? 'Resolver is not Migrated' : 'No Recordhash or Ownerhash is Set')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: skyblue">Recordhash</span> Or <span style="color: skyblue">Ownerhash</span> <span style="color: orange">not Set</span></span>')
                             }}
                             data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
                           >
@@ -1734,9 +1746,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
                               setColor(item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan')),
-                              setHelp(item.type === 'resolver' ? 'Resolver not migrated' : (recordhash ? 'Recordhash Is Set' : 'Ownerhash Is Set'))
+                              setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: skyblue">Recordhash</span> <span style="color: lightgreen">is Set</span></span>' : '<span><span style="color: skyblue">Ownerhash</span> <span style="color: lightgreen">is Set</span></span>'))
                             }}
-                            data-tooltip={ recordhash ? 'Resolver Not Migrated But Recordhash Is Set' : 'Resolver Not Migrated But Ownerhash Is Set' }
+                            data-tooltip={ recordhash ? 'Resolver not Migrated But Recordhash is Set' : 'Resolver not Migrated But Ownerhash is Set' }
                           >
                             <div 
                               className="material-icons smol"
@@ -1758,7 +1770,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('info'),
                               setColor(constants.blocked.includes(item.type) ? 'orange' : 'skyblue'),
-                              setHelp(constants.blocked.includes(item.type) ? 'In Process of Bug Fixing' : item.help)
+                              setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
                             }}
                             data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
                           >
@@ -1784,7 +1796,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('timer'),
                               setColor(queue < 0 ? 'orange' : 'lime'),
-                              setHelp(queue < 0 ? 'Too Soon To Update. Please wait at least one hour between updates' : 'Ready For Next Record Update')
+                              setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: skyblue">one hour</span> between updates</span>' : '<span><span style="color: lightgreen">Ready</span> For Next Record Update</span>')
                             }}
                             data-tooltip={ 
                               queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
@@ -1836,7 +1848,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
                           ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
                         }}
-                        data-tooltip={ item.help }
+                        data-tooltip={ item.tooltip }
                       >
                         <div 
                             style={{

@@ -22,6 +22,7 @@ import Loading from '../components/LoadingColors'
 import MainSearchBox from '../components/MainSearchBox'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
+import * as ensContent from '../utils/contenthash'
 
 /// Homepage
 const Home: NextPage = () => {
@@ -50,7 +51,6 @@ const Home: NextPage = () => {
   const [recordhash, setRecordhash] = React.useState('')
   const [ownerhash, setOwnerhash] = React.useState('')
   const [owner, setOwner] = React.useState('')
-  const [controller, setController] = React.useState('')
   const [onSearch, setOnSearch] = React.useState(false)
   const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
@@ -82,9 +82,17 @@ const Home: NextPage = () => {
   // Get Recordhash with ethers.js
   async function getRecordhash(provider: any, name: string) {
     const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider);
-    const _recordhash = await contract.recordhash(ethers.utils.namehash(name));
-    if (_recordhash === null) { return '0x' }
-    return _recordhash
+    const _recordhash = await contract.getRecordhash(ethers.utils.namehash(name));
+    if (_recordhash === null) { return '' }
+    return `ipns://${ensContent.decodeContenthash(_recordhash.toString()).decoded}`
+  }
+
+  // Get Ownerhash with ethers.js
+  async function getOwnerhash(provider: any, address: string) {
+    const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider);
+    const _ownerhash = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase());
+    if (_ownerhash === null) { return '' }
+    return `ipns://${ensContent.decodeContenthash(_ownerhash.toString()).decoded}`
   }
 
   // Get historical gas savings
@@ -113,6 +121,9 @@ const Home: NextPage = () => {
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
+    setOwner('')
+    setOwnerhash('')
+    setRecordhash('')
     constants.showOverlay(5);
     const getSaving = async () => {
       const _savings = await getSavings()
@@ -130,7 +141,7 @@ const Home: NextPage = () => {
       const _update = async () => {
         if (previewModalState.modalData) {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData.split(':')[0]) // Get updated Resolver
-          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.split(':')[0], ccip2Config) // Get updated Recordhash
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.split(':')[0], ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Ownerhash
           _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
             _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
@@ -186,7 +197,7 @@ const Home: NextPage = () => {
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead(
     ccip2Config, // CCIP2 Resolver
-    'recordhash',
+    'getRecordhash',
     {
       args: [
         ethers.utils.namehash(query)
@@ -197,29 +208,24 @@ const Home: NextPage = () => {
   // Read Ownerhash from CCIP2 Resolver
   const { data: _Ownerhash_ } = useContractRead(
     ccip2Config, // CCIP2 Resolver
-    'ownerhash',
+    'getRecordhash',
     {
       args: [
-        ethers.utils.keccak256(ethers.utils.solidityPack(['address'], [accountData?.address ? accountData?.address : constants.zeroAddress]))
+        ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase()
       ]
     }
   )
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (_Owner_ && _Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
-      setManager(_Controller_.toString())
-      setController(_Controller_.toString())
-      setOwner(_Owner_.toString())
-    } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
+    if (_Owner_) {
       setManager(_Owner_.toString())
       setOwner(_Owner_.toString())
     } else {
-      setTimeout(() => {
-        setLoading(false)
-      }, 2000);
+      if (!ownerLoading && !ownerError) setOwner('0x')
     }
-  }, [tokenID, _Controller_, _Owner_])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenID, _Owner_])
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
@@ -227,11 +233,24 @@ const Home: NextPage = () => {
       const _setOrigins = async () => {
         let _Owner = await getOwner(constants.provider, tokenID)
         let _Recordhash = await getRecordhash(constants.provider, query)
-        if (_Owner && _Recordhash) {
+        let _Ownerhash = await getOwnerhash(constants.provider, _Owner)
+        if (_Owner) {
           setOwner(_Owner)
-          setRecordhash(_Recordhash)
+          if (_Recordhash && _Ownerhash && (_Recordhash !== _Ownerhash)) {
+            setRecordhash(_Recordhash)
+            setOwnerhash(_Ownerhash)
+          } else if (_Recordhash && _Ownerhash && (_Recordhash === _Ownerhash)) {
+            setRecordhash('ipns://')
+            setOwnerhash(_Ownerhash)
+          } else if (_Recordhash && !_Ownerhash) {
+            setRecordhash(_Recordhash)
+            setOwnerhash('ipns://')
+          } else {
+            setRecordhash('ipns://')
+            setOwnerhash('ipns://')
+          }
         } else {
-          setOwner('')
+          setOwner('0x')
           setSuccess(false)
         }
       }
@@ -242,7 +261,7 @@ const Home: NextPage = () => {
 
   // Shows search result for ENS domain search
   React.useEffect(() => {
-    if (query.length > 0 && recordhash) {
+    if (query.length > 0 && recordhash && ownerhash) {
       var allEns: string[] = []
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
@@ -255,9 +274,9 @@ const Home: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (recordhash && recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash && recordhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
-              } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
+              } else if (ownerhash && ownerhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
                 items[0].migrated = '3/4'
               }
               setMeta(items)
@@ -274,23 +293,56 @@ const Home: NextPage = () => {
 
   // Captures Recordhash hook
   React.useEffect(() => {
-    if (_Recordhash_) {
-      setRecordhash(_Recordhash_.toString())
+    if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && accountData?.address) {
+      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
+    } else {
+      setRecordhash('ipns://')
     }
-  }, [_Recordhash_])
-  // Captures Oecordhash hook
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_Recordhash_, _Ownerhash_])
+  // Captures Ownerhash hook
   React.useEffect(() => {
-    if (_Ownerhash_) {
-      setOwnerhash(_Ownerhash_.toString())
+    if (_Ownerhash_ && accountData?.address) {
+      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
+    } else {
+      setOwnerhash('ipns://')
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Ownerhash_])
 
+  // End name query
   React.useEffect(() => {
-    if (success) {
-      if (!ownerLoading && !ownerError) {
-        if (owner && owner !== null && owner !== constants.zeroAddress) {
-          setErrorModal(false)
+    if (success && recordhash && ownerhash && owner) {
+      if (accountData?.address) {
+        /* If wallet is connected */
+        if (!ownerLoading && !ownerError) {
+          if (owner !== '0x' && owner !== constants.zeroAddress) {
+            setErrorModal(false)
+            setTimeout(() => {
+              setLoading(false)
+            }, 2000)
+            setEmpty(false)
+          } else {
+            setErrorMessage('Name not Registered')
+            setErrorModal(true)
+            setLoading(false)
+            setEmpty(true)
+            setQuery('')
+          }
+        } else if (ownerError) {
+          setErrorMessage('Failed to Fetch')
+          setErrorModal(true)
           setLoading(false)
+          setEmpty(true)
+          setQuery('')
+        }
+      } else {
+        /* If wallet is not connected */
+        if (owner !== '0x' && owner !== constants.zeroAddress) {
+          setErrorModal(false)
+          setTimeout(() => {
+            setLoading(false)
+          }, 2000)
           setEmpty(false)
         } else {
           setErrorMessage('Name not Registered')
@@ -299,24 +351,10 @@ const Home: NextPage = () => {
           setEmpty(true)
           setQuery('')
         }
-      } else if (ownerError) {
-        setErrorMessage('Failed to Fetch')
-        setErrorModal(true)
-        setLoading(false)
-        setEmpty(true)
-        setQuery('')
-      }
-    } else {
-      if (!owner || owner === null || owner === constants.zeroAddress) {
-        setErrorMessage('Name not Registered')
-        setErrorModal(true)
-        setLoading(false)
-        setEmpty(true)
-        setQuery('')
-      }
+      }      
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success, owner])
+  }, [success, owner, recordhash, ownerhash, ownerLoading, ownerError])
 
 
   // Sets tokenID for ENS domain search result
@@ -338,11 +376,14 @@ const Home: NextPage = () => {
     setManager('')
     setLoading(true)
     setSearchType('search')
-    setQuery(query)
+    setRecordhash('')
+    setOwner('')
     setOnSearch(true)
     if (accountData?.address) {
     } else {
+      setOwnerhash('')
     }  
+    setQuery(query)
   }
 
   return (

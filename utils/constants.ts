@@ -3,9 +3,9 @@ import { ethers } from 'ethers'
 import iEnsLegacyRegistry from '../ABI/Contract-ABI-ENSLegacyRegistry.json'
 import iEnsLegacyRegistrar from '../ABI/Contract-ABI-ENSLegacyRegistrar.json'
 import iEnsLegacyResolver from '../ABI/Contract-ABI-ENSLegacyResolver.json'
-import iEnsUniversalResolverGoerli from '../ABI/contract-ABI-ENSUniversalResolverGoerli.json'
-import iEnsPublicResolverMainnet from '../ABI/contract-ABI-ENSPublicResolverMainnet.json'
-import iEnsUniversalResolverMainnet from '../ABI/contract-ABI-ENSUniversalResolverMainnet.json'
+import iEnsUniversalResolverGoerli from '../ABI/Contract-ABI-ENSUniversalResolverGoerli.json'
+import iEnsPublicResolverMainnet from '../ABI/Contract-ABI-ENSPublicResolverMainnet.json'
+import iEnsUniversalResolverMainnet from '../ABI/Contract-ABI-ENSUniversalResolverMainnet.json'
 import iEnsWrapper from '../ABI/Contract-ABI-ENSWrapper.json'
 import iCCIP2Goerli from '../ABI/Contract-ABI-CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/Contract-ABI-CCIP2Mainnet.json'
@@ -30,18 +30,18 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
 export const ccip2 = [
-  '0x58fa11A12B083B0A87ae719CB44A5d3C55a38750', // CCIP2 Resolver Goerli
+  '0xf885eBf034Fb06933FB79E6bC41025867f85d39b', // CCIP2 Resolver Goerli
   '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
  ]
 export const waitingPeriod = 1 * 15 * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
-  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar [!!!] Redundant
-  "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329", // Legacy Resolver [!!!] Redundant
-  "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper
-  "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750", // Universal Resolver Goerli
-  "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41", // Public Resolver Mainnet
-  "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63" // Universal Resolver Mainnet
+  "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar (Goerli & Mainnet)
+  "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329", // Public Legacy Resolver 1 (Mainnet)
+  "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper (Goerli)
+  "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750", // Universal Resolver (Goerli)
+  "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41", // Public Legacy Resolver 2 (Mainnet)
+  "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63" // Universal Resolver (Mainnet)
 ]
 export const carousal = [
   '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',

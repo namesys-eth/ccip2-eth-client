@@ -5,11 +5,6 @@
         "internalType": "address",
         "name": "_gateway",
         "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "_chainID",
-        "type": "string"
       }
     ],
     "stateMutability": "nonpayable",
@@ -19,11 +14,44 @@
     "inputs": [
       {
         "internalType": "string",
-        "name": "message",
+        "name": "_message",
+        "type": "string"
+      }
+    ],
+    "name": "BadConfig",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_message",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidRequest",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_message",
         "type": "string"
       }
     ],
     "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_message",
+        "type": "string"
+      }
+    ],
+    "name": "NotAuthorised",
     "type": "error"
   },
   {
@@ -55,6 +83,11 @@
       }
     ],
     "name": "OffchainLookup",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PlsFundDevs",
     "type": "error"
   },
   {
@@ -94,17 +127,36 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "owner",
+        "name": "oldAddr",
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "contenthash",
-        "type": "bytes"
+        "indexed": true,
+        "internalType": "address",
+        "name": "newAddr",
+        "type": "address"
       }
     ],
-    "name": "OwnerhashChanged",
+    "name": "GatewayUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes4",
+        "name": "sig",
+        "type": "bytes4"
+      },
+      {
+        "indexed": true,
+        "internalType": "bool",
+        "name": "status",
+        "type": "bool"
+      }
+    ],
+    "name": "InterfaceUpdated",
     "type": "event"
   },
   {
@@ -129,7 +181,7 @@
         "type": "bytes"
       }
     ],
-    "name": "RecordhashChanged",
+    "name": "RecordhashUpdated",
     "type": "event"
   },
   {
@@ -149,44 +201,6 @@
       }
     ],
     "name": "ThankYou",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "oldAddr",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newAddr",
-        "type": "address"
-      }
-    ],
-    "name": "UpdatedGatewayManager",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes4",
-        "name": "sig",
-        "type": "bytes4"
-      },
-      {
-        "indexed": true,
-        "internalType": "bool",
-        "name": "status",
-        "type": "bool"
-      }
-    ],
-    "name": "UpdatedSupportedInterface",
     "type": "event"
   },
   {
@@ -351,13 +365,32 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "_node",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRecordhash",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "_recordhash",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
-        "name": "signRequest",
+        "name": "_message",
         "type": "string"
       },
       {
         "internalType": "bytes",
-        "name": "signature",
+        "name": "_signature",
         "type": "bytes"
       }
     ],
@@ -365,7 +398,7 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "signer",
+        "name": "_signer",
         "type": "address"
       }
     ],
@@ -457,19 +490,13 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "ownerhash",
+    "inputs": [],
+    "name": "ownerhashFees",
     "outputs": [
       {
-        "internalType": "bytes",
+        "internalType": "uint256",
         "name": "",
-        "type": "bytes"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -561,12 +588,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_tokenContract",
+        "name": "_contract",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_tokenID",
+        "name": "_token",
         "type": "uint256"
       }
     ],
@@ -578,55 +605,109 @@
   {
     "inputs": [
       {
-        "internalType": "bytes",
-        "name": "_contenthash",
-        "type": "bytes"
-      }
-    ],
-    "name": "setOwnerhash",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "bytes32",
         "name": "_node",
         "type": "bytes32"
       },
-      {
-        "internalType": "bytes",
-        "name": "_contenthash",
-        "type": "bytes"
-      }
-    ],
-    "name": "setRecordhash",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
       {
         "internalType": "string[]",
         "name": "_subdomain",
         "type": "string[]"
       },
       {
+        "internalType": "bytes",
+        "name": "_recordhash",
+        "type": "bytes"
+      }
+    ],
+    "name": "setDeepSubRecordhash",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_recordhash",
+        "type": "bytes"
+      }
+    ],
+    "name": "setOwnerhash",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes32",
         "name": "_node",
         "type": "bytes32"
       },
       {
         "internalType": "bytes",
-        "name": "_contenthash",
+        "name": "_recordhash",
+        "type": "bytes"
+      }
+    ],
+    "name": "setRecordhash",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_recordhash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setShortOwnerhash",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_node",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_recordhash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setShortRecordhash",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_node",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "_subdomain",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_recordhash",
         "type": "bytes"
       }
     ],
     "name": "setSubRecordhash",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -649,6 +730,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "updateChainID",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -656,7 +744,7 @@
         "type": "address"
       }
     ],
-    "name": "updateGatewayManager",
+    "name": "updateGateway",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -674,7 +762,20 @@
         "type": "bool"
       }
     ],
-    "name": "updateSupportedInterface",
+    "name": "updateInterface",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_wei",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateOwnerhashFees",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -708,7 +809,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_tokenContract",
+        "name": "_contract",
         "type": "address"
       },
       {

@@ -48,8 +48,9 @@ const Account: NextPage = () => {
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [tab, setTab] = React.useState('OWNER')
-  const [tokenID, setTokenID] = React.useState('')
+  const [activeTab, setActiveTab] = React.useState('OWNER')
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
   const [savings, setSavings] = React.useState('')
@@ -142,12 +143,23 @@ const Account: NextPage = () => {
 
   /// ENS Domain Config
   // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _Owner_ } = useContractRead(
+  const { data: _OwnerLegacy_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
       args: [
-        tokenID
+        tokenIDLegacy
+      ]
+    }
+  )
+
+  // Read ownership of a domain from ENS Wrapper
+  const { data: _OwnerWrapped_ } = useContractRead(
+    constants.ensConfig[3], // ENS Wrapper
+    'ownerOf',
+    {
+      args: [
+        tokenIDWrapper
       ]
     }
   )
@@ -155,10 +167,10 @@ const Account: NextPage = () => {
   // Read Ownerhash from CCIP2 Resolver
   const { data: _Ownerhash_ } = useContractRead(
     ccip2Config, // CCIP2 Resolver
-    'ownerhash',
+    'getRecordhash',
     {
       args: [
-        ethers.utils.keccak256(ethers.utils.solidityPack(['address'], [accountData?.address ? accountData?.address : constants.zeroAddress]))
+        ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase()
       ]
     }
   )
@@ -166,7 +178,7 @@ const Account: NextPage = () => {
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead(
     ccip2Config, // CCIP2 Resolver
-    'recordhash',
+    'getRecordhash',
     {
       args: [
         ethers.utils.namehash(process)
@@ -228,15 +240,17 @@ const Account: NextPage = () => {
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (previewModalState.trigger && previewModalState.modalData) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger) { // Trigger update when one of the names is migrated
       let _LIST = meta
       const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
       const _update = async () => {
         if (previewModalState.modalData) {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
-          const flag = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config) // Get updated Recordhash
-          _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
-            _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Ownerhash
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
+            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
+            _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
           )
         }
       }
@@ -326,6 +340,7 @@ const Account: NextPage = () => {
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
+    console.log('here')
     const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
     if (!finish && length === 0 && _wallet !== wallet) {
       setLoading(true); // Show loading state when calling logTokens
@@ -361,7 +376,7 @@ const Account: NextPage = () => {
                 'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
               })
               setProcess(allTokens[i].title)
-              const __Recordhash = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config)
+              const __Recordhash = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress)
               items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
                 __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
                 items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
@@ -383,7 +398,7 @@ const Account: NextPage = () => {
       loadTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, ownerhash])
+  }, [accountData, finish, length, wallet])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -410,15 +425,21 @@ const Account: NextPage = () => {
   }, [getting])
 
   React.useEffect(() => {
-    if (_Owner_ && _Owner_?.toString() !== constants.zeroAddress) {
-      setManager(_Owner_.toString())
-    } else if (tab !== 'OWNER') {
+    if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
+      if (_OwnerLegacy_.toString() === constants.ensContracts[3]) {
+        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+          setManager(_OwnerWrapped_.toString())
+        }
+      } else {
+        setManager(_OwnerLegacy_.toString())
+      }
+    } else if (activeTab !== 'OWNER') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000)
     }
-  }, [tokenID, _Owner_, tab])
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_])
 
   // Handle search for a name
   React.useEffect(() => {
@@ -436,7 +457,7 @@ const Account: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (recordhash && recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash && recordhash.toString() !== '0x' && (recordhash.toString() !== ownerhash.toString()) && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '3/4'
@@ -462,9 +483,14 @@ const Account: NextPage = () => {
   }, [manager, accountData?.address, query, recordhash, ownerhash])
 
   React.useEffect(() => {
-    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
-      setErrorModal(false)
-      setLoading(false)
+    if (success) {
+      if (_OwnerLegacy_ && _OwnerLegacy_.toString() !== constants.zeroAddress) {
+        setErrorModal(false)
+        setLoading(false)
+      } else if (_OwnerWrapped_ && _OwnerWrapped_.toString() !== constants.zeroAddress) {
+        setErrorModal(false)
+        setLoading(false)
+      }
     } else {
       setLoading(false)
     }
@@ -474,14 +500,14 @@ const Account: NextPage = () => {
   // Capture Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_) {
-      setRecordhash(_Recordhash_.toString())
+      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
     }
-  }, [_Recordhash_])
+  }, [_Recordhash_, _Ownerhash_])
 
   // Capture Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_) {
-      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_!.toString()).decoded}`)
+      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
     }
   }, [_Ownerhash_])
 
@@ -489,9 +515,21 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (query) {
       try {
-        let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let token = ethers.BigNumber.from(labelhash)
-        setTokenID(token.toString())
+        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let _token = ethers.BigNumber.from(_labelhash)
+        setTokenIDLegacy(_token.toString())
+      } catch (error) {
+      }
+    }
+  }, [query])
+
+  // Format query to ENS name and get tokenID
+  React.useEffect(() => {
+    if (query) {
+      try {
+        let _namehash = ethers.utils.namehash(query)
+        let _token = ethers.BigNumber.from(_namehash)
+        setTokenIDWrapper(_token.toString())
       } catch (error) {
       }
     }
@@ -508,13 +546,13 @@ const Account: NextPage = () => {
     hash: response2of2?.hash,
   });
 
-  // Handles setting Recordhash after transaction 2 
+  // Handles setting Ownerhash after transaction 2 
   React.useEffect(() => {
-    if (isSetOwnerhashSuccess && txSuccess2of2) {
+    if (txSuccess2of2) {
       setOwnerhash(`ipns://${CID}`)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetOwnerhashSuccess, txSuccess2of2]);
+  }, [txSuccess2of2]);
 
   // Handles Ownerhash transaction loading and error
   React.useEffect(() => {
@@ -881,18 +919,19 @@ const Account: NextPage = () => {
               }}>
               <button
                 onClick={() => {
-                  setTab('OWNER'),
-                  setMeta(cache),
-                  setTokenID(''),
+                  setActiveTab('OWNER'),
+                  cache.length > 0 ? setMeta(cache) : '',
+                  setTokenIDLegacy(''),
+                  setTokenIDWrapper(''),
                   setQuery(''),
                   setSuccess(false),
                   setManager(''),
-                  setLoading(true),
+                  cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
                   setErrorModal(false),
                   setKeypair(['', '', ''])
                 }}
                 className='button-header'
-                disabled={tab === 'OWNER'}
+                disabled={activeTab === 'OWNER'}
                 data-tooltip='Show names you own'
               >
                 <div
@@ -909,9 +948,9 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  tab === 'SEARCH' ? '' : setCache(flash),
+                  activeTab === 'SEARCH' ? '' : setCache(flash),
                   setMeta([]),
-                  setTab('UTILS'),
+                  setActiveTab('UTILS'),
                   setSuccess(false),
                   setManager(''),
                   setLoading(true),
@@ -921,7 +960,7 @@ const Account: NextPage = () => {
                   setMessage('Please Wait')
                 }}
                 className='button-header'
-                disabled={tab === 'UTILS'}
+                disabled={activeTab === 'UTILS'}
                 data-tooltip='NameSys Utility Functions'
               >
                 <div
@@ -938,9 +977,9 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  tab === 'UTILS' ? '' : setCache(flash),
+                  activeTab === 'UTILS' ? '' : setCache(flash),
                   setMeta([]),
-                  setTab('SEARCH'),
+                  setActiveTab('SEARCH'),
                   setSuccess(false),
                   setManager(''),
                   setLoading(true),
@@ -949,7 +988,7 @@ const Account: NextPage = () => {
                   setMessage('Please Wait')
                 }}
                 className='button-header'
-                disabled={tab === 'SEARCH'}
+                disabled={activeTab === 'SEARCH'}
                 data-tooltip='Search for an ENS name'
               >
                 <div
@@ -1006,7 +1045,7 @@ const Account: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    { tab !== 'OWNER' ? `${message}` :
+                    { activeTab !== 'OWNER' ? `${message}` :
                       (previewModalState.modalData ? 'Please wait' : `${message}`)
                     }
                   </div>
@@ -1017,7 +1056,7 @@ const Account: NextPage = () => {
                       fontFamily: 'SF Mono'
                     }}
                   >
-                    { tab !== 'OWNER' || length < 3 ? '' :
+                    { activeTab !== 'OWNER' || length < 3 ? '' :
                       (previewModalState.modalData ? '' : `${progress}/${length}`)
                     }
                   </div>
@@ -1026,7 +1065,7 @@ const Account: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && 
+          {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected && 
            !empty && wallet === accountData?.address && !finish && (
             <div>
               <div
@@ -1074,7 +1113,7 @@ const Account: NextPage = () => {
               <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected &&
+          {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected &&
            !empty && wallet !== accountData?.address && (
             <div>
               <div
@@ -1101,7 +1140,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('Please use the search tab if any names are missing in the list')
+                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: skyblue">search</span> tab for missing names</span>')
                   }}
                 >
                   <div
@@ -1114,7 +1153,7 @@ const Account: NextPage = () => {
                   </div>
                 </button>
               </div>
-              {tab === 'OWNER' && !loading && (
+              {activeTab === 'OWNER' && !loading && (
                 <div
                   className='list-container'
                   style={{
@@ -1132,7 +1171,7 @@ const Account: NextPage = () => {
               )}
             </div>
           )}
-          {!loading && tab === 'SEARCH' && meta.length > 0 && isConnected && !empty && (
+          {!loading && activeTab === 'SEARCH' && meta.length > 0 && isConnected && !empty && (
             <div>
               <div
                 style={{
@@ -1163,7 +1202,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && tab === 'UTILS' && !success && meta && isConnected && (
+          {!loading && activeTab === 'UTILS' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -1189,7 +1228,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('NameSys Utility Functions to set Ownerhash and Export Keys')
+                    setHelp('<span>NameSys Utility Functions to set <span style="color: skyblue">Ownerhash</span> and <span style="color: skyblue">Export Keys</span></span>')
                   }}
                 >
                   <div
@@ -1238,7 +1277,7 @@ const Account: NextPage = () => {
                       setModal(true),
                       setIcon('info'),
                       setColor('skyblue'),
-                      setHelp('Sets Ownerhash For All Names in a Wallet')
+                      setHelp('<span>Sets <span style="color: skyblue">Ownerhash</span> For All Names in a Wallet</span>')
                     }}
                     data-tooltip='Set New Ownerhash'
                   >
@@ -1336,7 +1375,7 @@ const Account: NextPage = () => {
                       setModal(true),
                       setIcon('info'),
                       setColor('skyblue'),
-                      setHelp('Export your IPNS and/or Records Signer Keys')
+                      setHelp('<span>Export your <span style="color: skyblue">IPNS</span> and/or Records <span style="color: skyblue">Signer</span> Keys</span>')
                     }}
                     data-tooltip='Export Keys'
                   >
@@ -1484,7 +1523,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && tab === 'SEARCH' && !success && meta && isConnected && (
+          {!loading && activeTab === 'SEARCH' && !success && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -1509,7 +1548,7 @@ const Account: NextPage = () => {
                     setModal(true),
                     setIcon('info'),
                     setColor('skyblue'),
-                    setHelp('Search for a name that you own')
+                    setHelp('<span>Search for a name that you <span style="color: skyblue">own</span></span>')
                   }}
                 >
                   <div
@@ -1536,7 +1575,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && empty && tab === 'OWNER' && (
+          {!loading && empty && activeTab === 'OWNER' && (
             <div>
               <div
                 style={{
@@ -1560,7 +1599,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!response && !manager && query && tab !== 'OWNER' && !loading && (
+          {!response && !manager && query && activeTab !== 'OWNER' && !loading && (
             <div>
               <div
                 style={{
@@ -1642,7 +1681,8 @@ const Account: NextPage = () => {
             <Error
               onClose={() => {
                 setErrorModal(false),
-                setTokenID(''),
+                setTokenIDLegacy(''),
+                setTokenIDWrapper(''),
                 setQuery(''),
                 setManager('')
               }}
@@ -1654,7 +1694,8 @@ const Account: NextPage = () => {
             <Error
               onClose={() => {
                 setErrorModal(false),
-                setTokenID(''),
+                setTokenIDLegacy(''),
+                setTokenIDWrapper(''),
                 setQuery(''),
                 setManager('')
               }}

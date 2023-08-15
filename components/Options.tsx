@@ -1,6 +1,7 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
+import Help from '../components/Help'
 
 interface ModalProps {
   show: boolean;
@@ -11,8 +12,9 @@ interface ModalProps {
 }
 
 const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState("");
-  const [browser, setBrowser] = React.useState(false);
+  const [browser, setBrowser] = React.useState(false)
+  const [helpModal, setHelpModal] = React.useState(false)
+  const [help, setHelp] = React.useState('')
   
   React.useEffect(() => {
     setBrowser(true);
@@ -67,55 +69,123 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
-        <button 
-            className="button-option"
+          {/* Top Button */}
+          <div
             style={{
-              height: '35px',
-              width: '160px',
-              marginTop: '15px',
-              fontSize: '15px',
-              fontWeight: '700'
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center'
             }}
-            onClick={ handleOwnerhashSubmit }
-            data-tooltip={ children ? 'Use Preset Global Ownerhash' : 'No Global Ownerhash Found' }
-            disabled={ !children }
           >
-            <div 
+            <button 
+              className="button-option"
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'
+                height: '35px',
+                width: '160px',
+                marginTop: '15px',
+                fontSize: '15px',
+                fontWeight: '700'
               }}
+              onClick={ handleOwnerhashSubmit }
+              data-tooltip={ children ? 'Use Preset Global Ownerhash' : 'No Global Ownerhash Found' }
+              disabled={ !children }
             >
-              { 'Ownerhash' }&nbsp;<span className="material-icons chonk">recycling</span>
-            </div>
-          </button>
-          <button 
-            className="button-option"
+              <div 
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                { 'Ownerhash' }&nbsp;<span className="material-icons chonk">recycling</span>
+              </div>
+            </button>
+            <button 
+              className="button-tiny"
+              onClick={() => { 
+                setHelpModal(true),
+                setHelp('<span><span style="color: skyblue">Ownerhash</span> works for all your names in the wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: skyblue">Ownerhash</span></span>')
+              }}
+              data-tooltip={ 'Cheaper but Slower Option' }
+            >
+              <div 
+                className="material-icons smol"
+                style={{ 
+                  color: 'skyblue',
+                  marginLeft: '5px',
+                  marginTop: '21px'
+                }}
+              >
+                info_outline 
+              </div>
+            </button>
+          </div>
+          {/* Bottom Button */}
+          <div
             style={{
-              height: '35px',
-              width: '160px',
-              marginTop: '20px',
-              fontSize: '15px',
-              fontWeight: '700'
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center'
             }}
-            onClick={ handleRecordhashSubmit }
-            data-tooltip='Set New On-chain Recordhash'
           >
-            <div 
+            <button 
+              className="button-option"
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center'              
+                height: '35px',
+                width: '160px',
+                marginTop: '20px',
+                fontSize: '15px',
+                fontWeight: '700'
               }}
+              onClick={ handleRecordhashSubmit }
+              data-tooltip='Set New On-chain Recordhash'
             >
-              { 'Recordhash' }&nbsp;<span className="material-icons chonk">create</span>
-            </div>
-          </button>
+              <div 
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'              
+                }}
+              >
+                { 'Recordhash' }&nbsp;<span className="material-icons chonk">create</span>
+              </div>
+            </button>
+            <button 
+              className="button-tiny"
+              onClick={() => { 
+                setHelpModal(true),
+                setHelp('<span><span style="color: skyblue">Recordhash</span> is specific to each name and it is a faster but expensive option</span>')
+              }}
+              data-tooltip={ 'Faster but Expensive Option' }
+            >
+              <div 
+                className="material-icons smol"
+                style={{ 
+                  color: 'skyblue',
+                  marginLeft: '5px',
+                  marginTop: '21px'
+                }}
+              >
+                info_outline 
+              </div>
+            </button>
+          </div>
         </StyledModalBody>
       </StyledModal>
+      <div id="modal-inner">
+        <Help
+          color={ 'lightblue' }
+          _ENS_={ 'info' }
+          onClose={() => setHelpModal(false)}
+          show={helpModal}
+        >
+          { help }
+        </Help>
+      </div>
     </StyledModalOverlay>
   ) : null;
 
