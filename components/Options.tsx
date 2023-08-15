@@ -106,14 +106,14 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: skyblue">Ownerhash</span> works for all your names in the wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: skyblue">Ownerhash</span></span>')
+                setHelp('<span><span style="color: cyan">Ownerhash</span> works for all your names in the wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: cyan">Ownerhash</span></span>')
               }}
               data-tooltip={ 'Cheaper but Slower Option' }
             >
               <div 
                 className="material-icons smol"
                 style={{ 
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginLeft: '5px',
                   marginTop: '21px'
                 }}
@@ -158,14 +158,14 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: skyblue">Recordhash</span> is specific to each name and it is a faster but expensive option</span>')
+                setHelp('<span><span style="color: cyan">Recordhash</span> is specific to each name and it is a faster but expensive option</span>')
               }}
               data-tooltip={ 'Faster but Expensive Option' }
             >
               <div 
                 className="material-icons smol"
                 style={{ 
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginLeft: '5px',
                   marginTop: '21px'
                 }}
@@ -227,7 +227,7 @@ const StyledModalTitle = styled.div`
   color: white;
   padding-left: 20px;
   padding-right: 20px;
-  color: skyblue;
+  color: cyan;
 `;
 
 const StyledModalHeader = styled.div`

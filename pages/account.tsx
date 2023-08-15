@@ -55,7 +55,7 @@ const Account: NextPage = () => {
   const [query, setQuery] = React.useState('')
   const [savings, setSavings] = React.useState('')
   const [icon, setIcon] = React.useState('')
-  const [color, setColor] = React.useState('skyblue')
+  const [color, setColor] = React.useState('cyan')
   const [getting, setGetting] = React.useState(0)
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('')
@@ -289,7 +289,7 @@ const Account: NextPage = () => {
     if (!keypair[0] && !keypair[1] && signature) {
       const keygen = async () => {
         let _origin = 'eth:' + accountData?.address
-        let _caip10 = `eip155:${_Chain_}`  // CAIP-10
+        let _caip10 = `eip155:${_Chain_}:${accountData?.address}`  // CAIP-10
         const __keypair = await _KEYGEN(_origin, _caip10, signature, saltModalState.modalData)
         setKeypair([__keypair[0][0], __keypair[1][0], __keypair[0][1]])
       };
@@ -340,7 +340,6 @@ const Account: NextPage = () => {
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    console.log('here')
     const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
     if (!finish && length === 0 && _wallet !== wallet) {
       setLoading(true); // Show loading state when calling logTokens
@@ -1122,7 +1121,7 @@ const Account: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -1139,14 +1138,14 @@ const Account: NextPage = () => {
                   onClick={() => {
                     setModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: skyblue">search</span> tab for missing names</span>')
+                    setColor('cyan'),
+                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: cyan">search</span> tab for missing names</span>')
                   }}
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
@@ -1179,7 +1178,7 @@ const Account: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -1210,7 +1209,7 @@ const Account: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -1227,14 +1226,14 @@ const Account: NextPage = () => {
                   onClick={() => {
                     setModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('<span>NameSys Utility Functions to set <span style="color: skyblue">Ownerhash</span> and <span style="color: skyblue">Export Keys</span></span>')
+                    setColor('cyan'),
+                    setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
                   }}
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
@@ -1259,7 +1258,7 @@ const Account: NextPage = () => {
                     justifyContent: 'center',
                     display: 'flex',
                     fontSize: '18px',
-                    color: 'skyblue',
+                    color: 'cyan',
                     marginBottom: '25px',
                     fontWeight: '700'
                   }}
@@ -1276,15 +1275,15 @@ const Account: NextPage = () => {
                     onClick={() => {
                       setModal(true),
                       setIcon('info'),
-                      setColor('skyblue'),
-                      setHelp('<span>Sets <span style="color: skyblue">Ownerhash</span> For All Names in a Wallet</span>')
+                      setColor('cyan'),
+                      setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
                     }}
                     data-tooltip='Set New Ownerhash'
                   >
                     <div
                       className="material-icons smol"
                       style={{
-                        color: 'skyblue'
+                        color: 'cyan'
                       }}
                     >
                       info_outline
@@ -1357,7 +1356,7 @@ const Account: NextPage = () => {
                     justifyContent: 'center',
                     display: 'flex',
                     fontSize: '18px',
-                    color: 'skyblue',
+                    color: 'cyan',
                     marginBottom: '25px',
                     fontWeight: '700'
                   }}
@@ -1374,15 +1373,15 @@ const Account: NextPage = () => {
                     onClick={() => {
                       setModal(true),
                       setIcon('info'),
-                      setColor('skyblue'),
-                      setHelp('<span>Export your <span style="color: skyblue">IPNS</span> and/or Records <span style="color: skyblue">Signer</span> Keys</span>')
+                      setColor('cyan'),
+                      setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
                     }}
                     data-tooltip='Export Keys'
                   >
                     <div
                       className="material-icons smol"
                       style={{
-                        color: 'skyblue'
+                        color: 'cyan'
                       }}
                     >
                       info_outline
@@ -1422,7 +1421,7 @@ const Account: NextPage = () => {
                     data-tooltip='Copy IPNS Key'
                     style={{
                       marginLeft: '-25px',
-                      color: color && !keypair[0] ? color : 'skyblue'   
+                      color: color && !keypair[0] ? color : 'cyan'   
                     }}
                   >
                     <span 
@@ -1470,7 +1469,7 @@ const Account: NextPage = () => {
                     data-tooltip='Copy Manager Key'
                     style={{
                       marginLeft: '-25px',
-                      color: color && !keypair[1] ? color : 'skyblue'   
+                      color: color && !keypair[1] ? color : 'cyan'   
                     }}
                   >
                     <span 
@@ -1531,7 +1530,7 @@ const Account: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px'
                 }}
               >
@@ -1547,14 +1546,14 @@ const Account: NextPage = () => {
                   onClick={() => {
                     setModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('<span>Search for a name that you <span style="color: skyblue">own</span></span>')
+                    setColor('cyan'),
+                    setHelp('<span>Search for a name that you <span style="color: cyan">own</span></span>')
                   }}
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline

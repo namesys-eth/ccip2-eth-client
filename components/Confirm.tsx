@@ -1,6 +1,7 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
+import Help from '../components/Help'
 
 interface ModalProps {
   show: boolean;
@@ -10,9 +11,8 @@ interface ModalProps {
   handleTrigger: (data: boolean) => void;
 }
 
-const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState("");
-  const [browser, setBrowser] = React.useState(false);
+const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
+  const [browser, setBrowser] = React.useState(false)
   
   React.useEffect(() => {
     setBrowser(true);
@@ -23,8 +23,8 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
     onClose();
   };
 
-  const handleSubmit = () => {
-    handleModalData(inputValue);
+  const handleConfirmSubmit = () => {
+    handleModalData('0');
     handleTrigger(true);
     onClose();
   };
@@ -50,66 +50,70 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 fontSize: '46px'
               }}
             >
-              key
-            </div>
-            <div
-              style={{
-                marginTop: '10px'
-              }}
-            >
-              Please enter your secret IPNS key identifier
+              notification_important
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
-          <input 
-            id='keyid'
-            key='0'
-            placeholder='key identifier'
-            type='password'
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value)
-            }}
-            style={{ 
-              background: 'black',
-              outline: 'none',
-              border: 'none',
-              padding: '5px',
-              borderRadius: '3px',
-              fontFamily: 'SF Mono',
-              letterSpacing: '-0.5px',
-              fontWeight: '400',
-              fontSize: '14px',
-              width: '100%',
-              wordWrap: 'break-word',
-              textAlign: 'left',
-              color: 'rgb(255, 255, 255, 0.6)',
-              cursor: 'copy'
-            }}
-          />
-          <button 
-            className="button"
+          {/* Button */}
+          <div
             style={{
-              height: '28px',
-              width: '120px',
-              marginTop: '15px',
-              fontSize: '14px'
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center'
             }}
-            onClick={ handleSubmit }
-            data-tooltip='Click to proceed'
           >
-            <div 
+            <div
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: '13px'
+                lineHeight: '16px',
+                fontWeight: '700'
               }}
             >
-              { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
+              <span
+                style={{
+                  marginTop: '15px',
+                  fontSize: '15px'
+                }}
+              >
+                Please note that this will set a new on-chain &nbsp;
+              </span>
+              <span style={{ color: 'cyan', fontWeight: '700' }}>
+                Recordhash
+              </span>&nbsp;
+              for this name. If you intend to set a new &nbsp;
+              <span style={{ color: 'cyan', fontWeight: '700' }}>
+                Ownerhash
+              </span>,&nbsp;
+              please update it in &nbsp;
+              <span style={{ color: 'orange', fontWeight: '700' }}>
+                UTILS
+              </span>&nbsp;
+              tab
             </div>
-          </button>
+            <button 
+              className="button-option"
+              style={{
+                height: '35px',
+                width: '130px',
+                marginTop: '25px',
+                fontSize: '15px',
+                fontWeight: '700'
+              }}
+              onClick={ handleConfirmSubmit }
+              data-tooltip={ 'Confirm' }
+            >
+              <div 
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                { 'Confirm' }&nbsp;<span className="material-icons chonk">thumb_up_alt</span>
+              </div>
+            </button>
+          </div>
         </StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
@@ -126,10 +130,10 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
 };
 
 const StyledModalBody = styled.div`
-  padding-top: 0px;
+  padding-top: 10px;
   padding-left: 20px;
   padding-right: 20px;
-  padding-bottom: 25px;
+  padding-bottom: 15px;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -143,13 +147,13 @@ const StyledModalBody = styled.div`
 `;
 
 const StyledModalTitle = styled.div`
-  margin-top: -15px;
-  font-size: 14px;
+  margin-top: -10px;
+  font-size: 17px;
   display: flex;
   justify-content: center;
   flex-direction: column;
   font-weight: 700;
-  margin-bottom: 15px;
+  margin-bottom: 0px;
   color: white;
   padding-left: 20px;
   padding-right: 20px;
@@ -164,15 +168,13 @@ const StyledModalHeader = styled.div`
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
-  width: auto;
-  max-width: 60%;
-  height: 198px;
+  width: 450px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
   text-align: center;
   justify-content: center;
-  padding: 3px;
+  padding: 5px;
 `;
 
 const StyledModalOverlay = styled.div`
@@ -187,4 +189,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 0.1);
 `;
 
-export default Salt;
+export default Confirm;

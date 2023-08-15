@@ -741,7 +741,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -758,14 +758,14 @@ const Home: NextPage = () => {
                   onClick={() => {
                     setModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
+                    setColor('cyan'),
                     setHelp('search results for your query')
                   }}
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
