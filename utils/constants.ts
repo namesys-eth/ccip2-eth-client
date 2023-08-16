@@ -64,31 +64,31 @@ export const ccip2Interface = [
   iCCIP2Mainnet,
 ]
 export const ensConfig = [
-  { // Legacy Registry
+  { 
     addressOrName: ensContracts[0],
     contractInterface: ensInterface[0]
   },
-  { // Legacy Registrar [!!!] Redundant
+  {
     addressOrName: ensContracts[1],
     contractInterface: ensInterface[1]
   },
-  { // Legacy Resolver [!!!] Redundant
+  { 
     addressOrName: ensContracts[2],
     contractInterface: ensInterface[2]
   },
-  { // Name Wrapper
+  { 
     addressOrName: ensContracts[3],
     contractInterface: ensInterface[3]
   },
-  { // Universal Resolver Goerli (used for gas simulations)
+  { 
     addressOrName: ensContracts[4],
     contractInterface: ensInterface[4]
   },
-  { // Public Resolver Mainnet (used for gas simulations)
+  { 
     addressOrName: ensContracts[5],
     contractInterface: ensInterface[5]
   },
-  { // Universal Resolver Mainnet (used for gas simulations)
+  { 
     addressOrName: ensContracts[6],
     contractInterface: ensInterface[6]
   }

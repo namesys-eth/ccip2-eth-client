@@ -57,7 +57,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
             <span 
               style={{ 
                 marginBottom: '-3px',
-                color: '#bfbfbf'
+                color: 'white'
               }}
             >
               <div
@@ -326,12 +326,13 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                       flexDirection: 'row',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      fontSize: '14px'
+                      fontSize: '14px',
+                      fontWeight: '700'
                     }}
                   >
                       { label }&nbsp;
                       <span className="material-icons smoller">
-                        {label === "view" ? 'open_in_new' : 'manage_history'}
+                        {label === "view" ? 'visibility' : 'manage_history'}
                       </span>
                   </div>
               </button>

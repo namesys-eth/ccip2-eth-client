@@ -19,10 +19,11 @@ import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
-import MainSearchBox from '../components/MainSearchBox'
+import BigSearch from '../components/BigSearch'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
 import * as ensContent from '../utils/contenthash'
+import { isMainThread } from 'worker_threads'
 
 /// Homepage
 const Home: NextPage = () => {
@@ -40,7 +41,8 @@ const Home: NextPage = () => {
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [tokenID, setTokenID] = React.useState('')
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
   const [savings, setSavings] = React.useState('')
@@ -72,11 +74,20 @@ const Home: NextPage = () => {
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
   // Get Owner with ethers.js
-  async function getOwner(provider: any, _tokenID: string) {
-    const contract = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider);
-    const _addr = await contract.ownerOf(_tokenID);
-    if (_addr === ethers.constants.AddressZero) { return '0x' }
-    return _addr
+  async function getOwner(provider: any) {
+    const contractLegacy = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider);
+    const _OwnerLegacy = await contractLegacy.ownerOf(tokenIDLegacy);
+    const contractWrapper = new ethers.Contract(constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName, constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface, provider);
+    const _OwnerWrapped = await contractWrapper.ownerOf(tokenIDWrapper);
+    if (_OwnerLegacy === ethers.constants.AddressZero) { return '0x' }
+    if (_OwnerLegacy === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+      if (_OwnerWrapped !== ethers.constants.AddressZero) {
+        return _OwnerWrapped
+      } else {
+        return '0x'
+      }
+    }
+    return _OwnerLegacy
   }
 
   // Get Recordhash with ethers.js
@@ -172,24 +183,35 @@ const Home: NextPage = () => {
   }
 
   /// ENS Domain Search Functionality
-  // Read ENS Legacy Registry for Controller record of ENS domain
-  const { data: _Controller_ } = useContractRead(
+  // Read ENS Legacy Registrar for Owner record of ENS domain
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead(
     constants.ensConfig[1],
-    'getApproved',
+    'ownerOf',
     {
       args: [
-        tokenID
+        tokenIDLegacy
+      ]
+    }
+  )
+
+  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
+  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead(
+    constants.ensConfig[0],
+    'owner',
+    {
+      args: [
+        tokenIDLegacy
       ]
     }
   )
 
   // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _Owner_, isLoading: ownerLoading, isError: ownerError } = useContractRead(
-    constants.ensConfig[1],
+  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead(
+    constants.ensConfig[_Chain_ === '1' ? 7 : 3],
     'ownerOf',
     {
       args: [
-        tokenID
+        tokenIDWrapper
       ]
     }
   )
@@ -218,20 +240,42 @@ const Home: NextPage = () => {
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (_Owner_) {
-      setManager(_Owner_.toString())
-      setOwner(_Owner_.toString())
+    if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
+      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+          setManager(_OwnerWrapped_.toString())
+          setOwner(_OwnerWrapped_.toString())
+        }
+      } else {
+        setManager(_OwnerLegacy_.toString())
+        setOwner(_OwnerLegacy_.toString())
+      }
     } else {
-      if (!ownerLoading && !ownerError) setOwner('0x')
+      if (_OwnerDomain_ && _OwnerDomain_?.toString() !== constants.zeroAddress) {
+        if (_OwnerDomain_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+          if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+            setManager(_OwnerWrapped_.toString())
+            setOwner(_OwnerWrapped_.toString())
+          } else if (wrapperError) {
+            setOwner('0x')
+          }
+        } else {
+          setOwner(_OwnerDomain_.toString())
+          setManager(_OwnerDomain_.toString())
+        }
+      } else {
+        setOwner('0x')
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenID, _Owner_])
+  }, [tokenIDLegacy, _OwnerLegacy_, tokenIDWrapper, _OwnerWrapped_, _OwnerDomain_])
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
-    if (!accountData?.address && tokenID && tokenID !== '0x' && query && query !== '') {
+    if (!accountData?.address && tokenIDLegacy && tokenIDWrapper && query && query !== ''
+      ) {
       const _setOrigins = async () => {
-        let _Owner = await getOwner(constants.provider, tokenID)
+        let _Owner = await getOwner(constants.provider)
         let _Recordhash = await getRecordhash(constants.provider, query)
         let _Ownerhash = await getOwnerhash(constants.provider, _Owner)
         if (_Owner) {
@@ -257,7 +301,7 @@ const Home: NextPage = () => {
       _setOrigins()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, tokenID])
+  }, [query, tokenIDLegacy, tokenIDWrapper])
 
   // Shows search result for ENS domain search
   React.useEffect(() => {
@@ -313,66 +357,49 @@ const Home: NextPage = () => {
   // End name query
   React.useEffect(() => {
     if (success && recordhash && ownerhash && owner) {
-      if (accountData?.address) {
-        /* If wallet is connected */
-        if (!ownerLoading && !ownerError) {
-          if (owner !== '0x' && owner !== constants.zeroAddress) {
-            setErrorModal(false)
-            setTimeout(() => {
-              setLoading(false)
-            }, 2000)
-            setEmpty(false)
-          } else {
-            setErrorMessage('Name not Registered')
-            setErrorModal(true)
-            setLoading(false)
-            setEmpty(true)
-            setQuery('')
-          }
-        } else if (ownerError) {
-          setErrorMessage('Failed to Fetch')
-          setErrorModal(true)
+      if (owner !== '0x' && owner !== constants.zeroAddress) {
+        setErrorModal(false)
+        setTimeout(() => {
           setLoading(false)
-          setEmpty(true)
-          setQuery('')
-        }
+        }, 2000)
+        setEmpty(false)
       } else {
-        /* If wallet is not connected */
-        if (owner !== '0x' && owner !== constants.zeroAddress) {
-          setErrorModal(false)
-          setTimeout(() => {
-            setLoading(false)
-          }, 2000)
-          setEmpty(false)
-        } else {
-          setErrorMessage('Name not Registered')
-          setErrorModal(true)
-          setLoading(false)
-          setEmpty(true)
-          setQuery('')
-        }
+        setErrorMessage('Name not Registered')
+        setErrorModal(true)
+        setLoading(false)
+        setEmpty(true)
+        setQuery('')
       }      
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success, owner, recordhash, ownerhash, ownerLoading, ownerError])
-
+  }, [success, owner, recordhash, ownerhash, legacyLoading, legacyError, wrapperLoading, wrapperError])
 
   // Sets tokenID for ENS domain search result
   React.useEffect(() => { 
     if (query) {
       try {
-        let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let token = ethers.BigNumber.from(labelhash)
-        setTokenID(token.toString())
+        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let _token = ethers.BigNumber.from(_labelhash)
+        if (query.split('.').length == 2) {
+          setTokenIDLegacy(_token.toString())
+        } else {
+          console.log(ethers.utils.namehash(query))
+          setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
+        }
+        let __labelhash = ethers.utils.namehash(query)
+        let __token = ethers.BigNumber.from(__labelhash)
+        setTokenIDWrapper(__token.toString())
       } catch (error) {
       }
     }
-  }, [query])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, owner, manager])
 
   // Triggers search of ENS domain
   const handleNameSearch = (query: string) => {
     setMeta([])
-    setTokenID('')
+    setTokenIDLegacy('')
+    setTokenIDWrapper('')
     setManager('')
     setLoading(true)
     setSearchType('search')
@@ -668,7 +695,7 @@ const Home: NextPage = () => {
               marginBottom: '50px',
             }}
           >
-            <MainSearchBox
+            <BigSearch
               onSearch={handleNameSearch}
             />
           </div>
@@ -836,7 +863,8 @@ const Home: NextPage = () => {
             <Error
               onClose={() => {
                 setErrorModal(false),
-                  setTokenID(''),
+                  setTokenIDLegacy(''),
+                  setTokenIDWrapper(''),
                   setQuery(''),
                   setManager('')
               }}

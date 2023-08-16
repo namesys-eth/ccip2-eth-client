@@ -142,8 +142,8 @@ const Account: NextPage = () => {
   })  // Wagmi Signature hook
 
   /// ENS Domain Config
-  // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _OwnerLegacy_ } = useContractRead(
+  // Read ENS Legacy Registrar for Owner record of ENS domain via tokenID
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
@@ -153,9 +153,20 @@ const Account: NextPage = () => {
     }
   )
 
+  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
+  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead(
+    constants.ensConfig[0],
+    'owner',
+    {
+      args: [
+        tokenIDLegacy
+      ]
+    }
+  )
+
   // Read ownership of a domain from ENS Wrapper
-  const { data: _OwnerWrapped_ } = useContractRead(
-    constants.ensConfig[3], // ENS Wrapper
+  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead(
+    constants.ensConfig[_Chain_ === '1' ? 7 : 3], // ENS Wrapper
     'ownerOf',
     {
       args: [
@@ -257,6 +268,7 @@ const Account: NextPage = () => {
       _update()
       setMeta(_LIST)
       setFlash(_LIST)
+      setCache(_LIST)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewModalState])
@@ -390,6 +402,7 @@ const Account: NextPage = () => {
               setMeta(items)
               setFlash(items)
               setLoading(false)
+              setSuccess(true)
             }
           }
         } 
@@ -425,20 +438,33 @@ const Account: NextPage = () => {
 
   React.useEffect(() => {
     if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
-      if (_OwnerLegacy_.toString() === constants.ensContracts[3]) {
+      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
           setManager(_OwnerWrapped_.toString())
         }
       } else {
         setManager(_OwnerLegacy_.toString())
       }
-    } else if (activeTab !== 'OWNER') {
+    } else {
+      if (_OwnerDomain_ && _OwnerDomain_?.toString() !== constants.zeroAddress) {
+        if (_OwnerDomain_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+          if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+            setManager(_OwnerWrapped_.toString())
+          } else if (wrapperError) {
+            setManager('')
+          }
+        } else {
+          setManager(_OwnerDomain_.toString())
+        }
+      }
+    } 
+    if (activeTab !== 'OWNER') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
       }, 2000)
     }
-  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_])
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_])
 
   // Handle search for a name
   React.useEffect(() => {
@@ -461,40 +487,26 @@ const Account: NextPage = () => {
               } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '3/4'
               }
-              setFlash(meta)
               setMeta(items)
               setSuccess(true)
+              setLoading(false)
             } else {
               setSuccess(false)
               setErrorMessage('Name not Registered')
               setErrorModal(true)
+              setLoading(false)
             }
           })
       }
       setMetadata()
-    } else if (manager && manager !== accountData?.address)  {
+    } else if (manager && manager !== accountData?.address && query.length > 0) {
       setLoading(false)
       setSuccess(false)
-      setErrorMessage('You are not Owner or Manager')
+      setErrorMessage('You are not Owner')
       setErrorModal(true)
-    }
+    } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, accountData?.address, query, recordhash, ownerhash])
-
-  React.useEffect(() => {
-    if (success) {
-      if (_OwnerLegacy_ && _OwnerLegacy_.toString() !== constants.zeroAddress) {
-        setErrorModal(false)
-        setLoading(false)
-      } else if (_OwnerWrapped_ && _OwnerWrapped_.toString() !== constants.zeroAddress) {
-        setErrorModal(false)
-        setLoading(false)
-      }
-    } else {
-      setLoading(false)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success])
 
   // Capture Recordhash hook
   React.useEffect(() => {
@@ -514,27 +526,26 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (query) {
       try {
-        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let _token = ethers.BigNumber.from(_labelhash)
-        setTokenIDLegacy(_token.toString())
-      } catch (error) {
-      }
-    }
-  }, [query])
-
-  // Format query to ENS name and get tokenID
-  React.useEffect(() => {
-    if (query) {
-      try {
         let _namehash = ethers.utils.namehash(query)
         let _token = ethers.BigNumber.from(_namehash)
         setTokenIDWrapper(_token.toString())
+      } catch (error) {
+      }
+      try {
+        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let _token = ethers.BigNumber.from(_labelhash)
+        if (query.split('.').length == 2) {
+          setTokenIDLegacy(_token.toString())
+        } else {
+          setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
+        }
       } catch (error) {
       }
     }
   }, [query])
 
   const handleNameSearch = (query: string) => {
+    setMeta([])
     setLoading(true)
     setIsSearch(true)
     setProcess(query)
@@ -927,10 +938,11 @@ const Account: NextPage = () => {
                   setManager(''),
                   cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
                   setErrorModal(false),
-                  setKeypair(['', '', ''])
+                  setKeypair(['', '', '']),
+                  !cache ? setWallet(constants.zeroAddress) : setSuccess(true)
                 }}
                 className='button-header'
-                disabled={activeTab === 'OWNER'}
+                disabled={activeTab === 'OWNER' || loading}
                 data-tooltip='Show names you own'
               >
                 <div
@@ -959,7 +971,7 @@ const Account: NextPage = () => {
                   setMessage('Please Wait')
                 }}
                 className='button-header'
-                disabled={activeTab === 'UTILS'}
+                disabled={activeTab === 'UTILS' || loading}
                 data-tooltip='NameSys Utility Functions'
               >
                 <div
@@ -987,7 +999,7 @@ const Account: NextPage = () => {
                   setMessage('Please Wait')
                 }}
                 className='button-header'
-                disabled={activeTab === 'SEARCH'}
+                disabled={activeTab === 'SEARCH' || loading}
                 data-tooltip='Search for an ENS name'
               >
                 <div
@@ -1061,7 +1073,6 @@ const Account: NextPage = () => {
                   </div>
                 </div>
               </div>
-              <h1>please wait</h1>
             </div>
           )}
           {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected && 
@@ -1109,7 +1120,6 @@ const Account: NextPage = () => {
                   </div>
                 </div>
               </div>
-              <h1>please wait</h1>
             </div>
           )}
           {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected &&
@@ -1152,7 +1162,7 @@ const Account: NextPage = () => {
                   </div>
                 </button>
               </div>
-              {activeTab === 'OWNER' && !loading && (
+              {activeTab === 'OWNER' && !loading && success && (
                 <div
                   className='list-container'
                   style={{
@@ -1522,7 +1532,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && activeTab === 'SEARCH' && !success && meta && isConnected && (
+          {!loading && activeTab === 'SEARCH' && meta && isConnected && (
             <div>
               <div
                 style={{
@@ -1531,7 +1541,8 @@ const Account: NextPage = () => {
                   display: 'flex',
                   fontSize: '18px',
                   color: 'cyan',
-                  marginBottom: '25px'
+                  marginBottom: '25px',
+                  marginTop: meta ? '-15px' : '0px'
                 }}
               >
                 <span
@@ -1574,7 +1585,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && empty && activeTab === 'OWNER' && (
+          {!loading && empty && activeTab === 'OWNER' && !errorModal && (
             <div>
               <div
                 style={{
@@ -1598,7 +1609,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!response && !manager && query && activeTab !== 'OWNER' && !loading && (
+          {!response && !manager && query && activeTab !== 'OWNER' && !loading && !errorModal && (
             <div>
               <div
                 style={{
@@ -1685,7 +1696,7 @@ const Account: NextPage = () => {
                 setQuery(''),
                 setManager('')
               }}
-              show={errorModal && !isSearch && manager && !loading}
+              show={errorModal && !isSearch && !loading}
               title={'block'}
             >
               { errorMessage }
@@ -1698,10 +1709,10 @@ const Account: NextPage = () => {
                 setQuery(''),
                 setManager('')
               }}
-              show={errorModal && isSearch && manager && !loading}
+              show={errorModal && isSearch && !loading}
               title={'block'}
             >
-              {'Not Owned By You'}
+              { errorMessage }
             </Error>
             <Salt
                 handleTrigger={handleSaltTrigger}

@@ -34,7 +34,7 @@ const Error = ({ show, onClose, title, children }) => {
             <div className="material-icons miui-small">{title}</div>
           </div>
           </StyledModalTitle>}
-        <StyledModalBody>{children}</StyledModalBody>
+        <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
   ) : null;
@@ -51,12 +51,19 @@ const Error = ({ show, onClose, title, children }) => {
 
 const StyledModalBody = styled.div`
   padding-top: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 10px;
   display: flex;
+  height: auto;
   justify-content: center;
   overflow-y: auto;
   font-size: 18px;
   color: white;
   font-weight: 700;
+  text-align: center;
+  align-items: center;
+  line-height: 20px;
 `;
 
 const StyledModalTitle = styled.div`
@@ -77,7 +84,7 @@ const StyledModalHeader = styled.div`
 const StyledModal = styled.div`
   background: red;
   width: 400px;
-  height: 150px;
+  height: auto;
   border-radius: 6px;
   padding: 15px;
   overflow-y: initial !important

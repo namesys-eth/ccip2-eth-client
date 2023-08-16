@@ -95,7 +95,7 @@ const StyledModal = styled.div`
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
-  text-align: center;
+  padding: 15px;
   justify-content: center;
 `;
 

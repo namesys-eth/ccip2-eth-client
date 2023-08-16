@@ -131,7 +131,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
   const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
-  const [tokenID, setTokenID] = React.useState(''); // Token ID of ENS Domain
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState(''); // Wrapper Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
@@ -199,8 +200,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
   const web3 = new Web3(alchemyEndpoint);
   let caip10 = `eip155:${process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'}:${accountData?.address}`  // CAIP-10
-  let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_.split('.eth')[0]))
-  let token = ethers.BigNumber.from(labelhash)
 
   // Initialises internal LIST[] object
   function setMetadata(_recordhash: string) {
@@ -418,23 +417,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   };
 
   /// Preview Domain Metadata
-  // Read Legacy ENS Registry for ENS domain Controller
-  const { data: _ControllerLegacy_ } = useContractRead(
-    constants.ensConfig[1],
-    'getApproved',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
   // Read Legacy ENS Registry for ENS domain Owner
   const { data: _OwnerLegacy_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
     {
       args: [
-        tokenID
+        tokenIDLegacy
       ]
     }
   )
@@ -448,11 +437,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   )
   // Read ownership of a domain from ENS Wrapper
   const { data: _OwnerWrapped_ } = useContractRead(
-    constants.ensConfig[3], // ENS Wrapper
+    constants.ensConfig[chain === '1' ? 7 : 3], // ENS Wrapper
     'ownerOf',
     {
       args: [
-        tokenID
+        tokenIDWrapper
       ]
     }
   )
@@ -473,16 +462,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     {
       args: [
         ethers.utils.namehash(ENS)
-      ]
-    }
-  )
-  // Get Manager from ENS Wrapper
-  const { data: _ManagerWrapped_ } = useContractRead(
-    constants.ensConfig[3], // ENS Wrapper
-    'getApproved',
-    {
-      args: [
-        tokenID
       ]
     }
   )
@@ -515,23 +494,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Returns Owner of wrapped/legacy ENS Domain
   function getOwner() {
-    // If domain is wrapped, return owner of token (in new contract) as the controller
-    if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
+    if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
       return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
     } else {
-      // If domain is unwrapped, return owner of token (in legacy contract) as the controller
       return _OwnerLegacy_ ? _OwnerLegacy_.toString() : constants.zeroAddress
-    }
-  }
-
-  // Returns Controller of wrapped/legacy ENS Domain
-  function getController() {
-    // If domain is wrapped, return manager of token (in new contract) as the controller
-    if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
-      return _ManagerWrapped_ ? _ManagerWrapped_.toString() : constants.zeroAddress
-    } else {
-      // If domain is unwrapped, return manager of token (in legacy contract) as the controller
-      return _ControllerLegacy_ ? _ControllerLegacy_.toString() : constants.zeroAddress
     }
   }
                         
@@ -571,23 +537,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Sets in-app ENS domain manager
   React.useEffect(() => {
     if (accountData?.address) {
-      let _OwnerWrapped_ = getOwner()
-      //let _ManagerWrapped_ = getController()
+      let _Owner_ = getOwner()
       // Set Managers
       if (onChainManager && onChainManager.toString() === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([accountData.address])
       } else {
         // Set owner and controller as in-app managers if no on-chain manager exists
-        setManagers([_OwnerWrapped_])
+        setManagers([_Owner_])
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenID, _OwnerLegacy_, onChainManager])
+  }, [tokenIDLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
-    if (_OwnerLegacy_?.toString() === constants.ensContracts[3]) {
+    if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
       setWrapped(true)
     } else {
       setWrapped(false)
@@ -612,7 +577,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     setBrowser(true) 
     if (browser) {
-      setTokenID(token.toString())
+      let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_.split('.eth')[0]))
+      let namehash = ethers.utils.namehash(_ENS_)
+      setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
+      setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
       getResolver()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -698,7 +666,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     isSuccess: isMigrateSuccess,
     isError: isMigrateError
   } = useContractWrite(
-    !wrapped ? constants.ensConfig[0] : constants.ensConfig[3],
+    !wrapped ? constants.ensConfig[0] : constants.ensConfig[chain === '1' ? 7 : 3],
     'setResolver',
     {
       args: [

@@ -8,7 +8,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
   const [query, setQuery] = useState("")
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value)
+    setQuery(event.target.value.toLowerCase())
   };
 
   const handleInputInvalid = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +43,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
         <input
           type="text"
           placeholder={"search .eth name".toLowerCase()}
-          value={query}
+          value={query.toLowerCase()}
           name=".eth search"
           id="eth-search"
           onChange={handleInputChange}
