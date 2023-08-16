@@ -417,10 +417,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   };
 
   /// Preview Domain Metadata
-  // Read Legacy ENS Registry for ENS domain Owner
+  // Read Legacy ENS Registrar for ENS domain Owner
   const { data: _OwnerLegacy_ } = useContractRead(
     constants.ensConfig[1],
     'ownerOf',
+    {
+      args: [
+        tokenIDLegacy
+      ]
+    }
+  )
+   // Read Legacy ENS Registry for ENS domain Owner
+   const { data: _OwnerDomain_ } = useContractRead(
+    constants.ensConfig[0],
+    'owner',
     {
       args: [
         tokenIDLegacy
@@ -494,10 +504,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Returns Owner of wrapped/legacy ENS Domain
   function getOwner() {
-    if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
-      return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
+    if (_OwnerLegacy_) {
+      if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
+        return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
+      } else {
+        return _OwnerLegacy_.toString()
+      }
     } else {
-      return _OwnerLegacy_ ? _OwnerLegacy_.toString() : constants.zeroAddress
+      if (_OwnerDomain_) {
+        if (_OwnerDomain_ && _OwnerDomain_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
+          return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
+        } else {
+          return _OwnerDomain_.toString()
+        }
+      } else {
+        return constants.zeroAddress
+      }
     }
   }
                         
@@ -507,9 +529,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (trigger !== 'resolver') {
         if (trigger === 'recordhash') {
           setConfirm(true)
+          setHashType('recordhash')
         }
       } else {
         if (optionsModalState.trigger) {
+          setHashType(optionsModalState.modalData === '1' ? 'recordhash' : 'ownerhash')
           migrate()
         }
       }
@@ -579,7 +603,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (browser) {
       let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(_ENS_.split('.eth')[0]))
       let namehash = ethers.utils.namehash(_ENS_)
-      setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
+      if (_ENS_.split('.').length > 2) {
+        setTokenIDLegacy(namehash)
+      } else {
+        setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
+      }
+      
       setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
       getResolver()
     }
@@ -1026,10 +1055,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (history && queue && resolver) {
       if (recordhash) {
         setMetadata(recordhash)
+        setHashType('recordhash')
       } else if (ownerhash) {
         setMetadata(ownerhash)
+        setHashType('ownerhash')
       } else {
         setMetadata('')
+        setHashType('recordhash')
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1686,8 +1718,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           marginRight: '15px'
                         }}
                       >
-                        { // Label
-                        item.header }
+                        { // Label Recordhash/Ownerhash
+                        item.type === 'recordhash' && (
+                          <span>
+                            { hashType }
+                          </span>
+                        )}
+                        { // Label+
+                        item.type !== 'recordhash' && (
+                          <span>
+                            { item.header }
+                          </span>
+                        )}
                         { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
                         ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
                           <button 

@@ -66,7 +66,7 @@ const StyledModalBody = styled.div`
   margin-top: 0px;
   margin-left: 40px;
   margin-right: 40px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
   height: auto;
