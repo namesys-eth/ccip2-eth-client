@@ -373,7 +373,10 @@ const Account: NextPage = () => {
         if (_Cache.length === 0) {
           setEmpty(true)
         } else {
-          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress)
+          const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
+          const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase())
+          let __Recordhash: boolean = false
+          let __Ownerhash: boolean = false
           for (var i = 0; i < allTokens.length; i++) {
             // ISSUE: ENS Metadata service is broken and not showing all the names
             if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
@@ -387,7 +390,15 @@ const Account: NextPage = () => {
                 'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
               })
               setProcess(allTokens[i].title)
-              const __Recordhash = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress)
+              const _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
+              if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
+                __Recordhash = false
+              } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
+                __Recordhash = true
+              }
+              if (_Ownerhash_ && _Ownerhash_ !== '0x') {
+                __Ownerhash = true
+              }
               items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
                 __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
                 items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
