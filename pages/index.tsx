@@ -75,8 +75,14 @@ const Home: NextPage = () => {
 
   // Get Owner with ethers.js
   async function getOwner(provider: any) {
-    const contractLegacy = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider);
-    const _OwnerLegacy = await contractLegacy.ownerOf(tokenIDLegacy);
+    let _OwnerLegacy: string = ''
+    if (query.split('.').length == 2) {
+      const contractLegacy = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider);
+      _OwnerLegacy = await contractLegacy.ownerOf(tokenIDLegacy);
+    } else {
+      const contractLegacy = new ethers.Contract(constants.ensConfig[0].addressOrName, constants.ensConfig[0].contractInterface, provider);
+      _OwnerLegacy = await contractLegacy.owner(tokenIDLegacy);
+    }   
     const contractWrapper = new ethers.Contract(constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName, constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface, provider);
     const _OwnerWrapped = await contractWrapper.ownerOf(tokenIDWrapper);
     if (_OwnerLegacy === ethers.constants.AddressZero) { return '0x' }

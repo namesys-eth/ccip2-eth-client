@@ -572,17 +572,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager])
+  }, [tokenIDLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager, _OwnerDomain_, tokenIDWrapper])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
-    if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
-      setWrapped(true)
+    if (_OwnerLegacy_) {
+      if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
+        setWrapped(true)
+      } else {
+        setWrapped(false)
+      }
     } else {
-      setWrapped(false)
+      if (_OwnerDomain_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
+        setWrapped(true)
+      } else {
+        setWrapped(false)
+      }
     }
+    
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_OwnerLegacy_])
+  }, [_OwnerLegacy_, _OwnerDomain_])
 
   // Send data to Home/Account-page and trigger update
   const handleSuccess = () => {
