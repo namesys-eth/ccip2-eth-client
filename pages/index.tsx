@@ -28,7 +28,7 @@ import { isMainThread } from 'worker_threads'
 /// Homepage
 const Home: NextPage = () => {
   const { chain: activeChain } = useNetwork()
-  const { address: _Wallet_, isConnected } = useAccount()
+  const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [modal, setModal] = React.useState(false)
@@ -488,7 +488,7 @@ const Home: NextPage = () => {
                 className='button'
                 onClick={() => { window.location.href = isProduction ? '/account.html' : '/account' }}
                 data-tooltip='My Names'
-                disabled={!isConnected}
+                disabled={isDisconnected}
               >
                 <div
                   style={{
@@ -798,7 +798,7 @@ const Home: NextPage = () => {
                 }}
               >
                 <List
-                  label={isConnected && manager === _Wallet_ ? 'edit' : 'view'}
+                  label={(!isDisconnected || isConnected) && manager === _Wallet_ ? 'edit' : 'view'}
                   items={meta}
                   onItemClick={onItemClick}
                 />

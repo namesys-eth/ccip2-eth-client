@@ -35,7 +35,7 @@ import * as ensContent from '../utils/contenthash'
 
 const Account: NextPage = () => {
   const { chain: activeChain } = useNetwork()
-  const { address: _Wallet_, isConnected } = useAccount()
+  const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [modal, setModal] = React.useState(false)
@@ -771,7 +771,7 @@ const Account: NextPage = () => {
                 textAlign: 'center',
                 paddingTop: '100px'
               }}>
-              {!isMobile && !isConnected && (
+              {!isMobile && isDisconnected && (
                 <div>
                   <img
                     className="icon-ccip2"
@@ -797,7 +797,7 @@ const Account: NextPage = () => {
                   </h4>
                 </div>
               )}
-              {!isMobile && isConnected && (
+              {!isMobile && (isConnected || !isDisconnected) && (
                 <div 
                   style={{ 
                     marginTop: '0px',
@@ -828,7 +828,7 @@ const Account: NextPage = () => {
                   </h4>
                 </div>
               )}
-              {isMobile && !isConnected && (
+              {isMobile && isDisconnected && (
                 <div>
                   <img
                     className="icon-ccip2"
@@ -856,7 +856,7 @@ const Account: NextPage = () => {
                   </h4>
                 </div>
               )}
-              {isMobile && isConnected && (
+              {isMobile && (isConnected || !isDisconnected) && (
                 <div 
                   style={{ 
                     marginTop: '-15px',
@@ -892,7 +892,7 @@ const Account: NextPage = () => {
             </div>
           </div>
           <br></br><br></br>
-          {!isConnected && (
+          {isDisconnected && (
             <div
               style={{
                 marginBottom: '0px'
@@ -912,7 +912,7 @@ const Account: NextPage = () => {
               </div></div>
             </div>
           )}
-          {isConnected && (
+          {(isConnected || !isDisconnected) && (
             <div
               style={{
                 alignItems: 'center',
@@ -1011,7 +1011,7 @@ const Account: NextPage = () => {
               </button>
             </div>
           )}
-          {loading && isConnected && (
+          {loading && (isConnected || !isDisconnected) && (
             <div>
               <div
                 style={{
@@ -1070,7 +1070,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected && 
+          {!loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) && 
            !empty && wallet === _Wallet_ && !finish && (
             <div>
               <div
@@ -1117,7 +1117,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected &&
+          {!loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) &&
            !empty && wallet === _Wallet_ && (
             <div>
               <div
@@ -1175,7 +1175,7 @@ const Account: NextPage = () => {
               )}
             </div>
           )}
-          {!loading && activeTab === 'SEARCH' && meta.length > 0 && isConnected && !empty && (
+          {!loading && activeTab === 'SEARCH' && meta.length > 0 && (isConnected || !isDisconnected) && !empty && (
             <div>
               <div
                 style={{
@@ -1206,7 +1206,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && activeTab === 'UTILS' && !success && meta && isConnected && (
+          {!loading && activeTab === 'UTILS' && !success && meta && (isConnected || !isDisconnected) && (
             <div>
               <div
                 style={{
@@ -1527,7 +1527,7 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && activeTab === 'SEARCH' && meta && isConnected && (
+          {!loading && activeTab === 'SEARCH' && meta && (isConnected || !isDisconnected) && (
             <div>
               <div
                 style={{

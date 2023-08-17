@@ -46,7 +46,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
             display: 'flex',
             flexDirection: 'column',
             width: '100%',
-            marginLeft: !isMobile ? '-8%' : '-9%'
+            marginLeft: !isMobile ? '-9.5%' : '-10.5%'
           }}
         >
           <div
