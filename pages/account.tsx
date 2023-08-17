@@ -39,14 +39,14 @@ const Account: NextPage = () => {
   const [meta, setMeta] = React.useState<any[]>([])  // Stores all names and their states
   const [faqModal, setFaqModal] = React.useState(false) // Controls FAQ modal
   const [helpModal, setHelpModal] = React.useState(false) // Controls Help modal 
-  const [termsModal, setTermsModal] = React.useState(false)
-  const [errorModal, setErrorModal] = React.useState(false)
-  const [errorMessage, setErrorMessage] = React.useState('')
-  const [previewModal, setPreviewModal] = React.useState(false)
-  const [nameToPreviewModal, setNameToPreview] = React.useState('')
-  const [loading, setLoading] = React.useState(true)
-  const [empty, setEmpty] = React.useState(false)
-  const [success, setSuccess] = React.useState(false)
+  const [termsModal, setTermsModal] = React.useState(false) // Controls Terms modal
+  const [errorModal, setErrorModal] = React.useState(false) // Controls Error modal
+  const [errorMessage, setErrorMessage] = React.useState('') // Sets Error message
+  const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
+  const [nameToPreviewModal, setNameToPreview] = React.useState('') // Sets name to expand in preview
+  const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
+  const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
+  const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
   const [activeTab, setActiveTab] = React.useState('OWNER')
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
@@ -804,7 +804,8 @@ const Account: NextPage = () => {
                     style={{
                       fontSize: '52px',
                       color: '#fc6603',
-                      marginBottom: '20px' 
+                      marginBottom: '20px',
+                      marginTop: '30px'
                     }}
                   >
                     NameSys
@@ -842,8 +843,8 @@ const Account: NextPage = () => {
               {isMobile && (isConnected || !isDisconnected) && (
                 <div 
                   style={{ 
-                    marginTop: '-15px',
-                    marginBottom: '20px' 
+                    marginTop: '-30px',
+                    marginBottom: isMobile ? '10px' : '2px'
                   }}
                 >
                   <img
@@ -858,7 +859,7 @@ const Account: NextPage = () => {
                     style={{
                       fontSize: '40px',
                       color: '#fc6603',
-                      marginBottom: '20px' 
+                      marginTop: '10px' 
                     }}
                   >
                     NameSys
@@ -867,7 +868,6 @@ const Account: NextPage = () => {
               )}
             </div>
           </div>
-          <br></br><br></br>
           {isDisconnected && (
             <div
               style={{
@@ -896,8 +896,9 @@ const Account: NextPage = () => {
                 display: 'flex',
                 flexDirection: 'row',
                 marginBottom: '50px',
-                marginTop: '-30px',
-              }}>
+                marginTop: isMobile ? '-35px' : '2px'
+              }}
+            >
               <button
                 onClick={() => {
                   setActiveTab('OWNER'),
