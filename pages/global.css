@@ -55,12 +55,6 @@
 		padding: 0;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 body {
   margin: 0;
   font-family: "Spotnik";
@@ -102,7 +96,12 @@ body {
   }
 }
 
+.iekbcc0 {
+  max-width: 197.5vw;
+}
+
 .page {
+  max-width: 100vw !important;
   height: auto;
   border-radius: 4px;
   overflow-x: hidden;

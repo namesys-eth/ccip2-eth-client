@@ -288,7 +288,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
             </span>
             <div>
               <a 
-                href={`https://app.ens.domains/name/${item.name}.eth`} 
+                href={`https://app.ens.domains/name/${item.name.toLowerCase()}.eth`} 
                 target='_blank'
                 rel="noreferrer"
               >
@@ -300,7 +300,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
               </a>
               <a 
                 style={{ marginRight: '15px' }}
-                href={`https://ens.vision/name/${item.name}.eth`} 
+                href={`https://ens.vision/name/${item.name}`} 
                 target='_blank'            
                 rel="noreferrer"      
               >

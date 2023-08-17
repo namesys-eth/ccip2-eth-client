@@ -27,9 +27,8 @@ import { isMainThread } from 'worker_threads'
 
 /// Homepage
 const Home: NextPage = () => {
-  const { activeChain, } = useNetwork()
-  const { data: accountData } = useAccount()
-  const { isConnected } = useConnect()
+  const { chain: activeChain } = useNetwork()
+  const { address: _Wallet_, isConnected } = useAccount()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [modal, setModal] = React.useState(false)
@@ -158,8 +157,8 @@ const Home: NextPage = () => {
       const _update = async () => {
         if (previewModalState.modalData) {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData.split(':')[0]) // Get updated Resolver
-          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.split(':')[0], ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Recordhash
-          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Ownerhash
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.split(':')[0], ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
           _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
             _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
             _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
@@ -189,60 +188,45 @@ const Home: NextPage = () => {
   }
 
   /// ENS Domain Search Functionality
-  // Read ENS Legacy Registrar for Owner record of ENS domain
-  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead(
-    constants.ensConfig[1],
-    'ownerOf',
-    {
-      args: [
-        tokenIDLegacy
-      ]
-    }
-  )
+  // Read ENS Legacy Registrar for Owner record of ENS domain via TokenID
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[1].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDLegacy]
+  })
 
   // Read ENS Legacy Registry for Owner record of ENS domain via namehash
-  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead(
-    constants.ensConfig[0],
-    'owner',
-    {
-      args: [
-        tokenIDLegacy
-      ]
-    }
-  )
+  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
+    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[0].contractInterface,
+    functionName: 'owner',
+    args: [tokenIDLegacy]
+  })
 
-  // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead(
-    constants.ensConfig[_Chain_ === '1' ? 7 : 3],
-    'ownerOf',
-    {
-      args: [
-        tokenIDWrapper
-      ]
-    }
-  )
+  // Read ENS Wrapper for Owner record of ENS domain
+  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+    address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDWrapper]
+  })
 
   // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'getRecordhash',
-    {
-      args: [
-        ethers.utils.namehash(query)
-      ]
-    }
-  )
+  const { data: _Recordhash_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.namehash(query)]
+  })
 
   // Read Ownerhash from CCIP2 Resolver
-  const { data: _Ownerhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'getRecordhash',
-    {
-      args: [
-        ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase()
-      ]
-    }
-  )
+  const { data: _Ownerhash_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+  })
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
@@ -278,7 +262,7 @@ const Home: NextPage = () => {
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
-    if (!accountData?.address && tokenIDLegacy && tokenIDWrapper && query && query !== ''
+    if (!_Wallet_ && tokenIDLegacy && tokenIDWrapper && query && query !== ''
       ) {
       const _setOrigins = async () => {
         let _Owner = await getOwner(constants.provider)
@@ -343,7 +327,7 @@ const Home: NextPage = () => {
 
   // Captures Recordhash hook
   React.useEffect(() => {
-    if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && accountData?.address) {
+    if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && _Wallet_) {
       setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
     } else {
       setRecordhash('ipns://')
@@ -352,7 +336,7 @@ const Home: NextPage = () => {
   }, [_Recordhash_, _Ownerhash_])
   // Captures Ownerhash hook
   React.useEffect(() => {
-    if (_Ownerhash_ && accountData?.address) {
+    if (_Ownerhash_ && _Wallet_) {
       setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
     } else {
       setOwnerhash('ipns://')
@@ -412,7 +396,7 @@ const Home: NextPage = () => {
     setRecordhash('')
     setOwner('')
     setOnSearch(true)
-    if (accountData?.address) {
+    if (_Wallet_) {
     } else {
       setOwnerhash('')
     }  
@@ -423,7 +407,7 @@ const Home: NextPage = () => {
     <div
       className="page"
       style={{
-        maxWidth: '100%',
+        maxWidth: '100vw',
         justifyContent: 'center',
         display: 'flex',
         flexDirection: 'column',
@@ -814,7 +798,7 @@ const Home: NextPage = () => {
                 }}
               >
                 <List
-                  label={isConnected && manager === accountData?.address ? 'edit' : 'view'}
+                  label={isConnected && manager === _Wallet_ ? 'edit' : 'view'}
                   items={meta}
                   onItemClick={onItemClick}
                 />

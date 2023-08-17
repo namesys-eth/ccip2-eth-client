@@ -34,9 +34,8 @@ import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 
 const Account: NextPage = () => {
-  const { activeChain, } = useNetwork()
-  const { data: accountData } = useAccount()
-  const { isConnected } = useConnect()
+  const { chain: activeChain } = useNetwork()
+  const { address: _Wallet_, isConnected } = useAccount()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [modal, setModal] = React.useState(false)
@@ -142,60 +141,45 @@ const Account: NextPage = () => {
   })  // Wagmi Signature hook
 
   /// ENS Domain Config
-  // Read ENS Legacy Registrar for Owner record of ENS domain via tokenID
-  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead(
-    constants.ensConfig[1],
-    'ownerOf',
-    {
-      args: [
-        tokenIDLegacy
-      ]
-    }
-  )
-
-  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
-  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead(
-    constants.ensConfig[0],
-    'owner',
-    {
-      args: [
-        tokenIDLegacy
-      ]
-    }
-  )
-
-  // Read ownership of a domain from ENS Wrapper
-  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead(
-    constants.ensConfig[_Chain_ === '1' ? 7 : 3], // ENS Wrapper
-    'ownerOf',
-    {
-      args: [
-        tokenIDWrapper
-      ]
-    }
-  )
-
-  // Read Ownerhash from CCIP2 Resolver
-  const { data: _Ownerhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'getRecordhash',
-    {
-      args: [
-        ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase()
-      ]
-    }
-  )
-
-  // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'getRecordhash',
-    {
-      args: [
-        ethers.utils.namehash(process)
-      ]
-    }
-  )
+    // Read ENS Legacy Registrar for Owner record of ENS domain via TokenID
+    const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+      address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+      abi: constants.ensConfig[1].contractInterface,
+      functionName: 'ownerOf',
+      args: [tokenIDLegacy]
+    })
+  
+    // Read ENS Legacy Registry for Owner record of ENS domain via namehash
+    const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
+      address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+      abi: constants.ensConfig[0].contractInterface,
+      functionName: 'owner',
+      args: [tokenIDLegacy]
+    })
+  
+    // Read ENS Wrapper for Owner record of ENS domain
+    const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+      address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
+      abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
+      functionName: 'ownerOf',
+      args: [tokenIDWrapper]
+    })
+  
+    // Read Recordhash from CCIP2 Resolver
+    const { data: _Recordhash_ } = useContractRead({
+      address: `0x${ccip2Config.addressOrName.slice(2)}`,
+      abi: ccip2Config.contractInterface,
+      functionName: 'getRecordhash',
+      args: [ethers.utils.namehash(query)]
+    })
+  
+    // Read Ownerhash from CCIP2 Resolver
+    const { data: _Ownerhash_ } = useContractRead({
+      address: `0x${ccip2Config.addressOrName.slice(2)}`,
+      abi: ccip2Config.contractInterface,
+      functionName: 'getRecordhash',
+      args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+    })
 
   // Sets Ownerhash in CCIP2 Resolver
   const {
@@ -204,15 +188,12 @@ const Account: NextPage = () => {
     isLoading: isSetOwnerhashLoading,
     isSuccess: isSetOwnerhashSuccess,
     isError: isSetOwnerhashError
-  } = useContractWrite(
-    ccip2Config,
-    'setOwnerhash',
-    {
-      args: [ 
-        constants.encodeContenthash(CID)
-      ]
-    }
-  );
+  } = useContractWrite({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'setOwnerhash',
+    args: [constants.encodeContenthash(CID)]
+  })
 
   // Get historical gas savings
   async function getSavings() {
@@ -257,8 +238,8 @@ const Account: NextPage = () => {
       const _update = async () => {
         if (previewModalState.modalData) {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
-          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Recordhash
-          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, accountData?.address ? accountData?.address : constants.zeroAddress) // Get updated Ownerhash
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
           _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
             _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
             _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
@@ -276,8 +257,8 @@ const Account: NextPage = () => {
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
     if (saltModalState.trigger && !keypair[0] && !keypair[1]) {
-      let _origin = 'eth:' + accountData?.address
-      let _caip10 = `eip155:${_Chain_}:${accountData?.address}`  // CAIP-10
+      let _origin = 'eth:' + _Wallet_
+      let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
       signMessage({ 
         message: statementIPNSKey(
           _origin,
@@ -286,7 +267,7 @@ const Account: NextPage = () => {
             ['bytes32', 'address'], 
             [
               ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
-              accountData?.address
+              _Wallet_
             ]
           ))
         ) 
@@ -300,8 +281,8 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (!keypair[0] && !keypair[1] && signature) {
       const keygen = async () => {
-        let _origin = 'eth:' + accountData?.address
-        let _caip10 = `eip155:${_Chain_}:${accountData?.address}`  // CAIP-10
+        let _origin = 'eth:' + _Wallet_
+        let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
         const __keypair = await _KEYGEN(_origin, _caip10, signature, saltModalState.modalData)
         setKeypair([__keypair[0][0], __keypair[1][0], __keypair[0][1]])
       };
@@ -335,7 +316,7 @@ const Account: NextPage = () => {
 
   // Handle wallet change by the user
   React.useEffect(() => {
-    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    let _wallet = _Wallet_ ? _Wallet_ : constants.zeroAddress
     if (!loading) setLoading(true)
     if (!finish && process && _wallet === wallet) { // Prohibit wallet change when names are loading
       setMessage('Loading Names')
@@ -348,11 +329,11 @@ const Account: NextPage = () => {
       setMessage('Loading Names')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, finish])
+  }, [_Wallet_, finish])
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
+    const _wallet = _Wallet_ ? _Wallet_ : constants.zeroAddress
     if (!finish && length === 0 && _wallet !== wallet) {
       setLoading(true); // Show loading state when calling logTokens
       setWallet(_wallet)
@@ -374,7 +355,7 @@ const Account: NextPage = () => {
           setEmpty(true)
         } else {
           const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
-          const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase())
+          const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase())
           let __Recordhash: boolean = false
           let __Ownerhash: boolean = false
           for (var i = 0; i < allTokens.length; i++) {
@@ -421,7 +402,7 @@ const Account: NextPage = () => {
       loadTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, finish, length, wallet])
+  }, [_Wallet_, finish, length, wallet])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -475,11 +456,12 @@ const Account: NextPage = () => {
         setResponse(false)
       }, 2000)
     }
-  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_, wrapperError])
 
   // Handle search for a name
   React.useEffect(() => {
-    if (manager && manager === accountData?.address && query.length > 0) {
+    if (manager && manager === _Wallet_ && query.length > 0) {
       setResponse(true)
       var allEns: string[] = []
       var items: any[] = []
@@ -512,14 +494,14 @@ const Account: NextPage = () => {
           })
       }
       setMetadata()
-    } else if (manager && manager !== accountData?.address && query.length > 0) {
+    } else if (manager && manager !== _Wallet_ && query.length > 0) {
       setLoading(false)
       setSuccess(false)
       setErrorMessage('You are not Owner')
       setErrorModal(true)
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, accountData?.address, query, recordhash, ownerhash])
+  }, [manager, _Wallet_, query, recordhash, ownerhash])
 
   // Capture Recordhash hook
   React.useEffect(() => {
@@ -1089,7 +1071,7 @@ const Account: NextPage = () => {
             </div>
           )}
           {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected && 
-           !empty && wallet === accountData?.address && !finish && (
+           !empty && wallet === _Wallet_ && !finish && (
             <div>
               <div
                 style={{
@@ -1136,7 +1118,7 @@ const Account: NextPage = () => {
             </div>
           )}
           {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected &&
-           !empty && wallet !== accountData?.address && (
+           !empty && wallet !== _Wallet_ && (
             <div>
               <div
                 style={{

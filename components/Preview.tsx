@@ -180,7 +180,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [onChainManager, setOnChainManager] = React.useState(''); // Sets CCIP2 Manager
 
   const { Revision } = Name // W3Name Revision object
-  const { data: accountData } = useAccount()
+  const { address: _Wallet_ } = useAccount()
   const recoveredAddress = React.useRef<string>()
   const { 
     data: signature, 
@@ -200,8 +200,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
   const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
   const web3 = new Web3(alchemyEndpoint);
-  const caip10 = `eip155:${chain}:${accountData?.address}`  // CAIP-10
-  const origin = `eth:${accountData?.address ? accountData?.address : constants.zeroAddress}`
+  const caip10 = `eip155:${chain}:${_Wallet_}`  // CAIP-10
+  const origin = `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}`
 
   // Initialises internal LIST[] object
   function setMetadata(_recordhash: string) {
@@ -416,64 +416,49 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   };
 
   /// Preview Domain Metadata
-  // Read Legacy ENS Registrar for ENS domain Owner
-  const { data: _OwnerLegacy_ } = useContractRead(
-    constants.ensConfig[1],
-    'ownerOf',
-    {
-      args: [
-        tokenIDLegacy
-      ]
-    }
-  )
+  // Read ENS Legacy Registrar for Owner record of ENS domain
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[1].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDLegacy]
+  })
    // Read Legacy ENS Registry for ENS domain Owner
-   const { data: _OwnerDomain_ } = useContractRead(
-    constants.ensConfig[0],
-    'owner',
-    {
-      args: [
-        tokenIDLegacy
-      ]
-    }
-  )
+   const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
+    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[0].contractInterface,
+    functionName: 'owner',
+    args: [tokenIDLegacy]
+  })
   // Read CCIP2 for ENS domain on-chain manager
-  const { data: _CCIP2Manager_ } = useContractRead(
-    ccip2Config,
-    'isApprovedSigner',
-    {
-      args: [getOwner(), ethers.utils.namehash(ENS), keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress]
-    }
-  )
+  const { data: _CCIP2Manager_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'isApprovedSigner',
+    args: [getOwner(), ethers.utils.namehash(ENS), keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress]
+  })
+
   // Read ownership of a domain from ENS Wrapper
-  const { data: _OwnerWrapped_ } = useContractRead(
-    constants.ensConfig[chain === '1' ? 7 : 3], // ENS Wrapper
-    'ownerOf',
-    {
-      args: [
-        tokenIDWrapper
-      ]
-    }
-  )
+  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+    address: `0x${constants.ensConfig[chain === '1' ? 7 : 3].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[chain === '1' ? 7 : 3].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDWrapper]
+  })
   // Read Ownerhash from CCIP2 Resolver
-  const { data: _Ownerhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'getRecordhash',
-    {
-      args: [
-        ethers.utils.hexZeroPad(accountData?.address ? accountData?.address : constants.zeroAddress, 32).toLowerCase()
-      ]
-    }
-  )
+  const { data: _Ownerhash_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+  })
   // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'getRecordhash',
-    {
-      args: [
-        ethers.utils.namehash(ENS)
-      ]
-    }
-  )
+  const { data: _Recordhash_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.namehash(_ENS_)]
+  })
 
   // Captures on-chain manager hook
   React.useEffect(() => {
@@ -559,12 +544,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Sets in-app ENS domain manager
   React.useEffect(() => {
-    if (accountData?.address) {
+    if (_Wallet_) {
       let _Owner_ = getOwner()
       // Set Managers
       if (onChainManager && onChainManager.toString() === 'true') {
         // Set connected account as in-app manager if it is authorised
-        setManagers([accountData.address])
+        setManagers([_Wallet_])
       } else {
         // Set owner and controller as in-app managers if no on-chain manager exists
         setManagers([_Owner_])
@@ -633,7 +618,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ['bytes32', 'address'], 
             [
               ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
-              accountData?.address
+              _Wallet_
             ]
           )),
           hashType
@@ -650,7 +635,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (sigIPNS && !keypair) {
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
-        const _origin = hashType === 'ownerhash' ? `eth:${accountData?.address ? accountData?.address : constants.zeroAddress}` : _ENS_
+        const _origin = hashType === 'ownerhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
         const __keypair = await _KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
         setKeypair(__keypair)
         setMessage(['IPNS Key Generated', ''])
@@ -702,16 +687,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     isLoading: isMigrateLoading,
     isSuccess: isMigrateSuccess,
     isError: isMigrateError
-  } = useContractWrite(
-    !wrapped ? constants.ensConfig[0] : constants.ensConfig[chain === '1' ? 7 : 3],
-    'setResolver',
-    {
-      args: [
-        ethers.utils.namehash(_ENS_), 
-        ccip2Contract
-      ]
-    }
-  );
+  } = useContractWrite({
+    address: `0x${!wrapped ? constants.ensConfig[0].addressOrName.slice(2) : constants.ensConfig[chain === '1' ? 7 : 3].addressOrName.slice(2)}`,
+    abi: !wrapped ? constants.ensConfig[0].contractInterface : constants.ensConfig[chain === '1' ? 7 : 3].contractInterface,
+    functionName: 'setResolver',
+    args: [ethers.utils.namehash(_ENS_), ccip2Contract]
+  })
 
   // Sets Recordhash in CCIP2 Resolver
   const {
@@ -720,16 +701,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     isLoading: isSetRecordhashLoading,
     isSuccess: isSetRecordhashSuccess,
     isError: isSetRecordhashError
-  } = useContractWrite(
-    ccip2Config,
-    'setRecordhash',
-    {
-      args: [
-        ethers.utils.namehash(_ENS_), 
-        constants.encodeContenthash(CID)
-      ]
-    }
-  );
+  } = useContractWrite({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'setRecordhash',
+    args: [ethers.utils.namehash(_ENS_), constants.encodeContenthash(CID)]
+  })
 
   // Get gas cost estimate for hypothetical on-chain record update
   async function getGas(key: string, value: string) {
@@ -740,11 +717,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       );
       let gasAmount: any
       if (key === 'contenthash') {
-        gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(_ENS_), ensContent.encodeContenthash(value).encoded).estimateGas({ from: accountData?.address })
+        gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(_ENS_), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
       } else if (key === 'avatar') {
-        gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address })
+        gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: _Wallet_ })
       } else if (key === 'addr') {
-        gasAmount = await contract.methods.setAddr(ethers.utils.namehash(_ENS_), value).estimateGas({ from: accountData?.address })
+        gasAmount = await contract.methods.setAddr(ethers.utils.namehash(_ENS_), value).estimateGas({ from: _Wallet_ })
       }
       return gasAmount
     }
@@ -898,7 +875,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function writeRevision(revision: Name.Revision, gas: {}) {
     const request = {
       ens: _ENS_,
-      owner: accountData?.address,
+      owner: _Wallet_,
       manager: keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress,
       managerSignature: sigApproved,
       revision: Revision.encode(revision),
@@ -1022,7 +999,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     const request = {
       type: 'read',
       ens: _ENS_,
-      owner: accountData?.address,
+      owner: _Wallet_,
       recordsTypes: 'all',
       recordsValues: 'all',
       chain: chain,
@@ -1199,7 +1176,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         manager: keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress,
         managerSignature: sigApproved,
         ens: _ENS_,
-        owner: accountData?.address ? accountData?.address : constants.zeroAddress,
+        owner: _Wallet_ ? _Wallet_ : constants.zeroAddress,
         ipns: CID,
         recordsTypes: states,
         recordsValues: _encodedValues,
@@ -1235,7 +1212,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     }
                     await _promise()	
                     _gas.then((value: number) => {	
-                      gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001	
+                      let _gasData = gasData && gasData.formatted && gasData.formatted.gasPrice ? Number(gasData.formatted.gasPrice) : 0
+                      gas[item.type] = value * _gasData * 0.000000001 * 0.000000001	
                     })	
                     if (item.type === 'avatar') {	
                       setAvatar(data.response.avatar)	
@@ -1946,8 +1924,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           !list[item.key].active ||
                           !legit[item.type] ||
                           item.state ||
-                          !accountData ||
-                          !managers.includes(accountData?.address ? accountData.address : '0x0c0cac01ac0ffeecafeNOTHEX')
+                          !_Wallet_ ||
+                          !managers.includes(_Wallet_ ? _Wallet_ : '0x0c0cac01ac0ffeecafeNOTHEX')
                         }
                         style={{
                           alignSelf: 'flex-end',
