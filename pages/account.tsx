@@ -34,11 +34,11 @@ import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 
 const Account: NextPage = () => {
-  const { chain: activeChain } = useNetwork()
-  const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount()
-  const [meta, setMeta] = React.useState<any[]>([])
-  const [faqModal, setFaqModal] = React.useState(false)
-  const [modal, setModal] = React.useState(false)
+  const { chain: activeChain } = useNetwork() // Wagmi useNetwork()
+  const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount() // Wagmi connector hook
+  const [meta, setMeta] = React.useState<any[]>([])  // Stores all names and their states
+  const [faqModal, setFaqModal] = React.useState(false) // Controls FAQ modal
+  const [helpModal, setHelpModal] = React.useState(false) // Controls Help modal 
   const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState('')
@@ -68,7 +68,6 @@ const Account: NextPage = () => {
   const [finish, setFinish] = React.useState(false) // Tracks NFT query processing
   const [crash, setCrash] = React.useState(false) // Tracks transactions failures
   const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
-  const [wallet, setWallet] = React.useState('') // Tracks wallet changes
   const [recordhash, setRecordhash] = React.useState('') // Recordhash
   const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
   const [keypair, setKeypair] = React.useState<string[]>(['', '', '']) // Exported keypairs [ed25519-priv, secp256k1, ed25519-pub]
@@ -316,30 +315,21 @@ const Account: NextPage = () => {
 
   // Handle wallet change by the user
   React.useEffect(() => {
-    let _wallet = _Wallet_ ? _Wallet_ : constants.zeroAddress
-    if (!loading) setLoading(true)
-    if (!finish && process && _wallet === wallet) { // Prohibit wallet change when names are loading
+    if (!finish && !success && process) { // Prohibit wallet change when names are loading
       setMessage('Loading Names')
-    } else if (!finish && process && _wallet !== wallet) {
-      setMessage('Please be Patient') // Print message on bad wallet change
-      setWallet(constants.zeroAddress)
-    } 
-    if (!finish && !process) { // Print message on load
-      setWallet(constants.zeroAddress)
-      setMessage('Loading Names')
+    } else if (!finish && !success && !process) { // Print message on load
+      setMessage('Failed to Fetch')
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Wallet_, finish, success])
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    const _wallet = _Wallet_ ? _Wallet_ : constants.zeroAddress
-    if (!finish && length === 0 && _wallet !== wallet) {
+    if (!finish && !success && length === 0 && _Wallet_) {
       setLoading(true); // Show loading state when calling logTokens
-      setWallet(_wallet)
       // Call logTokens directly here
       const loadTokens = async () => {
-        const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet)
+        const nfts = await constants.alchemy.nft.getNftsForOwner(_Wallet_)
         const allTokens = nfts.ownedNfts
         var allEns: string[] = []
         var items: any[] = []
@@ -402,7 +392,7 @@ const Account: NextPage = () => {
       loadTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Wallet_, finish, length, wallet])
+  }, [_Wallet_, finish, length])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -800,8 +790,8 @@ const Account: NextPage = () => {
               {!isMobile && (isConnected || !isDisconnected) && (
                 <div 
                   style={{ 
-                    marginTop: '0px',
-                    marginBottom: '20px' 
+                    marginTop: '-35px',
+                    marginBottom: '10px' 
                   }}
                 >
                   <img
@@ -819,13 +809,6 @@ const Account: NextPage = () => {
                   >
                     NameSys
                   </h4>
-                  <h4
-                    style={{
-                      fontSize: 22,
-                      color: '#eb8634'
-                    }}>
-                    Your Names
-                  </h4>
                 </div>
               )}
               {isMobile && isDisconnected && (
@@ -842,7 +825,7 @@ const Account: NextPage = () => {
                     style={{
                       fontSize: '52px',
                       color: '#fc6603',
-                      marginBottom: '20px' 
+                      marginBottom: '20px'
                     }}
                   >
                     NameSys
@@ -879,13 +862,6 @@ const Account: NextPage = () => {
                     }}
                   >
                     NameSys
-                  </h4>
-                  <h4
-                    style={{
-                      fontSize: 18,
-                      color: '#eb8634'
-                    }}>
-                    Your Names
                   </h4>
                 </div>
               )}
@@ -925,7 +901,8 @@ const Account: NextPage = () => {
               <button
                 onClick={() => {
                   setActiveTab('OWNER'),
-                  cache.length > 0 ? setMeta(cache) : '',
+                  console.log(cache.length)
+                  cache.length > 0 ? setMeta(cache) : console.error('BUG'),
                   setTokenIDLegacy(''),
                   setTokenIDWrapper(''),
                   setQuery(''),
@@ -934,7 +911,8 @@ const Account: NextPage = () => {
                   cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
                   setErrorModal(false),
                   setKeypair(['', '', '']),
-                  !cache ? setWallet(constants.zeroAddress) : setSuccess(true)
+                  !cache ? '' : setSuccess(true),
+                  console.log(loading)
                 }}
                 className='button-header'
                 disabled={activeTab === 'OWNER' || loading}
@@ -1070,8 +1048,8 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) && 
-           !empty && wallet === _Wallet_ && !finish && (
+          {loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) && 
+           !empty && !finish && (
             <div>
               <div
                 style={{
@@ -1118,7 +1096,7 @@ const Account: NextPage = () => {
             </div>
           )}
           {!loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) &&
-           !empty && wallet === _Wallet_ && (
+           !empty && (
             <div>
               <div
                 style={{
@@ -1141,7 +1119,7 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
+                    setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
                     setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: cyan">search</span> tab for missing names</span>')
@@ -1229,7 +1207,7 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
+                    setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
                     setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
@@ -1278,7 +1256,7 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setModal(true),
+                      setHelpModal(true),
                       setIcon('info'),
                       setColor('cyan'),
                       setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
@@ -1376,7 +1354,7 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setModal(true),
+                      setHelpModal(true),
                       setIcon('info'),
                       setColor('cyan'),
                       setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
@@ -1550,7 +1528,7 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
+                    setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
                     setHelp('<span>Search for a name that you <span style="color: cyan">own</span></span>')
@@ -1722,8 +1700,8 @@ const Account: NextPage = () => {
             <Help
                 color={ color }
                 _ENS_={ icon }
-                onClose={() => setModal(false)}
-                show={modal}
+                onClose={() => setHelpModal(false)}
+                show={helpModal}
               >
                 { help }
             </Help>
