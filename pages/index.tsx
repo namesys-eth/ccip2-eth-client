@@ -522,7 +522,7 @@ const Home: NextPage = () => {
             <div
               style={{
                 marginRight: !isMobile ? '15px' : '10px',
-                marginTop: !isMobile ? '8px' : '10px',
+                marginTop: !isMobile ? '6px' : '10px',
                 color: '#fc6603',
                 fontFamily: 'SF Mono',
                 fontSize: !isMobile ? '18px' : '13px',

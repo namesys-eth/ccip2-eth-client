@@ -96,8 +96,9 @@ const StyledModal = styled.div`
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
-  padding: 15px;
+  padding: 5px;
   justify-content: center;
+  text-align: center;
 `;
 
 const StyledModalOverlay = styled.div`

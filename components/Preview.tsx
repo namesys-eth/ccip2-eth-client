@@ -1637,15 +1637,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <div
               style={{
                 marginBottom: '15px',
-                marginTop: '-15px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
+                marginTop: '-15px'
               }}
             >
               <span
                 style={{
-                  color: 'orange',
+                  color: 'white',
                   fontSize: '20px',
                   fontWeight: '700',
                   fontFamily: 'SF Mono'
@@ -1668,7 +1665,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   fontSize: '11px', 
                   color: 'cyan',
                   fontWeight: '700',
-                  letterSpacing: '0px'
+                  letterSpacing: '0px',
+                  marginTop: '13px'
                 }}
               >
                 ETH
@@ -2104,7 +2102,7 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   width: auto;
-  min-width: 450px;
+  min-width: 400px;
   border-radius: 6px;
   padding-top: 0px;
   padding-left: 0px;

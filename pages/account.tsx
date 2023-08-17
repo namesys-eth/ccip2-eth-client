@@ -320,16 +320,16 @@ const Account: NextPage = () => {
     if (!loading) setLoading(true)
     if (!finish && process && _wallet === wallet) { // Prohibit wallet change when names are loading
       setMessage('Loading Names')
-    } else {
+    } else if (!finish && process && _wallet !== wallet) {
       setMessage('Please be Patient') // Print message on bad wallet change
       setWallet(constants.zeroAddress)
-    }
+    } 
     if (!finish && !process) { // Print message on load
       setWallet(constants.zeroAddress)
       setMessage('Loading Names')
-    }
+    } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Wallet_, finish])
+  }, [_Wallet_, finish, success])
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
@@ -1118,7 +1118,7 @@ const Account: NextPage = () => {
             </div>
           )}
           {!loading && activeTab === 'OWNER' && meta.length > 0 && isConnected &&
-           !empty && wallet !== _Wallet_ && (
+           !empty && wallet === _Wallet_ && (
             <div>
               <div
                 style={{
