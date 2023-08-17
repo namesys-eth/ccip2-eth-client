@@ -41,9 +41,7 @@ const Success = ({ _ENS_, color, show, onClose, children }) => {
               { _ENS_ }
             </span>
           </StyledModalTitle>}
-        <StyledModalBody>
-          { children }
-        </StyledModalBody>
+        <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
   ) : null;

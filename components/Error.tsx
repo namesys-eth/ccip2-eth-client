@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-const Error = ({ show, onClose, title, children }) => {
+const Error = ({ show, onClose, color, title, children }) => {
   const [browser, setBrowser] = React.useState(false);
 
   React.useEffect(() => {

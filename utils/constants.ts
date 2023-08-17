@@ -33,7 +33,7 @@ export const ccip2 = [
   '0xf885eBf034Fb06933FB79E6bC41025867f85d39b', // CCIP2 Resolver Goerli
   '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
  ]
-export const waitingPeriod = 1 * 15 * 60 // 60 mins
+export const waitingPeriod = 1 * 60 * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
   "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar (Goerli & Mainnet)

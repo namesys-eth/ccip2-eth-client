@@ -500,7 +500,9 @@ const Account: NextPage = () => {
               }
               setMeta(items)
               setSuccess(true)
-              setLoading(false)
+              setTimeout(() => {
+                setLoading(false)
+              }, 1000)
             } else {
               setSuccess(false)
               setErrorMessage('Name not Registered')
@@ -1694,6 +1696,7 @@ const Account: NextPage = () => {
                 onClose={() => {
                   setCrash(false)
                 }}
+                color={'red'}
                 show={crash && !loading}
                 title={'cancel'}
               >
@@ -1707,6 +1710,7 @@ const Account: NextPage = () => {
                 setQuery(''),
                 setManager('')
               }}
+              color={'red'}
               show={errorModal && !isSearch && !loading}
               title={'block'}
             >
@@ -1720,6 +1724,7 @@ const Account: NextPage = () => {
                 setQuery(''),
                 setManager('')
               }}
+              color={'red'}
               show={errorModal && isSearch && !loading}
               title={'block'}
             >

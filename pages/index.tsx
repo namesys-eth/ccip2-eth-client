@@ -874,6 +874,7 @@ const Home: NextPage = () => {
                   setQuery(''),
                   setManager('')
               }}
+              color={'red'}
               show={errorModal && searchType === 'search' && !loading}
               title={'block'}
             >

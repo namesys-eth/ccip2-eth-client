@@ -156,7 +156,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [signatures, setSignatures] = React.useState(EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
   const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
-  const [timestamp, setTimestamp] = React.useState(''); // Whether record edit is legitimate
+  const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
@@ -176,6 +176,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature S3(K1) for Records Manager
   const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
+  const [sustain, setSustain] = React.useState(false); // Sustains status of record update
   const [onChainManager, setOnChainManager] = React.useState(''); // Sets CCIP2 Manager
 
   const { Revision } = Name // W3Name Revision object
@@ -195,11 +196,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const ccip2Contract = constants.ccip2[chain === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[chain === '1' ? 1 : 0]
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
-  const network = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 'goerli' : 'homestead'
+  const network = chain === '5' ? 'goerli' : 'homestead'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey);
   const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
   const web3 = new Web3(alchemyEndpoint);
-  let caip10 = `eip155:${process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'}:${accountData?.address}`  // CAIP-10
+  const caip10 = `eip155:${chain}:${accountData?.address}`  // CAIP-10
+  const origin = `eth:${accountData?.address ? accountData?.address : constants.zeroAddress}`
 
   // Initialises internal LIST[] object
   function setMetadata(_recordhash: string) {
@@ -279,16 +281,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _origin = `eth:${accountData?.address ? accountData?.address : constants.zeroAddress}`
-    let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${type === 'recordhash' ? _ENS_ : _origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${type === 'recordhash' ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
   // Signature S2 statement; S2(K0) [Record Signature]
   // S2 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementRecords(recordType: string, extradata: string, signer: string) {
-    let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
-    let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`)
+    let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`)
     let _toSign = `Requesting Signature To Update ENS Record\n\nOrigin: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
     return _toSign
   }
@@ -296,8 +296,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S3 statement; S3(K1) [Approved Signature]
   // S3 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementManager(signer: string) {
-    let _chain = process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? '5' : '1'
-    let _signer = 'eip155:' + _chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
+    let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
     let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${_ENS_}\nApproved Signer: ${_signer}\nApproved By: ${caip10}`
     return _toSign
   }
@@ -736,13 +735,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function getGas(key: string, value: string) {
     const getGasAmountForContractCall = async () => {
       const contract = new web3.eth.Contract(
-        constants.ensConfig[process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 4 : 6].contractInterface as AbiItem[], 
-        constants.ensConfig[process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? 4 : 6].addressOrName
+        constants.ensConfig[chain === '1' ? 4 : 6].contractInterface as AbiItem[], 
+        constants.ensConfig[chain === '1' ? 4 : 6].addressOrName
       );
       let gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address })
       return gasAmount
     }
     const gas = await getGasAmountForContractCall()
+    console.log(gas)
     return gas
   }
   
@@ -795,9 +795,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     })
     setPreCache(_updatedList)
     setStates([])
-    setCID('')
+    setCID('') // Purge CID from local storage 
+    setSigIPNS('') // Purge IPNS Signature S1 from local storage 
+    setSigApproved('') // Purge Manager Signature S2 from local storage 
+    setSignatures(EMPTY_STRING()) // Purge Record Signatures from local storage 
+    setSaltModalState({
+      modalData: undefined,
+      trigger: false
+    }) // Purge IPNS password/identifier
     setKeypair(undefined) // Purge keypairs from local storage 
     setNewValues(EMPTY_STRING())
+    setSustain(false)
     e.preventDefault();
     onClose();
   };
@@ -893,7 +901,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       version: JSON.stringify(revision, (key, value) => {
         return typeof value === 'bigint' ? value.toString() : value;
       }),
-      timestamp: timestamp
+      timestamp: timestamp,
+      hashType: hashType
     }
     try {
       await fetch(
@@ -915,9 +924,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         })
     } catch(error) {
       console.error('ERROR:', 'Failed to write Revision to CCIP2 backend')
-      setMessage(['Record Update Failed', ''])
+      setMessage(['Revision Update Failed', ''])
       setCrash(true)
       setLoading(false)
+      setSustain(true)
+      setColor('orangered')
     }
   }
 
@@ -1004,7 +1015,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     const request = {
       type: 'read',
       ens: _ENS_,
-      address: accountData?.address,
+      owner: accountData?.address,
       recordsTypes: 'all',
       recordsValues: 'all',
       chain: chain,
@@ -1211,12 +1222,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 list.map(async (item) => {	
                   if (item.type !== 'resolver' && data.response.meta[item.type]) {	
                     // Get gas for each record separately
-                    const _gas = getGas(item.type, data.response[item.type])	
+                    let _gas: any	
+                    if (item.type === 'contenthash') {
+                      _gas = getGas(item.type, ensContent.encodeContenthash(data.response[item.type]).encoded)
+                    } else {
+                      _gas = getGas(item.type, data.response[item.type])	
+                    }
                     const _promise = async () => {	
                       await Promise.all([_gas])	
                     }
                     await _promise()	
-                    _gas.then((value) => {	
+                    _gas.then((value: number) => {	
                       gas[item.type] = value * gasData?.gasPrice!?.toNumber() * 0.000000001 * 0.000000001	
                     })	
                     if (item.type === 'avatar') {	
@@ -1313,6 +1329,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setMessage(['Record Update Failed', ''])
           setCrash(true)
           setLoading(false)
+          setSustain(true)
+          setColor('red')
         }
       }
       editRecord()
@@ -1363,7 +1381,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setLegit(EMPTY_BOOL())
         setStates([])
         setLoading(false)
-        setSuccess('Off-chain Setup Complete with Ownerhash. Enjoy!')
+        setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Ownerhash</span>. Enjoy!</span>')
         setIcon('check_circle_outline')
         setColor('lime')
         setSuccessModal(true)
@@ -1423,7 +1441,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLegit(EMPTY_BOOL())
       setStates([])
       setLoading(false)
-      setSuccess('Off-chain Setup Complete With Recordhash. Enjoy!')
+      setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>. Enjoy!')
       setIcon('check_circle_outline')
       setColor('lime')
       setSuccessModal(true)
@@ -1700,7 +1718,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       onClose={() => setSuccessModal(false)}
                       show={successModal}
                     >
-                      <span>{ success }</span>
+                      { success }
                     </Success>
                   </div>
                   <div
@@ -1747,7 +1765,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lightgreen">Migrated</span></span>' : '<span>Global <span style="color: cyan">Ownerhash</span> is Set</span>')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : '<span>Global <span style="color: cyan">Ownerhash</span> is Set</span>')
                             }}
                             data-tooltip={ 'Ready For Off-Chain Use With Ownerhash' }
                           >
@@ -1769,7 +1787,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('gpp_good'),
                               setColor('lime'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lightgreen">Migrated</span><span>' : '<span>Domain-specific <span style="color: cyan">Recordhash</span> is Set<span>')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span>Domain-specific <span style="color: cyan">Recordhash</span> is Set<span>')
                             }}
                             data-tooltip={ 'Ready For Off-Chain Use With Recordhash' }
                           >
@@ -1792,7 +1810,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
                               setColor(item.type === 'resolver' ? 'orange' : 'tomato'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lightgreen">Migrated</span><span>' : '<span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span>')
+                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span>')
                             }}
                             data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                           >
@@ -1838,7 +1856,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
                               setColor(item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan')),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: cyan">Recordhash</span> <span style="color: lightgreen">is Set</span></span>' : '<span><span style="color: cyan">Ownerhash</span> <span style="color: lightgreen">is Set</span></span>'))
+                              setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: cyan">Recordhash</span> <span style="color: lime">is Set</span></span>' : '<span><span style="color: cyan">Ownerhash</span> <span style="color: lime">is Set</span></span>'))
                             }}
                             data-tooltip={ recordhash ? 'Resolver not Migrated But Recordhash is Set' : 'Resolver not Migrated But Ownerhash is Set' }
                           >
@@ -1888,7 +1906,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               setHelpModal(true),
                               setIcon('timer'),
                               setColor(queue < 0 ? 'orange' : 'lime'),
-                              setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lightgreen">Ready</span> For Next Record Update</span>')
+                              setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
                             }}
                             data-tooltip={ 
                               queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
@@ -1911,11 +1929,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           <div 
                             className="material-icons smol"
                             style={{ 
-                              color: 'lime',
+                              color: crash && sustain ? 'cancel' : 'lime',
                               marginLeft: '-5px'
                             }}
                           >
-                            task_alt
+                            { crash && sustain ? 'cancel' : 'task_alt' }
                           </div>
                         )}
                       </span>
@@ -2031,6 +2049,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               setCrash(false),
               setLoading(false)
             }}
+            color={color}
             show={crash && !loading}
             title={'cancel'}
           >

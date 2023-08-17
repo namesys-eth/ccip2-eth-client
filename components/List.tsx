@@ -199,7 +199,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                       setModal(true),
                       setIcon('gpp_good'),
                       setColor('lime'),
-                      setHelp('<span><span style="color: lightgreen">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
+                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
                     }}
                     data-tooltip={ 'Ready For Off-chain Use With Recordhash' }
                   >
@@ -220,7 +220,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                       setModal(true),
                       setIcon('gpp_good'),
                       setColor('cyan'),
-                      setHelp('<span><span style="color: lightgreen">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
+                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
                     }}
                     data-tooltip={ 'Ready For Off-chain Use With Ownerhash' }
                   >
@@ -241,7 +241,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                       setModal(true),
                       setIcon('gpp_good'),
                       setColor('orange'),
-                      setHelp('<span>Resolver is <span style="color: lightgreen">migrated</span> but <span style="color: cyan">Recordhash</span> or <span style="color: cyan">Ownerhash</span> is <span style="color: orange">not Set</span>. You can set Recordhash by pressing <span style="color: orange">SET</span>. You can set <span style="color: cyan">Ownerhash</span> in <span style="color: orange">UTILS</span></span>')
+                      setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Recordhash</span> or <span style="color: cyan">Ownerhash</span> is <span style="color: orange">not Set</span>. You can set Recordhash by pressing <span style="color: orange">SET</span>. You can set <span style="color: cyan">Ownerhash</span> in <span style="color: orange">UTILS</span></span>')
                     }}
                     data-tooltip={ 'No Recordhash Found' }
                   >
