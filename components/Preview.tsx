@@ -738,11 +738,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         constants.ensConfig[chain === '1' ? 4 : 6].contractInterface as AbiItem[], 
         constants.ensConfig[chain === '1' ? 4 : 6].addressOrName
       );
-      let gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address })
+      let gasAmount: any
+      if (key === 'contenthash') {
+        gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(_ENS_), ensContent.encodeContenthash(value).encoded).estimateGas({ from: accountData?.address })
+      } else if (key === 'avatar') {
+        gasAmount = await contract.methods.setText(ethers.utils.namehash(_ENS_), key, value).estimateGas({ from: accountData?.address })
+      } else if (key === 'addr') {
+        gasAmount = await contract.methods.setAddr(ethers.utils.namehash(_ENS_), value).estimateGas({ from: accountData?.address })
+      }
       return gasAmount
     }
     const gas = await getGasAmountForContractCall()
-    console.log(gas)
     return gas
   }
   
@@ -969,7 +975,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Upates new record values in local storage before pushing updates
-  function setValues(key: string, value: string) {
+  function setValues(key: string, _value: string) {
+    let value = _value.trim()
     let __THIS = legit
     __THIS['resolver'] = false
     if (key === 'recordhash') {
@@ -1222,12 +1229,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 list.map(async (item) => {	
                   if (item.type !== 'resolver' && data.response.meta[item.type]) {	
                     // Get gas for each record separately
-                    let _gas: any	
-                    if (item.type === 'contenthash') {
-                      _gas = getGas(item.type, ensContent.encodeContenthash(data.response[item.type]).encoded)
-                    } else {
-                      _gas = getGas(item.type, data.response[item.type])	
-                    }
+                    let _gas = getGas(item.type, data.response[item.type])	
                     const _promise = async () => {	
                       await Promise.all([_gas])	
                     }
