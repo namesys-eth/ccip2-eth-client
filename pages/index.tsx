@@ -515,8 +515,8 @@ const Home: NextPage = () => {
             style={{
               marginLeft: 'auto',
               display: 'flex',
-              flexDirection: 'row',
-              marginTop: !isMobile ? '-7%': '25px',
+              flexDirection: isMobile ? 'column' : 'row',
+              marginTop: !isMobile ? '-7%': '-5px',
             }}
           >
             <div
@@ -525,13 +525,13 @@ const Home: NextPage = () => {
                 marginTop: !isMobile ? '8px' : '10px',
                 color: '#fc6603',
                 fontFamily: 'SF Mono',
-                fontSize: !isMobile ? '18px' : '15px',
+                fontSize: !isMobile ? '18px' : '13px',
               }}
             >
               <span
                 style={{
                   fontFamily: 'Spotnik',
-                  fontSize: !isMobile ? '12px' : '10px',
+                  fontSize: !isMobile ? '12px' : '7.5px',
                   fontWeight: '700',
                   marginRight: '2px'
                 }}
@@ -542,7 +542,7 @@ const Home: NextPage = () => {
               <span
                 style={{
                   fontFamily: 'Spotnik',
-                  fontSize: !isMobile ? '15px' : '12px',
+                  fontSize: !isMobile ? '15px' : '10px',
                   fontWeight: '700',
                   marginLeft: '2px'
                 }}
@@ -794,7 +794,7 @@ const Home: NextPage = () => {
                 style={{
                   maxHeight: '520px',
                   overflowY: 'auto',
-                  marginBottom: '50px',
+                  marginBottom: '50px'
                 }}
               >
                 <List

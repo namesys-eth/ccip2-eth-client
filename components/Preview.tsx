@@ -19,6 +19,7 @@ import { _KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
+import { isMobile } from 'react-device-detect'
 import {
   useAccount,
   useFeeData,
@@ -1625,362 +1626,382 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         {list.length > 0 && !loading && 
           <StyledModalBody>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              flexDirection: 'column'
+            }}
+          >
+            <div
+              style={{
+                marginBottom: '15px',
+                marginTop: '-15px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <span
+                style={{
+                  color: 'orange',
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  fontFamily: 'SF Mono'
+                }}
+              >
+                {_ENS_.split('.eth')[0]}
+              </span>
+              <span 
+                style={{ 
+                  fontFamily: 'SF Mono',
+                  fontSize: '15px', 
+                  color: 'cyan'
+                }}
+              >
+                .
+              </span>
+              <span 
+                style={{ 
+                  fontFamily: 'Spotnik',
+                  fontSize: '11px', 
+                  color: 'cyan',
+                  fontWeight: '700',
+                  letterSpacing: '0px'
+                }}
+              >
+                ETH
+              </span>
+            </div>
             <ul
               style={{
                 listStyle: 'none',
                 color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'column',
+                marginLeft: !isMobile ? '-5%' : '0'
               }}
             >
               <div
                 style={{
-                  marginBottom: '15px',
-                  marginTop: '-15px'
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                  paddingBottom: !isMobile ? '15px' : '5px',
                 }}
               >
-                <span
-                  style={{
-                    color: 'orange',
-                    fontSize: '20px',
-                    fontWeight: '700',
-                    fontFamily: 'SF Mono'
-                  }}
-                >
-                  {_ENS_.split('.eth')[0]}
-                </span>
-                <span 
-                  style={{ 
-                    fontFamily: 'SF Mono',
-                    fontSize: '15px', 
-                    color: 'cyan'
-                  }}
-                >
-                  .
-                </span>
-                <span 
-                  style={{ 
-                    fontFamily: 'Spotnik',
-                    fontSize: '11px', 
-                    color: 'cyan',
-                    fontWeight: '700',
-                    letterSpacing: '0px'
-                  }}
-                >
-                  ETH
-                </span>
-              </div>
-              {list.map((item) => (
-                <li
-                  key={item.key}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    width: '500px',
-                    maxWidth: '85%',
-                    paddingLeft: '20px',
-                    paddingRight: '20px'
-                  }}
-                >
-                  <div id="modal-inner">
-                    <Help
-                      color={ color }
-                      _ENS_={ icon }
-                      onClose={() => setHelpModal(false)}
-                      show={helpModal}
-                    >
-                      { help }
-                    </Help>
-                    <Success
-                      color={ color }
-                      _ENS_={ icon }
-                      onClose={() => setSuccessModal(false)}
-                      show={successModal}
-                    >
-                      { success }
-                    </Success>
-                  </div>
-                  <div
+                {list.map((item) => (
+                  <li
+                    key={item.key}
                     style={{
                       display: 'flex',
-                      alignItems: 'flex-start',
-                      flexDirection: 'column'
+                      flexDirection: 'column',
+                      width: !isMobile ? '500px' : '480px',
+                      maxWidth: !isMobile ? '95%' : '85%',
+                      paddingLeft: !isMobile ? '5px' : '5px',
+                      paddingRight: !isMobile ? '5px' : '5px'
                     }}
                   >
-                    <div 
-                      style={{                      
-                        marginBottom: '10px',
+                    <div id="modal-inner">
+                      <Help
+                        color={ color }
+                        _ENS_={ icon }
+                        onClose={() => setHelpModal(false)}
+                        show={helpModal}
+                      >
+                        { help }
+                      </Help>
+                      <Success
+                        color={ color }
+                        _ENS_={ icon }
+                        onClose={() => setSuccessModal(false)}
+                        show={successModal}
+                      >
+                        { success }
+                      </Success>
+                    </div>
+                    <div
+                      style={{
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        width: '100%'
+                        alignItems: 'flex-start',
+                        flexDirection: 'column'
                       }}
                     >
-                      <span 
-                        style={{ 
-                          fontFamily: 'Spotnik',
-                          fontWeight: '700',
-                          fontSize: '15px',
-                          color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
-                          marginRight: '15px'
+                      <div 
+                        style={{                      
+                          marginBottom: '10px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          width: !isMobile ? '100%' : '90%'
                         }}
                       >
-                        { // Label Recordhash/Ownerhash
-                        item.type === 'recordhash' && (
-                          <span>
-                            { hashType }
-                          </span>
-                        )}
-                        { // Label+
-                        item.type !== 'recordhash' && (
-                          <span>
-                            { item.header }
-                          </span>
-                        )}
-                        { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                        ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon('gpp_good'),
-                              setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : '<span>Global <span style="color: cyan">Ownerhash</span> is Set</span>')
-                            }}
-                            data-tooltip={ 'Ready For Off-Chain Use With Ownerhash' }
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{
-                                color: item.type === 'resolver' ? 'lime' : 'cyan'
+                        <span 
+                          style={{ 
+                            fontFamily: 'Spotnik',
+                            fontWeight: '700',
+                            fontSize: '15px',
+                            color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
+                            marginRight: '15px'
+                          }}
+                        >
+                          { // Label Recordhash/Ownerhash
+                          item.type === 'recordhash' && (
+                            <span>
+                              { hashType }
+                            </span>
+                          )}
+                          { // Label+
+                          item.type !== 'recordhash' && (
+                            <span>
+                              { item.header }
+                            </span>
+                          )}
+                          { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
+                          ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon('gpp_good'),
+                                setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : '<span>Global <span style="color: cyan">Ownerhash</span> is Set</span>')
                               }}
+                              data-tooltip={ 'Ready For Off-Chain Use With Ownerhash' }
                             >
-                              gpp_good
-                            </div>
-                          </button>
-                        )}
-                        { // Set Badge if Resolver is migrated and Recordhash is set
-                        ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && recordhash && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon('gpp_good'),
-                              setColor('lime'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span>Domain-specific <span style="color: cyan">Recordhash</span> is Set<span>')
-                            }}
-                            data-tooltip={ 'Ready For Off-Chain Use With Recordhash' }
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{
-                                color: 'lime',
-                                marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: item.type === 'resolver' ? 'lime' : 'cyan'
+                                }}
+                              >
+                                gpp_good
+                              </div>
+                            </button>
+                          )}
+                          { // Set Badge if Resolver is migrated and Recordhash is set
+                          ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && recordhash && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon('gpp_good'),
+                                setColor('lime'),
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span>Domain-specific <span style="color: cyan">Recordhash</span> is Set<span>')
                               }}
+                              data-tooltip={ 'Ready For Off-Chain Use With Recordhash' }
                             >
-                              gpp_good
-                            </div>
-                          </button>
-                        )}
-                        { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash is set
-                        ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
-                              setColor(item.type === 'resolver' ? 'orange' : 'tomato'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span>')
-                            }}
-                            data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{
-                                color: item.type === 'resolver' ? 'orange' : 'tomato',
-                                marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: 'lime',
+                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                }}
+                              >
+                                gpp_good
+                              </div>
+                            </button>
+                          )}
+                          { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash is set
+                          ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
+                                setColor(item.type === 'resolver' ? 'orange' : 'tomato'),
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span>')
                               }}
+                              data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
                             >
-                              { item.type === 'resolver' ? 'gpp_good' : 'cancel' }
-                            </div>
-                          </button>
-                        )}
-                        { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                        ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
-                              setColor('tomato'),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span></span>')
-                            }}
-                            data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{
-                                color: 'tomato',
-                                marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: item.type === 'resolver' ? 'orange' : 'tomato',
+                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                }}
+                              >
+                                { item.type === 'resolver' ? 'gpp_good' : 'cancel' }
+                              </div>
+                            </button>
+                          )}
+                          { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
+                          ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
+                                setColor('tomato'),
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span></span>')
                               }}
+                              data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
                             >
-                              { item.type === 'resolver' ? 'gpp_bad' : 'cancel' }
-                            </div>
-                          </button>
-                        )}
-                        { // Resolver is not migrated but Recordhash has been set in the past
-                        ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                              setColor(item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan')),
-                              setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: cyan">Recordhash</span> <span style="color: lime">is Set</span></span>' : '<span><span style="color: cyan">Ownerhash</span> <span style="color: lime">is Set</span></span>'))
-                            }}
-                            data-tooltip={ recordhash ? 'Resolver not Migrated But Recordhash is Set' : 'Resolver not Migrated But Ownerhash is Set' }
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{
-                                color: item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan'),
-                                marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: 'tomato',
+                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                }}
+                              >
+                                { item.type === 'resolver' ? 'gpp_bad' : 'cancel' }
+                              </div>
+                            </button>
+                          )}
+                          { // Resolver is not migrated but Recordhash has been set in the past
+                          ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
+                                setColor(item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan')),
+                                setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: cyan">Recordhash</span> <span style="color: lime">is Set</span></span>' : '<span><span style="color: cyan">Ownerhash</span> <span style="color: lime">is Set</span></span>'))
                               }}
+                              data-tooltip={ recordhash ? 'Resolver not Migrated But Recordhash is Set' : 'Resolver not Migrated But Ownerhash is Set' }
                             >
-                              { item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe' }
-                            </div>
-                          </button>
-                        )}
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan'),
+                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                }}
+                              >
+                                { item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe' }
+                              </div>
+                            </button>
+                          )}
 
-                        { // Help icons
-                        item.type !== 'resolver' && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon('info'),
-                              setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
-                              setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
-                            }}
-                            data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
-                          >
+                          { // Help icons
+                          item.type !== 'resolver' && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon('info'),
+                                setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
+                                setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
+                              }}
+                              data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
+                            >
+                              <div 
+                                className="material-icons smol"
+                                style={{ 
+                                  color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
+                                  marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
+                                }}
+                              >
+                                info_outline 
+                              </div>
+                            </button>
+                          )}    
+
+                          { // Countdown
+                          !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
+                          && resolver === ccip2Contract && 
+                          (recordhash || ownerhash) && (
+                            <button 
+                              className="button-tiny"
+                              onClick={() => { 
+                                setHelpModal(true),
+                                setIcon('timer'),
+                                setColor(queue < 0 ? 'orange' : 'lime'),
+                                setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
+                              }}
+                              data-tooltip={ 
+                                queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
+                              }
+                            >
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: queue < 0 ? 'orange' : 'lime',
+                                  marginLeft: '-5px'
+                                }}
+                              >
+                                timer
+                              </div>
+                            </button>
+                          )}
+
+                          { // Updated State marker
+                          item.state && (
                             <div 
                               className="material-icons smol"
                               style={{ 
-                                color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
-                                marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
-                              }}
-                            >
-                              info_outline 
-                            </div>
-                          </button>
-                        )}    
-
-                        { // Countdown
-                        !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
-                        && resolver === ccip2Contract && 
-                        (recordhash || ownerhash) && (
-                          <button 
-                            className="button-tiny"
-                            onClick={() => { 
-                              setHelpModal(true),
-                              setIcon('timer'),
-                              setColor(queue < 0 ? 'orange' : 'lime'),
-                              setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
-                            }}
-                            data-tooltip={ 
-                              queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
-                            }
-                          >
-                            <div 
-                              className="material-icons smol"
-                              style={{
-                                color: queue < 0 ? 'orange' : 'lime',
+                                color: crash && sustain ? 'cancel' : 'lime',
                                 marginLeft: '-5px'
                               }}
                             >
-                              timer
+                              { crash && sustain ? 'cancel' : 'task_alt' }
                             </div>
-                          </button>
-                        )}
-
-                        { // Updated State marker
-                        item.state && (
+                          )}
+                        </span>
+                        <button
+                          className="button"
+                          disabled={ 
+                            constants.blocked.includes(item.type) ||
+                            !list[item.key].active ||
+                            !legit[item.type] ||
+                            item.state ||
+                            !_Wallet_ ||
+                            !managers.includes(_Wallet_ ? _Wallet_ : '0x0c0cac01ac0ffeecafeNOTHEX')
+                          }
+                          style={{
+                            alignSelf: 'flex-end',
+                            height: '25px',
+                            width: 'auto',
+                            marginTop: '-3px',
+                          }}
+                          onClick={() => { 
+                            setTrigger(item.type),
+                            ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
+                            ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
+                          }}
+                          data-tooltip={ item.tooltip }
+                        >
                           <div 
-                            className="material-icons smol"
-                            style={{ 
-                              color: crash && sustain ? 'cancel' : 'lime',
-                              marginLeft: '-5px'
-                            }}
-                          >
-                            { crash && sustain ? 'cancel' : 'task_alt' }
-                          </div>
-                        )}
-                      </span>
-                      <button
-                        className="button"
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                fontSize: '13px'
+                              }}
+                            >
+                                {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
+                            </div>
+                        </button>
+                      </div>
+                      <input 
+                        id={ item.key }
+                        key={ item.key }
+                        placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
+                        type='text'
                         disabled={ 
-                          constants.blocked.includes(item.type) ||
-                          !list[item.key].active ||
-                          !legit[item.type] ||
-                          item.state ||
-                          !_Wallet_ ||
-                          !managers.includes(_Wallet_ ? _Wallet_ : '0x0c0cac01ac0ffeecafeNOTHEX')
+                          !item.editable || constants.blocked.includes(item.type)
                         }
-                        style={{
-                          alignSelf: 'flex-end',
-                          height: '25px',
-                          width: 'auto',
-                          marginTop: '-3px',
+                        style={{ 
+                          fontFamily: 'SF Mono',
+                          fontWeight: '400',
+                          fontSize: '14px',
+                          width: '100%',
+                          wordWrap: 'break-word',
+                          textAlign: 'left',
+                          marginBottom: '-5px',
+                          color: 'rgb(255, 255, 255, 0.75)',
+                          cursor: 'copy'
                         }}
-                        onClick={() => { 
-                          setTrigger(item.type),
-                          ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
-                          ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
+                        onChange={(e) => {
+                          setValues(item.type, e.target.value)
                         }}
-                        data-tooltip={ item.tooltip }
-                      >
-                        <div 
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'row',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              fontSize: '13px'
-                            }}
-                          >
-                              {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
-                          </div>
-                      </button>
+                      />
                     </div>
-                    <input 
-                      id={ item.key }
-                      key={ item.key }
-                      placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
-                      type='text'
-                      disabled={ 
-                        !item.editable || constants.blocked.includes(item.type)
-                      }
-                      style={{ 
-                        fontFamily: 'SF Mono',
-                        fontWeight: '400',
-                        fontSize: '14px',
-                        width: '100%',
-                        wordWrap: 'break-word',
-                        textAlign: 'left',
-                        marginBottom: '-5px',
-                        color: 'rgb(255, 255, 255, 0.75)',
-                        cursor: 'copy'
-                      }}
-                      onChange={(e) => {
-                        setValues(item.type, e.target.value)
-                      }}
-                    />
-                  </div>
-                  <hr style={{ marginTop: '5px' }}></hr>
-                </li>
-              ))}
+                    <hr style={{ marginTop: '5px' }}></hr>
+                  </li>
+                ))}
+              </div>
             </ul>
+          </div>
           </StyledModalBody>
         }
         <div id="modal-inner">
@@ -2067,6 +2088,8 @@ const StyledModalTitle = styled.div`
   padding-bottom: 10px;
   font-size: 22px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   font-weight: 1200;
   margin-bottom: 0px;
@@ -2081,13 +2104,13 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   width: auto;
-  min-width: 400px;
+  min-width: 450px;
   border-radius: 6px;
   padding-top: 0px;
   padding-left: 0px;
   padding-right: 8px;
   padding-bottom: 0px;
-  overflow-y: initial !important
+  overflow-y: initial !important;
 `;
 
 const StyledModalOverlay = styled.div`

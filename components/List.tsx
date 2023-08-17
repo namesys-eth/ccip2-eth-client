@@ -1,6 +1,7 @@
 import React from "react";
 import Help from './Help'
 import * as lang from '../utils/languages'
+import { isMobile } from 'react-device-detect'
 
 interface ListItem {
   key: number;
@@ -36,8 +37,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
         color: 'white',
         display: 'flex',
         alignItems: 'center',
-        flexDirection: 'column',
-        paddingRight: '2%',
+        flexDirection: 'column'
       }}>
       {items.map((item) => (
         <li
@@ -45,7 +45,8 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            width: '100%'
+            width: '100%',
+            marginLeft: !isMobile ? '-8%' : '-9%'
           }}
         >
           <div
@@ -53,107 +54,15 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
-            }}>
+            }}
+          >
             <span 
               style={{ 
                 marginBottom: '-3px',
                 color: 'white'
               }}
             >
-              <div
-              >
-                {/*
-                {item.name.split('').map((char, index) => (
-                  <span key={index}>
-                    { !alphabets.includes(char) &&
-                      !['x'].includes(char) && (
-                      <span
-                        style={{ 
-                          fontFamily: 'SF Mono',
-                          letterSpacing: '-0px',
-                          fontWeight: '600',
-                          fontSize: lang.arabic.includes(char) ||
-                            lang.hindi.includes(char) || 
-                            lang.persian.includes(char) ||
-                            lang.chinese.includes(char) || 
-                            lang.korean.includes(char)
-                            ? '24px' : '21px'
-                        }}
-                      >
-                        { char }
-                      </span>
-                    )}
-                    { alphabets.includes(char) && (
-                      <span
-                        style={{ 
-                          fontFamily: 'Rajdhani',
-                          letterSpacing: '0.3px',
-                          fontWeight: '700',
-                          fontSize: '26px'
-                        }}
-                      >
-                        { char }
-                      </span>
-                    )}
-                    { ['x'].includes(char) &&
-                      numbers.includes(item.name.charAt(index - 1)) &&
-                      numbers.includes(item.name.charAt(index + 1)) && (
-                      <span
-                        style={{ 
-                          fontFamily: 'Rajdhani',
-                          letterSpacing: '0.3px',
-                          fontWeight: '700',
-                          fontSize: '24px'
-                        }}
-                      >
-                        { char }
-                      </span>
-                    )}
-                    { ['x'].includes(char) &&
-                      numbers.includes(item.name.charAt(index - 1)) &&
-                      alphabets.includes(item.name.charAt(index + 1)) && (
-                      <span
-                        style={{ 
-                          fontFamily: 'Rajdhani',
-                          letterSpacing: '0.3px',
-                          fontWeight: '700',
-                          fontSize: '26px'
-                        }}
-                      >
-                        { char }
-                      </span>
-                    )}
-                    { ['x'].includes(char) &&
-                      alphabets.includes(item.name.charAt(index - 1)) &&
-                      numbers.includes(item.name.charAt(index + 1)) && (
-                      <span
-                        style={{ 
-                          fontFamily: 'Rajdhani',
-                          letterSpacing: '0.3px',
-                          fontWeight: '700',
-                          fontSize: '26px'
-                        }}
-                      >
-                        { char }
-                      </span>
-                    )}
-                    { ['x'].includes(char) &&
-                      numbers.includes(item.name.charAt(index - 1)) &&
-                      index === item.name.length - 1 && (
-                      <span
-                        style={{ 
-                          fontFamily: 'Rajdhani',
-                          letterSpacing: '0.3px',
-                          fontWeight: '700',
-                          fontSize: '24px'
-                        }}
-                      >
-                        { char }
-                      </span>
-                    )}
-                  </span>
-                ))}
-                */}
+              <div>
                 {item.name.split('').map((char, index) => (
                   <span 
                     key={index}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { isMobile } from 'react-device-detect';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
@@ -165,7 +166,7 @@ const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
-  max-width: 60%;
+  max-width: ${isMobile ? '90%' : '60%'};
   height: 198px;
   border-radius: 6px;
   overflow-y: initial !important

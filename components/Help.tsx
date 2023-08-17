@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
+import { isMobile } from 'react-device-detect';
 
 const Help = ({ _ENS_, color, show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false);
@@ -91,7 +92,7 @@ const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
-  max-width: 60%;
+  max-width: ${isMobile ? '90%' : '60%'};
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
