@@ -128,6 +128,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
   const [finish, setFinish] = React.useState(false); // Indicates when all records have finished fetching
   const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
+  const [resolveCall, setResolveCall] = React.useState<any>(); // Resolver object for querying records
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
   const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
@@ -137,6 +138,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
+  const [refresh, setRefresh] = React.useState(''); // Refresh record trigger
   const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
   const [preCache, setPreCache] = React.useState<any[]>([]); // Copy of LIST[] object
   const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
@@ -811,7 +813,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Get Contenthash for ENS domain first
   async function getContenthash(resolver: ethers.providers.Resolver) {
     await resolver.getContentHash()
-      .then((response: React.SetStateAction<string>) => {
+      .then((response: string) => {
         if (!response) {
           setContenthash('')
         } else {
@@ -834,16 +836,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setAvatar(response)
         }
-        getRecord()
+        getAddr()
       })
       .catch(() => {
         setAvatar('')
-        getRecord()
+        getAddr()
       });
   }
 
   // Get Addr for ENS domain at last
-  async function getRecord() {
+  async function getAddr() {
     await provider.resolveName(_ENS_)
       .then(response => {
         if (!response) {
@@ -866,6 +868,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setMessage(['This May Take a While', ''])
         if (response?.address) {
           setResolver(response?.address)
+          setResolveCall(response)
           if (response?.address === ccip2Contract) {
             getContenthash(response)
           } else {
@@ -876,6 +879,48 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
         }
       })
+  }
+
+  // Re-try empty records
+  async function refreshRecord(_record: string) {
+    setRefresh(_record)
+    if (_record === 'addr') {
+      await provider.resolveName(_ENS_)
+      .then(response => {
+        if (response) {
+          setAddr(response)
+          setRefresh('1')
+        }
+        setRefresh('0')
+      })
+      .catch(() => {
+        setRefresh('0')
+      });
+    } else if (_record === 'avatar') {
+      await provider.getAvatar(_ENS_)
+      .then(response => {
+        if (response) {
+          setAvatar(response)
+          setRefresh('1')
+        }
+        setRefresh('0')
+      })
+      .catch(() => {
+        setRefresh('0')
+      });
+    } else if (_record === 'contenthash') {
+      resolveCall.getContentHash()
+      .then((response: string) => {
+        if (response) {
+          setContenthash(response)
+          setRefresh('1')
+        }
+        setRefresh('0')
+      })
+      .catch(() => {
+        setRefresh('0')
+      });
+    }
   }
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
@@ -1127,6 +1172,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateRecords]);
+
+  // Handles record refresh
+  React.useEffect(() => {
+    if (refresh && ['0', '1'].includes(refresh)) { 
+      setTimeout(() => {
+        setRefresh('.') // Show result
+      }, 10000)
+      setTimeout(() => {
+        setRefresh('') // Allow refresh after
+      }, 30000)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refresh]);
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
@@ -1917,6 +1975,29 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 }}
                               >
                                 timer
+                              </div>
+                            </button>
+                          )}
+
+                          { // Refresh buttons
+                          !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
+                          && resolver === ccip2Contract && 
+                          (recordhash || ownerhash) && (
+                            <button 
+                              className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
+                              onClick={() => { 
+                                refresh !== '' ? '' : refreshRecord(item.type)
+                              }}
+                              data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? 'Click to Refresh' : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
+                            >
+                              <div 
+                                className="material-icons smol"
+                                style={{
+                                  color: ![item.type, '.', '0', '1'].includes(refresh) ? 'cyan' : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orange' : 'cyan')))),
+                                  marginLeft: '-5px'
+                                }}
+                              >
+                                sync
                               </div>
                             </button>
                           )}

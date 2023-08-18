@@ -1375,6 +1375,16 @@ button:not(:disabled),
   }
 }
 
+.blink {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
 .icon {
   display: inline-block;
   color: inherit;

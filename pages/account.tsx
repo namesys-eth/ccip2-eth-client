@@ -818,7 +818,9 @@ const Account: NextPage = () => {
                 </div>
               )}
               {isMobile && isDisconnected && (
-                <div>
+                <div 
+                  className="flex-column"
+                >
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
@@ -847,6 +849,7 @@ const Account: NextPage = () => {
               )}
               {isMobile && (isConnected || !isDisconnected) && (
                 <div 
+                  className="flex-column"
                   style={{ 
                     marginTop: '-30px',
                     marginBottom: isMobile ? '10px' : '2px'
