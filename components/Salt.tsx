@@ -1,37 +1,37 @@
-import React from 'react';
-import { isMobile } from 'react-device-detect';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import { isMobile } from 'react-device-detect'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
 import Help from '../components/Help'
 
 interface ModalProps {
-  show: boolean;
-  onClose: any;
-  children: any;
-  handleModalData: (data: string | undefined) => void;
-  handleTrigger: (data: boolean) => void;
+  show: boolean
+  onClose: any
+  children: any
+  handleModalData: (data: string | undefined) => void
+  handleTrigger: (data: boolean) => void
 }
 
 const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState("");
-  const [browser, setBrowser] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState("")
+  const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
   
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   const handleSubmit = () => {
-    handleModalData(inputValue);
-    handleTrigger(true);
-    onClose();
-  };
+    handleModalData(inputValue)
+    handleTrigger(true)
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -145,17 +145,17 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
         </Help>
       </div>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 5px;
@@ -173,7 +173,7 @@ const StyledModalBody = styled.div`
   font-size: 14px;
   font-weight: 700;
   margin-top: -15px;
-`;
+`
 
 const StyledModalTitle = styled.div`
   margin-top: -15px;
@@ -187,12 +187,12 @@ const StyledModalTitle = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   color: cyan;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`;
+`
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
@@ -206,7 +206,7 @@ const StyledModal = styled.div`
   text-align: center;
   justify-content: center;
   padding: 3px;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -218,6 +218,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.90);
-`;
+`
 
-export default Salt;
+export default Salt

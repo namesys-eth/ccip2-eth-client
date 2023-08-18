@@ -99,12 +99,12 @@ const Account: NextPage = () => {
 
   // Handle Salt modal data return
   const handleSaltModalData = (data: string | undefined) => {
-    setSaltModalState(prevState => ({ ...prevState, modalData: data }));
-  };
+    setSaltModalState(prevState => ({ ...prevState, modalData: data }))
+  }
   // Handle Salt modal trigger
   const handleSaltTrigger = (trigger: boolean) => {
-    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }));
-  };
+    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
 
   // Handle Preview modal data return
   const handlePreviewModalData = (data: string) => {
@@ -279,7 +279,7 @@ const Account: NextPage = () => {
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState]);
+  }, [saltModalState])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -289,11 +289,11 @@ const Account: NextPage = () => {
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
         const __keypair = await _KEYGEN(_origin, _caip10, signature, saltModalState.modalData)
         setKeypair([__keypair[0][0], __keypair[1][0], __keypair[0][1]])
-      };
+      }
       keygen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, signature]);
+  }, [keygen, signature])
 
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
@@ -307,7 +307,7 @@ const Account: NextPage = () => {
       CIDGen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypair]);
+  }, [keypair])
 
   // Triggers setting Ownerhash
   React.useEffect(() => {
@@ -316,7 +316,7 @@ const Account: NextPage = () => {
       setMessage('Waiting For Transaction')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [CID]);
+  }, [CID])
 
   // Handle wallet change by the user
   React.useEffect(() => {
@@ -544,7 +544,7 @@ const Account: NextPage = () => {
 
   const { isSuccess: txSuccess1of1, isError: txError1of1, isLoading: txLoading1of1 } = useWaitForTransaction({
     hash: response1of1?.hash,
-  });
+  })
 
   // Handles setting Ownerhash after transaction 2 
   React.useEffect(() => {
@@ -556,7 +556,7 @@ const Account: NextPage = () => {
       }, 2000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txSuccess1of1, isSetOwnerhashSuccess]);
+  }, [txSuccess1of1, isSetOwnerhashSuccess])
 
   // Handles Ownerhash transaction loading and error
   React.useEffect(() => {
@@ -570,7 +570,7 @@ const Account: NextPage = () => {
       setLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading1of1, txError1of1]);
+  }, [txLoading1of1, txError1of1])
 
   // Handles transaction wait
   React.useEffect(() => {
@@ -600,7 +600,7 @@ const Account: NextPage = () => {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError, activeTab, salt]);
+  }, [signLoading, signError, activeTab, salt])
 
   return (
     <div

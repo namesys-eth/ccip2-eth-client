@@ -20,8 +20,8 @@ export const buffer = "\x19Ethereum Signed Message:\n"
 export const prefix = '0xe5010172002408011220'
 
 export interface MainBodyState {
-  modalData: string | undefined;
-  trigger: boolean;
+  modalData: string | undefined
+  trigger: boolean
 }
 let network = process.env.NEXT_PUBLIC_NETWORK
 export const alchemyConfig = {
@@ -30,7 +30,7 @@ export const alchemyConfig = {
   chainId: network === 'goerli' ? '5': '1',
 }
 export const alchemy = new Alchemy(alchemyConfig)
-export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey);
+export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey)
 export const ccip2 = [
   '0xf885eBf034Fb06933FB79E6bC41025867f85d39b', // CCIP2 Resolver Goerli
   '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
@@ -140,19 +140,19 @@ export const files = [
 
 // Overlay 
 export function showOverlay(durationInSeconds: number) {
-  const overlay = document.getElementById('overlay');
+  const overlay = document.getElementById('overlay')
   if (overlay) {
-    overlay.style.display = 'block';
+    overlay.style.display = 'block'
     setTimeout(() => {
-      hideOverlay();
-    }, durationInSeconds * 1000);
+      hideOverlay()
+    }, durationInSeconds * 1000)
   }
 }
 
 export function hideOverlay() {
-  const overlay = document.getElementById('overlay');
+  const overlay = document.getElementById('overlay')
   if (overlay) {
-    overlay.style.display = 'none';
+    overlay.style.display = 'none'
   }
 }
 // Returns formatted ed25519/IPNS keypair

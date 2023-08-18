@@ -4,30 +4,30 @@ import styled from 'styled-components'
 import Help from '../components/Help'
 
 interface ModalProps {
-  show: boolean;
-  onClose: any;
-  children: any;
-  handleModalData: (data: string | undefined) => void;
-  handleTrigger: (data: boolean) => void;
+  show: boolean
+  onClose: any
+  children: any
+  handleModalData: (data: string | undefined) => void
+  handleTrigger: (data: boolean) => void
 }
 
 const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
   const [browser, setBrowser] = React.useState(false)
   
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   const handleConfirmSubmit = () => {
-    handleModalData('0');
-    handleTrigger(true);
-    onClose();
-  };
+    handleModalData('0')
+    handleTrigger(true)
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -107,17 +107,17 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
         </StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 10px;
@@ -134,7 +134,7 @@ const StyledModalBody = styled.div`
   color: white;
   font-size: 14px;
   font-weight: 700;
-`;
+`
 
 const StyledModalTitle = styled.div`
   margin-top: -10px;
@@ -148,12 +148,12 @@ const StyledModalTitle = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   color: cyan;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`;
+`
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
@@ -165,7 +165,7 @@ const StyledModal = styled.div`
   text-align: center;
   justify-content: center;
   padding: 5px;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -177,6 +177,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.75);
-`;
+`
 
-export default Confirm;
+export default Confirm

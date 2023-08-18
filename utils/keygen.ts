@@ -16,8 +16,8 @@ export function useFetchImplementation(fetchImplementation: any) {
 
 /* @dev : Useful but unused functions
 function bigintToUint8Array(n: bigint): Uint8Array {
-  const hex = n.toString(16).padStart(64, '0');
-  return new Uint8Array(hex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+  const hex = n.toString(16).padStart(64, '0')
+  return new Uint8Array(hex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)))
 }
 
 function Stringify(arg: any) {
@@ -25,7 +25,7 @@ function Stringify(arg: any) {
       typeof value === 'bigint'
           ? value.toString()
           : value // return everything else unchanged
-  ));
+  ))
 }
 */ 
 

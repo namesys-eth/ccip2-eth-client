@@ -9,15 +9,15 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(event.target.value.toLowerCase())
-  };
+  }
 
   const handleInputInvalid = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.setCustomValidity("Please enter a valid .eth name")
-  };
+  }
 
   const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.setCustomValidity("")
-  };
+  }
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -67,7 +67,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
         </button>
       </div>
     </form>
-  );
-};
+  )
+}
 
 export default SearchBox

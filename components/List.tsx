@@ -1,33 +1,33 @@
-import React from "react";
+import React from "react"
 import Help from './Help'
 import * as lang from '../utils/languages'
 import { isMobile } from 'react-device-detect'
 
 interface ListItem {
-  key: number;
-  name: string;
-  migrated: string;
+  key: number
+  name: string
+  migrated: string
 }
 
 interface ListProps {
-  label: string;
-  items: ListItem[];
-  onItemClick: (value: string) => void;
+  label: string
+  items: ListItem[]
+  onItemClick: (value: string) => void
 }
 
 const alphabets: string[] = []; // List of all alphabets except 'x'
 for (let i = 65; i <= 90; i++) {
   if (String.fromCharCode(i).toLocaleLowerCase() !== 'x') { // Ignore 'x'
-    alphabets.push(String.fromCharCode(i).toLocaleLowerCase());
+    alphabets.push(String.fromCharCode(i).toLocaleLowerCase())
   }
 }
 
 const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
-  const [icon, setIcon] = React.useState('');
-  const [help, setHelp] = React.useState('');
-  const [color, setColor] = React.useState('');
+  const [icon, setIcon] = React.useState('')
+  const [help, setHelp] = React.useState('')
+  const [color, setColor] = React.useState('')
   const [helpModal, setHelpModal] = React.useState(false)
 
   return (
@@ -247,7 +247,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
         </li>
       ))}
     </ul>
-  );
-};
+  )
+}
 
-export default List;
+export default List

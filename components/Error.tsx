@@ -1,18 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
 
 const Error = ({ show, onClose, color, title, children }) => {
-  const [browser, setBrowser] = React.useState(false);
+  const [browser, setBrowser] = React.useState(false)
 
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -32,17 +32,17 @@ const Error = ({ show, onClose, color, title, children }) => {
         <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 20px;
@@ -59,7 +59,7 @@ const StyledModalBody = styled.div`
   text-align: center;
   align-items: center;
   line-height: 20px;
-`;
+`
 
 const StyledModalTitle = styled.div`
   font-size: 18px;
@@ -68,13 +68,13 @@ const StyledModalTitle = styled.div`
   font-weight: 700;
   color: white;
   margin-top: -20px;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
   font-size: 20px;
-`;
+`
 
 const StyledModal = styled.div`
   background: red;
@@ -85,7 +85,7 @@ const StyledModal = styled.div`
   overflow-y: initial !important
   padding-bottom: 20px;
   justify-content: center;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -97,6 +97,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.85);
-`;
+`
 
-export default Error;
+export default Error

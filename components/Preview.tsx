@@ -38,10 +38,10 @@ import {
 interface ModalProps {
   _ENS_: string,
   chain: string,
-  show: boolean;
-  onClose: any;
-  handleParentModalData: (data: string) => void;
-  handleParentTrigger: (data: boolean) => void;
+  show: boolean
+  onClose: any
+  handleParentModalData: (data: string) => void
+  handleParentTrigger: (data: boolean) => void
 }
 
 // Get latest timestamp from all records
@@ -58,10 +58,10 @@ function latestTimestamp(list: string[]) {
 /// Init 
 // Types object with empty strings
 function EMPTY_STRING() {
-  const EMPTY_STRING = {};
+  const EMPTY_STRING = {}
   for (const key of constants.types) {
     if (!['resolver', 'recordhash'].includes(key)) {
-      EMPTY_STRING[key] = '';
+      EMPTY_STRING[key] = ''
     }
   }
   return EMPTY_STRING
@@ -94,15 +94,15 @@ const waitingPeriod = constants.waitingPeriod
 // Check if image URL resolves
 function checkImageURL(url: string) {
   return new Promise(function(resolve, reject) {
-    var img = new Image();
+    var img = new Image()
     img.onload = function() {
-      resolve(true);
-    };
+      resolve(true)
+    }
     img.onerror = function() {
-      reject(false);
-    };
-    img.src = url;
-  });
+      reject(false)
+    }
+    img.src = url
+  })
 }
 
 /**
@@ -200,9 +200,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const ccip2Config = constants.ccip2Config[chain === '1' ? 1 : 0]
   const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
   const network = chain === '5' ? 'goerli' : 'homestead'
-  const provider = new ethers.providers.AlchemyProvider(network, apiKey);
+  const provider = new ethers.providers.AlchemyProvider(network, apiKey)
   const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
-  const web3 = new Web3(alchemyEndpoint);
+  const web3 = new Web3(alchemyEndpoint)
   const caip10 = `eip155:${chain}:${_Wallet_}`  // CAIP-10
   const origin = `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}`
 
@@ -322,9 +322,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       type = 'address'
       _value = value
     }
-    let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
+    let _result = ethers.utils.defaultAbiCoder.encode([type], [_value])
     let _ABI = [constants.signedRecord]
-    let _interface = new ethers.utils.Interface(_ABI);
+    let _interface = new ethers.utils.Interface(_ABI)
     let _encodedWithSelector = _interface.encodeFunctionData(
       "signedRecord", 
       [
@@ -355,7 +355,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       type = 'address'
       _value = _recordValue
     }
-    let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
+    let _result = ethers.utils.defaultAbiCoder.encode([type], [_value])
     const toPack = ethers.utils.keccak256(_result)
     const _extradata = ethers.utils.hexlify(ethers.utils.solidityPack(["bytes"], [toPack]))
     return _extradata
@@ -393,30 +393,30 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handle Options modal data return
   const handleOptionsModalData = (data: string | undefined) => {
-    setOptionsModalState(prevState => ({ ...prevState, modalData: data }));
-  };
+    setOptionsModalState(prevState => ({ ...prevState, modalData: data }))
+  }
   // Handle Options modal trigger
   const handleOptionsTrigger = (trigger: boolean) => {
-    setOptionsModalState(prevState => ({ ...prevState, trigger: trigger }));
-  };
+    setOptionsModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
 
   // Handle Confirm modal data return
   const handleConfirmModalData = (data: string | undefined) => {
-    setConfirmModalState(prevState => ({ ...prevState, modalData: data }));
-  };
+    setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
+  }
   // Handle Confirm modal trigger
   const handleConfirmTrigger = (trigger: boolean) => {
-    setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }));
-  };
+    setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
       
   // Handle Salt modal data return
   const handleSaltModalData = (data: string | undefined) => {
-    setSaltModalState(prevState => ({ ...prevState, modalData: data }));
-  };
+    setSaltModalState(prevState => ({ ...prevState, modalData: data }))
+  }
   // Handle Salt modal trigger
   const handleSaltTrigger = (trigger: boolean) => {
-    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }));
-  };
+    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
 
   /// Preview Domain Metadata
   // Read ENS Legacy Registrar for Owner record of ENS domain
@@ -582,16 +582,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Send data to Home/Account-page and trigger update
   const handleSuccess = () => {
-    handleParentModalData(_ENS_);
-    handleParentTrigger(true);
-  };
+    handleParentModalData(_ENS_)
+    handleParentTrigger(true)
+  }
 
   // Handles loading of avatar
   React.useEffect(() => {
     checkImageURL(avatar)
       .then(() => setImageLoaded(true))
-      .catch(() => setImageLoaded(false));
-  }, [avatar]);
+      .catch(() => setImageLoaded(false))
+  }, [avatar])
 
   // Triggers upon Preview load and attempts to get Resolver for ENS domain
   React.useEffect(() => {
@@ -609,7 +609,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       getResolver()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [browser]);
+  }, [browser])
  
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -630,7 +630,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, recordhash, trigger]);
+  }, [saltModalState, recordhash, trigger])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -642,13 +642,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const __keypair = await _KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
         setKeypair(__keypair)
         setMessage(['IPNS Key Generated', ''])
-      };
+      }
       keygen()
     } else {
       setMessage(['IPNS Key/CID Exists', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, sigIPNS]);
+  }, [keygen, sigIPNS])
 
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
@@ -671,7 +671,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ) // Checks if connected wallet is on-chain manager
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypair]);
+  }, [keypair])
 
   // Sets signature from Wagmi signMessage() as S1(K1)
   React.useEffect(() => {
@@ -723,7 +723,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const contract = new web3.eth.Contract(
         constants.ensConfig[chain === '1' ? 4 : 6].contractInterface as AbiItem[], 
         constants.ensConfig[chain === '1' ? 4 : 6].addressOrName
-      );
+      )
       let gasAmount: any
       if (key === 'contenthash') {
         gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(_ENS_), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
@@ -748,7 +748,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setMessage(message)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [CID, states]);
+  }, [CID, states])
 
   // Handles single vs. mulitple record updates
   React.useEffect(() => {
@@ -762,18 +762,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ...item, 
             label: 'Edit All',
             help: 'set multiple records in one click'
-          };
+          }
         } else {
           return { 
             ...item, 
             label: item.type !== 'resolver' ? (item.type !== 'recordhash' ? 'Edit' : 'Set') : 'Migrate'
-          };
+          }
         }
-      });
+      })
       setPreCache(_updatedList)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [states]);
+  }, [states])
 
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
@@ -783,7 +783,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       return { 
         ...item,  
         active: resolver !== ccip2Contract
-      };
+      }
     })
     setPreCache(_updatedList)
     setStates([])
@@ -798,9 +798,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setKeypair(undefined) // Purge keypairs from local storage 
     setNewValues(EMPTY_STRING())
     setSustain(false)
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   // Finish query for ENS domain records
   function finishQuery(data: React.SetStateAction<any[]> | undefined) {
@@ -824,7 +824,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .catch(() => {
         setContenthash('')
         getAvatar()
-      });
+      })
   }
 
   // Get Avatar for ENS domain second
@@ -841,7 +841,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .catch(() => {
         setAvatar('')
         getAddr()
-      });
+      })
   }
 
   // Get Addr for ENS domain at last
@@ -858,70 +858,69 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .catch(() => {
         setAddr('')
         setFinish(true)
-      });
-  }
-
-  // Get Resolver for ENS domain
-  async function getResolver() {
-    await provider.getResolver(_ENS_)
-      .then(response => {
-        setMessage(['This May Take a While', ''])
-        if (response?.address) {
-          setResolver(response?.address)
-          setResolveCall(response)
-          if (response?.address === ccip2Contract) {
-            getContenthash(response)
-          } else {
-            setContenthash('')
-            setAvatar('')
-            setAddr('')
-            setFinish(true)
-          }
-        }
       })
   }
 
-  // Re-try empty records
-  async function refreshRecord(_record: string) {
-    setRefresh(_record)
-    if (_record === 'addr') {
-      await provider.resolveName(_ENS_)
-      .then(response => {
-        if (response) {
-          setAddr(response)
-          setRefresh('1')
-        }
-        setRefresh('0')
-      })
-      .catch(() => {
-        setRefresh('0')
-      });
-    } else if (_record === 'avatar') {
-      await provider.getAvatar(_ENS_)
-      .then(response => {
-        if (response) {
-          setAvatar(response)
-          setRefresh('1')
-        }
-        setRefresh('0')
-      })
-      .catch(() => {
-        setRefresh('0')
-      });
-    } else if (_record === 'contenthash') {
-      resolveCall.getContentHash()
-      .then((response: string) => {
-        if (response) {
-          setContenthash(response)
-          setRefresh('1')
-        }
-        setRefresh('0')
-      })
-      .catch(() => {
-        setRefresh('0')
-      });
+// Get Resolver for ENS domain
+async function getResolver() {
+  try {
+    setMessage(['This May Take a While', ''])
+    const _response = await provider.getResolver(_ENS_)
+    if (_response?.address) {
+      setResolver(_response.address)
+      setResolveCall(_response)
+      if (_response.address === ccip2Contract) {
+        getContenthash(_response)
+      } else {
+        const _contenthash = await refreshRecord('contenthash')
+        setContenthash(_contenthash || '')
+        const _avatar = await refreshRecord('avatar')
+        setAvatar(_avatar || '')
+        const _addr = await refreshRecord('addr')
+        setAddr(_addr || '')
+        setFinish(true)
+      }
     }
+  } catch (error) {
+    console.error('Error in getResolver():', error)
   }
+}
+
+// Re-try empty records
+async function refreshRecord(_record: string) {
+  setRefresh(_record)
+  try {
+    if (_record === 'addr') {
+      const response = await provider.resolveName(_ENS_)
+      if (response) {
+        setAddr(response)
+        setRefresh('1')
+        return response
+      }
+    } else if (_record === 'avatar') {
+      const response = await provider.getAvatar(_ENS_)
+      if (response) {
+        setAvatar(response)
+        setRefresh('1')
+        return response
+      }
+    } else if (_record === 'contenthash') {
+      const response = await resolveCall.getContentHash()
+      if (response) {
+        setContenthash(response)
+        setRefresh('1')
+        return response
+      }
+    }
+    setRefresh('0')
+    return ''
+  } catch (error) {
+    console.error(`Error in refreshRecord('${_record}'):`, error)
+    setRefresh('0')
+    return ''
+  }
+}
+
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
   async function writeRevision(revision: Name.Revision, gas: {}) {
@@ -934,7 +933,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       chain: chain,
       gas: JSON.stringify(gas), 
       version: JSON.stringify(revision, (key, value) => {
-        return typeof value === 'bigint' ? value.toString() : value;
+        return typeof value === 'bigint' ? value.toString() : value
       }),
       timestamp: timestamp,
       hashType: hashType
@@ -974,13 +973,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Check if value is a valid Addr
   function isAddr(value: string) {
-    const hexRegex = /^[0-9a-fA-F]+$/;
+    const hexRegex = /^[0-9a-fA-F]+$/
     return value.startsWith('0x') && value.length === 42 && hexRegex.test(value.split('0x')[1])
   }
 
   // Check if value is a valid Avatar URL
   function isAvatar(value: string) {
-    const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
     return urlRegex.test(value)
   }
   // Check if value is a valid Contenthash
@@ -1022,7 +1021,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       return
     }
     setLegit(__THIS)
-    const _THIS = newValues;
+    const _THIS = newValues
     _THIS[key] = value
     setNewValues(_THIS)
     const priorState = states
@@ -1038,10 +1037,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           editable: true, 
           active: true,
           state: false
-        };
+        }
       }
-      return item;
-    });
+      return item
+    })
     setPreCache(_updatedList)
   }
 
@@ -1104,7 +1103,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       getUpdate(ownerhash ? ownerhash : '')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finish, ownerhash]);
+  }, [finish, ownerhash])
 
   // Triggers setting metadata
   React.useEffect(() => {
@@ -1121,15 +1120,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue, resolver, recordhash, ownerhash]);
+  }, [history, queue, resolver, recordhash, ownerhash])
 
   // Wagmi hook for awaiting transaction processing
   const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
     hash: response1of2?.hash,
-  });
+  })
   const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
     hash: response2of2?.hash,
-  });
+  })
 
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
@@ -1139,25 +1138,25 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           ...item, 
           editable: queue > 0, // allow updates only after the waiting period
           active: queue > 0
-        };
+        }
       } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
         return { 
           ...item, 
           editable: false, 
           active: false
-        };
+        }
       } else if (['recordhash'].includes(item.type)) {
         return { 
           ...item, 
           editable: false, 
           active: resolver === ccip2Contract
-        };
+        }
       }
-      return item;
-    });
+      return item
+    })
     setPreCache(_updatedList)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, resolver]);
+  }, [trigger, resolver])
 
   // Handles password prompt for S1(K1)
   React.useEffect(() => {
@@ -1171,7 +1170,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateRecords]);
+  }, [updateRecords])
 
   // Handles record refresh
   React.useEffect(() => {
@@ -1184,7 +1183,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }, 30000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh]);
+  }, [refresh])
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
@@ -1197,11 +1196,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypair[1][0]) 
         }) // Sign with K0
         if (_signature) __signatures[_recordType] = _signature
-      });
+      })
       setSignatures(__signatures)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, keypair]);
+  }, [write, keypair])
 
   // Handles generating signatures for off-chain manager
   React.useEffect(() => {
@@ -1212,7 +1211,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setSigApproved('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChainManager, signatures]);
+  }, [onChainManager, signatures])
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
@@ -1308,7 +1307,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     if (data.response.ipfs && w3name && gas) {
                       const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
                       // @W3Name broadcast
-                      let _revision: Name.Revision;
+                      let _revision: Name.Revision
                       if (!history.revision) {
                         _revision = await Name.v0(w3name, toPublish)
                       } else {
@@ -1328,7 +1327,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           setStates(prevState => prevState.filter(item => item !== _state))
                         })
                         setLegit(EMPTY_BOOL())
-                      }, 2000);
+                      }, 2000)
                       // Update values in the modal to new ones
                       setTimestamp(data.response.timestamp)
                       const _updatedList = list.map((item) => {
@@ -1343,13 +1342,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               label: 'edit',
                               active: _queue > 0,
                               editable: _queue > 0
-                            };
+                            }
                           } else {
                             return { 
                               ...item,  
                               active: _queue > 0,
                               editable: _queue > 0
-                            };
+                            }
                           } 
                         } else {
                           return item
@@ -1386,7 +1385,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setUpdateRecords(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signatures, sigApproved]);
+  }, [signatures, sigApproved])
 
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
@@ -1421,7 +1420,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               }
             }
           }
-        });
+        })
         setPreCache(_updatedList)
         setLegit(EMPTY_BOOL())
         setStates([])
@@ -1434,7 +1433,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of2, migrated, optionsModalState, resolver]);
+  }, [isMigrateSuccess, txSuccess1of2, migrated, optionsModalState, resolver])
 
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
@@ -1442,7 +1441,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setList(preCache)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preCache]);
+  }, [preCache])
 
   // Handles setting Recordhash after transaction 2 
   React.useEffect(() => {
@@ -1452,7 +1451,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setMessage(['Transaction Successfully Confirmed', '2'])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetRecordhashSuccess, txSuccess2of2]);
+  }, [isSetRecordhashSuccess, txSuccess2of2])
 
   // Handles finishing migration of Resolver to CCIP2
   React.useEffect(() => {
@@ -1482,7 +1481,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           }
         }
-      });
+      })
       setPreCache(_updatedList)
       setLegit(EMPTY_BOOL())
       setStates([])
@@ -1494,7 +1493,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordhash]);
+  }, [recordhash])
 
   // Sets migration state to true upon successful transaction 1 receipt
   React.useEffect(() => {
@@ -1509,7 +1508,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       pin()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of2]);
+  }, [isMigrateSuccess, txSuccess1of2])
 
   // Handles transaction wait
   React.useEffect(() => {
@@ -1535,7 +1534,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLoading(false)
       setStates([])
     } 
-  }, [isMigrateLoading, isSetRecordhashLoading, isMigrateError, isSetRecordhashError]);
+  }, [isMigrateLoading, isSetRecordhashLoading, isMigrateError, isSetRecordhashError])
 
   // Handles first transaction loading and error
   React.useEffect(() => {
@@ -1550,7 +1549,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setStates([])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading1of2, txError1of2]);
+  }, [txLoading1of2, txError1of2])
 
   // Handles second transaction loading and error
   React.useEffect(() => {
@@ -1565,7 +1564,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setStates([])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading2of2, txError2of2]);
+  }, [txLoading2of2, txError2of2])
 
   // Handles signature loading and error
   React.useEffect(() => {
@@ -1581,7 +1580,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setMessage(['Starting Keygen', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError, salt]);
+  }, [signLoading, signError, salt])
 
   /// Modal Content
   const modalContent = show ? (
@@ -2135,17 +2134,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             </div>
       </StyledModal>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 20px;
@@ -2157,7 +2156,7 @@ const StyledModalBody = styled.div`
   height: auto;
   overflow-y: auto;
   overflow-x: hidden;
-`;
+`
 
 const StyledModalTitle = styled.div`
   padding-top: 10px;
@@ -2170,13 +2169,13 @@ const StyledModalTitle = styled.div`
   font-weight: 1200;
   margin-bottom: 0px;
   color: white;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
   font-size: 20px;
-`;
+`
 
 const StyledModal = styled.div`
   width: auto;
@@ -2187,7 +2186,7 @@ const StyledModal = styled.div`
   padding-right: 8px;
   padding-bottom: 0px;
   overflow-y: initial !important;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -2199,6 +2198,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.15);
-`;
+`
 
-export default Preview;
+export default Preview

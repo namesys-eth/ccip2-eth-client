@@ -1,18 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
-import { isMobile } from 'react-device-detect';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
+import { isMobile } from 'react-device-detect'
 
 const Help = ({ _ENS_, color, show, onClose, children }) => {
-  const [browser, setBrowser] = React.useState(false);
+  const [browser, setBrowser] = React.useState(false)
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -45,17 +45,17 @@ const Help = ({ _ENS_, color, show, onClose, children }) => {
           <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 0px;
@@ -71,7 +71,7 @@ const StyledModalBody = styled.div`
   font-weight: 700;
   line-height: 20px;
   max-width: 400px;
-`;
+`
 
 const StyledModalTitle = styled.div`
   margin-top: -15px;
@@ -81,12 +81,12 @@ const StyledModalTitle = styled.div`
   font-weight: 700;
   margin-bottom: 15px;
   color: white;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`;
+`
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
@@ -99,7 +99,7 @@ const StyledModal = styled.div`
   padding: 5px;
   justify-content: center;
   text-align: center;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -111,6 +111,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.85);
-`;
+`
 
-export default Help;
+export default Help
