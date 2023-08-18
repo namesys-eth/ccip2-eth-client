@@ -405,12 +405,9 @@ const Home: NextPage = () => {
 
   return (
     <div
-      className="page"
+      className="page flex-column-sans-align"
       style={{
         maxWidth: '100vw',
-        justifyContent: 'center',
-        display: 'flex',
-        flexDirection: 'column',
         top: '20px'
       }}>
       {/* Avatar */}
@@ -491,12 +488,7 @@ const Home: NextPage = () => {
                 disabled={isDisconnected}
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
                   {!isMobile ? 'My Names' : 'Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
                 </div>
@@ -557,12 +549,7 @@ const Home: NextPage = () => {
               data-tooltip='Learn more'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
               </div>
@@ -574,12 +561,7 @@ const Home: NextPage = () => {
               data-tooltip='Terms of Use'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 {'terms'}&nbsp;<span className="material-icons">gavel</span>
               </div>
@@ -711,21 +693,16 @@ const Home: NextPage = () => {
           {loading && onSearch && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   marginTop: '-10px',
                   marginBottom: '200px'
                 }}
               >
                 <div
+                  className="flex-column"
                   style={{
-                    paddingBottom: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex'
+                    paddingBottom: '10px'
                   }}
                 >
                   <Loading 
@@ -807,15 +784,13 @@ const Home: NextPage = () => {
           )}
           {/* Footer */}
           <div
+            className="flex-sans-direction"
             style={{
               color: '#fc6603',
               top: 'auto',
               left: '50%',
               transform: 'translateX(-50%)',
               bottom: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              display: 'flex',
               position: 'fixed'
             }}>
             <span

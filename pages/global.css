@@ -239,32 +239,29 @@ input[type="text"] {
   margin-bottom: -1.5px;
 }
 
+/* Font sizes */
 .miui {
   font-size: 100px;
 }
-
 .miui-small {
   font-size: 60px;
 }
-
 .miui-smaller {
   font-size: 40px;
 }
-
 .smol{
   font-size: 16px;
   margin-left: 5px;
   color: cyan;
 }
-
 .smoller{
   font-size: 18px;
 }
-
 .chonk{
   font-size: 20px;
 }
 
+/* Label style */
 .label {
     font-family: "SF Mono";
     font-size: 15px;
@@ -276,6 +273,7 @@ input[type="text"] {
     cursor: pointer;
 }
 
+/* Names container */
 .list-container {
   width: 40%;
   margin-left: 30%;
@@ -290,6 +288,45 @@ input[type="text"] {
     margin-left: 0.5%;
     padding: 15px 1px 15px 1px;
   }
+}
+
+/* Flexes */
+.flex-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.flex-column-sans-align {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.flex-row-sans-align {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.flex-sans-direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flex-column-sans-justify {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.flex-row-sans-justify {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
 }
 
 .overlay {

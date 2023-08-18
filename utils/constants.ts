@@ -14,8 +14,10 @@ import * as ensContent from '../utils/contenthash'
 export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
 export const signedRedirect = 'function signedRedirect(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
 export const zeroAddress = '0x' + '0'.repeat(40)
+export const zeroBytes = '0x' + '0'.repeat(64)
 export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
+export const prefix = '0xe5010172002408011220'
 
 export interface MainBodyState {
   modalData: string | undefined;

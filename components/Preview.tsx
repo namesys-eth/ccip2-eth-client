@@ -695,7 +695,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     args: [ethers.utils.namehash(_ENS_), ccip2Contract]
   })
 
-  // Sets Recordhash in CCIP2 Resolver
+  // Sets Short Recordhash in CCIP2 Resolver
   const {
     data: response2of2,
     write: initRecordhash,
@@ -705,8 +705,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   } = useContractWrite({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
-    functionName: 'setRecordhash',
-    args: [ethers.utils.namehash(_ENS_), constants.encodeContenthash(CID)]
+    functionName: 'setShortRecordhash',
+    args: [
+      ethers.utils.namehash(_ENS_), 
+      ethers.utils.defaultAbiCoder.encode(
+        ['bytes32'], 
+        [CID ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+      )
+    ]
   })
 
   // Get gas cost estimate for hypothetical on-chain record update
@@ -1385,6 +1391,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (isSetRecordhashSuccess && txSuccess2of2) {
       setRecordhash(`ipns://${CID}`)
       setENS(_ENS_)
+      setMessage(['Transaction Successfully Confirmed', '2'])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetRecordhashSuccess, txSuccess2of2]);
@@ -1422,7 +1429,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLegit(EMPTY_BOOL())
       setStates([])
       setLoading(false)
-      setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>. Enjoy!')
+      setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>')
       setIcon('check_circle_outline')
       setColor('lime')
       setSuccessModal(true)
@@ -1435,8 +1442,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess1of2) {
       const pin = async () => {
-        setResolver(ccip2Contract)
-        setMigrated(true)
+        setMessage(['Transaction Confirmed', '1'])
+        setTimeout(() => {
+          setResolver(ccip2Contract)
+          setMigrated(true)
+        }, 2000)
       }
       pin()
     }
@@ -1504,15 +1514,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (signLoading && !signError) {
       setLoading(true)
       setMessage(['Waiting for Signature', sigCount.toString()])
-    }
-    if (signError && !signLoading) {
+    } else if (signError && !signLoading) {
       setMessage(['Signature Failed', sigCount.toString()])
       setCrash(true)
       setLoading(false)
       setStates([])
+    } else if (!signError && !signLoading && salt) {
+      setMessage(['Starting Keygen', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError]);
+  }, [signLoading, signError, salt]);
 
   /// Modal Content
   const modalContent = show ? (
@@ -1572,11 +1583,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         {loading && 
           <StyledModalBody>
             <div
+              className='flex-column'
               style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'column',
                 marginTop: '-10px',
                 marginBottom: '80px'
               }}
@@ -1627,12 +1635,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         {list.length > 0 && !loading && 
           <StyledModalBody>
           <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              flexDirection: 'column'
-            }}
+            className='flex-column'
           >
             <div
               style={{
@@ -1680,11 +1683,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               }}
             >
               <div
+                className='flex-column'
                 style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  flexDirection: 'column',
                   paddingBottom: !isMobile ? '15px' : '5px',
                 }}
               >
@@ -1879,7 +1879,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
                                 setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
                               }}
-                              data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Click to Expand' }
+                              data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me' }
                             >
                               <div 
                                 className="material-icons smol"
@@ -1958,16 +1958,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           data-tooltip={ item.tooltip }
                         >
                           <div 
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                fontSize: '13px'
-                              }}
-                            >
-                                {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
-                            </div>
+                            className="flex-sans-direction"
+                            style={{
+                              fontSize: '13px'
+                            }}
+                          >
+                              {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
+                          </div>
                         </button>
                       </div>
                       <input 

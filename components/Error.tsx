@@ -24,12 +24,7 @@ const Error = ({ show, onClose, color, title, children }) => {
         </StyledModalHeader>
         {title && <StyledModalTitle>
           <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            className="flex-column"
           >
             <div className="material-icons miui-small">{title}</div>
           </div>
@@ -101,7 +96,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.85);
 `;
 
 export default Error;

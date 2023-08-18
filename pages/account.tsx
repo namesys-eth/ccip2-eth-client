@@ -182,7 +182,7 @@ const Account: NextPage = () => {
 
   // Sets Ownerhash in CCIP2 Resolver
   const {
-    data: response2of2,
+    data: response1of1,
     write: initOwnerhash,
     isLoading: isSetOwnerhashLoading,
     isSuccess: isSetOwnerhashSuccess,
@@ -190,8 +190,13 @@ const Account: NextPage = () => {
   } = useContractWrite({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
-    functionName: 'setOwnerhash',
-    args: [constants.encodeContenthash(CID)]
+    functionName: 'setShortOwnerhash',
+    args: [
+      ethers.utils.defaultAbiCoder.encode(
+        ['bytes32'], 
+        [CID ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+      )
+    ]
   })
 
   // Get historical gas savings
@@ -315,13 +320,13 @@ const Account: NextPage = () => {
 
   // Handle wallet change by the user
   React.useEffect(() => {
-    if (!finish && !success && process) { // Prohibit wallet change when names are loading
+    if (!finish && !success && process && activeTab === 'OWNER') { // Prohibit wallet change when names are loading
       setMessage('Loading Names')
     } else if (!finish && !success && !process) { // Print message on load
       setMessage('Failed to Fetch')
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Wallet_, finish, success])
+  }, [_Wallet_, finish, success, activeTab])
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
@@ -537,54 +542,71 @@ const Account: NextPage = () => {
     setQuery(query)
   }
 
-  const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
-    hash: response2of2?.hash,
+  const { isSuccess: txSuccess1of1, isError: txError1of1, isLoading: txLoading1of1 } = useWaitForTransaction({
+    hash: response1of1?.hash,
   });
 
   // Handles setting Ownerhash after transaction 2 
   React.useEffect(() => {
-    if (txSuccess2of2) {
+    if (txSuccess1of1 && isSetOwnerhashSuccess) {
       setOwnerhash(`ipns://${CID}`)
+      setMessage('Transaction Confirmed')
+      setTimeout(() => {
+        setLoading(false)
+      }, 2000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txSuccess2of2]);
+  }, [txSuccess1of1, isSetOwnerhashSuccess]);
 
   // Handles Ownerhash transaction loading and error
   React.useEffect(() => {
-    if (txLoading2of2 && !txError2of2) {
+    if (txLoading1of1 && !txError1of1) {
       setLoading(true)
       setMessage('Waiting for Confirmation')
     }
-    if (!txLoading2of2 && txError2of2) {
+    if (!txLoading1of1 && txError1of1) {
       setMessage('Transaction Failed')
       setCrash(true)
       setLoading(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [txLoading2of2, txError2of2]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading1of1, txError1of1]);
 
-    // Handles signature loading and error
+  // Handles transaction wait
   React.useEffect(() => {
-    if (signLoading && !signError) {
+    if (isSetOwnerhashLoading && !isSetOwnerhashError) {
       setLoading(true)
-      setMessage('Waiting for Signature')
-    }
-    if (signError && !signLoading) {
-      setMessage('Signature Failed')
+      setFinish(false)
+      setMessage('Waiting for Transaction')
+    } else if (!isSetOwnerhashLoading && isSetOwnerhashError) {
       setCrash(true)
       setLoading(false)
+      setMessage('Transaction Declined By User')
+    }
+  }, [isSetOwnerhashLoading, isSetOwnerhashError])
+
+  // Handles signature loading and error
+  React.useEffect(() => {
+    if (activeTab === 'UTILS') {
+      if (signLoading && !signError) {
+        setLoading(true)
+        setMessage('Waiting for Signature')
+      } else if (signError && !signLoading) {
+        setMessage('Signature Failed')
+        setCrash(true)
+        setLoading(false)
+      } else if (!signError && !signLoading && salt) {
+        setMessage('Signature Successful')
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError]);
+  }, [signLoading, signError, activeTab, salt]);
 
   return (
     <div
-      className="page"
+      className="page flex-column-sans-align"
       style={{
         maxWidth: '100%',
-        justifyContent: 'center',
-        display: 'flex',
-        flexDirection: 'column',
         top: '20px'
       }}>
       {/* Avatar */}
@@ -663,12 +685,7 @@ const Account: NextPage = () => {
                 data-tooltip='Homepage'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
                   {!isMobile ? 'Home' : 'Home'}
                   <span className="material-icons" style={{ marginLeft: '3px' }}>home</span>
@@ -699,12 +716,7 @@ const Account: NextPage = () => {
               data-tooltip='Learn more'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 {'about'}
                 <span className="material-icons" style={{ marginLeft: '3px' }}>info</span>
@@ -717,12 +729,7 @@ const Account: NextPage = () => {
               data-tooltip='Terms of Use'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 {'terms'}<span>&nbsp;</span><span className="material-icons">gavel</span>
               </div>
@@ -755,10 +762,8 @@ const Account: NextPage = () => {
         <div className={ !isMobile && !isSearch ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
           <div style={{ marginTop: '-120px' }}>
             <div
+              className="flex-column"
               style={{
-                display: 'flex',
-                justifyContent: 'center',
-                textAlign: 'center',
                 paddingTop: '100px'
               }}>
               {!isMobile && isDisconnected && (
@@ -890,11 +895,8 @@ const Account: NextPage = () => {
           )}
           {(isConnected || !isDisconnected) && (
             <div
+              className="flex-sans-direction"
               style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'row',
                 marginBottom: '50px',
                 marginTop: isMobile ? '-35px' : '2px'
               }}
@@ -920,12 +922,7 @@ const Account: NextPage = () => {
                 data-tooltip='Show names you own'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
                   {'NAMES'}
                   <span className="material-icons" style={{ marginLeft: '3px' }}>manage_accounts</span>
@@ -949,12 +946,7 @@ const Account: NextPage = () => {
                 data-tooltip='NameSys Utility Functions'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
                   {'UTILS'}
                   <span className="material-icons" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
@@ -977,12 +969,7 @@ const Account: NextPage = () => {
                 data-tooltip='Search for an ENS name'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
                   {'SEARCH'}
                   <span className="material-icons" style={{ marginLeft: '3px' }}>search</span>
@@ -993,21 +980,16 @@ const Account: NextPage = () => {
           {loading && (isConnected || !isDisconnected) && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   marginTop: '50px',
                   marginBottom: '200px'
                 }}
               >
                 <div
+                  className="flex-column"
                   style={{
-                    paddingBottom: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex'
+                    paddingBottom: '10px'
                   }}
                 >
                   <Loading 
@@ -1016,12 +998,9 @@ const Account: NextPage = () => {
                   />
                 </div>
                 <div
+                  className="flex-column"
                   style={{
-                    marginTop: '40px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    marginTop: '40px'
                   }}
                 >
                   <div
@@ -1053,21 +1032,16 @@ const Account: NextPage = () => {
            !empty && !finish && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   marginTop: '50px',
                   marginBottom: '200px'
                 }}
               >
                 <div
+                  className="flex-column"
                   style={{
-                    paddingBottom: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex'
+                    paddingBottom: '10px'
                   }}
                 >
                   <Loading 
@@ -1076,12 +1050,9 @@ const Account: NextPage = () => {
                   />
                 </div>
                 <div
+                  className="flex-column"
                   style={{
-                    marginTop: '40px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    marginTop: '40px'
                   }}
                 >
                   <div
@@ -1100,10 +1071,8 @@ const Account: NextPage = () => {
            !empty && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
                   color: 'cyan',
                   marginBottom: '25px',
@@ -1125,6 +1094,7 @@ const Account: NextPage = () => {
                     setColor('cyan'),
                     setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: cyan">search</span> tab for missing names</span>')
                   }}
+                  data-tooltip='Enlighten me'
                 >
                   <div
                     className="material-icons smol"
@@ -1157,10 +1127,8 @@ const Account: NextPage = () => {
           {!loading && activeTab === 'SEARCH' && meta.length > 0 && (isConnected || !isDisconnected) && !empty && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
                   color: 'cyan',
                   marginBottom: '25px',
@@ -1188,10 +1156,8 @@ const Account: NextPage = () => {
           {!loading && activeTab === 'UTILS' && !success && meta && (isConnected || !isDisconnected) && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
                   color: 'cyan',
                   marginBottom: '25px',
@@ -1213,6 +1179,7 @@ const Account: NextPage = () => {
                     setColor('cyan'),
                     setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
                   }}
+                  data-tooltip='Enlighten me'
                 >
                   <div
                     className="material-icons smol"
@@ -1225,22 +1192,16 @@ const Account: NextPage = () => {
                 </button>
               </div>
               <div
-                className='export-container'
+                className='export-container flex-column'
                 style={{
                   maxHeight: '520px',
                   overflowY: 'auto',
-                  marginBottom: '30px',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column'
+                  marginBottom: '30px'
                 }}
               >
                 <div
+                  className="flex-sans-direction"
                   style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex',
                     fontSize: '18px',
                     color: 'cyan',
                     marginBottom: '25px',
@@ -1301,12 +1262,7 @@ const Account: NextPage = () => {
                   }}
                 >
                   <div
-                    style={{
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'row'
-                    }}
+                    className="flex-sans-direction"
                   >
                     <span>{'SET'}</span>
                     <span 
@@ -1323,22 +1279,16 @@ const Account: NextPage = () => {
                 </button>
               </div>
               <div
-                className='hash-container'
+                className='hash-container flex-column'
                 style={{
                   maxHeight: '520px',
                   overflowY: 'auto',
-                  marginBottom: '70px',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column'
+                  marginBottom: '70px'
                 }}
               >
                 <div
+                  className="flex-sans-direction"
                   style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex',
                     fontSize: '18px',
                     color: 'cyan',
                     marginBottom: '25px',
@@ -1373,12 +1323,9 @@ const Account: NextPage = () => {
                   </button>
                 </div>
                 <div
+                  className="flex-sans-direction"
                   style={{
-                    width: '90%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex',
-                    flexDirection: 'row'
+                    width: '90%'
                   }}
                 >
                   <input
@@ -1420,13 +1367,10 @@ const Account: NextPage = () => {
                   </button>
                 </div>
                 <div
+                  className="flex-sans-direction"
                   style={{
                     marginTop: '10px',
-                    width: '90%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex',
-                    flexDirection: 'row'
+                    width: '90%'
                   }}
                 >
                   <input
@@ -1483,12 +1427,7 @@ const Account: NextPage = () => {
                   }}
                 >
                   <div
-                    style={{
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'row'
-                    }}
+                    className="flex-sans-direction"
                   >
                     <span>{'EXPORT'}</span>
                     <span 
@@ -1509,10 +1448,8 @@ const Account: NextPage = () => {
           {!loading && activeTab === 'SEARCH' && meta && (isConnected || !isDisconnected) && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
                   color: 'cyan',
                   marginBottom: '25px',
@@ -1534,6 +1471,7 @@ const Account: NextPage = () => {
                     setColor('cyan'),
                     setHelp('<span>Search for a name that you <span style="color: cyan">own</span></span>')
                   }}
+                  data-tooltip='Enlighten me'
                 >
                   <div
                     className="material-icons smol"
@@ -1562,11 +1500,8 @@ const Account: NextPage = () => {
           {!loading && empty && activeTab === 'OWNER' && !errorModal && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   fontSize: '22px',
                   color: '#fc6603',
                   marginBottom: '25px',
@@ -1586,11 +1521,8 @@ const Account: NextPage = () => {
           {!response && !manager && query && activeTab !== 'OWNER' && !loading && !errorModal && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   fontSize: '22px',
                   color: '#fc6603',
                   marginBottom: '25px',
@@ -1609,15 +1541,13 @@ const Account: NextPage = () => {
           )}
           {/* Footer */}
           <div
+            className="flex-sans-direction"
             style={{
               color: '#fc6603',
               top: 'auto',
               left: '50%',
               transform: 'translateX(-50%)',
               bottom: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              display: 'flex',
               position: 'fixed'
             }}>
             <span

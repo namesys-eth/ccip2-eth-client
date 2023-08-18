@@ -28,17 +28,16 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
   const [icon, setIcon] = React.useState('');
   const [help, setHelp] = React.useState('');
   const [color, setColor] = React.useState('');
-  const [modal, setModal] = React.useState(false)
+  const [helpModal, setHelpModal] = React.useState(false)
 
   return (
     <ul
+      className="flex-column"
       style={{
         listStyle: 'none',
-        color: 'white',
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column'
-      }}>
+        color: 'white'
+      }}
+    >
       {items.map((item) => (
         <li
           key={item.key}
@@ -105,7 +104,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                   <button 
                     className="button-tiny"
                     onClick={() => { 
-                      setModal(true),
+                      setHelpModal(true),
                       setIcon('gpp_good'),
                       setColor('lime'),
                       setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
@@ -126,7 +125,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                   <button 
                     className="button-tiny"
                     onClick={() => { 
-                      setModal(true),
+                      setHelpModal(true),
                       setIcon('gpp_good'),
                       setColor('cyan'),
                       setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
@@ -147,7 +146,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                   <button 
                     className="button-tiny"
                     onClick={() => { 
-                      setModal(true),
+                      setHelpModal(true),
                       setIcon('gpp_good'),
                       setColor('orange'),
                       setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Recordhash</span> or <span style="color: cyan">Ownerhash</span> is <span style="color: orange">not Set</span>. You can set Recordhash by pressing <span style="color: orange">SET</span>. You can set <span style="color: cyan">Ownerhash</span> in <span style="color: orange">UTILS</span></span>')
@@ -168,7 +167,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                   <button 
                     className="button-tiny"
                     onClick={() => { 
-                      setModal(true),
+                      setHelpModal(true),
                       setIcon('gpp_maybe'),
                       setColor('tomato'),
                       setHelp('<span>Resolver is <span style="color: orange">not migrated</span>. Please <span style="color: cyan">MIGRATE</span> to enable off-chain Records</span>')
@@ -189,8 +188,8 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
               <Help
                 color={ color }
                 _ENS_={ icon }
-                onClose={() => setModal(false)}
-                show={modal}
+                onClose={() => setHelpModal(false)}
+                show={helpModal}
               >
                 { help }
               </Help>
@@ -230,19 +229,16 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                 data-tooltip={`Click to ${label} off-chain records`}
               >
                 <div 
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      fontSize: '14px',
-                      fontWeight: '700'
-                    }}
-                  >
-                      { label }&nbsp;
-                      <span className="material-icons smoller">
-                        {label === "view" ? 'visibility' : 'manage_history'}
-                      </span>
+                  className="flex-sans-direction"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '700'
+                  }}
+                >
+                    { label }&nbsp;
+                    <span className="material-icons smoller">
+                      {label === "view" ? 'visibility' : 'manage_history'}
+                    </span>
                   </div>
               </button>
             </div>

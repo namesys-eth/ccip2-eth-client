@@ -56,12 +56,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
         <StyledModalBody>
           {/* Button */}
           <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            className="flex-column"
           >
             <div
               style={{
@@ -103,12 +98,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               data-tooltip={ 'Confirm' }
             >
               <div 
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 { 'Confirm' }&nbsp;<span className="material-icons chonk">thumb_up_alt</span>
               </div>
@@ -186,7 +176,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.75);
 `;
 
 export default Confirm;

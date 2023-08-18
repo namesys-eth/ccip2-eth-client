@@ -26,19 +26,11 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
 
   return (
     <form 
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column'
-      }}
+      className="flex-column-sans-justify"
       onSubmit={handleFormSubmit}
     >
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          flexDirection: 'row'
-        }}
+        className="flex-row-sans-justify"
       >
         <input
           type="text"

@@ -71,12 +71,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
         <StyledModalBody>
           {/* Top Button */}
           <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            className="flex-row"
           >
             <button 
               className="button-option"
@@ -92,12 +87,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               disabled={ !children }
             >
               <div 
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 { 'Ownerhash' }&nbsp;<span className="material-icons chonk">recycling</span>
               </div>
@@ -124,12 +114,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
           </div>
           {/* Bottom Button */}
           <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            className="flex-row"
           >
             <button 
               className="button-option"
@@ -144,12 +129,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               data-tooltip='Set New On-chain Recordhash'
             >
               <div 
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'              
-                }}
+                className="flex-row"
               >
                 { 'Recordhash' }&nbsp;<span className="material-icons chonk">create</span>
               </div>
@@ -256,7 +236,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.85);
 `;
 
 export default Options;
