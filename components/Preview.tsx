@@ -440,7 +440,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     functionName: 'isApprovedSigner',
     args: [getOwner(), ethers.utils.namehash(ENS), keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress]
   })
-
   // Read ownership of a domain from ENS Wrapper
   const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
     address: `0x${constants.ensConfig[chain === '1' ? 7 : 3].addressOrName.slice(2)}`,
@@ -453,7 +452,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: 'getRecordhash',
-    args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+    args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : getOwner(), 32).toLowerCase()]
   })
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead({
@@ -548,13 +547,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Sets in-app ENS domain manager
   React.useEffect(() => {
     if (_Wallet_) {
-      let _Owner_ = getOwner()
       // Set Managers
       if (onChainManager && onChainManager.toString() === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([_Wallet_])
       } else {
-        // Set owner and controller as in-app managers if no on-chain manager exists
+        // Set owner as in-app managers if no on-chain manager exists
+        let _Owner_ = getOwner()
         setManagers([_Owner_])
       }
     }
@@ -604,7 +603,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else {
         setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
       }
-      
       setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
       getResolver()
     }
@@ -1863,7 +1861,7 @@ async function refreshRecord(_record: string) {
                               onClick={() => { 
                                 setHelpModal(true),
                                 setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
-                                setColor(item.type === 'resolver' ? 'orange' : 'tomato'),
+                                setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
                                 setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span>')
                               }}
                               data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
@@ -1871,7 +1869,7 @@ async function refreshRecord(_record: string) {
                               <div 
                                 className="material-icons smol"
                                 style={{
-                                  color: item.type === 'resolver' ? 'orange' : 'tomato',
+                                  color: item.type === 'resolver' ? 'orange' : 'orangered',
                                   marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                 }}
                               >
@@ -1886,7 +1884,7 @@ async function refreshRecord(_record: string) {
                               onClick={() => { 
                                 setHelpModal(true),
                                 setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
-                                setColor('tomato'),
+                                setColor('orangered'),
                                 setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span></span>')
                               }}
                               data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
@@ -1894,7 +1892,7 @@ async function refreshRecord(_record: string) {
                               <div 
                                 className="material-icons smol"
                                 style={{
-                                  color: 'tomato',
+                                  color: 'orangered',
                                   marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                 }}
                               >
@@ -1909,7 +1907,7 @@ async function refreshRecord(_record: string) {
                               onClick={() => { 
                                 setHelpModal(true),
                                 setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                                setColor(item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan')),
+                                setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : (ownerhash && managers.includes(_Wallet_ || '0x0') ? 'cyan' : 'cyan'))),
                                 setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: cyan">Recordhash</span> <span style="color: lime">is Set</span></span>' : '<span><span style="color: cyan">Ownerhash</span> <span style="color: lime">is Set</span></span>'))
                               }}
                               data-tooltip={ recordhash ? 'Resolver not Migrated But Recordhash is Set' : 'Resolver not Migrated But Ownerhash is Set' }
@@ -1917,7 +1915,7 @@ async function refreshRecord(_record: string) {
                               <div 
                                 className="material-icons smol"
                                 style={{
-                                  color: item.type === 'resolver' ? 'tomato' : (recordhash ? 'orange' : 'cyan'),
+                                  color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'cyan'),
                                   marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                 }}
                               >

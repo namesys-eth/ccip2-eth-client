@@ -169,7 +169,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     onClick={() => { 
                       setHelpModal(true),
                       setIcon('gpp_maybe'),
-                      setColor('tomato'),
+                      setColor('orangered'),
                       setHelp('<span>Resolver is <span style="color: orange">not migrated</span>. Please <span style="color: cyan">MIGRATE</span> to enable off-chain Records</span>')
                     }}
                     data-tooltip={ 'Resolver Not Migrated' }
@@ -177,7 +177,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     <div 
                       className="material-icons smol"
                       style={{
-                        color: 'tomato'
+                        color: 'orangered'
                       }}
                     >
                       gpp_maybe
