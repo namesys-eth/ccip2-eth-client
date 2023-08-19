@@ -600,7 +600,7 @@ const Account: NextPage = () => {
       }, 2000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txSuccess1of1, isSetOwnerhashSuccess])
+  }, [txSuccess1of1, isSetOwnerhashSuccess, flash])
 
   // Handles Ownerhash transaction loading and error
   React.useEffect(() => {

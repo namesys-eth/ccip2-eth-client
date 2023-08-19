@@ -846,11 +846,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles single vs. mulitple record updates
   React.useEffect(() => {
     if (states.length > 1) {
-      const _updatedList = list.map((item) => {
+      let _updatedList = list.map((item) => {
         if (!['resolver', 'recordhash'].includes(item.type) && 
           states.includes(item.type) 
         ) 
-        {
+        { 
           return { 
             ...item, 
             label: 'Edit All',
@@ -872,7 +872,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     setLegit(EMPTY_BOOL())
     setLoading(false)
-    const _updatedList = list.map((item) => {
+    let _updatedList = list.map((item) => {
       return { 
         ...item,  
         active: resolver !== ccip2Contract
@@ -909,7 +909,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Finish query for ENS domain records
   function finishQuery(data: React.SetStateAction<any[]> | undefined) {
-    if ( data ) {
+    if (data) {
       setList(data)
       setLoading(false)
     }
@@ -1124,8 +1124,8 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     } else if (key === 'contenthash') {
       __THIS[key] = isContenthash(value)
     } else {
-      // @CHECKPOINT: should never trigger
       setStates(prevState => [...prevState, key])
+      console.error('Error:', 'Illegal State Checkpoint')
       return
     }
     setLegit(__THIS)
@@ -1138,7 +1138,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     } else if (priorState.includes(key) && !newValues[key]) {
       setStates(prevState => prevState.filter(item => item !== key))
     }
-    const _updatedList = list.map((item) => {
+    let _updatedList = list.map((item) => {
       if (states.includes(item.type)) {
         return { 
           ...item, 
@@ -1248,29 +1248,31 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
 
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
-    const _updatedList = list.map((item) => {
-      if (states.includes(item.type) && !constants.forbidden.includes(item.type)) {
-        return { 
-          ...item, 
-          editable: queue > 0, // allow updates only after the waiting period
-          active: queue > 0
+    if (trigger) {
+      let _updatedList = list.map((item) => {
+        if (states.includes(item.type) && !constants.forbidden.includes(item.type)) {
+          return { 
+            ...item, 
+            editable: queue > 0, // allow updates only after the waiting period
+            active: queue > 0
+          }
+        } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
+          return { 
+            ...item, 
+            editable: false, 
+            active: false
+          }
+        } else if (['recordhash'].includes(item.type)) {
+          return { 
+            ...item, 
+            editable: false, 
+            active: resolver === ccip2Contract
+          }
         }
-      } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
-        return { 
-          ...item, 
-          editable: false, 
-          active: false
-        }
-      } else if (['recordhash'].includes(item.type)) {
-        return { 
-          ...item, 
-          editable: false, 
-          active: resolver === ccip2Contract
-        }
-      }
-      return item
-    })
-    setPreCache(_updatedList)
+        return item
+      })
+      setPreCache(_updatedList)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, resolver, states])
 
@@ -1292,7 +1294,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   React.useEffect(() => {
     if (refresh && ['0', '1'].includes(refresh)) { 
       if (refresh === '1') {
-        const _updatedList = list.map((item) => {
+        let _updatedList = list.map((item) => {
           if (item.type === refreshedItem) {
             return { 
               ...item, 
@@ -1461,7 +1463,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                       }, 2000)
                       // Update values in the modal to new ones
                       setTimestamp(data.response.timestamp)
-                      const _updatedList = list.map((item) => {
+                      let _updatedList = list.map((item) => {
                         if (!['resolver', 'recordhash'].includes(item.type)) {
                           let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
                           setQueue(_queue)
@@ -1542,7 +1544,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setMessage(['Waiting For Keygen', ''])
         setSalt(true)
       } else {
-        const _updatedList = list.map((item) => {
+        let _updatedList = list.map((item) => {
           if (constants.forbidden.includes(item.type)) {
             return { 
               ...item, 
@@ -1608,7 +1610,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Handles finishing migration of Resolver to CCIP2
   React.useEffect(() => {
     if (recordhash && txSuccess2of2) {
-      const _updatedList = list.map((item) => {
+      let _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
           return { 
             ...item, 
