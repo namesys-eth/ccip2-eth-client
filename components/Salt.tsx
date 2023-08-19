@@ -53,7 +53,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '46px'
+                fontSize: '66px'
               }}
             >
               key
@@ -119,9 +119,10 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             className="button"
             style={{
               height: '28px',
-              width: '120px',
-              marginTop: '25px',
-              fontSize: '14px'
+              width: '130px',
+              padding: '5px',
+              marginTop: '20px',
+              fontSize: '16px'
             }}
             disabled={!inputValue.length}
             onClick={ handleSubmit }
@@ -130,7 +131,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             <div 
               className="flex-row"
               style={{
-                fontSize: '13px'
+                fontSize: '15px'
               }}
             >
               { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
@@ -176,7 +177,7 @@ const StyledModalBody = styled.div`
   color: white;
   font-size: 14px;
   font-weight: 700;
-  margin-top: -15px;
+  margin-top: 5px;
 `
 
 const StyledModalTitle = styled.div`
@@ -186,7 +187,6 @@ const StyledModalTitle = styled.div`
   justify-content: center;
   flex-direction: column;
   font-weight: 700;
-  margin-bottom: 15px;
   color: white;
   padding-left: 20px;
   padding-right: 20px;
@@ -203,7 +203,7 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: 400px;
   max-width: ${isMobile ? '90%' : '60%'};
-  height: 220px;
+  height: 235px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;

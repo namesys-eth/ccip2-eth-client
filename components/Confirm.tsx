@@ -51,7 +51,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '46px'
+                fontSize: '66px'
               }}
             >
               notification_important
@@ -61,6 +61,10 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
           {/* Button */}
           <div
             className="flex-column"
+            style={{
+              marginTop: '10px',
+              marginBottom: '10px'
+            }}
           >
             <div
               style={{
@@ -70,27 +74,24 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
             >
               <span
                 style={{
-                  marginTop: '15px',
-                  fontSize: '15px'
+                  fontSize: '15px',
+                  lineHeight: '20px'
                 }}
               >
-                Please note that this will set a new on-chain &nbsp;
+                This will set a new on-chain&nbsp;
               </span>
-              <span style={{ color: 'cyan', fontWeight: '700' }}>
+              <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
                 Recordhash
-              </span> or&nbsp;
-              <span style={{ color: 'cyan', fontWeight: '700' }}>
+              </span>&nbsp;Or&nbsp;
+              <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
                 Gateway
-              </span>&nbsp;
-              for this name. If you intend to set a new&nbsp;
-              <span style={{ color: 'cyan', fontWeight: '700' }}>
+              </span>. If you intend to set a global&nbsp;
+              <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
                 Ownerhash
-              </span>,&nbsp;
-              please update it in&nbsp;
-              <span style={{ color: 'orange', fontWeight: '700' }}>
+              </span>,&nbsp;please update it in&nbsp;
+              <span style={{ color: 'orange', fontWeight: '700', lineHeight: '20px' }}>
                 UTILS
-              </span>&nbsp;
-              tab
+              </span>&nbsp;tab
             </div>
             <div
               className="flex-row"
