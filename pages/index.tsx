@@ -137,7 +137,7 @@ const Home: NextPage = () => {
     }
     try {
       const _RESPONSE = await fetch(
-        "https://sshmatrix.club:3003/gas",
+        "https://ipfs.namesys.xyz:3003/gas",
         {
           method: "post",
           headers: {

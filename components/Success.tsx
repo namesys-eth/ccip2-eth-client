@@ -59,13 +59,13 @@ const Success = ({ _ENS_, color, show, onClose, children }) => {
 
 const StyledModalBody = styled.div`
   padding-top: 0px;
-  padding-left: 40px;
-  padding-right: 40px;
+  padding-left: ${isMobile ? '10px' : '20px'};
+  padding-right: ${isMobile ? '10px' : '20px'};
   padding-bottom: 5px;
   margin-top: 0px;
-  margin-left: 40px;
-  margin-right: 40px;
-  margin-bottom: 20px;
+  margin-left: ${isMobile ? '10px' : '20px'};
+  margin-right: ${isMobile ? '10px' : '20px'};
+  margin-bottom: ${isMobile ? '15px' : '20px'};
   display: flex;
   justify-content: center;
   height: auto;

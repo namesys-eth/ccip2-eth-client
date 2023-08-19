@@ -28,6 +28,7 @@ import {
   useWaitForTransaction,
   useContractRead
 } from 'wagmi' // Legacy Wagmi 1.6
+import { Resolver } from "@ethersproject/providers"
 /* →
 import {
   usePrepareContractWrite
@@ -139,6 +140,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
   const [refresh, setRefresh] = React.useState(''); // Refresh record trigger
+  const [refreshedItem, setRefreshedItem] = React.useState(''); // Refresh record item
+  const [refreshedValue, setRefreshedValue] = React.useState(''); // Refresh record value
   const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
   const [preCache, setPreCache] = React.useState<any[]>([]); // Copy of LIST[] object
   const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
@@ -870,11 +873,11 @@ async function getResolver() {
       if (_response.address === ccip2Contract) {
         getContenthash(_response)
       } else {
-        const _contenthash = await refreshRecord('contenthash')
+        const _contenthash = await refreshRecord('contenthash', _response)
         setContenthash(_contenthash || '')
-        const _avatar = await refreshRecord('avatar')
+        const _avatar = await refreshRecord('avatar', _response)
         setAvatar(_avatar || '')
-        const _addr = await refreshRecord('addr')
+        const _addr = await refreshRecord('addr', _response)
         setAddr(_addr || '')
         setFinish(true)
       }
@@ -885,13 +888,14 @@ async function getResolver() {
 }
 
 // Re-try empty records
-async function refreshRecord(_record: string) {
+async function refreshRecord(_record: string, _resolver: Resolver) {
   setRefresh(_record)
   try {
     if (_record === 'addr') {
       const response = await provider.resolveName(_ENS_)
       if (response) {
         setAddr(response)
+        setRefreshedValue(response)
         setRefresh('1')
         return response
       }
@@ -899,13 +903,15 @@ async function refreshRecord(_record: string) {
       const response = await provider.getAvatar(_ENS_)
       if (response) {
         setAvatar(response)
+        setRefreshedValue(response)
         setRefresh('1')
         return response
       }
     } else if (_record === 'contenthash') {
-      const response = await resolveCall.getContentHash()
+      const response = await _resolver.getContentHash()
       if (response) {
         setContenthash(response)
+        setRefreshedValue(response)
         setRefresh('1')
         return response
       }
@@ -938,7 +944,7 @@ async function refreshRecord(_record: string) {
     }
     try {
       await fetch(
-        "https://sshmatrix.club:3003/revision",
+        "https://ipfs.namesys.xyz:3003/revision",
         {
           method: "post",
           headers: {
@@ -1057,7 +1063,7 @@ async function refreshRecord(_record: string) {
     }
     try{
       await fetch(
-        "https://sshmatrix.club:3003/read",
+        "https://ipfs.namesys.xyz:3003/read",
         {
           method: "POST",
           headers: {
@@ -1173,6 +1179,21 @@ async function refreshRecord(_record: string) {
   // Handles record refresh
   React.useEffect(() => {
     if (refresh && ['0', '1'].includes(refresh)) { 
+      if (refresh === '1') {
+        const _updatedList = list.map((item) => {
+          if (item.type === refreshedItem) {
+            return { 
+              ...item, 
+              value: refreshedValue
+            }
+          } else {
+            return { 
+              ...item
+            }
+          }
+        })
+        setPreCache(_updatedList)
+      }
       setTimeout(() => {
         setRefresh('.') // Show result
       }, 10000)
@@ -1251,7 +1272,7 @@ async function refreshRecord(_record: string) {
         setMessage(['Writing Records', ''])
         try {
           await fetch(
-            "https://sshmatrix.club:3003/write",
+            "https://ipfs.namesys.xyz:3003/write",
             {
               method: "post",
               headers: {
@@ -1983,7 +2004,8 @@ async function refreshRecord(_record: string) {
                             <button 
                               className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
                               onClick={() => { 
-                                refresh !== '' ? '' : refreshRecord(item.type)
+                                refresh !== '' ? '' : refreshRecord(item.type, resolveCall),
+                                setRefreshedItem(item.type)
                               }}
                               data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? 'Click to Refresh' : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
                             >
