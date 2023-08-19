@@ -69,17 +69,13 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
             <div
               style={{
                 lineHeight: '16px',
-                fontWeight: '700'
+                fontWeight: '700',
+                fontSize: '15px'
               }}
             >
-              <span
-                style={{
-                  fontSize: '15px',
-                  lineHeight: '20px'
-                }}
-              >
-                This will set a new on-chain&nbsp;
-              </span>
+              <span style={{ lineHeight: '20px' }}>
+                Beware that will set a new on-chain
+              </span>&nbsp;
               <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
                 Recordhash
               </span>&nbsp;Or&nbsp;

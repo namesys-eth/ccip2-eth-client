@@ -107,7 +107,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: cyan">Ownerhash</span> works for all your names in the wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: cyan">Ownerhash</span></span>')
+                setHelp('<span><span style="color: cyan">Ownerhash</span> works for all your names in a wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: cyan">Ownerhash</span></span>')
               }}
               data-tooltip={ 'Cheaper but Slower IPNS' }
             >

@@ -410,7 +410,6 @@ const Home: NextPage = () => {
         if (query.split('.').length == 2) {
           setTokenIDLegacy(_token.toString())
         } else {
-          console.log(ethers.utils.namehash(query))
           setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
         }
         let __labelhash = ethers.utils.namehash(query)

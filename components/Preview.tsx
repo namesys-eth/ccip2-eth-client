@@ -296,7 +296,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature For IPNS/Signer Key Generation\n\nOrigin: ${type === 'recordhash' ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature For IPNS/Signer Key Generation\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -580,7 +580,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         
   // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
-    if (safeTrigger !== '1') {
+    if (safeTrigger === '1') {
       if (trigger && !write) {
         if (trigger !== 'resolver') {
           if (trigger === 'recordhash') {
@@ -717,7 +717,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setKeygen(true)
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, gatewayModalState, recordhash, trigger, safeTrigger])
+  }, [saltModalState, gatewayModalState, recordhash, trigger, safeTrigger, hashType])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -1571,6 +1571,11 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setPreCache(_updatedList)
         setLegit(EMPTY_BOOL())
         setStates([])
+        setSalt(false)
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
         setLoading(false)
         setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Ownerhash</span>. Enjoy!</span>')
         setIcon('check_circle_outline')
@@ -1636,6 +1641,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>')
       setIcon('check_circle_outline')
       setColor('lime')
+      setSalt(false)
       setSuccessModal(true)
       handleSuccess()
     }
@@ -1719,7 +1725,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
 
   // Handles signature loading and error
   React.useEffect(() => {
-    if (signLoading && !signError) {
+    if (signLoading && !signError && trigger) {
       setLoading(true)
       setMessage(['Waiting for Signature', sigCount.toString()])
     } else if (signError && !signLoading) {
@@ -1727,6 +1733,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setCrash(true)
       setLoading(false)
       setStates([])
+      if (trigger === 'resolver') handleSuccess()
       setTrigger('')
       setSafeTrigger('0')
       setSaltModalState({
@@ -1741,7 +1748,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setMessage(['Starting Keygen', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError])
+  }, [signLoading, signError, trigger])
 
   /// Modal Content
   const modalContent = show ? (
@@ -2195,6 +2202,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                           }}
                           onClick={() => { 
                             setTrigger(item.type),
+                            setSafeTrigger('1'),
                             ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
                             ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
                           }}

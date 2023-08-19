@@ -479,6 +479,7 @@ const Account: NextPage = () => {
               } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '3/4'
               }
+              setCache(flash)
               setMeta(items)
               setSuccess(true)
               setTimeout(() => {
@@ -500,7 +501,7 @@ const Account: NextPage = () => {
       setErrorModal(true)
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, _Wallet_, query, recordhash, ownerhash])
+  }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
 
   // Capture Recordhash hook
   React.useEffect(() => {
@@ -553,6 +554,15 @@ const Account: NextPage = () => {
   // Handles setting Ownerhash after transaction 2 
   React.useEffect(() => {
     if (txSuccess1of1 && isSetOwnerhashSuccess) {
+      let _LIST = meta
+      for (var i = 0; i < meta.length; i++) {
+        if (meta[i].migrated === '1/2') {
+          _LIST[i].migrated = '3/4'
+        }
+      }
+      setMeta(_LIST)
+      setFlash(_LIST)
+      setCache(_LIST)
       setOwnerhash(`ipns://${CID}`)
       setMessage('Transaction Confirmed')
       setTimeout(() => {
@@ -911,7 +921,6 @@ const Account: NextPage = () => {
               <button
                 onClick={() => {
                   setActiveTab('OWNER'),
-                  console.log(cache.length)
                   cache.length > 0 ? setMeta(cache) : console.error('BUG'),
                   setTokenIDLegacy(''),
                   setTokenIDWrapper(''),
@@ -921,8 +930,7 @@ const Account: NextPage = () => {
                   cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
                   setErrorModal(false),
                   setKeypair(['', '', '']),
-                  !cache ? '' : setSuccess(true),
-                  console.log(loading)
+                  !cache ? '' : setSuccess(true)
                 }}
                 className='button-header'
                 disabled={activeTab === 'OWNER' || loading}
