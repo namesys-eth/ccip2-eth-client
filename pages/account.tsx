@@ -584,9 +584,9 @@ const Account: NextPage = () => {
   // Handles setting Ownerhash after transaction 2 
   React.useEffect(() => {
     if (txSuccess1of1 && isSetOwnerhashSuccess) {
-      let _LIST = meta
-      for (var i = 0; i < meta.length; i++) {
-        if (meta[i].migrated === '1/2') {
+      let _LIST = flash
+      for (var i = 0; i < flash.length; i++) {
+        if (flash[i].migrated === '1/2') {
           _LIST[i].migrated = '3/4'
         }
       }
