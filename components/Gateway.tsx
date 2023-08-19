@@ -12,7 +12,7 @@ interface ModalProps {
   handleTrigger: (data: boolean) => void
 }
 
-const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
+const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
   const [inputValue, setInputValue] = React.useState("")
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
@@ -56,14 +56,14 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 fontSize: '46px'
               }}
             >
-              key
+              dns
             </div>
             <div
               style={{
                 marginTop: '5px'
               }}
             >
-              enter secret IPNS key identifier
+              enter the HTTP gateway URL
               <button 
                 className="button-tiny"
                 style={{
@@ -71,7 +71,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 }}
                 onClick={() => { 
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">Secret identifier</span> is required to generate a secure IPNS key. <span style="color: orange">You will need it to make record updates in the future</span>. <span style="color: orangered">Please remember your choice</span></span>')
+                  setHelp('<span><span style="color: cyan">HTTP Gateway</span> should be a <span style="color: orange">HTTPS://</span> URL</span>')
                 }}
                 data-tooltip={ 'Enlighten Me' }
               >
@@ -91,13 +91,12 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
           <input 
             id='keyid'
             key='0'
-            placeholder='secret key identifier'
-            type='password'
+            placeholder='https://'
+            type='text'
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value)
             }}
-
             style={{
               background: 'black',
               outline: 'none',
@@ -120,12 +119,11 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             style={{
               height: '28px',
               width: '120px',
-              marginTop: '25px',
+              marginTop: '15px',
               fontSize: '14px'
             }}
-            disabled={!inputValue.length}
             onClick={ handleSubmit }
-            data-tooltip='Click to proceed'
+            data-tooltip='Click to crash your proverbial car'
           >
             <div 
               className="flex-row"
@@ -133,7 +131,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 fontSize: '13px'
               }}
             >
-              { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
+              { 'proceed' }&nbsp;<span className="material-icons smoller">car_crash</span>
             </div>
           </button>
         </StyledModalBody>
@@ -224,4 +222,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 0.90);
 `
 
-export default Salt
+export default Gateway

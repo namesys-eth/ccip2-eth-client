@@ -54,6 +54,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
           }}
           type="submit"
           data-tooltip='Search'
+          disabled={!query.length}
         >
           <span 
             className="material-icons"

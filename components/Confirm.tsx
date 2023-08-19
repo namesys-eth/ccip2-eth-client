@@ -13,18 +13,22 @@ interface ModalProps {
 
 const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
   const [browser, setBrowser] = React.useState(false)
+  const [helpModal, setHelpModal] = React.useState(false)
+  const [help, setHelp] = React.useState('')
   
   React.useEffect(() => {
     setBrowser(true)
   }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
+    handleModalData(undefined)
+    handleTrigger(false)
     e.preventDefault()
     onClose()
   }
 
-  const handleConfirmSubmit = () => {
-    handleModalData('0')
+  const handleConfirmSubmit = (trigger: string) => {
+    handleModalData(trigger)
     handleTrigger(true)
     onClose()
   }
@@ -74,38 +78,126 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               </span>
               <span style={{ color: 'cyan', fontWeight: '700' }}>
                 Recordhash
+              </span> or&nbsp;
+              <span style={{ color: 'cyan', fontWeight: '700' }}>
+                Gateway
               </span>&nbsp;
-              for this name. If you intend to set a new &nbsp;
+              for this name. If you intend to set a new&nbsp;
               <span style={{ color: 'cyan', fontWeight: '700' }}>
                 Ownerhash
               </span>,&nbsp;
-              please update it in &nbsp;
+              please update it in&nbsp;
               <span style={{ color: 'orange', fontWeight: '700' }}>
                 UTILS
               </span>&nbsp;
               tab
             </div>
-            <button 
-              className="button-option"
+            <div
+              className="flex-row"
               style={{
-                height: '35px',
-                width: '130px',
-                marginTop: '25px',
-                fontSize: '15px',
-                fontWeight: '700'
+                marginLeft: '25px'
               }}
-              onClick={ handleConfirmSubmit }
-              data-tooltip={ 'Confirm' }
             >
-              <div 
-                className="flex-row"
+              <button 
+                className="button-option"
+                style={{
+                  height: '35px',
+                  width: '175px',
+                  marginTop: '20px',
+                  fontSize: '15px',
+                  fontWeight: '700'
+                }}
+                onClick={() => { 
+                  handleConfirmSubmit('0') 
+                }}
+                data-tooltip={ 'Continue With Recordhash' }
               >
-                { 'Confirm' }&nbsp;<span className="material-icons chonk">thumb_up_alt</span>
-              </div>
-            </button>
+                <div 
+                  className="flex-row"
+                >
+                  { 'Recordhash' }&nbsp;<span className="material-icons chonk">hub</span>
+                </div>
+              </button>
+              <button 
+                className="button-tiny"
+                onClick={() => { 
+                  setHelpModal(true),
+                  setHelp('<span><span style="color: cyan">Recordhash</span> is specific to each name and it is the <span style="color: lime">permissionless</span> and <span style="color: lime">decentralised</span> option</span>')
+                }}
+                data-tooltip={ 'Enlighten Me' }
+              >
+                <div 
+                  className="material-icons smol"
+                  style={{ 
+                    color: 'cyan',
+                    marginLeft: '5px',
+                    marginTop: '16px'
+                  }}
+                >
+                  info_outline 
+                </div>
+              </button>
+            </div>
+            <div
+              className="flex-row"
+              style={{
+                marginLeft: '25px'
+              }}
+            >
+              <button 
+                className="button-option"
+                style={{
+                  height: '35px',
+                  width: '175px',
+                  marginTop: '15px',
+                  fontSize: '15px',
+                  fontWeight: '700'
+                }}
+                onClick={ () => { 
+                  handleConfirmSubmit('1')
+                }}
+                data-tooltip={ 'Continue With HTTP Gateway' }
+                disabled
+              >
+                <div 
+                  className="flex-row"
+                >
+                  { 'HTTP Gateway' }&nbsp;<span className="material-icons chonk">dns</span>
+                </div>
+              </button>
+              <button 
+                className="button-tiny"
+                onClick={() => { 
+                  setHelpModal(true),
+                  setHelp('<span><span style="color: orange">COMING SOON<span style="font-family: \'SF Mono\'; font-size: 16px">!</span></span> <span style="color: cyan">HTTP Gateway</span> could point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
+                }}
+                data-tooltip={ 'Satanic and Evil Middleware' }
+              >
+                <div 
+                  className="material-icons smol"
+                  style={{ 
+                    color: 'orange',
+                    marginLeft: '5px',
+                    marginTop: '16px'
+                  }}
+                >
+                  info_outline 
+                </div>
+              </button>
+            </div>
           </div>
         </StyledModalBody>
       </StyledModal>
+      <div id="modal-inner">
+        <Help
+          color={ 'lightblue' }
+          _ENS_={ 'info' }
+          onClose={() => setHelpModal(false)}
+          show={helpModal}
+        >
+          { help }
+        </Help>
+      </div>
     </StyledModalOverlay>
   ) : null
 

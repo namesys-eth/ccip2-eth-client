@@ -8,6 +8,7 @@ import { AbiItem } from 'web3-utils'
 import { verifyMessage } from 'ethers/lib/utils'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
+import Gateway from '../components/Gateway'
 import Options from '../components/Options'
 import Error from '../components/Error'
 import Gas from '../components/Gas'
@@ -116,6 +117,7 @@ function checkImageURL(url: string) {
 * @interface handleParentTrigger : Send modal state to Home/Account page
 **/
 const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
+  // React States
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
   const [loading, setLoading] = React.useState(true); // Loading process indicator
@@ -139,12 +141,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
+  const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
   const [refresh, setRefresh] = React.useState(''); // Refresh record trigger
   const [refreshedItem, setRefreshedItem] = React.useState(''); // Refresh record item
   const [refreshedValue, setRefreshedValue] = React.useState(''); // Refresh record value
   const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
   const [preCache, setPreCache] = React.useState<any[]>([]); // Copy of LIST[] object
-  const [trigger, setTrigger] = React.useState(null); // Triggered upon button click adjacent to the record in Preview modal
+  const [trigger, setTrigger] = React.useState<any>(undefined); // Triggered upon button click adjacent to the record in Preview modal
+  const [safeTrigger, setSafeTrigger] = React.useState<string>(''); // Cache state for trigger
   const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
@@ -177,6 +181,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     modalData: undefined,
     trigger: false
   }); // Confirm modal state
+  const [gatewayModalState, setGatewayModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }); // Confirm modal state
   const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
@@ -185,9 +193,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [sustain, setSustain] = React.useState(false); // Sustains status of record update
   const [onChainManager, setOnChainManager] = React.useState(''); // Sets CCIP2 Manager
 
-  const { Revision } = Name // W3Name Revision object
+  // Variables
   const { address: _Wallet_ } = useAccount()
+  const { Revision } = Name // W3Name Revision object
   const recoveredAddress = React.useRef<string>()
+  const ccip2Contract = constants.ccip2[chain === '1' ? 1 : 0]
+  const ccip2Config = constants.ccip2Config[chain === '1' ? 1 : 0]
+  const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
+  const network = chain === '5' ? 'goerli' : 'homestead'
+  const provider = new ethers.providers.AlchemyProvider(network, apiKey)
+  const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
+  const web3 = new Web3(alchemyEndpoint)
+  const caip10 = `eip155:${chain}:${_Wallet_}`  // CAIP-10
+  const origin = `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}`
   const { 
     data: signature, 
     error: signError, 
@@ -199,30 +217,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       recoveredAddress.current = address
     },
   })  // Wagmi Signature hook
-  const ccip2Contract = constants.ccip2[chain === '1' ? 1 : 0]
-  const ccip2Config = constants.ccip2Config[chain === '1' ? 1 : 0]
-  const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_ID
-  const network = chain === '5' ? 'goerli' : 'homestead'
-  const provider = new ethers.providers.AlchemyProvider(network, apiKey)
-  const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
-  const web3 = new Web3(alchemyEndpoint)
-  const caip10 = `eip155:${chain}:${_Wallet_}`  // CAIP-10
-  const origin = `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}`
 
   // Initialises internal LIST[] object
   function setMetadata(_recordhash: string) {
     let _LIST = [
       {
         key: 0,
-        header: hashType === 'recordhash' ? 'Recordhash' : 'Ownerhash',
+        header: hashType === 'recordhash' ? 'Recordhash' : (hashType === 'gateway' ? 'Gateway' : 'Ownerhash'),
         type: 'recordhash',
         value: _recordhash,
         editable: false,
         active: resolver === ccip2Contract,
         state: false,
         label: 'Set',
-        help: '<span>On-chain <span style="color: cyan">IPNS</span> storage</span>',
-        tooltip: 'Set New Recordhash'
+        help: '<span>On-chain Record <span style="color: cyan">Storage</span> Pointer</span>',
+        tooltip: 'Set New Storage'
       },
       {
         key: 1,
@@ -287,7 +296,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${type === 'recordhash' ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature For IPNS/Signer Key Generation\n\nOrigin: ${type === 'recordhash' ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -401,6 +410,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handle Options modal trigger
   const handleOptionsTrigger = (trigger: boolean) => {
     setOptionsModalState(prevState => ({ ...prevState, trigger: trigger }))
+    if (trigger) {
+      setSafeTrigger('1')
+    } else {
+      setSafeTrigger('0')
+      setTrigger('')
+    }
   }
 
   // Handle Confirm modal data return
@@ -410,6 +425,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handle Confirm modal trigger
   const handleConfirmTrigger = (trigger: boolean) => {
     setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
+    if (trigger) {
+      setSafeTrigger('1')
+    } else {
+      setSafeTrigger('0')
+      setTrigger('')
+    }
   }
       
   // Handle Salt modal data return
@@ -419,8 +440,30 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handle Salt modal trigger
   const handleSaltTrigger = (trigger: boolean) => {
     setSaltModalState(prevState => ({ ...prevState, trigger: trigger }))
+    if (trigger) {
+      setSafeTrigger('1')
+    } else {
+      setSafeTrigger('0')
+      setTrigger('')
+    }
+    setSalt(false)
   }
 
+  // Handle Salt modal data return
+  const handleGatewayModalData = (data: string | undefined) => {
+    setGatewayModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Salt modal trigger
+  const handleGatewayTrigger = (trigger: boolean) => {
+    setGatewayModalState(prevState => ({ ...prevState, trigger: trigger }))
+    if (trigger) {
+      setSafeTrigger('1')
+    } else {
+      setSafeTrigger('0')
+      setTrigger('')
+    }
+  }
+  
   /// Preview Domain Metadata
   // Read ENS Legacy Registrar for Owner record of ENS domain
   const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
@@ -470,25 +513,48 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (_CCIP2Manager_) {
       setOnChainManager(_CCIP2Manager_.toString())
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_CCIP2Manager_])
   // Capture Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_) {
       if (_Ownerhash_.toString().length > 2) {
-        setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_!.toString()).decoded}`)
+        let _String: string = ''
+        if (_Ownerhash_.toString().startsWith(constants.prefix)) {
+          _String = `ipns://${ensContent.decodeContenthash(_Ownerhash_!.toString()).decoded}`
+        } else {
+          _String = ethers.utils.toUtf8String(_Ownerhash_.toString())
+        }
+        if (_String.startsWith('https://')) {
+          setOwnerhash(`${_String}`)
+        } else {
+          setOwnerhash(`${_String}`)
+        }
       } else {
         setOwnerhash(undefined)
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Ownerhash_])
   React.useEffect(() => {
     if (_Recordhash_) {
       if (_Recordhash_.toString().length > 2  && (_Recordhash_ !== _Ownerhash_)) {
-        setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`)
+        let _String: string = ''
+        if (_Recordhash_.toString().startsWith(constants.prefix)) {
+          _String = `ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`
+        } else {
+          _String = ethers.utils.toUtf8String(_Recordhash_.toString())
+        }
+        if (_String.startsWith('https://')) {
+          setRecordhash(`${_String}`)
+        } else {
+          setRecordhash(`${_String}`)
+        }
       } else {
         setRecordhash(undefined)
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Recordhash_, _Ownerhash_])
 
   // Returns Owner of wrapped/legacy ENS Domain
@@ -514,35 +580,49 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         
   // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
-    if (trigger && !write) {
-      if (trigger !== 'resolver') {
-        if (trigger === 'recordhash') {
-          setConfirm(true)
-          setHashType('recordhash')
+    if (safeTrigger !== '1') {
+      if (trigger && !write) {
+        if (trigger !== 'resolver') {
+          if (trigger === 'recordhash') {
+            setConfirm(true)
+            setHashType('recordhash')
+          }
+        } else {
+          if (optionsModalState.trigger) {
+            setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
+            migrate()
+          }
         }
-      } else {
-        if (optionsModalState.trigger) {
-          setHashType(optionsModalState.modalData === '1' ? 'recordhash' : 'ownerhash')
-          migrate()
+      } else if (trigger && write) {
+        if (recordhash) {
+          if (recordhash.startsWith('https://')) {
+            setHashType('gateway')
+          } else {
+            setHashType('recordhash')
+          }
+        } 
+        if (ownerhash && !recordhash) {
+          if (ownerhash.startsWith('https://')) {
+            setHashType('gateway')
+          } else {
+            setHashType('ownerhash')
+          }
         }
+        setUpdateRecords(true)
       }
-    } else if (trigger && write) {
-      if (recordhash) {
-        setHashType('recordhash')
-      } 
-      if (ownerhash && !recordhash) {
-        setHashType('ownerhash')
-      }
-      setUpdateRecords(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, optionsModalState, write])
+  }, [trigger, optionsModalState, write, safeTrigger])
 
   // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
     if (confirmModalState.trigger && confirmModalState.modalData) {
       setConfirm(false)
-      setSalt(true)
+      if (confirmModalState.modalData === '0') {
+        setSalt(true)
+      } else {
+        setGateway(true)
+      } 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [confirmModalState])
@@ -614,14 +694,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
  
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !updateRecords && !keypair && trigger) {
+    let _modalData: string = ''
+    if (saltModalState.trigger && saltModalState.modalData) {
+      _modalData = saltModalState.modalData
+    } else if (gatewayModalState.trigger && gatewayModalState.modalData) {
+      _modalData = gatewayModalState.modalData
+    }
+    if ((saltModalState.trigger || gatewayModalState.trigger) && !updateRecords && !keypair && trigger && safeTrigger) {
       setSigCount(1)
       signMessage({ 
         message: statementIPNSKey(
           ethers.utils.keccak256(ethers.utils.solidityPack(
             ['bytes32', 'address'], 
             [
-              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_modalData])), 
               _Wallet_
             ]
           )),
@@ -629,9 +715,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         ) 
       })
       setKeygen(true)
-    }
+    } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, recordhash, trigger])
+  }, [saltModalState, gatewayModalState, recordhash, trigger, safeTrigger])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -639,7 +725,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (sigIPNS && !keypair) {
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
-        const _origin = hashType === 'ownerhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
+        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
         const __keypair = await _KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
         setKeypair(__keypair)
         setMessage(['IPNS Key Generated', ''])
@@ -654,14 +740,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
     if (keypair) {
-      const CIDGen = async () => {
-        let key = constants.formatkey(keypair)
-        const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
-        const CID_IPNS = w3name.toString()
-        setCID(CID_IPNS)
-        setMessage(['IPNS CID Generated', ''])
+      if (hashType !== 'gateway') {
+        const CIDGen = async () => {
+          let key = constants.formatkey(keypair)
+          const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
+          const CID_IPNS = w3name.toString()
+          setCID(CID_IPNS)
+          setMessage(['IPNS CID Generated', ''])
+        }
+        CIDGen()
+      } else if (hashType === 'gateway') {
+        setCID(gatewayModalState.modalData || '')
       }
-      CIDGen()
       // Set query for on-chain manager [v2]
       setOnChainManagerQuery(
         [
@@ -672,7 +762,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ) // Checks if connected wallet is on-chain manager
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypair])
+  }, [keypair, hashType, gatewayModalState])
 
   // Sets signature from Wagmi signMessage() as S1(K1)
   React.useEffect(() => {
@@ -744,6 +834,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (states.includes('recordhash') || states.includes('resolver')) {
       if (CID.startsWith('k5')) {
         initRecordhash()
+      } else if (CID.startsWith('https://')) {
+        initRecordhash()
       }
     } else {
       setMessage(message)
@@ -795,7 +887,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSaltModalState({
       modalData: undefined,
       trigger: false
-    }) // Purge IPNS password/identifier
+    })
+    setOptionsModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setGatewayModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setConfirmModalState({
+      modalData: undefined,
+      trigger: false
+    })
     setKeypair(undefined) // Purge keypairs from local storage 
     setNewValues(EMPTY_STRING())
     setSustain(false)
@@ -1114,13 +1218,21 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     if (history && queue && resolver) {
       if (recordhash) {
         setMetadata(recordhash)
-        setHashType('recordhash')
+        if (recordhash.startsWith('https://')) {
+          setHashType('gateway')
+        } else {
+          setHashType('recordhash')
+        }
       } else if (ownerhash) {
         setMetadata(ownerhash)
-        setHashType('ownerhash')
+        if (ownerhash.startsWith('https://')) {
+          setHashType('gateway')
+        } else {
+          setHashType('ownerhash')
+        }
       } else {
         setMetadata('')
-        setHashType('recordhash')
+        setHashType('storage')
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1160,7 +1272,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     })
     setPreCache(_updatedList)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, resolver])
+  }, [trigger, resolver, states])
 
   // Handles password prompt for S1(K1)
   React.useEffect(() => {
@@ -1207,7 +1319,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
     // Handle Signature S2(K0) to add as extradata
-    if (write && keypair && newValues) {
+    if (write && keypair && newValues && newValues !== EMPTY_STRING()) {
       let __signatures = EMPTY_STRING()
       states.forEach(async (_recordType) => {
         let _signature: any
@@ -1230,7 +1342,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setSigApproved('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChainManager, signatures])
+  }, [onChainManager, signatures, write])
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
@@ -1377,6 +1489,22 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                       setNewValues(EMPTY_STRING())
                       setSignatures(EMPTY_STRING())
                       setSigCount(0)
+                      setSaltModalState({
+                        modalData: undefined,
+                        trigger: false
+                      })
+                      setOptionsModalState({
+                        modalData: undefined,
+                        trigger: false
+                      })
+                      setGatewayModalState({
+                        modalData: undefined,
+                        trigger: false
+                      })
+                      setConfirmModalState({
+                        modalData: undefined,
+                        trigger: false
+                      })
                       setUpdateRecords(false) // Reset
                     }
                   }
@@ -1541,6 +1669,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setCrash(true)
       setLoading(false)
       setStates([])
+      setTrigger('')
     } 
     if (!isMigrateLoading && isSetRecordhashLoading) {
       setLoading(true) //
@@ -1552,6 +1681,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setCrash(true)
       setLoading(false)
       setStates([])
+      setTrigger('')
     } 
   }, [isMigrateLoading, isSetRecordhashLoading, isMigrateError, isSetRecordhashError])
 
@@ -1566,6 +1696,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setCrash(true)
       setLoading(false)
       setStates([])
+      setTrigger('')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading1of2, txError1of2])
@@ -1581,6 +1712,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setCrash(true)
       setLoading(false)
       setStates([])
+      setTrigger('')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading2of2, txError2of2])
@@ -1595,11 +1727,21 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setCrash(true)
       setLoading(false)
       setStates([])
+      setTrigger('')
+      setSafeTrigger('0')
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setLegit(EMPTY_BOOL())
+      setNewValues(EMPTY_STRING())
+      setWrite(false)
+      setUpdateRecords(false) // Reset
     } else if (!signError && !signLoading && salt) {
       setMessage(['Starting Keygen', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError, salt])
+  }, [signLoading, signError])
 
   /// Modal Content
   const modalContent = show ? (
@@ -1838,9 +1980,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                                 setHelpModal(true),
                                 setIcon('gpp_good'),
                                 setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : '<span>Global <span style="color: cyan">Ownerhash</span> is Set</span>')
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> is Set</span>`)
                               }}
-                              data-tooltip={ 'Ready For Off-Chain Use With Ownerhash' }
+                              data-tooltip={ `Ready For Off-Chain Use With ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}` }
                             >
                               <div 
                                 className="material-icons smol"
@@ -1860,9 +2002,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                                 setHelpModal(true),
                                 setIcon('gpp_good'),
                                 setColor('lime'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span>Domain-specific <span style="color: cyan">Recordhash</span> is Set<span>')
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span>Domain-specific <span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> is Set<span>`)
                               }}
-                              data-tooltip={ 'Ready For Off-Chain Use With Recordhash' }
+                              data-tooltip={ `Ready For Off-Chain Use With ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}` }
                             >
                               <div 
                                 className="material-icons smol"
@@ -1875,7 +2017,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                               </div>
                             </button>
                           )}
-                          { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash is set
+                          { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash or Gateway is set
                           ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
                             <button 
                               className="button-tiny"
@@ -1883,9 +2025,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                                 setHelpModal(true),
                                 setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
                                 setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : '<span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span>')
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span style="color: cyan">Storage</span> <span style="color: orange">not Set</span>`)
                               }}
-                              data-tooltip={ 'Resolver Migrated But Recordhash Not Set' }
+                              data-tooltip={ 'Resolver Migrated But Storage Not Set' }
                             >
                               <div 
                                 className="material-icons smol"
@@ -1906,9 +2048,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                                 setHelpModal(true),
                                 setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
                                 setColor('orangered'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Recordhash</span> Or <span style="color: cyan">Ownerhash</span> <span style="color: orange">not Set</span></span>')
+                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Storage</span> <span style="color: orange">not Set</span></span>')
                               }}
-                              data-tooltip={ 'Resolver Not Migrated And Recordhash Not Set' }
+                              data-tooltip={ 'Resolver Not Migrated And Storage Not Set' }
                             >
                               <div 
                                 className="material-icons smol"
@@ -1929,9 +2071,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                                 setHelpModal(true),
                                 setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
                                 setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : (ownerhash && managers.includes(_Wallet_ || '0x0') ? 'cyan' : 'cyan'))),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? '<span><span style="color: cyan">Recordhash</span> <span style="color: lime">is Set</span></span>' : '<span><span style="color: cyan">Ownerhash</span> <span style="color: lime">is Set</span></span>'))
+                                setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set</span></span>`))
                               }}
-                              data-tooltip={ recordhash ? 'Resolver not Migrated But Recordhash is Set' : 'Resolver not Migrated But Ownerhash is Set' }
+                              data-tooltip={ recordhash ? `Resolver not Migrated But ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} is Set` : `Resolver not Migrated But ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} is Set` }
                             >
                               <div 
                                 className="material-icons smol"
@@ -2036,13 +2178,14 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                         </span>
                         <button
                           className="button"
-                          disabled={ 
+                          disabled={
                             constants.blocked.includes(item.type) ||
                             !list[item.key].active ||
                             !legit[item.type] ||
                             item.state ||
                             !_Wallet_ ||
-                            !managers.includes(_Wallet_ ? _Wallet_ : '0x0c0cac01ac0ffeecafeNOTHEX')
+                            !managers.includes(_Wallet_ ? _Wallet_ : '0x0c0cac01ac0ffeecafeNOTHEX') ||
+                            (!['resolver', 'recordhash'].includes(item.type) && newValues === EMPTY_STRING())
                           }
                           style={{
                             alignSelf: 'flex-end',
@@ -2120,6 +2263,15 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
             show={salt}
           >
           </Salt>
+          <Gateway
+            handleTrigger={handleGatewayTrigger}
+            handleModalData={handleGatewayModalData}
+            onClose={() => {
+              setSalt(false)
+            }}
+            show={gateway}
+          >
+          </Gateway>
           <Options
             handleTrigger={handleOptionsTrigger}
             handleModalData={handleOptionsModalData}

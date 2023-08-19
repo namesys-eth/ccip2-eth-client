@@ -351,6 +351,7 @@ const Account: NextPage = () => {
         } else {
           const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
           const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase())
+          let _Recordhash_: any
           let __Recordhash: boolean = false
           let __Ownerhash: boolean = false
           for (var i = 0; i < allTokens.length; i++) {
@@ -366,14 +367,14 @@ const Account: NextPage = () => {
                 'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
               })
               setProcess(allTokens[i].title)
-              const _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
+              _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
               if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
                 __Recordhash = false
+                if (_Ownerhash_ && _Ownerhash_ !== '0x') {
+                  __Ownerhash = true
+                }
               } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
                 __Recordhash = true
-              }
-              if (_Ownerhash_ && _Ownerhash_ !== '0x') {
-                __Ownerhash = true
               }
               items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
                 __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
@@ -391,6 +392,9 @@ const Account: NextPage = () => {
               setLoading(false)
               setSuccess(true)
             }
+            __Recordhash = false
+            __Ownerhash = false
+            _Recordhash_ = undefined
           }
         } 
       }

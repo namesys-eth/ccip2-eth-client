@@ -142,6 +142,27 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                     </div>
                   </button>
                 }
+                { item.migrated === '4/5' &&
+                  <button 
+                    className="button-tiny"
+                    onClick={() => { 
+                      setHelpModal(true),
+                      setIcon('gpp_good'),
+                      setColor('cyan'),
+                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">HTTP Gateway</span> is Set</span>')
+                    }}
+                    data-tooltip={ 'Ready For Off-chain Use With HTTP Gateway' }
+                  >
+                    <div 
+                      className="material-icons smol"
+                      style={{
+                        color: 'cyan'
+                      }}
+                    >
+                      gpp_good
+                    </div>
+                  </button>
+                }
                 { item.migrated === '1/2' &&
                   <button 
                     className="button-tiny"
@@ -149,9 +170,9 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                       setHelpModal(true),
                       setIcon('gpp_good'),
                       setColor('orange'),
-                      setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Recordhash</span> or <span style="color: cyan">Ownerhash</span> is <span style="color: orange">not Set</span>. You can set Recordhash by pressing <span style="color: orange">SET</span>. You can set <span style="color: cyan">Ownerhash</span> in <span style="color: orange">UTILS</span></span>')
+                      setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
                     }}
-                    data-tooltip={ 'No Recordhash Found' }
+                    data-tooltip={ 'No Storage Found' }
                   >
                     <div 
                       className="material-icons smol"

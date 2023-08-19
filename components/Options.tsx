@@ -21,6 +21,8 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
   }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
+    handleModalData(undefined)
+    handleTrigger(false)
     e.preventDefault()
     onClose()
   }
@@ -33,6 +35,12 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
 
   const handleRecordhashSubmit = () => {
     handleModalData('1')
+    handleTrigger(true)
+    onClose()
+  }
+
+  const handleGatewaySubmit = () => {
+    handleModalData('2')
     handleTrigger(true)
     onClose()
   }
@@ -55,7 +63,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '46px'
+                fontSize: '66px'
               }}
             >
               cloud_upload
@@ -65,25 +73,28 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 marginTop: '15px'
               }}
             >
-              Please choose your IPNS storage
+              Please choose your Storage
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
           {/* Top Button */}
           <div
             className="flex-row"
+            style={{
+              marginLeft: '25px'
+            }}
           >
             <button 
               className="button-option"
               style={{
                 height: '35px',
-                width: '160px',
+                width: '175px',
                 marginTop: '15px',
                 fontSize: '15px',
                 fontWeight: '700'
               }}
               onClick={ handleOwnerhashSubmit }
-              data-tooltip={ children ? 'Use Preset Global Ownerhash' : 'No Global Ownerhash Found' }
+              data-tooltip={ children ? 'Uses Preset Global Ownerhash' : 'No Global Ownerhash Found' }
               disabled={ !children }
             >
               <div 
@@ -98,12 +109,12 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 setHelpModal(true),
                 setHelp('<span><span style="color: cyan">Ownerhash</span> works for all your names in the wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: cyan">Ownerhash</span></span>')
               }}
-              data-tooltip={ 'Cheaper but Slower Option' }
+              data-tooltip={ 'Cheaper but Slower IPNS' }
             >
               <div 
                 className="material-icons smol"
                 style={{ 
-                  color: 'cyan',
+                  color: 'orange',
                   marginLeft: '5px',
                   marginTop: '21px'
                 }}
@@ -112,21 +123,24 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               </div>
             </button>
           </div>
-          {/* Bottom Button */}
+          {/* Middle Button */}
           <div
             className="flex-row"
+            style={{
+              marginLeft: '25px'
+            }}
           >
             <button 
               className="button-option"
               style={{
                 height: '35px',
-                width: '160px',
-                marginTop: '20px',
+                width: '175px',
+                marginTop: '15px',
                 fontSize: '15px',
                 fontWeight: '700'
               }}
               onClick={ handleRecordhashSubmit }
-              data-tooltip='Set New On-chain Recordhash'
+              data-tooltip='Sets New On-chain Recordhash'
             >
               <div 
                 className="flex-row"
@@ -140,14 +154,60 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 setHelpModal(true),
                 setHelp('<span><span style="color: cyan">Recordhash</span> is specific to each name and it is a faster but expensive option</span>')
               }}
-              data-tooltip={ 'Faster but Expensive Option' }
+              data-tooltip={ 'Faster but Expensive IPNS' }
             >
               <div 
                 className="material-icons smol"
                 style={{ 
                   color: 'cyan',
                   marginLeft: '5px',
-                  marginTop: '21px'
+                  marginTop: '16px'
+                }}
+              >
+                info_outline 
+              </div>
+            </button>
+          </div>
+          {/* Bottom Button */}
+          <div
+            className="flex-row"
+            style={{
+              marginLeft: '25px'
+            }}
+          >
+            <button 
+              className="button-option"
+              style={{
+                height: '35px',
+                width: '175px',
+                marginTop: '15px',
+                fontSize: '15px',
+                fontWeight: '700'
+              }}
+              onClick={ handleGatewaySubmit }
+              data-tooltip='Sets New On-chain Gateway'
+              disabled
+            >
+              <div 
+                className="flex-row"
+              >
+                { 'HTTP Gateway' }&nbsp;<span className="material-icons chonk">dns</span>
+              </div>
+            </button>
+            <button 
+              className="button-tiny"
+              onClick={() => { 
+                setHelpModal(true),
+                setHelp('<span><span style="color: orange">COMING SOON<span style="font-family: \'SF Mono\'; font-size: 16px">!</span></span> <span style="color: cyan">HTTP Gateway</span> could point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
+              }}
+              data-tooltip={ 'Satanic and Evil Middleware' }
+            >
+              <div 
+                className="material-icons smol"
+                style={{ 
+                  color: 'orange',
+                  marginLeft: '5px',
+                  marginTop: '16px'
                 }}
               >
                 info_outline 
