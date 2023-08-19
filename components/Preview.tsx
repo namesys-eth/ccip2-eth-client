@@ -2298,7 +2298,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
               }}
             show={confirm && !salt}
           >
-            {''}
+            {'1'}
           </Confirm>
           <Error
             onClose={() => {

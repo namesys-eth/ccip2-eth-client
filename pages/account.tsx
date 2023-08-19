@@ -26,6 +26,7 @@ import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
+import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
 import { _KEYGEN } from '../utils/keygen'
@@ -74,6 +75,8 @@ const Account: NextPage = () => {
   const [salt, setSalt] = React.useState(false) // Trigger signature for key export
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
   const [choice, setChoice] = React.useState(''); // Records active process
+  const [confirm, setConfirm] = React.useState(false); // Confirmation modal
+  const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
   const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
     trigger: false
@@ -82,7 +85,12 @@ const Account: NextPage = () => {
     modalData: undefined,
     trigger: false
   }) // Salt modal state
+  const [confirmModalState, setConfirmModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }); // Confirm modal state
   const recoveredAddress = React.useRef<string>()
+  
 
 
   // Copy text
@@ -114,6 +122,15 @@ const Account: NextPage = () => {
   const handlePreviewTrigger = (trigger: boolean) => {
     setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
+
+    // Handle Confirm modal data return
+    const handleConfirmModalData = (data: string | undefined) => {
+      setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
+    }
+    // Handle Confirm modal trigger
+    const handleConfirmTrigger = (trigger: boolean) => {
+      setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
+    }
 
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
@@ -502,6 +519,19 @@ const Account: NextPage = () => {
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
+
+  // Sets option between Ownerhash and Recordhash
+  React.useEffect(() => {
+    if (confirmModalState.trigger && confirmModalState.modalData) {
+      setConfirm(false)
+      if (confirmModalState.modalData === '0') {
+        setSalt(true)
+      } else {
+        setGateway(true)
+      } 
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmModalState])
 
   // Capture Recordhash hook
   React.useEffect(() => {
@@ -1272,7 +1302,7 @@ const Account: NextPage = () => {
                   type="submit"
                   data-tooltip='Set New Ownerhash'
                   onClick={() => { 
-                    setSalt(true),
+                    setConfirm(true),
                     setChoice('ownerhash')
                   }}
                 >
@@ -1643,6 +1673,16 @@ const Account: NextPage = () => {
                 show={salt}
               >
             </Salt>
+            <Confirm
+              handleTrigger={handleConfirmTrigger}
+              handleModalData={handleConfirmModalData}
+              onClose={() => {
+                setConfirm(false)
+                }}
+              show={confirm && !salt}
+            >
+              {'0'}
+            </Confirm>
             <Help
                 color={ color }
                 _ENS_={ icon }

@@ -66,29 +66,52 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               marginBottom: '10px'
             }}
           >
-            <div
-              style={{
-                lineHeight: '16px',
-                fontWeight: '700',
-                fontSize: '15px'
-              }}
-            >
-              <span style={{ lineHeight: '20px' }}>
-                Beware that will set a new on-chain
-              </span>&nbsp;
-              <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
-                Recordhash
-              </span>&nbsp;Or&nbsp;
-              <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
-                Gateway
-              </span>. If you intend to set a global&nbsp;
-              <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
-                Ownerhash
-              </span>,&nbsp;please update it in&nbsp;
-              <span style={{ color: 'orange', fontWeight: '700', lineHeight: '20px' }}>
-                UTILS
-              </span>&nbsp;tab
-            </div>
+            {/* Recordhash */}
+            {children === '1' && (
+              <div
+                style={{
+                  lineHeight: '16px',
+                  fontWeight: '700',
+                  fontSize: '15px'
+                }}
+              >
+                <span style={{ lineHeight: '20px' }}>
+                  Beware that will set a new on-chain
+                </span>&nbsp;
+                <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
+                  Recordhash
+                </span>&nbsp;Or&nbsp;
+                <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
+                  Gateway
+                </span>. If you intend to set a global&nbsp;
+                <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
+                  Ownerhash
+                </span>,&nbsp;please update it in&nbsp;
+                <span style={{ color: 'orange', fontWeight: '700', lineHeight: '20px' }}>
+                  UTILS
+                </span>&nbsp;tab
+              </div>
+            )}
+            {/* Ownerhash */}
+            {children === '0' && (
+              <div
+                style={{
+                  lineHeight: '16px',
+                  fontWeight: '700',
+                  fontSize: '15px'
+                }}
+              >
+                <span style={{ lineHeight: '20px' }}>
+                  This will set a new on-chain
+                </span>&nbsp;
+                <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
+                  Ownerhash
+                </span>&nbsp;Or&nbsp;
+                <span style={{ color: 'cyan', fontWeight: '700', lineHeight: '20px' }}>
+                  HTTP Gateway
+                </span>
+              </div>
+            )}
             <div
               className="flex-row"
               style={{
@@ -107,19 +130,19 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 onClick={() => { 
                   handleConfirmSubmit('0') 
                 }}
-                data-tooltip={ 'Continue With Recordhash' }
+                data-tooltip={ children === '0' ? 'Continue With Ownerhash' : 'Continue With Recordhash' }
               >
                 <div 
                   className="flex-row"
                 >
-                  { 'Recordhash' }&nbsp;<span className="material-icons chonk">hub</span>
+                  { children === '0' ? 'Ownerhash' : 'Recordhash' }&nbsp;<span className="material-icons chonk">hub</span>
                 </div>
               </button>
               <button 
                 className="button-tiny"
                 onClick={() => { 
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">Recordhash</span> is specific to each name and it is the <span style="color: lime">permissionless</span> and <span style="color: lime">decentralised</span> option</span>')
+                  setHelp(`<span><span style="color: cyan">${children === '0' ? 'Ownerhash' : 'Recordhash'}</span> is specific to one ${children === '0' ? 'wallet' : 'name'} and it is the <span style="color: lime">permissionless</span> and <span style="color: lime">decentralised</span> option</span>`)
                 }}
                 data-tooltip={ 'Enlighten Me' }
               >
