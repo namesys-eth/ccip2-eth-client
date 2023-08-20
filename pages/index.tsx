@@ -575,7 +575,7 @@ const Home: NextPage = () => {
                   marginLeft: '2px'
                 }}
               >
-                { '-beta' } 
+                {} 
               </span>
             </div>
             <button
@@ -748,7 +748,7 @@ const Home: NextPage = () => {
                 </div>
                 <div
                   style={{
-                    marginTop: '40px'
+                    marginTop: '10px'
                   }}
                 >
                   <span

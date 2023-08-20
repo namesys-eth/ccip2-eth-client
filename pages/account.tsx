@@ -48,20 +48,22 @@ const Account: NextPage = () => {
   const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
   const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
-  const [activeTab, setActiveTab] = React.useState('OWNER')
-  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
-  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
-  const [manager, setManager] = React.useState('')
-  const [query, setQuery] = React.useState('')
-  const [savings, setSavings] = React.useState('')
-  const [icon, setIcon] = React.useState('')
-  const [color, setColor] = React.useState('cyan')
-  const [getting, setGetting] = React.useState(0)
+  const [activeTab, setActiveTab] = React.useState('OWNER') // Set active tab
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
+  const [manager, setManager] = React.useState('') // Set manager of name
+  const [query, setQuery] = React.useState('') // Store name in query
+  const [savings, setSavings] = React.useState('') // Save gas savings
+  const [icon, setIcon] = React.useState('') // Set Icon inside help modal
+  const [color, setColor] = React.useState('cyan') // Set Color of help modal
+  const [getting, setGetting] = React.useState(0) // Count in process
+  const [sigCount, setSigCount] = React.useState(0) // Signature count
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
-  const [help, setHelp] = React.useState('')
-  const [signature, setSignature] = React.useState('') // Signature for storage
+  const [help, setHelp] = React.useState('') // Set Help modal
+  const [sigIPNS, setSigIPNS] = React.useState('') // IPNS Signature for local storage
+  const [sigSigner, setSigSigner] = React.useState('') // Signer Signature for local storage
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
-  const [isSearch, setIsSearch] = React.useState(false)
+  const [isSearch, setIsSearch] = React.useState(false) // Store if search is in progress
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [process, setProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
   const [progress, setProgress] = React.useState(0) // Stores progress
@@ -73,7 +75,8 @@ const Account: NextPage = () => {
   const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
   const [recordhash, setRecordhash] = React.useState('') // Recordhash
   const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
-  const [keypair, setKeypair] = React.useState<string[]>(['', '', '']) // Exported keypairs [ed25519-priv, secp256k1, ed25519-pub]
+  const [keypairIPNS, setKeypairIPNS] = React.useState<string[]>(['', '']) // Exported IPNS keypairs [ed25519-priv,ed25519-pub]
+  const [keypairSigner, setKeypairSigner] = React.useState<string[]>(['', '']) // Exported Signer keypairs [secp256k1-priv, secp256k1-pub]
   const [salt, setSalt] = React.useState(false) // Trigger signature for key export
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
   const [choice, setChoice] = React.useState(''); // Records active process
@@ -93,8 +96,6 @@ const Account: NextPage = () => {
   }); // Confirm modal state
   const recoveredAddress = React.useRef<string>()
   
-
-
   // Copy text
   function copyToClipboard(element: string) {
     const copyText = document.getElementById(element) as HTMLInputElement
@@ -141,7 +142,14 @@ const Account: NextPage = () => {
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(source: string, caip10: string, extradata: string) {
-    let _toSign = `Requesting Signature For Keypair Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature For IPNS Keypair Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    return _digest
+  }
+  // Signature S4 statement; S4(K1) [Signer Keygen]
+  // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  function statementSignerKey(source: string, caip10: string, extradata: string) {
+    let _toSign = `Requesting Signature For Signer Keypair Generation\n\nOrigin: ${source}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -279,9 +287,11 @@ const Account: NextPage = () => {
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !keypair[0] && !keypair[1]) {
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1]) {
+      if (choice === 'export') setChoice('export_IPNS')
       let _origin = 'eth:' + _Wallet_
       let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+      setSigCount(1)
       signMessage({ 
         message: statementIPNSKey(
           _origin,
@@ -298,27 +308,78 @@ const Account: NextPage = () => {
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, keypair])
-
-  // Triggers S1(K1) after password is set
+  }, [saltModalState, keypairIPNS])
   React.useEffect(() => {
-    if (!keypair[0] && !keypair[1] && signature) {
+    if (!keypairIPNS[0] && !keypairIPNS[1] && sigIPNS) {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-        const __keypair = await _KEYGEN(_origin, _caip10, signature, saltModalState.modalData)
-        setKeypair([__keypair[0][0], __keypair[1][0], __keypair[0][1]])
+        const __keypair = await _KEYGEN(_origin, _caip10, sigIPNS, saltModalState.modalData)
+        setKeypairIPNS(__keypair[0])
       }
       keygen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, signature])
+  }, [keygen, sigIPNS, keypairIPNS])
+
+  // Triggers S4(K1) after password is set
+  React.useEffect(() => {
+    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1]) {
+      if (choice === 'export_IPNS') setChoice('export_Signer')
+      let _origin = 'eth:' + _Wallet_
+      let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+      setSigCount(2)
+      signMessage({ 
+        message: statementSignerKey(
+          _origin,
+          _caip10,
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'], 
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
+              _Wallet_
+            ]
+          ))
+        ) 
+      })
+      setKeygen(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState, keypairSigner, keypairIPNS])
+  React.useEffect(() => {
+    if (!keypairSigner[0] && !keypairSigner[1] && sigSigner && keypairIPNS[0] && keypairIPNS[1]) {
+      const keygen = async () => {
+        let _origin = 'eth:' + _Wallet_
+        let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+        const __keypair = await _KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
+        setKeypairSigner(__keypair[1])
+      }
+      keygen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairIPNS, sigSigner, keypairSigner])
+
+  // Trigger end of export
+  React.useEffect(() => {
+    if (keypairSigner[0] && keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1]) {
+      setLoading(false)
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setSigCount(0)
+      setSigIPNS('')
+      setSigSigner('')
+      setSalt(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairSigner, keypairIPNS])
 
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
-    if (keypair[0] && keypair[2] && choice === 'ownerhash') {
+    if (keypairIPNS.length > 0 && choice === 'ownerhash') {
       const CIDGen = async () => {
-        let key = constants.formatkey([keypair[0], keypair[2]])
+        let key = constants.formatkey([keypairIPNS[0], keypairIPNS[1]])
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
@@ -326,7 +387,7 @@ const Account: NextPage = () => {
       CIDGen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypair])
+  }, [keypairIPNS])
 
   // Triggers setting Ownerhash
   React.useEffect(() => {
@@ -477,13 +538,17 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_, wrapperError])
 
-  // Load historical gas savings on pageload
+  // Set signature
   React.useEffect(() => {
-   if (_Signature_) {
-    setSignature(_Signature_)
-   }
+    if (_Signature_ && choice === 'ownerhash') {
+      setSigIPNS(_Signature_)
+     } else if (_Signature_ && choice === 'export_IPNS') {
+      setSigIPNS(_Signature_)
+     } else if (_Signature_ && choice === 'export_Signer') {
+      setSigSigner(_Signature_)
+     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Signature_])
+  }, [_Signature_, choice])
 
   // Handle search for a name
   React.useEffect(() => {
@@ -524,6 +589,7 @@ const Account: NextPage = () => {
     } else if (manager && manager !== _Wallet_ && query.length > 0) {
       setLoading(false)
       setSuccess(false)
+      setEmpty(true)
       setErrorMessage('You are not Owner')
       setErrorModal(true)
     } 
@@ -585,6 +651,7 @@ const Account: NextPage = () => {
     setIsSearch(true)
     setProcess(query)
     setQuery(query)
+    setEmpty(false)
   }
 
   const { isSuccess: txSuccess1of1, isError: txError1of1, isLoading: txLoading1of1 } = useWaitForTransaction({
@@ -622,6 +689,7 @@ const Account: NextPage = () => {
       if (!recentCrash) {
         setMessage('Transaction Failed')
         setCrash(true)
+        setSigCount(0)
       } else {
         if (recentCrash) setRecentCrash(false)
       }
@@ -640,8 +708,11 @@ const Account: NextPage = () => {
     } else if (!isSetOwnerhashLoading && isSetOwnerhashError) {
       if (!recentCrash) {
         setCrash(true)
-        setSignature('')
-        setKeypair([])
+        setSigCount(0)
+        setSigIPNS('')
+        setSigSigner('')
+        setKeypairIPNS([])
+        setKeypairSigner([])
         setSalt(false)
         setCID('')
         setLoading(false)
@@ -667,8 +738,11 @@ const Account: NextPage = () => {
         if (!recentCrash) {
           setMessage('Signature Failed')
           setCrash(true)
-          setKeypair([])
-          setSignature('')
+          setSigCount(0)
+          setKeypairIPNS([])
+          setKeypairSigner([])
+          setSigIPNS('')
+          setSigSigner('')
           setSalt(false)
           setLoading(false)
           setCID('')
@@ -763,7 +837,7 @@ const Account: NextPage = () => {
             >
               <button
                 className='button'
-                onClick={() => { window.location.href = '/', setKeypair(['', '', '']) }}
+                onClick={() => { window.location.href = '/', setKeypairSigner([]), setKeypairIPNS([]) }}
                 data-tooltip='Homepage'
               >
                 <div
@@ -793,7 +867,7 @@ const Account: NextPage = () => {
           >
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setFaqModal(true), setKeypair(['', '', '']) }}
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true), setKeypairSigner([]), setKeypairIPNS([]) }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Learn more'
             >
@@ -806,7 +880,7 @@ const Account: NextPage = () => {
             </button>
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setTermsModal(true), setKeypair(['', '', '']) }}
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true), setKeypairSigner([]), setKeypairIPNS([]) }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Terms of Use'
             >
@@ -997,7 +1071,8 @@ const Account: NextPage = () => {
                   setManager(''),
                   cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
                   setErrorModal(false),
-                  setKeypair(['', '', '']),
+                  setKeypairSigner([]), 
+                  setKeypairIPNS([]),
                   !cache ? '' : setSuccess(true)
                 }}
                 className='button-header'
@@ -1021,7 +1096,8 @@ const Account: NextPage = () => {
                   setLoading(true),
                   setQuery(''),
                   setErrorModal(false),
-                  setKeypair(['', '', '']),
+                  setKeypairSigner([]), 
+                  setKeypairIPNS([]),
                   setMessage('Please Wait')
                 }}
                 className='button-header'
@@ -1083,7 +1159,7 @@ const Account: NextPage = () => {
                 <div
                   className="flex-column"
                   style={{
-                    marginTop: '40px'
+                    marginTop: '10px'
                   }}
                 >
                   <div
@@ -1103,8 +1179,9 @@ const Account: NextPage = () => {
                       fontFamily: 'SF Mono'
                     }}
                   >
-                    { activeTab !== 'OWNER' || length < 3 ? '' :
-                      (previewModalState.modalData ? '' : `${progress}/${length}`)
+                    { 
+                      activeTab === 'UTILS' ? (sigCount > 0 ? `${sigCount}/2` : '') : 
+                      ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${progress}/${length}`) : '')
                     }
                   </div>
                 </div>
@@ -1135,7 +1212,7 @@ const Account: NextPage = () => {
                 <div
                   className="flex-column"
                   style={{
-                    marginTop: '40px'
+                    marginTop: '10px'
                   }}
                 >
                   <div
@@ -1421,7 +1498,7 @@ const Account: NextPage = () => {
                     }}
                     type="text"
                     placeholder={"IPNS Private Key"}
-                    value={choice !== 'export' ? '' : keypair[0]}
+                    value={!choice.startsWith('export') ? '' : keypairIPNS[0]}
                     id="export-ipns"
                     disabled
                   />
@@ -1430,12 +1507,12 @@ const Account: NextPage = () => {
                     onClick={() => {
                       copyToClipboard('export-ipns'),
                       setColor('lime'),
-                      setKeypair(['', keypair[1], keypair[2]])
+                      setKeypairIPNS(['', ''])
                     }} 
                     data-tooltip='Copy IPNS Key'
                     style={{
                       marginLeft: '-25px',
-                      color: color && !keypair[0] ? color : 'cyan'   
+                      color: color && !keypairIPNS[0] && !keypairIPNS[1] ? color : 'cyan'   
                     }}
                   >
                     <span 
@@ -1466,7 +1543,7 @@ const Account: NextPage = () => {
                     }}
                     type="text"
                     placeholder={"CCIP Manager Key"}
-                    value={choice !== 'export' ? '' : keypair[1]}
+                    value={!choice.startsWith('export') ? '' : keypairSigner[0]}
                     id="export-ccip"
                     disabled
                   />
@@ -1475,12 +1552,12 @@ const Account: NextPage = () => {
                     onClick={() => {
                       copyToClipboard('export-ccip'),
                       setColor('lime'),
-                      setKeypair([keypair[0], '', keypair[2]])
+                      setKeypairSigner(['', ''])
                     }} 
                     data-tooltip='Copy Manager Key'
                     style={{
                       marginLeft: '-25px',
-                      color: color && !keypair[1] ? color : 'cyan'   
+                      color: color && !keypairSigner[0] && !keypairSigner[1] ? color : 'cyan'   
                     }}
                   >
                     <span 

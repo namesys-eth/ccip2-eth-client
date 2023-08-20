@@ -32,8 +32,8 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey)
 export const ccip2 = [
-  '0x7b1c58d69a62d5f740D8CA069A6D903B6c414fE2', // CCIP2 Resolver Goerli
-  '0x57532d78FfBcC6ac5534A9b39899C7eC89082CdA' // CCIP2 Resolver Mainnet
+  '0x129e1727553e674088268A41E2B3d4e0D371D626', // CCIP2 Resolver Goerli
+  '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
  ]
 export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 60) * 60 // 60 mins
 export const ensContracts = [
