@@ -25,6 +25,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     handleModalData(undefined)
     handleTrigger(false)
+    setInputValue('')
     e.preventDefault()
     onClose()
   }
@@ -32,6 +33,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   const handleSubmit = () => {
     handleModalData(inputValue)
     handleTrigger(true)
+    setInputValue('')
     onClose()
   }
 

@@ -314,7 +314,7 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, keypairIPNS, choice])
   React.useEffect(() => {
-    if (!keypairIPNS[0] && !keypairIPNS[1] && sigIPNS) {
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && sigIPNS) {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
@@ -355,7 +355,7 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, keypairSigner, keypairIPNS, choice])
   React.useEffect(() => {
-    if (!keypairSigner[0] && !keypairSigner[1] && sigSigner && keypairIPNS[0] && keypairIPNS[1]) {
+    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && sigSigner && keypairIPNS[0] && keypairIPNS[1]) {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
@@ -685,9 +685,13 @@ const Account: NextPage = () => {
       setTimeout(() => {
         setLoading(false)
       }, 2000)
-      setKeypairIPNS([])
-      setKeypairSigner([])
     }
+    setSaltModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setKeypairIPNS([])
+    setKeypairSigner([])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSuccess1of1, isSetOwnerhashSuccess, flash])
 
@@ -1132,6 +1136,8 @@ const Account: NextPage = () => {
                   setManager(''),
                   setLoading(true),
                   setQuery(''),
+                  setKeypairIPNS([]),
+                  setKeypairSigner([]),
                   setErrorModal(false),
                   setMessage('Please Wait')
                 }}
@@ -1430,6 +1436,8 @@ const Account: NextPage = () => {
                   data-tooltip='Set New Ownerhash'
                   onClick={() => { 
                     setConfirm(true),
+                    setKeypairIPNS([]),
+                    setKeypairSigner([]),
                     setChoice('ownerhash')
                   }}
                 >
@@ -1519,7 +1527,8 @@ const Account: NextPage = () => {
                     onClick={() => {
                       copyToClipboard('export-ipns'),
                       setColor('lime'),
-                      setKeypairIPNS(['', ''])
+                      setKeypairIPNS(['', '']),
+                      setKeypairIPNS([])
                     }} 
                     data-tooltip='Copy IPNS Key'
                     style={{
@@ -1564,7 +1573,8 @@ const Account: NextPage = () => {
                     onClick={() => {
                       copyToClipboard('export-ccip'),
                       setColor('lime'),
-                      setKeypairSigner(['', ''])
+                      setKeypairSigner(['', '']),
+                      setKeypairSigner([])
                     }} 
                     data-tooltip='Copy Manager Key'
                     style={{
