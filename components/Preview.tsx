@@ -786,10 +786,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    console.log('where')
     if (sigSigner && keypairIPNS && !signer && CID && !keypairSigner) {
       // Set query for on-chain manager [v2]
-      console.log('here')
       setOnChainManagerQuery(
         [
           getOwner(),
@@ -902,7 +900,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   
   // Triggers Resolver migration after IPNS CID is generated and validated 
   React.useEffect(() => {
-    if (states.includes('recordhash') || states.includes('resolver')) {
+    if ((states.includes('recordhash') || states.includes('resolver')) && keypairIPNS && keypairSigner) {
       if (CID.startsWith('k5')) {
         initRecordhash()
       } else if (CID.startsWith('https://')) {
@@ -912,7 +910,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setMessage(message)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [CID, states])
+  }, [CID, states, keypairSigner, keypairIPNS])
 
   // Handles single vs. mulitple record updates
   React.useEffect(() => {
@@ -1226,7 +1224,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
 
   // Get records from history on NameSys backend
   // Must get Revision for IPNS update
-  async function getUpdate(_ownerhash: string) {
+  async function getUpdate(_storage: string, _type: string) {
     const request = {
       type: 'read',
       ens: _ENS_,
@@ -1234,7 +1232,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       recordsTypes: 'all',
       recordsValues: 'all',
       chain: chain,
-      ownerhash: _ownerhash,
+      ownerhash: _storage,
       hashType: hashType
     }
     try{
@@ -1266,7 +1264,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
               _Ownerstamps.push(Number(_HISTORY.ownerstamp[key]))
             }
           }
-          if (_ownerhash && _Ownerstamps.length > 0) {
+          if (_storage && _Ownerstamps.length > 0 && _type === 'ownerhash') {
             setQueue(Math.round(Date.now()/1000) - Math.max(..._Ownerstamps) - waitingPeriod)
           } else {
             setQueue(Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod)
@@ -1280,10 +1278,13 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Triggers fetching history from NameSys backend
   React.useEffect(() => {
     if (finish) {
-      getUpdate(ownerhash ? ownerhash : '')
+      getUpdate(
+        recordhash ? recordhash : ownerhash, 
+        recordhash ? 'recordhash' : 'ownerhash'
+      )
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finish, ownerhash])
+  }, [finish, ownerhash, recordhash])
 
   // Triggers setting metadata
   React.useEffect(() => {
@@ -1655,6 +1656,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setIcon('check_circle_outline')
         setColor('lime')
         setSuccessModal(true)
+        setQueue(0)
         handleSuccess()
       }
     }
@@ -1716,6 +1718,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setIcon('check_circle_outline')
       setColor('lime')
       setSalt(false)
+      setQueue(0)
       setSuccessModal(true)
       handleSuccess()
     }
@@ -2532,7 +2535,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 0.85);
 `
 
 export default Preview

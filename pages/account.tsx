@@ -287,8 +287,12 @@ const Account: NextPage = () => {
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1]) {
-      if (choice === 'export') setChoice('export_IPNS')
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && !choice.endsWith('_IPNS')) {
+      if (choice === 'export') {
+        setChoice('export_IPNS')
+      } else if (choice === 'ownerhash') {
+        setChoice('ownerhash_IPNS')
+      }
       let _origin = 'eth:' + _Wallet_
       let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
       setSigCount(1)
@@ -308,7 +312,7 @@ const Account: NextPage = () => {
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, keypairIPNS])
+  }, [saltModalState, keypairIPNS, choice])
   React.useEffect(() => {
     if (!keypairIPNS[0] && !keypairIPNS[1] && sigIPNS) {
       const keygen = async () => {
@@ -324,8 +328,12 @@ const Account: NextPage = () => {
 
   // Triggers S4(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1]) {
-      if (choice === 'export_IPNS') setChoice('export_Signer')
+    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
+      if (choice === 'export_IPNS') {
+        setChoice('export_Signer')
+      } else if (choice === 'ownerhash_IPNS') {
+        setChoice('ownerhash_Signer')
+      }
       let _origin = 'eth:' + _Wallet_
       let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
       setSigCount(2)
@@ -345,7 +353,7 @@ const Account: NextPage = () => {
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, keypairSigner, keypairIPNS])
+  }, [saltModalState, keypairSigner, keypairIPNS, choice])
   React.useEffect(() => {
     if (!keypairSigner[0] && !keypairSigner[1] && sigSigner && keypairIPNS[0] && keypairIPNS[1]) {
       const keygen = async () => {
@@ -362,22 +370,31 @@ const Account: NextPage = () => {
   // Trigger end of export
   React.useEffect(() => {
     if (keypairSigner[0] && keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1]) {
-      setLoading(false)
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setSigCount(0)
-      setSigIPNS('')
-      setSigSigner('')
-      setSalt(false)
+      if (choice.startsWith('export')) {
+        setLoading(false)
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
+        setSigCount(0)
+        setSigIPNS('')
+        setSigSigner('')
+        setSalt(false)
+      } else if (choice.startsWith('ownerhash')) {
+        // Triggers setting Ownerhash
+        setSigCount(0)
+        if (CID.startsWith('k5')) {
+          initOwnerhash()
+          setMessage('Waiting For Transaction')
+        }
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairSigner, keypairIPNS])
+  }, [keypairSigner, keypairIPNS, CID, choice])
 
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
-    if (keypairIPNS.length > 0 && choice === 'ownerhash') {
+    if (keypairIPNS.length > 0 && choice.startsWith('ownerhash')) {
       const CIDGen = async () => {
         let key = constants.formatkey([keypairIPNS[0], keypairIPNS[1]])
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
@@ -388,15 +405,6 @@ const Account: NextPage = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairIPNS])
-
-  // Triggers setting Ownerhash
-  React.useEffect(() => {
-    if (CID.startsWith('k5')) {
-      initOwnerhash()
-      setMessage('Waiting For Transaction')
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [CID])
 
   // Handle wallet change by the user
   React.useEffect(() => {
@@ -540,8 +548,10 @@ const Account: NextPage = () => {
 
   // Set signature
   React.useEffect(() => {
-    if (_Signature_ && choice === 'ownerhash') {
+    if (_Signature_ && choice === 'ownerhash_IPNS') {
       setSigIPNS(_Signature_)
+     } else if (_Signature_ && choice === 'ownerhash_Signer') {
+      setSigSigner(_Signature_)
      } else if (_Signature_ && choice === 'export_IPNS') {
       setSigIPNS(_Signature_)
      } else if (_Signature_ && choice === 'export_Signer') {
@@ -675,6 +685,8 @@ const Account: NextPage = () => {
       setTimeout(() => {
         setLoading(false)
       }, 2000)
+      setKeypairIPNS([])
+      setKeypairSigner([])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSuccess1of1, isSetOwnerhashSuccess, flash])
