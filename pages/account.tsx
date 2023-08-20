@@ -59,6 +59,8 @@ const Account: NextPage = () => {
   const [getting, setGetting] = React.useState(0)
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('')
+  const [signature, setSignature] = React.useState('') // Signature for storage
+  const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [isSearch, setIsSearch] = React.useState(false)
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [process, setProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
@@ -139,13 +141,13 @@ const Account: NextPage = () => {
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(source: string, caip10: string, extradata: string) {
-    let _toSign = `Requesting Signature For IPNS Key Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature For Keypair Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
 
   const { 
-    data: signature, 
+    data: _Signature_, 
     error: signError, 
     isLoading: signLoading, 
     signMessage 
@@ -296,7 +298,7 @@ const Account: NextPage = () => {
       setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState])
+  }, [saltModalState, keypair])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -316,7 +318,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (keypair[0] && keypair[2] && choice === 'ownerhash') {
       const CIDGen = async () => {
-        let key = constants.formatkey([[keypair[0], keypair[2]], ['', '']])
+        let key = constants.formatkey([keypair[0], keypair[2]])
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
         const CID_IPNS = w3name.toString()
         setCID(CID_IPNS)
@@ -475,6 +477,14 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_, wrapperError])
 
+  // Load historical gas savings on pageload
+  React.useEffect(() => {
+   if (_Signature_) {
+    setSignature(_Signature_)
+   }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_Signature_])
+
   // Handle search for a name
   React.useEffect(() => {
     if (manager && manager === _Wallet_ && query.length > 0) {
@@ -609,8 +619,12 @@ const Account: NextPage = () => {
       setMessage('Waiting for Confirmation')
     }
     if (!txLoading1of1 && txError1of1) {
-      setMessage('Transaction Failed')
-      setCrash(true)
+      if (!recentCrash) {
+        setMessage('Transaction Failed')
+        setCrash(true)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
       setLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -622,10 +636,23 @@ const Account: NextPage = () => {
       setLoading(true)
       setFinish(false)
       setMessage('Waiting for Transaction')
+      if (recentCrash) setRecentCrash(false)
     } else if (!isSetOwnerhashLoading && isSetOwnerhashError) {
-      setCrash(true)
-      setLoading(false)
-      setMessage('Transaction Declined By User')
+      if (!recentCrash) {
+        setCrash(true)
+        setSignature('')
+        setKeypair([])
+        setSalt(false)
+        setCID('')
+        setLoading(false)
+        setMessage('Transaction Declined By User')
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
   }, [isSetOwnerhashLoading, isSetOwnerhashError])
 
@@ -635,16 +662,27 @@ const Account: NextPage = () => {
       if (signLoading && !signError) {
         setLoading(true)
         setMessage('Waiting for Signature')
+        if (recentCrash) setRecentCrash(false)
       } else if (signError && !signLoading) {
-        setMessage('Signature Failed')
-        setCrash(true)
-        setLoading(false)
-      } else if (!signError && !signLoading && salt) {
-        setMessage('Signature Successful')
+        if (!recentCrash) {
+          setMessage('Signature Failed')
+          setCrash(true)
+          setKeypair([])
+          setSignature('')
+          setSalt(false)
+          setLoading(false)
+          setCID('')
+        } else {
+          if (recentCrash) setRecentCrash(false)
+        }
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError, activeTab, salt])
+  }, [signLoading, signError, activeTab])
 
   return (
     <div
@@ -1630,7 +1668,8 @@ const Account: NextPage = () => {
             />
             <Error
                 onClose={() => {
-                  setCrash(false)
+                  setCrash(false),
+                  setRecentCrash(true)
                 }}
                 color={'red'}
                 show={crash && !loading}

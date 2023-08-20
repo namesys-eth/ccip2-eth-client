@@ -156,8 +156,8 @@ export function hideOverlay() {
   }
 }
 // Returns formatted ed25519/IPNS keypair
-export function formatkey(keypair: [[string, string], [string, string]]) {
-  return '08011240' + keypair[0][0] + keypair[0][1] // ed25519 keypair = keypair[0]
+export function formatkey(keypair: [string, string]) {
+  return '08011240' + keypair[0] + keypair[0] // ed25519 keypair = keypairIPNS
 }
 
 // Encode ENS contenthash

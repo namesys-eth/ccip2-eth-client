@@ -74,7 +74,7 @@ const StyledModalBody = styled.div`
   font-size: 18px;
   font-weight: 700;
   line-height: 22px;
-  max-width: ${isMobile ? '500px' : '450px'};
+  max-width: ${isMobile ? '400px' : '400px'};
 `
 
 const StyledModalTitle = styled.div`

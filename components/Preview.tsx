@@ -150,10 +150,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [trigger, setTrigger] = React.useState<any>(undefined); // Triggered upon button click adjacent to the record in Preview modal
   const [safeTrigger, setSafeTrigger] = React.useState<string>(''); // Cache state for trigger
   const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
+  const [signer, setSigner] = React.useState(false); // Sets help text for the Help modal
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
-  const [keypair, setKeypair] = React.useState<[[string, string], [string, string]]>(); // Sets generated K0 and K2 keys
+  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K2 keys
+  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K2 and K0 keys
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
@@ -169,6 +171,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
+  const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
@@ -187,6 +190,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }); // Confirm modal state
   const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
+  const [sigSigner, setSigSigner] = React.useState(''); // Signature S4(K1) for Signer
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature S3(K1) for Records Manager
   const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
@@ -289,14 +293,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
    /* K0 = Generated secp256k1 Keypair 
     * K1 = Wallet secp256k1 Keypair 
     * K2 = Generated ed25519 Keypair
-    * S1 = Signature for K0 & K2 Generation (Signed by K1)
+    * S1 = Signature for K2 Generation (Signed by K1)
     * S2 = Signature for Records (Signed by K0)
     * S3 = Signature for Manager Approval (Signed by K1)
+    * S4 = Signature for K0 Generation (Signed by K1)
     */
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature For IPNS/Signer Key Generation\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature For IPNS Keypair Generation\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -307,13 +312,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _toSign = `Requesting Signature To Update ENS Record\n\nOrigin: ${_ENS_}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
     return _toSign
   }
-
   // Signature S3 statement; S3(K1) [Approved Signature]
   // S3 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementManager(signer: string) {
     let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
     let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${_ENS_}\nApproved Signer: ${_signer}\nApproved By: ${caip10}`
     return _toSign
+  }
+  // Signature S4 statement; S4(K1) [Signer Keygen]
+  // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  function statementSignerKey(extradata: string, type: string) {
+    let _toSign = `Requesting Signature For Signer Keypair Generation\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    return _digest
   }
 
   /// Encode string values of records
@@ -340,7 +351,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _encodedWithSelector = _interface.encodeFunctionData(
       "signedRecord", 
       [
-        keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress, 
+        keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress, 
         signatures[key],
         sigApproved,
         _result
@@ -374,12 +385,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Signature S2 with K0 
-  // K0 = keypair[1]; secp256k1
-  // K2 = keypair[0]; ed25519
+  // K0 = keypairSigner; secp256k1
+  // K2 = keypairIPNS; ed25519
   async function _signMessage(input: any) {
-    if (keypair) {
+    if (keypairSigner) {
       const SignS2 = async () => {
-        const _signer = new ethers.Wallet('0x' + keypair[1][0], provider)
+        const _signer = new ethers.Wallet('0x' + keypairSigner[0], provider)
         const __signature = await _signer.signMessage(input.message) 
         if (__signature) return __signature
       }
@@ -390,16 +401,38 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Signature S3 with K1
   async function __signMessage() {
-    setSigCount(2) // Trigger S3(K1)
-    if (keypair) {
+    setSigCount(3) // Trigger S3(K1)
+    if (keypairSigner) {
       const SignS3 = async () => {
         signMessage({ message: 
           statementManager(
-            keypair[1][0]
+            keypairSigner[0]
           ) 
         })
       }
       SignS3()
+    }
+  }
+
+  // Signature S4 with K1
+  async function ___signMessage(_value: string) {
+    setSigCount(2) // Trigger S3(K1)
+    if (keypairIPNS) {
+      const SignS4 = async () => {
+        signMessage({ 
+          message: statementSignerKey(
+            ethers.utils.keccak256(ethers.utils.solidityPack(
+              ['bytes32', 'address'], 
+              [
+                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_value])), 
+                _Wallet_
+              ]
+            )),
+            hashType
+          ) 
+        })
+      }
+      SignS4()
     }
   }
 
@@ -484,7 +517,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: 'isApprovedSigner',
-    args: [getOwner(), ethers.utils.namehash(ENS), keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress]
+    args: [getOwner(), ethers.utils.namehash(ENS), keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress]
   })
   // Read ownership of a domain from ENS Wrapper
   const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
@@ -700,7 +733,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     } else if (gatewayModalState.trigger && gatewayModalState.modalData) {
       _modalData = gatewayModalState.modalData
     }
-    if ((saltModalState.trigger || gatewayModalState.trigger) && !updateRecords && !keypair && trigger && safeTrigger) {
+    if ((saltModalState.trigger || gatewayModalState.trigger) && !updateRecords && !keypairIPNS && trigger && safeTrigger) {
       setSigCount(1)
       signMessage({ 
         message: statementIPNSKey(
@@ -721,55 +754,93 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    setLoading(true)
-    if (sigIPNS && !keypair) {
+    if (sigIPNS && !keypairIPNS) {
+      setLoading(true)
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
         const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
         const __keypair = await _KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
-        setKeypair(__keypair)
-        setMessage(['IPNS Key Generated', ''])
+        setKeypairIPNS(__keypair[0])
+        setMessage(['IPNS Keypair Generated', ''])
       }
       keygen()
-    } else {
-      setMessage(['IPNS Key/CID Exists', ''])
+    } else if (sigIPNS && keypairIPNS) {
+      setLoading(true)
+      setMessage(['IPNS Keypair Exists', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, sigIPNS])
 
+  // Triggers S4(K1) after password is set
+  React.useEffect(() => {
+    if (keypairIPNS && saltModalState.trigger && !sigSigner) {
+      const _sigSigner = async () => {
+        if (saltModalState.modalData) {
+          ___signMessage(saltModalState.modalData)
+        }
+      }
+      _sigSigner()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairIPNS, saltModalState, sigIPNS])
+
+  // Triggers S1(K1) after password is set
+  React.useEffect(() => {
+    console.log('where')
+    if (sigSigner && keypairIPNS && !signer && CID && !keypairSigner) {
+      // Set query for on-chain manager [v2]
+      console.log('here')
+      setOnChainManagerQuery(
+        [
+          getOwner(),
+          ethers.utils.namehash(ENS),
+          keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress
+        ]
+      ) // Checks if connected wallet is on-chain manager
+      setLoading(true)
+      setMessage(['Generating Signer Key', ''])
+      const keygen = async () => {
+        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
+        const __keypair = await _KEYGEN(_origin, caip10, sigSigner, saltModalState.modalData)
+        setKeypairSigner(__keypair[1])
+        setSigner(true)
+        setMessage(['Signer Keypair Generated', ''])
+      }
+      keygen()
+    } else if (sigSigner && keypairSigner && signer) {
+      setLoading(true)
+      setMessage(['Signer Keypair Exists', ''])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairIPNS, sigSigner, CID])
+
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
-    if (keypair) {
+    if (keypairIPNS && sigIPNS && !sigSigner) {
       if (hashType !== 'gateway') {
         const CIDGen = async () => {
-          let key = constants.formatkey(keypair)
+          let key = constants.formatkey(keypairIPNS)
           const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
           const CID_IPNS = w3name.toString()
           setCID(CID_IPNS)
-          setMessage(['IPNS CID Generated', ''])
+          setMessage(['Waiting For Signature', '2'])
         }
         CIDGen()
       } else if (hashType === 'gateway') {
         setCID(gatewayModalState.modalData || '')
       }
-      // Set query for on-chain manager [v2]
-      setOnChainManagerQuery(
-        [
-          getOwner(),
-          ethers.utils.namehash(ENS),
-          keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress
-        ]
-      ) // Checks if connected wallet is on-chain manager
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypair, hashType, gatewayModalState])
+  }, [keypairIPNS, hashType, gatewayModalState, sigIPNS, sigSigner])
 
   // Sets signature from Wagmi signMessage() as S1(K1)
   React.useEffect(() => {
     if (signature && sigCount === 1) {
       setSigIPNS(signature)
-    } else if (signature && sigCount === 2) {
+    } else if (signature && sigCount === 3) {
       setSigApproved(signature)
+    } else if (signature && sigCount === 2) {
+      setSigSigner(signature)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, sigCount])
@@ -900,7 +971,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       modalData: undefined,
       trigger: false
     })
-    setKeypair(undefined) // Purge keypairs from local storage 
+    setKeypairSigner(undefined) // Purge keypairs from local storage 
+    setKeypairIPNS(undefined)
     setNewValues(EMPTY_STRING())
     setSustain(false)
     e.preventDefault()
@@ -1035,7 +1107,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     const request = {
       ens: _ENS_,
       owner: _Wallet_,
-      manager: keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress,
+      manager: keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress,
       managerSignature: sigApproved,
       revision: Revision.encode(revision),
       chain: chain,
@@ -1279,7 +1351,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Handles password prompt for S1(K1)
   React.useEffect(() => {
     if (updateRecords) { // Check for false → true
-      if (!keypair || !CID) {
+      if (!keypairSigner || !CID) {
         setSalt(true) // Start K0 keygen if it doesn't exist in local storage
         setUpdateRecords(false) // Reset
       } else {
@@ -1321,26 +1393,26 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
     // Handle Signature S2(K0) to add as extradata
-    if (write && keypair && newValues && newValues !== EMPTY_STRING()) {
+    if (write && keypairSigner && newValues && newValues !== EMPTY_STRING() && sigSigner) {
       let __signatures = EMPTY_STRING()
       states.forEach(async (_recordType) => {
         let _signature: any
         _signature = await _signMessage({ 
-          message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypair[1][0]) 
+          message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0]) 
         }) // Sign with K0
         if (_signature) __signatures[_recordType] = _signature
       })
       setSignatures(__signatures)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [write, keypair])
+  }, [write, keypairSigner, sigSigner])
 
   // Handles generating signatures for off-chain manager
   React.useEffect(() => {
     // Handle Signature S3(K1)
-    if (write && keypair && !onChainManager && !sigApproved && signatures) {
+    if (write && keypairSigner && !onChainManager && !sigApproved && signatures) {
       __signMessage() // Sign with K1
-    } else if (write && keypair && onChainManager && signatures) {
+    } else if (write && keypairSigner && onChainManager && signatures) {
       setSigApproved('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1356,7 +1428,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     }
     if (
       write && 
-      keypair && 
+      keypairIPNS && 
       count === states.length && 
       count > 0 && 
       sigApproved
@@ -1370,7 +1442,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       // Generate POST request for writing records
       const request = {
         signatures: signatures,
-        manager: keypair ? ethers.utils.computeAddress(`0x${keypair[1][0]}`) : constants.zeroAddress,
+        manager: keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress,
         managerSignature: sigApproved,
         ens: _ENS_,
         owner: _Wallet_ ? _Wallet_ : constants.zeroAddress,
@@ -1397,7 +1469,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
             .then(response => response.json())
             .then(async data => {
               setMessage(['Publishing to IPNS', ''])
-              if (keypair && data.response) {	
+              if (keypairSigner && data.response) {	
                 // Get gas consumption estimate
                 let gas = {}	
                 list.map(async (item) => {	
@@ -1432,7 +1504,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                   checkGas()
                 })
                 // Handle W3Name publish 
-                let key = constants.formatkey(keypair)
+                let key = constants.formatkey(keypairIPNS)
                 let w3name: Name.WritableName
                 const keygen = async () => {
                   w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
@@ -1665,46 +1737,92 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateSuccess, txSuccess1of2])
 
-  // Handles transaction wait
+  // Handles first transaction wait
   React.useEffect(() => {
-    if (isMigrateLoading && !isSetRecordhashLoading) {
-      setLoading(true) // 
+    if (isMigrateLoading && !isMigrateError) {
+      setLoading(true) 
       setFinish(false)
       setMessage(['Waiting for Transaction', '1'])
+      if (recentCrash) setRecentCrash(false)
+    } else if (isMigrateError && !isMigrateLoading) {
+      if (!recentCrash) {
+        setMessage(['Transaction Declined by User', ''])
+        setCrash(true)
+        setTrigger('')
+        setStates([])
+        setCID('')
+        setKeypairSigner(undefined)
+        setKeypairIPNS(undefined)
+        setLoading(false)
+        setSigIPNS('')
+        setSigSigner('')
+        setSalt(false)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
     } 
-    if (isMigrateError && !isSetRecordhashLoading) {
-      setMessage(['Transaction Declined by User', ''])
-      setCrash(true)
-      setLoading(false)
-      setStates([])
-      setTrigger('')
-    } 
-    if (!isMigrateLoading && isSetRecordhashLoading) {
-      setLoading(true) //
+  }, [isMigrateLoading, isMigrateError])
+
+  // Handles second transaction wait
+  React.useEffect(() => {
+    if (!isSetRecordhashError && isSetRecordhashLoading) {
+      setLoading(true) 
       setFinish(false)
       setMessage(['Waiting for Transaction', '2'])
-    }
-    if (isSetRecordhashError && !isSetRecordhashLoading) {
-      setMessage(['Transaction Declined by User', ''])
-      setCrash(true)
-      setLoading(false)
-      setStates([])
-      setTrigger('')
+      if (recentCrash) setRecentCrash(false)
+    } else if (isSetRecordhashError && !isSetRecordhashLoading) {
+      if (!recentCrash) {
+        setMessage(['Transaction Declined by User', ''])
+        setCrash(true)
+        setTrigger('')
+        setStates([])
+        setCID('')
+        setSigSigner('')
+        setKeypairSigner(undefined)
+        setKeypairIPNS(undefined)
+        setLoading(false)
+        setSigIPNS('')
+        setSalt(false)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
     } 
-  }, [isMigrateLoading, isSetRecordhashLoading, isMigrateError, isSetRecordhashError])
+  }, [isSetRecordhashLoading, isSetRecordhashError])
 
   // Handles first transaction loading and error
   React.useEffect(() => {
     if (txLoading1of2 && !txError1of2) {
       setLoading(true)
       setMessage(['Waiting for Confirmation', '1'])
-    }
-    if (!txLoading1of2 && txError1of2) {
-      setMessage(['Transaction Failed', '1'])
-      setCrash(true)
-      setLoading(false)
-      setStates([])
-      setTrigger('')
+      if (recentCrash) setRecentCrash(false)
+    } else if (!txLoading1of2 && txError1of2) {
+      if (!recentCrash) {
+        setMessage(['Transaction Failed', '1'])
+        setCrash(true)
+        setTrigger('')
+        setStates([])
+        setCID('')
+        setSigSigner('')
+        setKeypairSigner(undefined)
+        setKeypairIPNS(undefined)
+        setLoading(false)
+        setSigIPNS('')
+        setSalt(false)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading1of2, txError1of2])
@@ -1714,13 +1832,27 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     if (txLoading2of2 && !txError2of2) {
       setLoading(true)
       setMessage(['Waiting for Confirmation', '2'])
-    }
-    if (!txLoading2of2 && txError2of2) {
-      setMessage(['Transaction Failed', '2'])
-      setCrash(true)
-      setLoading(false)
-      setStates([])
-      setTrigger('')
+      if (recentCrash) setRecentCrash(false)
+    } else if (!txLoading2of2 && txError2of2) {
+      if (!recentCrash) {
+        setMessage(['Transaction Failed', '2'])
+        setCrash(true)
+        setTrigger('')
+        setStates([])
+        setCID('')
+        setSigSigner('')
+        setKeypairSigner(undefined)
+        setKeypairIPNS(undefined)
+        setLoading(false)
+        setSigIPNS('')
+        setSalt(false)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txLoading2of2, txError2of2])
@@ -1730,27 +1862,48 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     if (signLoading && !signError && trigger) {
       setLoading(true)
       setMessage(['Waiting for Signature', sigCount.toString()])
-    } else if (signError && !signLoading) {
-      setMessage(['Signature Failed', sigCount.toString()])
-      setCrash(true)
-      setLoading(false)
-      setStates([])
-      if (trigger === 'resolver') handleSuccess()
-      setTrigger('')
-      setSafeTrigger('0')
+      if (recentCrash) setRecentCrash(false)
+    } else if (signError && !signLoading && trigger) {
+      if (!recentCrash) {
+        setMessage(['Signature Failed', sigCount.toString()])
+        setCrash(true)
+        setTrigger('')
+        setStates([])
+        setCID('')
+        setSigSigner('')
+        setSalt(false)
+        setKeypairSigner(undefined)
+        setKeypairIPNS(undefined)
+        setSigIPNS('')
+        setLoading(false)
+        setWrite(false)
+        setUpdateRecords(false) // Reset
+        setLegit(EMPTY_BOOL())
+        setNewValues(EMPTY_STRING())
+        let _updatedList = list.map((item) => {
+          if (item.type !== 'recordhash') {
+            return item
+          } else {
+            return { 
+              ...item, 
+              state: false
+            }
+          }
+          
+        })
+        setPreCache(_updatedList)
+        if (trigger === 'resolver') handleSuccess()
+        setSafeTrigger('0')
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
       setSaltModalState({
         modalData: undefined,
         trigger: false
       })
-      setLegit(EMPTY_BOOL())
-      setNewValues(EMPTY_STRING())
-      setWrite(false)
-      setUpdateRecords(false) // Reset
-    } else if (!signError && !signLoading && salt) {
-      setMessage(['Starting Keygen', ''])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError, trigger])
+  }, [signLoading, signError, trigger, sigCount])
 
   /// Modal Content
   const modalContent = show ? (
@@ -1852,7 +2005,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                   >
                     <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{message[1]}</span>
                     <span>{' Of '}</span>
-                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{optionsModalState.trigger ? String(Number(optionsModalState.modalData) + 1) : '2'}</span>
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{optionsModalState.trigger ? String(Number(optionsModalState.modalData) + 1) : '3'}</span>
                   </span>
                 </div>
               )}
@@ -2305,7 +2458,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
           <Error
             onClose={() => {
               setCrash(false),
-              setLoading(false)
+              setRecentCrash(true)
             }}
             color={color}
             show={crash && !loading}
@@ -2379,7 +2532,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.75);
 `
 
 export default Preview

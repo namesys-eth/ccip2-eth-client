@@ -40,7 +40,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
   }
 
   const handleGatewaySubmit = () => {
-    handleModalData('2')
+    handleModalData('1')
     handleTrigger(true)
     onClose()
   }

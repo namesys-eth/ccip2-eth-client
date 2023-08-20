@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
+import { isMobile } from 'react-device-detect'
 
 function sumValues(obj: { [key: string]: number }): number {
   let total = 0;
@@ -132,13 +133,13 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
 
 const StyledModalBody = styled.div`
   padding-top: 0px;
-  padding-left: 40px;
-  padding-right: 40px;
-  padding-bottom: 40px;
+  padding-left: ${isMobile ? '10px' : '20px'};
+  padding-right: ${isMobile ? '10px' : '20px'};
+  padding-bottom: ${isMobile ? '10px' : '20px'};
   margin-top: 0px;
-  margin-left: 40px;
-  margin-right: 40px;
-  margin-bottom: 40px;
+  margin-left: ${isMobile ? '10px' : '20px'};
+  margin-right: ${isMobile ? '10px' : '20px'};
+  margin-bottom: ${isMobile ? '10px' : '20px'};
   display: flex;
   justify-content: center;
   height: auto;
@@ -169,7 +170,7 @@ const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
-  max-width: 60%;
+  max-width: ${isMobile ? '90%' : '60%'};
   height: 280px;
   border-radius: 6px;
   overflow-y: initial !important
@@ -187,7 +188,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.75);
 `;
 
 export default Gas;
