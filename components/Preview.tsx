@@ -313,7 +313,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature For IPNS Keypair Generation\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -334,7 +334,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S4 statement; S4(K1) [Signer Keygen]
   // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementSignerKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature For Signer Keypair Generation\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate ENS Records Signer\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? _ENS_ : origin}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }

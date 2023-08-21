@@ -1,4 +1,4 @@
-/// My Names page (Accountpage)
+/// My Names page 
 import React from 'react'
 import { useCallback } from 'react'
 import Head from 'next/head'
@@ -142,14 +142,14 @@ const Account: NextPage = () => {
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(source: string, caip10: string, extradata: string) {
-    let _toSign = `Requesting Signature For IPNS Keypair Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
   // Signature S4 statement; S4(K1) [Signer Keygen]
   // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementSignerKey(source: string, caip10: string, extradata: string) {
-    let _toSign = `Requesting Signature For Signer Keypair Generation\n\nOrigin: ${source}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate ENS Records Signer\n\nOrigin: ${source}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }

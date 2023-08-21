@@ -6,7 +6,8 @@ import iEnsLegacyResolver from '../ABI/Contract-ABI-ENSLegacyResolver.json'
 import iEnsUniversalResolverGoerli from '../ABI/Contract-ABI-ENSUniversalResolverGoerli.json'
 import iEnsPublicResolverMainnet from '../ABI/Contract-ABI-ENSPublicResolverMainnet.json'
 import iEnsUniversalResolverMainnet from '../ABI/Contract-ABI-ENSUniversalResolverMainnet.json'
-import iEnsWrapper from '../ABI/Contract-ABI-ENSWrapper.json'
+import iEnsWrapperGoerli from '../ABI/Contract-ABI-ENSWrapperGoerli.json'
+import iEnsWrapperMainnet from '../ABI/Contract-ABI-ENSWrapperMainnet.json'
 import iCCIP2Goerli from '../ABI/Contract-ABI-CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/Contract-ABI-CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
@@ -43,7 +44,18 @@ export const ensContracts = [
   "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper (Goerli)
   "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750", // Universal Resolver (Goerli)
   "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41", // Public Legacy Resolver 2 (Mainnet)
-  "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63" // Universal Resolver (Mainnet)
+  "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63", // Universal Resolver (Mainnet)
+  "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401" // Name Wrapper (Mainnet)
+]
+export const ensInterface = [
+  iEnsLegacyRegistry, // Legacy Registry (Goerli & Mainnet)
+  iEnsLegacyRegistrar, // Legacy Registrar (Goerli & Mainnet)
+  iEnsLegacyResolver, // Public Legacy Resolver 1 (Mainnet)
+  iEnsWrapperGoerli, // Name Wrapper (Goerli)
+  iEnsUniversalResolverGoerli, // Universal Resolver (Goerli)
+  iEnsPublicResolverMainnet, // Public Legacy Resolver 2 (Mainnet)
+  iEnsUniversalResolverMainnet, // Universal Resolver (Mainnet)
+  iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
   '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
@@ -52,15 +64,7 @@ export const carousal = [
   '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
   '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
 ]
-export const ensInterface = [
-  iEnsLegacyRegistry,
-  iEnsLegacyRegistrar,
-  iEnsLegacyResolver,
-  iEnsWrapper,
-  iEnsUniversalResolverGoerli,
-  iEnsPublicResolverMainnet,
-  iEnsUniversalResolverMainnet,
-]
+
 export const ccip2Interface = [
   iCCIP2Goerli,
   iCCIP2Mainnet,
@@ -93,6 +97,10 @@ export const ensConfig = [
   { 
     addressOrName: ensContracts[6],
     contractInterface: ensInterface[6]
+  },
+  { 
+    addressOrName: ensContracts[7],
+    contractInterface: ensInterface[7]
   }
 ]
 export const ccip2Config = [
@@ -106,7 +114,6 @@ export const ccip2Config = [
   }
 
 ]
-
 // Uneditable records in Preview modal
 export const forbidden = [
   'resolver',
@@ -137,7 +144,6 @@ export const files = [
 	'dns/zonehash',
 	'revision' // No associated record file; Not a Record
 ] 
-
 // Overlay 
 export function showOverlay(durationInSeconds: number) {
   const overlay = document.getElementById('overlay')
@@ -148,7 +154,6 @@ export function showOverlay(durationInSeconds: number) {
     }, durationInSeconds * 1000)
   }
 }
-
 export function hideOverlay() {
   const overlay = document.getElementById('overlay')
   if (overlay) {
