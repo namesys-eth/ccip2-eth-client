@@ -172,11 +172,11 @@ const Home: NextPage = () => {
   React.useEffect(() => {
     if (previewModalState.trigger) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData?.split(':')[0])
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
       const _update = async () => {
         if (previewModalState.modalData) {
-          const _Resolver = await constants.provider.getResolver(previewModalState.modalData.split(':')[0]) // Get updated Resolver
-          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.split(':')[0], ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
           _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
             _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (

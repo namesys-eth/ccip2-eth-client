@@ -114,7 +114,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               <div 
                 className="material-icons smol"
                 style={{ 
-                  color: 'orange',
+                  color: 'yellow',
                   marginLeft: '5px',
                   marginTop: '21px'
                 }}

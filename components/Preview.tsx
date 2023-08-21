@@ -106,6 +106,17 @@ function checkImageURL(url: string) {
     img.src = url
   })
 }
+// Check for empty object
+function isEmpty(object: any) {
+  for (const key in object) {
+    if (object.hasOwnProperty(key)) {
+      if (object[key] !== '') {
+        return false
+      }
+    }
+  }
+  return true
+}
 
 /**
 * Preview Modal
@@ -156,6 +167,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
   const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K2 keys
   const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K2 and K0 keys
+  const [isConfig, setIsConfig] = React.useState(true); // Handles record setting vs config or migration
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
@@ -428,7 +440,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 _Wallet_
               ]
             )),
-            hashType
+            hashType === 'recordhash' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'recordhash') : hashType)
           ) 
         })
       }
@@ -642,6 +654,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
         }
         setUpdateRecords(true)
+        setSigCount(3)
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -744,7 +757,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               _Wallet_
             ]
           )),
-          hashType
+          hashType === 'recordhash' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'recordhash') : hashType)
         ) 
       })
       setKeygen(true)
@@ -1411,7 +1424,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Handles generating signatures for off-chain manager
   React.useEffect(() => {
     // Handle Signature S3(K1)
-    if (write && keypairSigner && !onChainManager && !sigApproved && signatures) {
+    if (write && keypairSigner && !onChainManager && !sigApproved && !isEmpty(signatures)) {
       __signMessage() // Sign with K1
     } else if (write && keypairSigner && onChainManager && signatures) {
       setSigApproved('0x')
@@ -1611,7 +1624,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
 
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1of2 && migrated) {
+    if (isMigrateSuccess && txSuccess1of2 && migrated && isConfig) {
       if (optionsModalState.modalData === '1') {
         setLoading(true)
         setMessage(['Waiting For Keygen', ''])
@@ -1656,12 +1669,13 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setIcon('check_circle_outline')
         setColor('lime')
         setSuccessModal(true)
-        setQueue(0)
+        setIsConfig(false)
+        setQueue(1)
         handleSuccess()
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of2, migrated, optionsModalState, resolver])
+  }, [isMigrateSuccess, txSuccess1of2, migrated, optionsModalState, resolver, isConfig])
 
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
@@ -1683,7 +1697,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
 
   // Handles finishing migration of Resolver to CCIP2
   React.useEffect(() => {
-    if (recordhash && txSuccess2of2) {
+    if (recordhash && txSuccess2of2 && isConfig) {
       let _updatedList = list.map((item) => {
         if (constants.forbidden.includes(item.type)) {
           return { 
@@ -1714,16 +1728,17 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       setLegit(EMPTY_BOOL())
       setStates([])
       setLoading(false)
+      setIsConfig(false)
       setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>')
       setIcon('check_circle_outline')
       setColor('lime')
       setSalt(false)
-      setQueue(0)
+      setQueue(1)
       setSuccessModal(true)
       handleSuccess()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordhash])
+  }, [recordhash, isConfig])
 
   // Sets migration state to true upon successful transaction 1 receipt
   React.useEffect(() => {
@@ -1767,6 +1782,10 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         modalData: undefined,
         trigger: false
       })
+      setOptionsModalState({
+        modalData: undefined,
+        trigger: false
+      })
     } 
   }, [isMigrateLoading, isMigrateError])
 
@@ -1794,6 +1813,10 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         if (recentCrash) setRecentCrash(false)
       }
       setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setConfirmModalState({
         modalData: undefined,
         trigger: false
       })
@@ -2008,7 +2031,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                   >
                     <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{message[1]}</span>
                     <span>{' Of '}</span>
-                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{optionsModalState.trigger ? String(Number(optionsModalState.modalData) + 1) : '3'}</span>
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{optionsModalState.trigger ? String(Number(optionsModalState.modalData === '0' && !isConfig ? '1' : optionsModalState.modalData) + ((isMigrateLoading || isSetRecordhashLoading || txLoading1of2 || txLoading2of2 || txSuccess1of2 || txSuccess2of2) && isConfig ? 1 : 2)) : '3'}</span>
                   </span>
                 </div>
               )}
@@ -2362,7 +2385,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                             setTrigger(item.type),
                             setSafeTrigger('1'),
                             ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
-                            ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setStates(states) // Update edited keys
+                            ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : setIsConfig(false) // Update edited keys
                           }}
                           data-tooltip={ item.tooltip }
                         >
