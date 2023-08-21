@@ -11,7 +11,11 @@ import type {
 } from '@rainbow-me/rainbowkit'
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
-import { chain, configureChains, createClient, WagmiConfig } from 'wagmi'
+import {
+  mainnet,
+  goerli
+} from 'wagmi/chains'
+import { configureChains, createConfig, WagmiConfig } from 'wagmi'
 import { isMobile } from 'react-device-detect'
 
 let rainbowFont = ''
@@ -30,7 +34,7 @@ const customTheme: Theme = {
     accentColorForeground: 'white',
     actionButtonBorder: 'white',
     actionButtonBorderMobile: 'white',
-    actionButtonSecondaryBackground: 'linear-gradient(112deg, rgba(198,127,105,1) 0%, rgba(230,136,133,1) 48%, rgba(254,232,206,1) 100%)',
+    actionButtonSecondaryBackground: 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)',
     closeButton: 'black',
     closeButtonBackground: 'linear-gradient(112deg, rgba(198,127,105,1) 0%, rgba(218,85,81,1) 48%, rgba(212,160,99,1) 100%)',
     connectButtonBackground: 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)',
@@ -39,6 +43,8 @@ const customTheme: Theme = {
     connectButtonText: 'white',
     connectButtonTextError: 'white',
     connectionIndicator: 'white',
+    downloadBottomCardBackground: 'none',
+    downloadTopCardBackground: 'none',
     error: 'red',
     generalBorder: 'rgb(255, 255, 255, 0.75)',
     generalBorderDim: 'rgb(255, 255, 255, 0.25)',
@@ -47,8 +53,8 @@ const customTheme: Theme = {
     modalBackground: 'linear-gradient(42deg, rgba(125,90,78,1) 0%, rgba(97,53,38,1) 100%)',
     modalBorder: 'white',
     modalText: 'white',
-    modalTextDim: 'rgb(255, 255, 255, 0.825)',
-    modalTextSecondary: 'rgb(255, 255, 255, 0.825)',
+    modalTextDim: 'white',
+    modalTextSecondary: 'white',
     profileAction: 'rgb(0, 0, 0, 0.5)',
     profileActionHover: 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)',
     profileForeground: 'rgb(0, 0, 0, 0.5)',
@@ -59,7 +65,7 @@ const customTheme: Theme = {
     body: `${rainbowFont}`,
   },
   radii: {
-    actionButton: '6px',
+    actionButton: '4px',
     connectButton: '6px',
     menuButton: '6px',
     modal: '6px',
@@ -75,18 +81,20 @@ const customTheme: Theme = {
   }
 }
 
-const { chains, provider } = configureChains(
+const { chains, publicClient } = configureChains(
   [
-    chain[`${process.env.NEXT_PUBLIC_NETWORK}`]
+    process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? goerli : mainnet
   ],
   [
-    alchemyProvider({ alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID }),
+    alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID ? process.env.NEXT_PUBLIC_ALCHEMY_ID : '' }),
     publicProvider()
   ]
 )
 
+const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ? process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID : ''
 const { connectors } = getDefaultWallets({
   appName: 'NameSys',
+  projectId,
   chains,
 })
 
@@ -94,17 +102,18 @@ const appInfo = {
   appName: 'NameSys: Off-Chain ENS Records Manager',
 }
 
-const wagmiClient = createClient({
+const wagmiConfig = createConfig({
   autoConnect: true,
   connectors,
-  provider
+  publicClient
 })
 
 function MyApp({ Component, pageProps }: AppProps) {
 
   return (
-      <WagmiConfig client={wagmiClient}>
+      <WagmiConfig config={wagmiConfig}>
         <RainbowKitProvider
+          modalSize={isMobile ? "compact" : "wide"}
           appInfo={appInfo}
           chains={chains}
           theme={customTheme}

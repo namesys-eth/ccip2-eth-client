@@ -1,17 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
+import { isMobile } from 'react-device-detect'
 
 const Success = ({ _ENS_, color, show, onClose, children }) => {
-  const [browser, setBrowser] = React.useState(false);
+  const [browser, setBrowser] = React.useState(false)
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -41,32 +42,30 @@ const Success = ({ _ENS_, color, show, onClose, children }) => {
               { _ENS_ }
             </span>
           </StyledModalTitle>}
-        <StyledModalBody>
-          { children }
-        </StyledModalBody>
+        <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 0px;
-  padding-left: 40px;
-  padding-right: 40px;
-  padding-bottom: 70px;
+  padding-left: ${isMobile ? '10px' : '20px'};
+  padding-right: ${isMobile ? '10px' : '20px'};
+  padding-bottom: 5px;
   margin-top: 0px;
-  margin-left: 40px;
-  margin-right: 40px;
-  margin-bottom: 40px;
+  margin-left: ${isMobile ? '10px' : '20px'};
+  margin-right: ${isMobile ? '10px' : '20px'};
+  margin-bottom: ${isMobile ? '15px' : '20px'};
   display: flex;
   justify-content: center;
   height: auto;
@@ -75,8 +74,8 @@ const StyledModalBody = styled.div`
   font-size: 18px;
   font-weight: 700;
   line-height: 22px;
-  max-width: 400px;
-`;
+  max-width: ${isMobile ? '400px' : '400px'};
+`
 
 const StyledModalTitle = styled.div`
   margin-top: -15px;
@@ -86,25 +85,24 @@ const StyledModalTitle = styled.div`
   font-weight: 700;
   margin-bottom: 15px;
   color: white;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`;
+`
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
-  max-width: 60%;
-  height: 170px;
+  max-width: ${isMobile ? '90%' : '60%'};
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
   text-align: center;
   justify-content: center;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -115,7 +113,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.1);
-`;
+  background-color: rgba(0, 0, 0, 0.65);
+`
 
-export default Success;
+export default Success

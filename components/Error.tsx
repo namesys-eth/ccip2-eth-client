@@ -1,18 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
 
-const Error = ({ show, onClose, title, children }) => {
-  const [browser, setBrowser] = React.useState(false);
+const Error = ({ show, onClose, color, title, children }) => {
+  const [browser, setBrowser] = React.useState(false)
 
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    e.preventDefault()
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -24,40 +24,42 @@ const Error = ({ show, onClose, title, children }) => {
         </StyledModalHeader>
         {title && <StyledModalTitle>
           <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            className="flex-column"
           >
             <div className="material-icons miui-small">{title}</div>
           </div>
           </StyledModalTitle>}
-        <StyledModalBody>{children}</StyledModalBody>
+        <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
   padding-top: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 10px;
   display: flex;
+  height: auto;
   justify-content: center;
   overflow-y: auto;
   font-size: 18px;
   color: white;
   font-weight: 700;
-`;
+  text-align: center;
+  align-items: center;
+  line-height: 20px;
+`
 
 const StyledModalTitle = styled.div`
   font-size: 18px;
@@ -66,24 +68,24 @@ const StyledModalTitle = styled.div`
   font-weight: 700;
   color: white;
   margin-top: -20px;
-`;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
   font-size: 20px;
-`;
+`
 
 const StyledModal = styled.div`
   background: red;
   width: 400px;
-  height: 150px;
+  height: auto;
   border-radius: 6px;
   padding: 15px;
   overflow-y: initial !important
   padding-bottom: 20px;
   justify-content: center;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -94,7 +96,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
-`;
+  background-color: rgba(0, 0, 0, 0.85);
+`
 
-export default Error;
+export default Error

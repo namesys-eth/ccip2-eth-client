@@ -8,16 +8,16 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
   const [query, setQuery] = useState("")
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value)
-  };
+    setQuery(event.target.value.toLowerCase())
+  }
 
   const handleInputInvalid = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.setCustomValidity("Please enter a valid .eth name")
-  };
+  }
 
   const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.setCustomValidity("")
-  };
+  }
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -26,24 +26,16 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
 
   return (
     <form 
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column'
-      }}
+      className="flex-column-sans-justify"
       onSubmit={handleFormSubmit}
     >
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          flexDirection: 'row'
-        }}
+        className="flex-row-sans-justify"
       >
         <input
           type="text"
           placeholder={"search .eth name".toLowerCase()}
-          value={query}
+          value={query.toLowerCase()}
           name=".eth search"
           id="eth-search"
           onChange={handleInputChange}
@@ -62,6 +54,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
           }}
           type="submit"
           data-tooltip='Search'
+          disabled={!query.length}
         >
           <span 
             className="material-icons"
@@ -75,7 +68,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
         </button>
       </div>
     </form>
-  );
-};
+  )
+}
 
 export default SearchBox

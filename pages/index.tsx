@@ -19,15 +19,16 @@ import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
-import MainSearchBox from '../components/MainSearchBox'
+import BigSearch from '../components/BigSearch'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
+import * as ensContent from '../utils/contenthash'
+import { isMainThread } from 'worker_threads'
 
 /// Homepage
 const Home: NextPage = () => {
-  const { activeChain, } = useNetwork()
-  const { data: accountData } = useAccount()
-  const { isConnected } = useConnect()
+  const { chain: activeChain } = useNetwork()
+  const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount()
   const [meta, setMeta] = React.useState<any[]>([])
   const [faqModal, setFaqModal] = React.useState(false)
   const [modal, setModal] = React.useState(false)
@@ -39,92 +40,104 @@ const Home: NextPage = () => {
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [tokenID, setTokenID] = React.useState('')
+  const [finish, setFinish] = React.useState(false)
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
   const [manager, setManager] = React.useState('')
   const [query, setQuery] = React.useState('')
   const [savings, setSavings] = React.useState('')
-  const [icon, setIcon] = React.useState('');
-  const [color, setColor] = React.useState('');
-  const [help, setHelp] = React.useState('');
+  const [icon, setIcon] = React.useState('')
+  const [color, setColor] = React.useState('')
+  const [help, setHelp] = React.useState('')
   const [searchType, setSearchType] = React.useState('')
   const [recordhash, setRecordhash] = React.useState('')
+  const [ownerhash, setOwnerhash] = React.useState('')
   const [owner, setOwner] = React.useState('')
-  const [controller, setController] = React.useState('')
   const [onSearch, setOnSearch] = React.useState(false)
-  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+  const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
     trigger: false
-  });
+  })
 
   // Handle Preview modal data return
   const handleParentModalData = (data: string) => {
-    setModalState(prevState => ({ ...prevState, modalData: data }));
-  };
+    setPreviewModalState(prevState => ({ ...prevState, modalData: data }))
+  }
   // Handle Preview modal trigger return
   const handleParentTrigger = (trigger: boolean) => {
-    setModalState(prevState => ({ ...prevState, trigger: trigger }));
-  };
+    setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
 
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
-  /* GraphQL instance; need subgraph for this
-  const logNames = useCallback(async () => {
-    let EnsQuery = await fetch(EnsGraphApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        query: `
-        query {
-          {
-            account(id: "${accountData?.address?.toLowerCase()}") {
-              domains(first: 1000) {
-                id
-                name
-              }
-              registrations(first: 1000) {
-                id
-                labelName
-              }
-            }
-          }
-        }`,
-      })
-    })
-    const { data } = await EnsQuery.json()
-    setMeta(data)
-  }, [accountData])
-  */
-
   // Get Owner with ethers.js
-  async function getOwner(provider: any, _tokenID: string) {
-    const contract = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider);
-    const _addr = await contract.ownerOf(_tokenID);
-    if (_addr === ethers.constants.AddressZero) { return '0x' }
-    return _addr
+  async function getOwner(provider: any) {
+    let _OwnerLegacy: string = ''
+    if (query.split('.').length == 2) {
+      const contractLegacy = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider)
+      try {
+        _OwnerLegacy = await contractLegacy.ownerOf(tokenIDLegacy)
+      } catch (error) {
+      }  
+    } else {
+      const contractLegacy = new ethers.Contract(constants.ensConfig[0].addressOrName, constants.ensConfig[0].contractInterface, provider)
+      try {
+        _OwnerLegacy = await contractLegacy.owner(tokenIDLegacy)
+      } catch (error) {
+      } 
+    }   
+    const contractWrapper = new ethers.Contract(constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName, constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface, provider)
+    let _OwnerWrapped: string = ''
+    try {
+      _OwnerWrapped = await contractWrapper.ownerOf(tokenIDWrapper)
+    } catch (error) {
+    }
+    if (_OwnerLegacy === ethers.constants.AddressZero) { return '0x' }
+    if (_OwnerLegacy === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+      if (_OwnerWrapped !== ethers.constants.AddressZero) {
+        return _OwnerWrapped
+      } else {
+        return '0x'
+      }
+    }
+    return _OwnerLegacy
   }
 
   // Get Recordhash with ethers.js
   async function getRecordhash(provider: any, name: string) {
-    const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider);
-    const _recordhash = await contract.recordhash(ethers.utils.namehash(name));
-    if (_recordhash === null) { return '0x' }
-    return _recordhash
+    const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider)
+    let _recordhash: string = ''
+    try {
+      _recordhash = await contract.getRecordhash(ethers.utils.namehash(name))
+    } catch (error) {
+    }
+    if (_recordhash === null) { return '' }
+    return `ipns://${ensContent.decodeContenthash(_recordhash.toString()).decoded}`
+  }
+
+  // Get Ownerhash with ethers.js
+  async function getOwnerhash(provider: any, address: string) {
+    const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider)
+    let _ownerhash: string = ''
+    try {
+      _ownerhash = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase())
+    } catch (error) {
+    }
+    if (_ownerhash === null) { return '' }
+    return `ipns://${ensContent.decodeContenthash(_ownerhash.toString()).decoded}`
   }
 
   // Get historical gas savings
   async function getSavings() {
     const request = {
       type: 'gas'
-    };
+    }
     try {
       const _RESPONSE = await fetch(
-        "https://sshmatrix.club:3003/gas",
+        "https://ipfs.namesys.xyz:3003/gas",
         {
           method: "post",
           headers: {
@@ -132,43 +145,50 @@ const Home: NextPage = () => {
           },
           body: JSON.stringify(request)
         }
-      );
-      const data = await _RESPONSE.json();
-      return data.response.gas;
+      )
+      const data = await _RESPONSE.json()
+      return data.response.gas
     } catch (error) {
       console.error('Error:', 'Failed to get gas data from NameSys backend')
-      return '';
+      return ''
     }
   }
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
-    constants.showOverlay(5);
+    setOwner('')
+    setOwnerhash('')
+    setRecordhash('')
+    constants.showOverlay(5)
     const getSaving = async () => {
       const _savings = await getSavings()
       setSavings(_savings)
     }
     getSaving()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (modalState.trigger) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
       const _update = async () => {
-        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await verifier.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
-        _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
-          _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
-        )
+        if (previewModalState.modalData) {
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
+            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
+            _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
+          )
+        }
       }
       _update()
       setMeta(_LIST)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState])
+  }, [previewModalState])
 
   // Preserve metadata across pageloads
   React.useEffect(() => {
@@ -182,82 +202,119 @@ const Home: NextPage = () => {
 
   // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
-    setPreviewModal(true);
-    setNameToPreview(name);
+    setPreviewModal(true)
+    setNameToPreview(name)
   }
 
   /// ENS Domain Search Functionality
-  // Read ENS Legacy Registry for Controller record of ENS domain
-  const { data: _Controller_ } = useContractRead(
-    constants.ensConfig[1],
-    'getApproved',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
+  // Read ENS Legacy Registrar for Owner record of ENS domain via TokenID
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[1].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDLegacy]
+  })
 
-  // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _Owner_ } = useContractRead(
-    constants.ensConfig[1],
-    'ownerOf',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
+  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
+  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
+    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[0].contractInterface,
+    functionName: 'owner',
+    args: [tokenIDLegacy]
+  })
+
+  // Read ENS Wrapper for Owner record of ENS domain
+  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+    address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDWrapper]
+  })
 
   // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'recordhash',
-    {
-      args: [
-        ethers.utils.namehash(query)
-      ]
-    }
-  )
+  const { data: _Recordhash_, isLoading: recordhashLoading, isError: recordhashError } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.namehash(query)]
+  })
+
+  // Read Ownerhash from CCIP2 Resolver
+  const { data: _Ownerhash_, isLoading: ownerhashLoading, isError: ownerhashError } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+  })
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (_Owner_ && _Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
-      setManager(_Controller_.toString())
-      setController(_Controller_.toString())
-      setOwner(_Owner_.toString())
-    } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
-      setManager(_Owner_.toString())
-      setOwner(_Owner_.toString())
+    if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
+      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+          setManager(_OwnerWrapped_.toString())
+          setOwner(_OwnerWrapped_.toString())
+        }
+      } else {
+        setManager(_OwnerLegacy_.toString())
+        setOwner(_OwnerLegacy_.toString())
+      }
     } else {
-      setTimeout(() => {
-        setLoading(false)
-      }, 2000);
+      if (_OwnerDomain_ && _OwnerDomain_?.toString() !== constants.zeroAddress) {
+        if (_OwnerDomain_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+          if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+            setManager(_OwnerWrapped_.toString())
+            setOwner(_OwnerWrapped_.toString())
+          } else if (wrapperError) {
+            setOwner('0x')
+          }
+        } else {
+          setOwner(_OwnerDomain_.toString())
+          setManager(_OwnerDomain_.toString())
+        }
+      } else {
+        setOwner('0x')
+      }
     }
-  }, [tokenID, _Controller_, _Owner_])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenIDLegacy, _OwnerLegacy_, tokenIDWrapper, _OwnerWrapped_, _OwnerDomain_])
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
-    if (!accountData?.address && tokenID && tokenID !== '0x' && query && query !== '') {
+    if (!_Wallet_ && tokenIDLegacy && tokenIDWrapper && query && query !== ''
+      ) {
       const _setOrigins = async () => {
-        let _Owner = await getOwner(constants.provider, tokenID)
+        let _Owner = await getOwner(constants.provider)
         let _Recordhash = await getRecordhash(constants.provider, query)
-        if (_Owner && _Recordhash) {
+        let _Ownerhash = await getOwnerhash(constants.provider, _Owner)
+        if (_Owner) {
           setOwner(_Owner)
-          setRecordhash(_Recordhash)
+          if (_Recordhash && _Ownerhash && (_Recordhash !== _Ownerhash)) {
+            setRecordhash(_Recordhash)
+            setOwnerhash(_Ownerhash)
+          } else if (_Recordhash && _Ownerhash && (_Recordhash === _Ownerhash)) {
+            setRecordhash('')
+            setOwnerhash(_Ownerhash)
+          } else if (_Recordhash && !_Ownerhash) {
+            setRecordhash(_Recordhash)
+            setOwnerhash('')
+          } else {
+            setRecordhash('')
+            setOwnerhash('')
+          }
         } else {
-          setOwner('')
+          setOwner('0x')
           setSuccess(false)
         }
       }
       _setOrigins()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, tokenID])
+  }, [query, tokenIDLegacy, tokenIDWrapper])
 
   // Shows search result for ENS domain search
   React.useEffect(() => {
-    if (query.length > 0 && recordhash) {
+    if (query.length > 0) {
       var allEns: string[] = []
       var items: any[] = []
       allEns.push(query.split('.eth')[0])
@@ -270,92 +327,123 @@ const Home: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (recordhash.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash && recordhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
+              } else if (ownerhash && ownerhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
+                items[0].migrated = '3/4'
               }
               setMeta(items)
               setSuccess(true)
+              setFinish(true)
             } else {
               setSuccess(false)
+              setFinish(true)
             }
           })
       }
       setMetadata()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, recordhash])
+  }, [query, recordhash, ownerhash])
 
-  // Captures recordhash hook
+  // Captures Recordhash hook
   React.useEffect(() => {
-    if (_Recordhash_) {
-      setRecordhash(_Recordhash_.toString())
+    if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && _Wallet_) {
+      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
+    } else {
+      setRecordhash('')
     }
-  }, [_Recordhash_])
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_Recordhash_, _Ownerhash_])
+  // Captures Ownerhash hook
   React.useEffect(() => {
-    if (success) {
-      if (owner && owner !== null && owner !== constants.zeroAddress) {
-        //console.log('Name is Registered')
+    if (_Ownerhash_ && _Wallet_) {
+      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
+    } else {
+      setOwnerhash('')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_Ownerhash_])
+
+  // End name query
+  React.useEffect(() => {
+    if (success && finish) {
+      if (owner !== '0x' && owner !== constants.zeroAddress) {
         setErrorModal(false)
-        setLoading(false)
+        setLoading(true)
+        setTimeout(() => {
+          setLoading(false)
+        }, 5000)
         setEmpty(false)
       } else {
-        setErrorMessage('Name not Registered')
-        setErrorModal(true)
-        setLoading(false)
-        setEmpty(true)
-        setQuery('')
-      }
+        if (!wrapperLoading && !legacyLoading && !domainLoading) {
+          setTimeout(() => {
+            setLoading(false)
+          }, 2000)
+          setErrorMessage('Name not Registered')
+          setErrorModal(true)
+          setEmpty(true)
+          setQuery('')
+        }
+      }      
     } else {
-      if (!owner || owner === null || owner === constants.zeroAddress) {
+      if (finish) {
+        setTimeout(() => {
+          setLoading(false)
+        }, 2000)
         setErrorMessage('Name not Registered')
         setErrorModal(true)
-        setLoading(false)
         setEmpty(true)
-        setQuery('')
+      } else {
+        setLoading(true)
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success, owner])
-
+  }, [success, owner, finish])
 
   // Sets tokenID for ENS domain search result
   React.useEffect(() => { 
     if (query) {
       try {
-        let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let token = ethers.BigNumber.from(labelhash)
-        setTokenID(token.toString())
+        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let _token = ethers.BigNumber.from(_labelhash)
+        if (query.split('.').length == 2) {
+          setTokenIDLegacy(_token.toString())
+        } else {
+          setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
+        }
+        let __labelhash = ethers.utils.namehash(query)
+        let __token = ethers.BigNumber.from(__labelhash)
+        setTokenIDWrapper(__token.toString())
       } catch (error) {
-        console.log('Warning:', 'BigNumberWarning')
       }
     }
-  }, [query])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, owner, manager])
 
   // Triggers search of ENS domain
   const handleNameSearch = (query: string) => {
-    setMeta([])
-    setTokenID('')
-    setManager('')
     setLoading(true)
-    setSearchType('search')
     setQuery(query)
+    setMeta([])
+    setTokenIDLegacy('')
+    setTokenIDWrapper('')
+    setManager('')
+    setSearchType('search')
+    setRecordhash('')
+    setOwner('')
     setOnSearch(true)
-    if (accountData?.address) {
-      console.log('WAGMI QUERY:', query)
+    if (_Wallet_) {
     } else {
-      console.log('ETHERS QUERY:', query)
+      setOwnerhash('')
     }  
   }
 
   return (
     <div
-      className="page"
+      className="page flex-column-sans-align"
       style={{
-        maxWidth: '100%',
-        justifyContent: 'center',
-        display: 'flex',
-        flexDirection: 'column',
+        maxWidth: '100vw',
         top: '20px'
       }}>
       {/* Avatar */}
@@ -433,15 +521,10 @@ const Home: NextPage = () => {
                 className='button'
                 onClick={() => { window.location.href = isProduction ? '/account.html' : '/account' }}
                 data-tooltip='My Names'
-                disabled={!isConnected}
+                disabled={isDisconnected}
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
                   {!isMobile ? 'My Names' : 'Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
                 </div>
@@ -460,10 +543,41 @@ const Home: NextPage = () => {
             style={{
               marginLeft: 'auto',
               display: 'flex',
-              flexDirection: 'row',
-              marginTop: !isMobile ? '-7%': '25px',
+              flexDirection: isMobile ? 'column' : 'row',
+              marginTop: !isMobile ? '-7%': '-5px',
             }}
           >
+            <div
+              style={{
+                marginRight: !isMobile ? '15px' : '10px',
+                marginTop: !isMobile ? '6px' : '10px',
+                color: '#fc6603',
+                fontFamily: 'SF Mono',
+                fontSize: !isMobile ? '18px' : '13px',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'Spotnik',
+                  fontSize: !isMobile ? '12px' : '7.5px',
+                  fontWeight: '700',
+                  marginRight: '2px'
+                }}
+              >
+                { 'v' } 
+              </span>
+                { '1.0.0' } 
+              <span
+                style={{
+                  fontFamily: 'Spotnik',
+                  fontSize: !isMobile ? '15px' : '10px',
+                  fontWeight: '700',
+                  marginLeft: '2px'
+                }}
+              >
+                {} 
+              </span>
+            </div>
             <button
               className='button clear'
               onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
@@ -471,12 +585,7 @@ const Home: NextPage = () => {
               data-tooltip='Learn more'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
               </div>
@@ -488,12 +597,7 @@ const Home: NextPage = () => {
               data-tooltip='Terms of Use'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
                 {'terms'}&nbsp;<span className="material-icons">gavel</span>
               </div>
@@ -599,7 +703,7 @@ const Home: NextPage = () => {
               marginBottom: '50px',
             }}
           >
-            <MainSearchBox
+            <BigSearch
               onSearch={handleNameSearch}
             />
           </div>
@@ -625,21 +729,16 @@ const Home: NextPage = () => {
           {loading && onSearch && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   marginTop: '-10px',
                   marginBottom: '200px'
                 }}
               >
                 <div
+                  className="flex-column"
                   style={{
-                    paddingBottom: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex'
+                    paddingBottom: '10px'
                   }}
                 >
                   <Loading 
@@ -649,7 +748,7 @@ const Home: NextPage = () => {
                 </div>
                 <div
                   style={{
-                    marginTop: '40px'
+                    marginTop: '10px'
                   }}
                 >
                   <span
@@ -672,7 +771,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -689,14 +788,14 @@ const Home: NextPage = () => {
                   onClick={() => {
                     setModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
+                    setColor('cyan'),
                     setHelp('search results for your query')
                   }}
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
@@ -708,11 +807,11 @@ const Home: NextPage = () => {
                 style={{
                   maxHeight: '520px',
                   overflowY: 'auto',
-                  marginBottom: '50px',
+                  marginBottom: '50px'
                 }}
               >
                 <List
-                  label={isConnected && manager === accountData?.address ? 'edit' : 'view'}
+                  label={(!isDisconnected || isConnected) && manager === _Wallet_ ? 'edit' : 'view'}
                   items={meta}
                   onItemClick={onItemClick}
                 />
@@ -721,15 +820,13 @@ const Home: NextPage = () => {
           )}
           {/* Footer */}
           <div
+            className="flex-sans-direction"
             style={{
               color: '#fc6603',
               top: 'auto',
               left: '50%',
               transform: 'translateX(-50%)',
               bottom: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              display: 'flex',
               position: 'fixed'
             }}>
             <span
@@ -767,10 +864,12 @@ const Home: NextPage = () => {
             <Error
               onClose={() => {
                 setErrorModal(false),
-                  setTokenID(''),
+                  setTokenIDLegacy(''),
+                  setTokenIDWrapper(''),
                   setQuery(''),
                   setManager('')
               }}
+              color={'red'}
               show={errorModal && searchType === 'search' && !loading}
               title={'block'}
             >

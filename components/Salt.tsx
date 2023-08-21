@@ -1,33 +1,41 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import React from 'react'
+import { isMobile } from 'react-device-detect'
+import ReactDOM from 'react-dom'
+import styled from 'styled-components'
+import Help from '../components/Help'
 
 interface ModalProps {
-  show: boolean;
-  onClose: any;
-  children: any;
-  handleModalData: (data: string | undefined) => void;
-  handleTrigger: (data: boolean) => void;
+  show: boolean
+  onClose: any
+  children: any
+  handleModalData: (data: string | undefined) => void
+  handleTrigger: (data: boolean) => void
 }
 
 const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState("");
-  const [browser, setBrowser] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState("")
+  const [browser, setBrowser] = React.useState(false)
+  const [helpModal, setHelpModal] = React.useState(false)
+  const [help, setHelp] = React.useState('')
   
   React.useEffect(() => {
-    setBrowser(true);
-  }, []);
+    setBrowser(true)
+  }, [])
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    onClose();
-  };
+    handleModalData(undefined)
+    handleTrigger(false)
+    setInputValue('')
+    e.preventDefault()
+    onClose()
+  }
 
   const handleSubmit = () => {
-    handleModalData(inputValue);
-    handleTrigger(true);
-    onClose();
-  };
+    handleModalData(inputValue)
+    handleTrigger(true)
+    setInputValue('')
+    onClose()
+  }
 
   const modalContent = show ? (
     <StyledModalOverlay>
@@ -47,30 +55,52 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '46px'
+                fontSize: '66px'
               }}
             >
               key
             </div>
             <div
               style={{
-                marginTop: '10px'
+                marginTop: '5px'
               }}
             >
-              Please enter your secret IPNS key identifier
+              enter secret IPNS key identifier
+              <button 
+                className="button-tiny"
+                style={{
+                  marginTop: '-7.5px'
+                }}
+                onClick={() => { 
+                  setHelpModal(true),
+                  setHelp('<span><span style="color: cyan">Secret identifier</span> is required to generate a secure IPNS key. <span style="color: orange">You will need it to make record updates in the future</span>. <span style="color: orangered">Please remember your choice</span></span>')
+                }}
+                data-tooltip={ 'Enlighten Me' }
+              >
+                <div 
+                  className="material-icons smol"
+                  style={{ 
+                    color: 'cyan',
+                    marginLeft: '5px'
+                  }}
+                >
+                  info_outline 
+                </div>
+              </button>
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
           <input 
             id='keyid'
             key='0'
-            placeholder='key identifier'
+            placeholder='secret key identifier'
             type='password'
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value)
             }}
-            style={{ 
+
+            style={{
               background: 'black',
               outline: 'none',
               border: 'none',
@@ -91,20 +121,19 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             className="button"
             style={{
               height: '28px',
-              width: '120px',
-              marginTop: '15px',
-              fontSize: '14px'
+              width: '130px',
+              padding: '5px',
+              marginTop: '20px',
+              fontSize: '16px'
             }}
+            disabled={!inputValue.length}
             onClick={ handleSubmit }
             data-tooltip='Click to proceed'
           >
             <div 
+              className="flex-row"
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: '13px'
+                fontSize: '15px'
               }}
             >
               { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
@@ -112,21 +141,31 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
           </button>
         </StyledModalBody>
       </StyledModal>
+      <div id="modal-inner">
+        <Help
+          color={ 'lightblue' }
+          _ENS_={ 'info' }
+          onClose={() => setHelpModal(false)}
+          show={helpModal}
+        >
+          { help }
+        </Help>
+      </div>
     </StyledModalOverlay>
-  ) : null;
+  ) : null
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    );
+    )
   } else {
-    return null;
+    return null
   }
-};
+}
 
 const StyledModalBody = styled.div`
-  padding-top: 0px;
+  padding-top: 5px;
   padding-left: 20px;
   padding-right: 20px;
   padding-bottom: 25px;
@@ -140,7 +179,8 @@ const StyledModalBody = styled.div`
   color: white;
   font-size: 14px;
   font-weight: 700;
-`;
+  margin-top: 5px;
+`
 
 const StyledModalTitle = styled.div`
   margin-top: -15px;
@@ -149,31 +189,30 @@ const StyledModalTitle = styled.div`
   justify-content: center;
   flex-direction: column;
   font-weight: 700;
-  margin-bottom: 15px;
   color: white;
   padding-left: 20px;
   padding-right: 20px;
-  color: skyblue;
-`;
+  color: cyan;
+`
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`;
+`
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
-  width: auto;
-  max-width: 60%;
-  height: 198px;
+  width: 400px;
+  max-width: ${isMobile ? '90%' : '60%'};
+  height: 235px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
   text-align: center;
   justify-content: center;
   padding: 3px;
-`;
+`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -184,7 +223,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.1);
-`;
+  background-color: rgba(0, 0, 0, 0.90);
+`
 
-export default Salt;
+export default Salt

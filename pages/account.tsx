@@ -8,148 +8,232 @@ import {
   useConnect,
   useAccount,
   useContractRead,
-  useNetwork
+  useNetwork,
+  useSignMessage,
+  useContractWrite,
+  useWaitForTransaction
 } from 'wagmi'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
+import { verifyMessage } from 'ethers/lib/utils'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
 import Preview from '../components/Preview'
 import Faq from '../components/FAQ'
+import Salt from '../components/Salt'
 import Error from '../components/Error'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
+import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
+import { _KEYGEN } from '../utils/keygen'
+import * as Name from 'w3name'
+import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
+import * as ensContent from '../utils/contenthash'
 
 const Account: NextPage = () => {
-  const { activeChain, } = useNetwork()
-  const { data: accountData } = useAccount()
-  const { isConnected } = useConnect()
-  const [meta, setMeta] = React.useState<any[]>([])
-  const [faqModal, setFaqModal] = React.useState(false)
-  const [modal, setModal] = React.useState(false)
-  const [termsModal, setTermsModal] = React.useState(false)
-  const [errorModal, setErrorModal] = React.useState(false)
-  const [errorMessage, setErrorMessage] = React.useState('')
-  const [previewModal, setPreviewModal] = React.useState(false)
-  const [nameToPreviewModal, setNameToPreview] = React.useState('')
-  const [loading, setLoading] = React.useState(true)
-  const [empty, setEmpty] = React.useState(false)
-  const [success, setSuccess] = React.useState(false)
-  const [tab, setTab] = React.useState('OWNER')
-  const [tokenID, setTokenID] = React.useState('')
-  const [manager, setManager] = React.useState('')
-  const [query, setQuery] = React.useState('')
-  const [savings, setSavings] = React.useState('')
-  const [icon, setIcon] = React.useState('')
-  const [color, setColor] = React.useState('')
-  const [getting, setGetting] = React.useState(0)
+  const { chain: activeChain } = useNetwork() // Wagmi useNetwork()
+  const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount() // Wagmi connector hook
+  const [meta, setMeta] = React.useState<any[]>([])  // Stores all names and their states
+  const [faqModal, setFaqModal] = React.useState(false) // Controls FAQ modal
+  const [helpModal, setHelpModal] = React.useState(false) // Controls Help modal 
+  const [termsModal, setTermsModal] = React.useState(false) // Controls Terms modal
+  const [errorModal, setErrorModal] = React.useState(false) // Controls Error modal
+  const [errorMessage, setErrorMessage] = React.useState('') // Sets Error message
+  const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
+  const [nameToPreviewModal, setNameToPreview] = React.useState('') // Sets name to expand in preview
+  const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
+  const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
+  const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
+  const [activeTab, setActiveTab] = React.useState('OWNER') // Set active tab
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
+  const [manager, setManager] = React.useState('') // Set manager of name
+  const [query, setQuery] = React.useState('') // Store name in query
+  const [savings, setSavings] = React.useState('') // Save gas savings
+  const [icon, setIcon] = React.useState('') // Set Icon inside help modal
+  const [color, setColor] = React.useState('cyan') // Set Color of help modal
+  const [getting, setGetting] = React.useState(0) // Count in process
+  const [sigCount, setSigCount] = React.useState(0) // Signature count
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
-  const [help, setHelp] = React.useState('')
-  const [searchType, setSearchType] = React.useState('')
+  const [help, setHelp] = React.useState('') // Set Help modal
+  const [sigIPNS, setSigIPNS] = React.useState('') // IPNS Signature for local storage
+  const [sigSigner, setSigSigner] = React.useState('') // Signer Signature for local storage
+  const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
+  const [isSearch, setIsSearch] = React.useState(false) // Store if search is in progress
+  const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [process, setProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
   const [progress, setProgress] = React.useState(0) // Stores progress
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
   const [response, setResponse] = React.useState(false) // Tracks response of search query
   const [finish, setFinish] = React.useState(false) // Tracks NFT query processing
+  const [crash, setCrash] = React.useState(false) // Tracks transactions failures
   const [message, setMessage] = React.useState('Loading Names') // Sets message while processing
-  const [wallet, setWallet] = React.useState('') // Tracks wallet changes
-  const [modalState, setModalState] = React.useState<constants.MainBodyState>({
+  const [recordhash, setRecordhash] = React.useState('') // Recordhash
+  const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
+  const [keypairIPNS, setKeypairIPNS] = React.useState<string[]>(['', '']) // Exported IPNS keypairs [ed25519-priv,ed25519-pub]
+  const [keypairSigner, setKeypairSigner] = React.useState<string[]>(['', '']) // Exported Signer keypairs [secp256k1-priv, secp256k1-pub]
+  const [salt, setSalt] = React.useState(false) // Trigger signature for key export
+  const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
+  const [choice, setChoice] = React.useState(''); // Records active process
+  const [confirm, setConfirm] = React.useState(false); // Confirmation modal
+  const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
+  const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
     modalData: '',
     trigger: false
-  }) // Child modal state
+  }) // Preview modal state
+  const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }) // Salt modal state
+  const [confirmModalState, setConfirmModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }); // Confirm modal state
+  const recoveredAddress = React.useRef<string>()
+  
+  // Copy text
+  function copyToClipboard(element: string) {
+    const copyText = document.getElementById(element) as HTMLInputElement
+    copyText.select()
+    copyText.setSelectionRange(0, 99999)
+    
+    navigator.clipboard.writeText(copyText.value).then(() => {
+    }).catch((error) => {
+        console.error('ERROR:', error)
+    })
+  }
+
+  // Handle Salt modal data return
+  const handleSaltModalData = (data: string | undefined) => {
+    setSaltModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Salt modal trigger
+  const handleSaltTrigger = (trigger: boolean) => {
+    setSaltModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
 
   // Handle Preview modal data return
-  const handleParentModalData = (data: string) => {
-    setModalState(prevState => ({ ...prevState, modalData: data }));
+  const handlePreviewModalData = (data: string) => {
+    setPreviewModalState(prevState => ({ ...prevState, modalData: data }))
   }
   // Handle Preview modal trigger return
-  const handleParentTrigger = (trigger: boolean) => {
-    setModalState(prevState => ({ ...prevState, trigger: trigger }));
+  const handlePreviewTrigger = (trigger: boolean) => {
+    setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
 
-  /* @dev : GraphQL Instance
-  /// we need our own subgraph for this
-  const logNames = useCallback(async () => {
-    let EnsQuery = await fetch(EnsGraphApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        query: `
-        query {
-          {
-            account(id: "${accountData?.address?.toLowerCase()}") {
-              domains(first: 1000) {
-                id
-                name
-              }
-              registrations(first: 1000) {
-                id
-                labelName
-              }
-            }
-          }
-        }`,
-      })
-    })
-    const { data } = await EnsQuery.json()
-    setMeta(data)
-  }, [accountData])
-  */
+    // Handle Confirm modal data return
+    const handleConfirmModalData = (data: string | undefined) => {
+      setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
+    }
+    // Handle Confirm modal trigger
+    const handleConfirmTrigger = (trigger: boolean) => {
+      setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
+    }
 
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
+  // Signature S1 statement; S1(K1) [IPNS Keygen]
+  // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  function statementIPNSKey(source: string, caip10: string, extradata: string) {
+    let _toSign = `Requesting Signature For IPNS Keypair Generation\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    return _digest
+  }
+  // Signature S4 statement; S4(K1) [Signer Keygen]
+  // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  function statementSignerKey(source: string, caip10: string, extradata: string) {
+    let _toSign = `Requesting Signature For Signer Keypair Generation\n\nOrigin: ${source}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    return _digest
+  }
+
+  const { 
+    data: _Signature_, 
+    error: signError, 
+    isLoading: signLoading, 
+    signMessage 
+  } = useSignMessage({
+    onSuccess(data, variables) {
+      const address = verifyMessage(variables.message, data)
+      recoveredAddress.current = address
+    },
+  })  // Wagmi Signature hook
+
   /// ENS Domain Config
-  // Read ENS Legacy Registry for Controller record of ENS domain
-  const { data: _Controller_ } = useContractRead(
-    constants.ensConfig[1],
-    'getApproved',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
+    // Read ENS Legacy Registrar for Owner record of ENS domain via TokenID
+    const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+      address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+      abi: constants.ensConfig[1].contractInterface,
+      functionName: 'ownerOf',
+      args: [tokenIDLegacy]
+    })
+  
+    // Read ENS Legacy Registry for Owner record of ENS domain via namehash
+    const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
+      address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+      abi: constants.ensConfig[0].contractInterface,
+      functionName: 'owner',
+      args: [tokenIDLegacy]
+    })
+  
+    // Read ENS Wrapper for Owner record of ENS domain
+    const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+      address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
+      abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
+      functionName: 'ownerOf',
+      args: [tokenIDWrapper]
+    })
+  
+    // Read Recordhash from CCIP2 Resolver
+    const { data: _Recordhash_ } = useContractRead({
+      address: `0x${ccip2Config.addressOrName.slice(2)}`,
+      abi: ccip2Config.contractInterface,
+      functionName: 'getRecordhash',
+      args: [ethers.utils.namehash(query)]
+    })
+  
+    // Read Ownerhash from CCIP2 Resolver
+    const { data: _Ownerhash_ } = useContractRead({
+      address: `0x${ccip2Config.addressOrName.slice(2)}`,
+      abi: ccip2Config.contractInterface,
+      functionName: 'getRecordhash',
+      args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+    })
 
-  // Read ENS Legacy Registry for Owner record of ENS domain
-  const { data: _Owner_ } = useContractRead(
-    constants.ensConfig[1],
-    'ownerOf',
-    {
-      args: [
-        tokenID
-      ]
-    }
-  )
-
-  // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead(
-    ccip2Config, // CCIP2 Resolver
-    'recordhash',
-    {
-      args: [
-        ethers.utils.namehash(process)
-      ]
-    }
-  )
+  // Sets Ownerhash in CCIP2 Resolver
+  const {
+    data: response1of1,
+    write: initOwnerhash,
+    isLoading: isSetOwnerhashLoading,
+    isSuccess: isSetOwnerhashSuccess,
+    isError: isSetOwnerhashError
+  } = useContractWrite({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'setShortOwnerhash',
+    args: [
+      ethers.utils.defaultAbiCoder.encode(
+        ['bytes32'], 
+        [CID ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+      )
+    ]
+  })
 
   // Get historical gas savings
   async function getSavings() {
     const request = {
       type: 'gas'
-    };
+    }
     try {
       const _RESPONSE = await fetch(
-        "https://sshmatrix.club:3003/gas",
+        "https://ipfs.namesys.xyz:3003/gas",
         {
           method: "post",
           headers: {
@@ -157,12 +241,12 @@ const Account: NextPage = () => {
           },
           body: JSON.stringify(request)
         }
-      );
-      const data = await _RESPONSE.json();
-      return data.response.gas;
+      )
+      const data = await _RESPONSE.json()
+      return data.response.gas
     } catch (error) {
       console.error('Error:', 'Failed to get gas data from CCIP2 backend')
-      return '';
+      return ''
     }
   }
 
@@ -175,53 +259,170 @@ const Account: NextPage = () => {
     }
     getSaving()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (modalState.trigger) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === modalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
       const _update = async () => {
-        const _Resolver = await constants.provider.getResolver(modalState.modalData) // Get updated Resolver
-        const flag = await verifier.verifyRecordhash(modalState.modalData, ccip2Config) // Get updated Recordhash
-        _LIST[index].migrated = _Resolver?.address === ccip2Contract && flag ? '1' : (
-          _Resolver?.address === ccip2Contract && !flag ? '1/2' : '0' // Set new flag
-        )
+        if (previewModalState.modalData) {
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
+            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
+            _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
+          )
+        }
       }
       _update()
       setMeta(_LIST)
       setFlash(_LIST)
+      setCache(_LIST)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalState])
+  }, [previewModalState])
+
+  // Triggers S1(K1) after password is set
+  React.useEffect(() => {
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && !choice.endsWith('_IPNS')) {
+      if (choice === 'export') {
+        setChoice('export_IPNS')
+      } else if (choice === 'ownerhash') {
+        setChoice('ownerhash_IPNS')
+      }
+      let _origin = 'eth:' + _Wallet_
+      let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+      setSigCount(1)
+      signMessage({ 
+        message: statementIPNSKey(
+          _origin,
+          _caip10,
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'], 
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
+              _Wallet_
+            ]
+          ))
+        ) 
+      })
+      setKeygen(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState, keypairIPNS, choice])
+  React.useEffect(() => {
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && sigIPNS) {
+      const keygen = async () => {
+        let _origin = 'eth:' + _Wallet_
+        let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+        const __keypair = await _KEYGEN(_origin, _caip10, sigIPNS, saltModalState.modalData)
+        setKeypairIPNS(__keypair[0])
+      }
+      keygen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keygen, sigIPNS, keypairIPNS])
+
+  // Triggers S4(K1) after password is set
+  React.useEffect(() => {
+    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
+      if (choice === 'export_IPNS') {
+        setChoice('export_Signer')
+      } else if (choice === 'ownerhash_IPNS') {
+        setChoice('ownerhash_Signer')
+      }
+      let _origin = 'eth:' + _Wallet_
+      let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+      setSigCount(2)
+      signMessage({ 
+        message: statementSignerKey(
+          _origin,
+          _caip10,
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'], 
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
+              _Wallet_
+            ]
+          ))
+        ) 
+      })
+      setKeygen(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState, keypairSigner, keypairIPNS, choice])
+  React.useEffect(() => {
+    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && sigSigner && keypairIPNS[0] && keypairIPNS[1]) {
+      const keygen = async () => {
+        let _origin = 'eth:' + _Wallet_
+        let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+        const __keypair = await _KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
+        setKeypairSigner(__keypair[1])
+      }
+      keygen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairIPNS, sigSigner, keypairSigner])
+
+  // Trigger end of export
+  React.useEffect(() => {
+    if (keypairSigner[0] && keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1]) {
+      if (choice.startsWith('export')) {
+        setLoading(false)
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
+        setSigCount(0)
+        setSigIPNS('')
+        setSigSigner('')
+        setSalt(false)
+      } else if (choice.startsWith('ownerhash')) {
+        // Triggers setting Ownerhash
+        setSigCount(0)
+        if (CID.startsWith('k5')) {
+          initOwnerhash()
+          setMessage('Waiting For Transaction')
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairSigner, keypairIPNS, CID, choice])
+
+  // Triggers IPNS CID derivation with new S1(K1)
+  React.useEffect(() => {
+    if (keypairIPNS.length > 0 && choice.startsWith('ownerhash')) {
+      const CIDGen = async () => {
+        let key = constants.formatkey([keypairIPNS[0], keypairIPNS[1]])
+        const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
+        const CID_IPNS = w3name.toString()
+        setCID(CID_IPNS)
+      }
+      CIDGen()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairIPNS])
 
   // Handle wallet change by the user
   React.useEffect(() => {
-    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
-    if (!loading) setLoading(true)
-    if (!finish && process && _wallet === wallet) { // Prohibit wallet change when names are loading
+    if (!finish && !success && process && activeTab === 'OWNER') { // Prohibit wallet change when names are loading
       setMessage('Loading Names')
-    } else {
-      setMessage('Please be Patient') // Print message on bad wallet change
-      setWallet(constants.zeroAddress)
-    }
-    if (!finish && !process) { // Print message on load
-      setWallet(constants.zeroAddress)
-      setMessage('Loading Names')
-    }
+    } else if (!finish && !success && !process) { // Print message on load
+      setMessage('Failed to Fetch')
+    } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, finish])
+  }, [_Wallet_, finish, success, activeTab])
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    const _wallet = accountData?.address ? accountData?.address : constants.zeroAddress;
-    if (!finish && length === 0 && _wallet !== wallet) {
+    if (!finish && !success && length === 0 && _Wallet_) {
       setLoading(true); // Show loading state when calling logTokens
-      setWallet(_wallet);
       // Call logTokens directly here
       const loadTokens = async () => {
-        const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet);
+        const nfts = await constants.alchemy.nft.getNftsForOwner(_Wallet_)
         const allTokens = nfts.ownedNfts
         var allEns: string[] = []
         var items: any[] = []
@@ -233,109 +434,62 @@ const Account: NextPage = () => {
           }
         }
         setLength(_Cache.length)
-        for (var i = 0; i < allTokens.length; i++) {
-          // ISSUE: ENS Metadata service is broken and not showing all the names
-          if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-            count = count + 1
-            //console.log('Count:', count)
-            setGetting(count)
-            allEns.push(allTokens[i].title.split('.eth')[0])
-            const _Resolver = await constants.provider.getResolver(allTokens[i].title)
-            items.push({
-              'key': count,
-              'name': allTokens[i].title.split('.eth')[0],
-              'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
-            })
-            setProcess(allTokens[i].title)
-            const flag = await verifier.verifyRecordhash(allTokens[i].title, ccip2Config)
-            items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
+        if (_Cache.length === 0) {
+          setEmpty(true)
+        } else {
+          const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
+          const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase())
+          let _Recordhash_: any
+          let __Recordhash: boolean = false
+          let __Ownerhash: boolean = false
+          for (var i = 0; i < allTokens.length; i++) {
+            // ISSUE: ENS Metadata service is broken and not showing all the names
+            if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
+              count = count + 1
+              setGetting(count)
+              allEns.push(allTokens[i].title.split('.eth')[0])
+              const _Resolver = await constants.provider.getResolver(allTokens[i].title)
+              items.push({
+                'key': count,
+                'name': allTokens[i].title.split('.eth')[0],
+                'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
+              })
+              setProcess(allTokens[i].title)
+              _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
+              if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
+                __Recordhash = false
+                if (_Ownerhash_ && _Ownerhash_ !== '0x') {
+                  __Ownerhash = true
+                }
+              } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
+                __Recordhash = true
+              }
+              items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
+                __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
+                items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
+                )
+              )
+            }
+            if (i === allTokens.length - 1) {
+              setFinish(true) // Flag finish of process
+              setLength(0)
+              setProgress(0)
+              setMessage('Showing Names')
+              setMeta(items)
+              setFlash(items)
+              setLoading(false)
+              setSuccess(true)
+            }
+            __Recordhash = false
+            __Ownerhash = false
+            _Recordhash_ = undefined
           }
-          if (i === allTokens.length - 1) {
-            setFinish(true) // Flag finish of process
-            setLength(0)
-            setProgress(0)
-            setMessage('Showing Names')
-            setMeta(items)
-            setFlash(items)
-            setLoading(false)
-          }
-        }
-      };
-      loadTokens();
+        } 
+      }
+      loadTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData]);
-
-  {/*
-  // Get all tokens for connected wallet
-  React.useEffect(() => {
-    let _wallet = accountData?.address ? accountData?.address : constants.zeroAddress
-    if (finish && length === 0 && _wallet !== wallet) { // Prohibit update when previous update is in process
-      const setMetadata = async () => {
-        await getTokens(_wallet)
-          .then(() => {
-            setTimeout(() => {
-              if (finish) setLoading(false)
-            }, 1000);
-          }) 
-      }
-      setMetadata()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountData, finish])
-  const getTokens = useCallback(async (_wallet: string) => {
-    if (_wallet) {
-      setWallet(_wallet)
-      setFinish(false)
-      await logTokens(_wallet)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  const logTokens = useCallback(async (_wallet: string) => {
-    const nfts = await constants.alchemy.nft.getNftsForOwner(_wallet)
-    const allTokens = nfts.ownedNfts
-    var allEns: string[] = []
-    var items: any[] = []
-    var count = 0
-    var _Cache: string[] = []
-    for (var i = 0; i < allTokens.length; i++) {
-      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        _Cache.push(allTokens[i].title)
-      }
-    }
-    setLength(_Cache.length)
-    for (var i = 0; i < allTokens.length; i++) {
-      // ISSUE: ENS Metadata service is broken and not showing all the names
-      if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-        count = count + 1
-        console.log('Count:', count)
-        setGetting(count)
-        allEns.push(allTokens[i].title.split('.eth')[0])
-        const _Resolver = await constants.provider.getResolver(allTokens[i].title)
-        items.push({
-          'key': count,
-          'name': allTokens[i].title.split('.eth')[0],
-          'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
-        })
-        setProcess(allTokens[i].title)
-        const flag = await recordhash.verifyRecordhash(allTokens[i].title)
-        items[count - 1].migrated = flag && items[count - 1].migrated === '1/2' ? '1' : items[count - 1].migrated
-      }
-      if (i === allTokens.length - 1) {
-        setFinish(true) // Flag finish of process
-        setLength(0)
-        setProgress(0)
-        setMessage('Showing Names')
-        setMeta(items)
-        setFlash(items)
-      }
-    }
-    if (count === 0) {
-      setEmpty(true)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  */}
+  }, [_Wallet_, finish, length])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -350,33 +504,65 @@ const Account: NextPage = () => {
 
   // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
-    setPreviewModal(true);
-    setNameToPreview(name);
+    setPreviewModal(true)
+    setNameToPreview(name)
   }
 
   React.useEffect(() => {
     if (getting > progress && getting > 0) {
-      setProgress(getting);
+      setProgress(getting)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getting]);
+  }, [getting])
 
   React.useEffect(() => {
-    if (_Controller_ && _Controller_?.toString() !== constants.zeroAddress) {
-      setManager(_Controller_.toString())
-    } else if (_Owner_ && _Controller_?.toString() === constants.zeroAddress) {
-      setManager(_Owner_.toString())
-    } else if (tab !== 'OWNER') {
+    if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
+      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+          setManager(_OwnerWrapped_.toString())
+        }
+      } else {
+        setManager(_OwnerLegacy_.toString())
+      }
+    } else {
+      if (_OwnerDomain_ && _OwnerDomain_?.toString() !== constants.zeroAddress) {
+        if (_OwnerDomain_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+          if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
+            setManager(_OwnerWrapped_.toString())
+          } else if (wrapperError) {
+            setManager('')
+          }
+        } else {
+          setManager(_OwnerDomain_.toString())
+        }
+      }
+    } 
+    if (activeTab !== 'OWNER') {
       setTimeout(() => {
         setLoading(false)
         setResponse(false)
-      }, 2000);
+      }, 2000)
     }
-  }, [tokenID, _Controller_, _Owner_, tab])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_, wrapperError])
+
+  // Set signature
+  React.useEffect(() => {
+    if (_Signature_ && choice === 'ownerhash_IPNS') {
+      setSigIPNS(_Signature_)
+     } else if (_Signature_ && choice === 'ownerhash_Signer') {
+      setSigSigner(_Signature_)
+     } else if (_Signature_ && choice === 'export_IPNS') {
+      setSigIPNS(_Signature_)
+     } else if (_Signature_ && choice === 'export_Signer') {
+      setSigSigner(_Signature_)
+     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_Signature_, choice])
 
   // Handle search for a name
   React.useEffect(() => {
-    if (manager && manager === accountData?.address && query.length > 0) {
+    if (manager && manager === _Wallet_ && query.length > 0) {
       setResponse(true)
       var allEns: string[] = []
       var items: any[] = []
@@ -390,75 +576,209 @@ const Account: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0 && _RESPONSE?.address) {
-              if (_Recordhash_ && _Recordhash_.toString() !== '0x' && items[0].migrated === '1/2') {
+              if (recordhash && recordhash.toString() !== '0x' && (recordhash.toString() !== ownerhash.toString()) && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
+              } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
+                items[0].migrated = '3/4'
               }
-              setFlash(meta)
+              setCache(flash)
               setMeta(items)
               setSuccess(true)
+              setTimeout(() => {
+                setLoading(false)
+              }, 1000)
             } else {
               setSuccess(false)
               setErrorMessage('Name not Registered')
               setErrorModal(true)
+              setLoading(false)
             }
           })
       }
       setMetadata()
-    } else if (manager && manager !== accountData?.address)  {
+    } else if (manager && manager !== _Wallet_ && query.length > 0) {
       setLoading(false)
       setSuccess(false)
-      setErrorMessage('You are not Owner or Manager')
+      setEmpty(true)
+      setErrorMessage('You are not Owner')
       setErrorModal(true)
-    }
+    } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, accountData?.address, query])
+  }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
 
+  // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
-    if (success && _Owner_ && _Owner_.toString() !== constants.zeroAddress) {
-      setErrorModal(false)
-      setLoading(false)
-    } else {
-      setLoading(false)
+    if (confirmModalState.trigger && confirmModalState.modalData) {
+      setConfirm(false)
+      if (confirmModalState.modalData === '0') {
+        setSalt(true)
+      } else {
+        setGateway(true)
+      } 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success])
+  }, [confirmModalState])
 
+  // Capture Recordhash hook
+  React.useEffect(() => {
+    if (_Recordhash_) {
+      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
+    }
+  }, [_Recordhash_, _Ownerhash_])
+
+  // Capture Ownerhash hook
+  React.useEffect(() => {
+    if (_Ownerhash_) {
+      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
+    }
+  }, [_Ownerhash_])
+
+  // Format query to ENS name and get tokenID
   React.useEffect(() => {
     if (query) {
       try {
-        let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let token = ethers.BigNumber.from(labelhash)
-        setTokenID(token.toString())
+        let _namehash = ethers.utils.namehash(query)
+        let _token = ethers.BigNumber.from(_namehash)
+        setTokenIDWrapper(_token.toString())
       } catch (error) {
-        //console.log('BigNumberWarning')
+      }
+      try {
+        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+        let _token = ethers.BigNumber.from(_labelhash)
+        if (query.split('.').length == 2) {
+          setTokenIDLegacy(_token.toString())
+        } else {
+          setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
+        }
+      } catch (error) {
       }
     }
   }, [query])
 
-  const handleManagerSearch = (query: string) => {
+  const handleNameSearch = (query: string) => {
+    setMeta([])
     setLoading(true)
-    setSearchType('MANAGER')
+    setIsSearch(true)
     setProcess(query)
     setQuery(query)
-    console.log('Query:', `Searching Manager for ${query}`)
+    setEmpty(false)
   }
 
-  const handleNameSearch = (query: string) => {
-    setLoading(true)
-    setSearchType('SEARCH')
-    setProcess(query)
-    setQuery(query)
-    console.log('Query:', `Searching for ${query}`)
-  }
+  const { isSuccess: txSuccess1of1, isError: txError1of1, isLoading: txLoading1of1 } = useWaitForTransaction({
+    hash: response1of1?.hash,
+  })
+
+  // Handles setting Ownerhash after transaction 2 
+  React.useEffect(() => {
+    if (txSuccess1of1 && isSetOwnerhashSuccess) {
+      let _LIST = flash
+      for (var i = 0; i < flash.length; i++) {
+        if (flash[i].migrated === '1/2') {
+          _LIST[i].migrated = '3/4'
+        }
+      }
+      setMeta(_LIST)
+      setFlash(_LIST)
+      setCache(_LIST)
+      setOwnerhash(`ipns://${CID}`)
+      setMessage('Transaction Confirmed')
+      setTimeout(() => {
+        setLoading(false)
+      }, 2000)
+    }
+    setSaltModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setKeypairIPNS([])
+    setKeypairSigner([])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txSuccess1of1, isSetOwnerhashSuccess, flash])
+
+  // Handles Ownerhash transaction loading and error
+  React.useEffect(() => {
+    if (txLoading1of1 && !txError1of1) {
+      setLoading(true)
+      setMessage('Waiting for Confirmation')
+    }
+    if (!txLoading1of1 && txError1of1) {
+      if (!recentCrash) {
+        setMessage('Transaction Failed')
+        setCrash(true)
+        setSigCount(0)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setLoading(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading1of1, txError1of1])
+
+  // Handles transaction wait
+  React.useEffect(() => {
+    if (isSetOwnerhashLoading && !isSetOwnerhashError) {
+      setLoading(true)
+      setFinish(false)
+      setMessage('Waiting for Transaction')
+      if (recentCrash) setRecentCrash(false)
+    } else if (!isSetOwnerhashLoading && isSetOwnerhashError) {
+      if (!recentCrash) {
+        setCrash(true)
+        setSigCount(0)
+        setSigIPNS('')
+        setSigSigner('')
+        setKeypairIPNS([])
+        setKeypairSigner([])
+        setSalt(false)
+        setCID('')
+        setLoading(false)
+        setMessage('Transaction Declined By User')
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+  }, [isSetOwnerhashLoading, isSetOwnerhashError])
+
+  // Handles signature loading and error
+  React.useEffect(() => {
+    if (activeTab === 'UTILS') {
+      if (signLoading && !signError) {
+        setLoading(true)
+        setMessage('Waiting for Signature')
+        if (recentCrash) setRecentCrash(false)
+      } else if (signError && !signLoading) {
+        if (!recentCrash) {
+          setMessage('Signature Failed')
+          setCrash(true)
+          setSigCount(0)
+          setKeypairIPNS([])
+          setKeypairSigner([])
+          setSigIPNS('')
+          setSigSigner('')
+          setSalt(false)
+          setLoading(false)
+          setCID('')
+        } else {
+          if (recentCrash) setRecentCrash(false)
+        }
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signLoading, signError, activeTab])
 
   return (
     <div
-      className="page"
+      className="page flex-column-sans-align"
       style={{
         maxWidth: '100%',
-        justifyContent: 'center',
-        display: 'flex',
-        flexDirection: 'column',
         top: '20px'
       }}>
       {/* Avatar */}
@@ -533,18 +853,14 @@ const Account: NextPage = () => {
             >
               <button
                 className='button'
-                onClick={() => { window.location.href = '/' }}
+                onClick={() => { window.location.href = '/', setKeypairSigner([]), setKeypairIPNS([]) }}
                 data-tooltip='Homepage'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
-                  {!isMobile ? 'Home' : 'Home'}&nbsp;<span className="material-icons">home</span>
+                  {!isMobile ? 'Home' : 'Home'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>home</span>
                 </div>
               </button>
             </div>
@@ -567,36 +883,27 @@ const Account: NextPage = () => {
           >
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setFaqModal(true) }}
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true), setKeypairSigner([]), setKeypairIPNS([]) }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Learn more'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
-                {'about'}<span style={{ fontFamily: 'SF Mono' }}>&nbsp;</span><span className="material-icons">info</span>
+                {'about'}
+                <span className="material-icons" style={{ marginLeft: '3px' }}>info</span>
               </div>
             </button>
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setTermsModal(true) }}
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true), setKeypairSigner([]), setKeypairIPNS([]) }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Terms of Use'
             >
               <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
+                className="flex-row"
               >
-                {'terms'}&nbsp;<span className="material-icons">gavel</span>
+                {'terms'}<span>&nbsp;</span><span className="material-icons">gavel</span>
               </div>
             </button>
             {!isMobile && (
@@ -624,16 +931,14 @@ const Account: NextPage = () => {
           margin: '50px 0 0 0'
         }}>
         {/* Content */}
-        <div className={ !isMobile && !searchType ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
+        <div className={ !isMobile && !isSearch ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
           <div style={{ marginTop: '-120px' }}>
             <div
+              className="flex-column"
               style={{
-                display: 'flex',
-                justifyContent: 'center',
-                textAlign: 'center',
                 paddingTop: '100px'
               }}>
-              {!isMobile && !isConnected && (
+              {!isMobile && isDisconnected && (
                 <div>
                   <img
                     className="icon-ccip2"
@@ -659,11 +964,11 @@ const Account: NextPage = () => {
                   </h4>
                 </div>
               )}
-              {!isMobile && isConnected && (
+              {!isMobile && (isConnected || !isDisconnected) && (
                 <div 
                   style={{ 
-                    marginTop: '0px',
-                    marginBottom: '20px' 
+                    marginTop: '-35px',
+                    marginBottom: '10px' 
                   }}
                 >
                   <img
@@ -676,22 +981,18 @@ const Account: NextPage = () => {
                     style={{
                       fontSize: '52px',
                       color: '#fc6603',
-                      marginBottom: '20px' 
+                      marginBottom: '20px',
+                      marginTop: '30px'
                     }}
                   >
                     NameSys
                   </h4>
-                  <h4
-                    style={{
-                      fontSize: 22,
-                      color: '#eb8634'
-                    }}>
-                    Your Names
-                  </h4>
                 </div>
               )}
-              {isMobile && !isConnected && (
-                <div>
+              {isMobile && isDisconnected && (
+                <div 
+                  className="flex-column"
+                >
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
@@ -704,7 +1005,7 @@ const Account: NextPage = () => {
                     style={{
                       fontSize: '52px',
                       color: '#fc6603',
-                      marginBottom: '20px' 
+                      marginBottom: '20px'
                     }}
                   >
                     NameSys
@@ -718,11 +1019,12 @@ const Account: NextPage = () => {
                   </h4>
                 </div>
               )}
-              {isMobile && isConnected && (
+              {isMobile && (isConnected || !isDisconnected) && (
                 <div 
+                  className="flex-column"
                   style={{ 
-                    marginTop: '-15px',
-                    marginBottom: '20px' 
+                    marginTop: '-30px',
+                    marginBottom: isMobile ? '10px' : '2px'
                   }}
                 >
                   <img
@@ -737,24 +1039,16 @@ const Account: NextPage = () => {
                     style={{
                       fontSize: '40px',
                       color: '#fc6603',
-                      marginBottom: '20px' 
+                      marginTop: '10px' 
                     }}
                   >
                     NameSys
-                  </h4>
-                  <h4
-                    style={{
-                      fontSize: 18,
-                      color: '#eb8634'
-                    }}>
-                    Your Names
                   </h4>
                 </div>
               )}
             </div>
           </div>
-          <br></br><br></br>
-          {!isConnected && (
+          {isDisconnected && (
             <div
               style={{
                 marginBottom: '0px'
@@ -774,127 +1068,105 @@ const Account: NextPage = () => {
               </div></div>
             </div>
           )}
-          {isConnected && (
+          {(isConnected || !isDisconnected) && (
             <div
+              className="flex-sans-direction"
               style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'row',
                 marginBottom: '50px',
-                marginTop: '-30px',
-              }}>
+                marginTop: isMobile ? '-35px' : '2px'
+              }}
+            >
               <button
                 onClick={() => {
-                  setTab('OWNER'),
-                  setMeta(cache),
-                  setTokenID(''),
+                  setActiveTab('OWNER'),
+                  cache.length > 0 ? setMeta(cache) : console.error('BUG'),
+                  setTokenIDLegacy(''),
+                  setTokenIDWrapper(''),
                   setQuery(''),
                   setSuccess(false),
                   setManager(''),
-                  setLoading(true),
+                  cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
                   setErrorModal(false),
-                  setTimeout(() => {
-                    setLoading(false)
-                  }, 2000)
+                  setKeypairSigner([]), 
+                  setKeypairIPNS([]),
+                  !cache ? '' : setSuccess(true)
                 }}
                 className='button-header'
-                disabled={tab === 'OWNER'}
+                disabled={activeTab === 'OWNER' || loading}
                 data-tooltip='Show names you own'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
-                  {'OWNED'}&nbsp;
-                  <span className="material-icons">manage_accounts</span>
+                  {'NAMES'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>manage_accounts</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  tab === 'SEARCH' ? '' : setCache(flash),
+                  activeTab === 'SEARCH' ? '' : setCache(flash),
                   setMeta([]),
-                  setTab('MANAGER'),
+                  setActiveTab('UTILS'),
                   setSuccess(false),
                   setManager(''),
                   setLoading(true),
                   setQuery(''),
                   setErrorModal(false),
-                  setTimeout(() => {
-                    setLoading(false)
-                  }, 2000)
+                  setKeypairSigner([]), 
+                  setKeypairIPNS([]),
+                  setMessage('Please Wait')
                 }}
                 className='button-header'
-                //disabled={tab === 'MANAGER' || loading}
-                disabled={ true }
-                data-tooltip='Search for a name that you manage'
+                disabled={activeTab === 'UTILS' || loading}
+                data-tooltip='NameSys Utility Functions'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
-                  {'MANAGED'}&nbsp;
-                  <span className="material-icons">supervised_user_circle</span>
+                  {'UTILS'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  tab === 'MANAGER' ? '' : setCache(flash),
+                  activeTab === 'UTILS' ? '' : setCache(flash),
                   setMeta([]),
-                  setTab('SEARCH'),
+                  setActiveTab('SEARCH'),
                   setSuccess(false),
                   setManager(''),
                   setLoading(true),
                   setQuery(''),
+                  setKeypairIPNS([]),
+                  setKeypairSigner([]),
                   setErrorModal(false),
-                  setTimeout(() => {
-                    setLoading(false)
-                  }, 2000)
+                  setMessage('Please Wait')
                 }}
                 className='button-header'
-                disabled={tab === 'SEARCH' || loading}
+                disabled={activeTab === 'SEARCH' || loading}
                 data-tooltip='Search for an ENS name'
               >
                 <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  className="flex-sans-direction"
                 >
-                  {'SEARCH'}&nbsp;
-                  <span className="material-icons">search</span>
+                  {'SEARCH'}
+                  <span className="material-icons" style={{ marginLeft: '3px' }}>search</span>
                 </div>
               </button>
             </div>
           )}
-          {loading && isConnected && (
+          {loading && (isConnected || !isDisconnected) && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   marginTop: '50px',
                   marginBottom: '200px'
                 }}
               >
                 <div
+                  className="flex-column"
                   style={{
-                    paddingBottom: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex'
+                    paddingBottom: '10px'
                   }}
                 >
                   <Loading 
@@ -903,12 +1175,9 @@ const Account: NextPage = () => {
                   />
                 </div>
                 <div
+                  className="flex-column"
                   style={{
-                    marginTop: '40px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    marginTop: '10px'
                   }}
                 >
                   <div
@@ -917,8 +1186,8 @@ const Account: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    { tab !== 'OWNER' ? 'Please Wait' :
-                      (modalState.modalData ? 'Please wait' : `${message}`)
+                    { activeTab !== 'OWNER' ? `${message}` :
+                      (previewModalState.modalData ? 'Please wait' : `${message}`)
                     }
                   </div>
                   <div
@@ -928,34 +1197,29 @@ const Account: NextPage = () => {
                       fontFamily: 'SF Mono'
                     }}
                   >
-                    { tab !== 'OWNER' || length < 3 ? '' :
-                      (modalState.modalData ? '' : `${progress}/${length}`)
+                    { 
+                      activeTab === 'UTILS' ? (sigCount > 0 ? `${sigCount}/2` : '') : 
+                      ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${progress}/${length}`) : '')
                     }
                   </div>
                 </div>
               </div>
-              <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected && 
-           !empty && wallet === accountData?.address && !finish && (
+          {loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) && 
+           !empty && !finish && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   marginTop: '50px',
                   marginBottom: '200px'
                 }}
               >
                 <div
+                  className="flex-column"
                   style={{
-                    paddingBottom: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    display: 'flex'
+                    paddingBottom: '10px'
                   }}
                 >
                   <Loading 
@@ -964,12 +1228,9 @@ const Account: NextPage = () => {
                   />
                 </div>
                 <div
+                  className="flex-column"
                   style={{
-                    marginTop: '40px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    marginTop: '10px'
                   }}
                 >
                   <div
@@ -982,19 +1243,16 @@ const Account: NextPage = () => {
                   </div>
                 </div>
               </div>
-              <h1>please wait</h1>
             </div>
           )}
-          {!loading && tab === 'OWNER' && meta.length > 0 && isConnected &&
-           !empty && wallet !== accountData?.address && (
+          {!loading && activeTab === 'OWNER' && meta.length > 0 && (isConnected || !isDisconnected) &&
+           !empty && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -1009,47 +1267,48 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
+                    setHelpModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('use search tab for missing names')
+                    setColor('cyan'),
+                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: cyan">search</span> tab for missing names</span>')
                   }}
+                  data-tooltip='Enlighten me'
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
                   </div>
                 </button>
               </div>
-              <div
-                className='list-container'
-                style={{
-                  maxHeight: '520px',
-                  overflowY: 'auto',
-                  marginBottom: '50px',
-                }}
-              >
-                <List
-                  label='edit'
-                  items={meta}
-                  onItemClick={onItemClick}
-                />
-              </div>
+              {activeTab === 'OWNER' && !loading && success && (
+                <div
+                  className='list-container'
+                  style={{
+                    maxHeight: '520px',
+                    overflowY: 'auto',
+                    marginBottom: '50px',
+                  }}
+                >
+                  <List
+                    label='edit'
+                    items={meta}
+                    onItemClick={onItemClick}
+                  />
+                </div>
+              )}
             </div>
           )}
-          {!loading && (tab === 'MANAGER' || tab === 'SEARCH') && meta.length > 0 && isConnected && !empty && (
+          {!loading && activeTab === 'SEARCH' && meta.length > 0 && (isConnected || !isDisconnected) && !empty && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -1072,15 +1331,13 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && tab === 'MANAGER' && !success && meta && isConnected && (
+          {!loading && activeTab === 'UTILS' && !success && meta && (isConnected || !isDisconnected) && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
+                  color: 'cyan',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -1090,21 +1347,22 @@ const Account: NextPage = () => {
                     marginRight: '5px'
                   }}
                 >
-                  names you manage
+                  NameSys Utilities
                 </span>
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
+                    setHelpModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('search names that you manage')
+                    setColor('cyan'),
+                    setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
                   }}
+                  data-tooltip='Enlighten me'
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
@@ -1112,29 +1370,272 @@ const Account: NextPage = () => {
                 </button>
               </div>
               <div
-                className='search-container'
+                className='export-container flex-column'
                 style={{
                   maxHeight: '520px',
                   overflowY: 'auto',
-                  marginBottom: '50px',
+                  marginBottom: '30px'
                 }}
               >
-                <SearchBox
-                  onSearch={handleManagerSearch}
+                <div
+                  className="flex-sans-direction"
+                  style={{
+                    fontSize: '18px',
+                    color: 'cyan',
+                    marginBottom: '25px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: '5px'
+                    }}
+                  >
+                    Ownerhash Setter
+                  </span>
+                  <button
+                    className="button-tiny"
+                    onClick={() => {
+                      setHelpModal(true),
+                      setIcon('info'),
+                      setColor('cyan'),
+                      setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
+                    }}
+                    data-tooltip='Set New Ownerhash'
+                  >
+                    <div
+                      className="material-icons smol"
+                      style={{
+                        color: 'cyan'
+                      }}
+                    >
+                      info_outline
+                    </div>
+                  </button>
+                </div>
+                <input
+                  style={{
+                    width: '90%',
+                    color: 'rgb(255, 255, 255, 0.75)'
+                  }}
+                  type="text"
+                  placeholder={"ipns://"}
+                  disabled
+                  value={ownerhash}
+                  id="owner-hash"
                 />
+                <button 
+                  className="button"
+                  style={{
+                    height: '38px',
+                    width: '80px',
+                    marginTop: '15px',
+                    marginLeft: '15px'
+                  }}
+                  type="submit"
+                  data-tooltip='Set New Ownerhash'
+                  onClick={() => { 
+                    setConfirm(true),
+                    setKeypairIPNS([]),
+                    setKeypairSigner([]),
+                    setChoice('ownerhash')
+                  }}
+                >
+                  <div
+                    className="flex-sans-direction"
+                  >
+                    <span>{'SET'}</span>
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700',
+                        marginLeft: '3px'
+                      }}
+                    >
+                      settings
+                    </span>
+                  </div>
+                </button>
+              </div>
+              <div
+                className='hash-container flex-column'
+                style={{
+                  maxHeight: '520px',
+                  overflowY: 'auto',
+                  marginBottom: '70px'
+                }}
+              >
+                <div
+                  className="flex-sans-direction"
+                  style={{
+                    fontSize: '18px',
+                    color: 'cyan',
+                    marginBottom: '25px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <span
+                    style={{
+                      marginRight: '5px'
+                    }}
+                  >
+                    Private Key Exporter
+                  </span>
+                  <button
+                    className="button-tiny"
+                    onClick={() => {
+                      setHelpModal(true),
+                      setIcon('info'),
+                      setColor('cyan'),
+                      setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
+                    }}
+                    data-tooltip='Export Keys'
+                  >
+                    <div
+                      className="material-icons smol"
+                      style={{
+                        color: 'cyan'
+                      }}
+                    >
+                      info_outline
+                    </div>
+                  </button>
+                </div>
+                <div
+                  className="flex-sans-direction"
+                  style={{
+                    width: '90%'
+                  }}
+                >
+                  <input
+                    style={{
+                      width: '100%',
+                      paddingRight: '32px',
+                      fontWeight: '400',
+                      textAlign: 'left',
+                      color: 'rgb(255, 255, 255, 0.75)'
+                    }}
+                    type="text"
+                    placeholder={"IPNS Private Key"}
+                    value={!choice.startsWith('export') ? '' : keypairIPNS[0]}
+                    id="export-ipns"
+                    disabled
+                  />
+                  <button 
+                    className="button-empty"
+                    onClick={() => {
+                      copyToClipboard('export-ipns'),
+                      setColor('lime'),
+                      setKeypairIPNS(['', '']),
+                      setKeypairIPNS([])
+                    }} 
+                    data-tooltip='Copy IPNS Key'
+                    style={{
+                      marginLeft: '-25px',
+                      color: color && !keypairIPNS[0] && !keypairIPNS[1] ? color : 'cyan'   
+                    }}
+                  >
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700'
+                      }}
+                    >
+                      content_copy
+                    </span>
+                  </button>
+                </div>
+                <div
+                  className="flex-sans-direction"
+                  style={{
+                    marginTop: '10px',
+                    width: '90%'
+                  }}
+                >
+                  <input
+                    style={{
+                      width: '100%',
+                      paddingRight: '32px',
+                      fontWeight: '400',
+                      textAlign: 'left',
+                      color: 'rgb(255, 255, 255, 0.75)'
+                    }}
+                    type="text"
+                    placeholder={"CCIP Manager Key"}
+                    value={!choice.startsWith('export') ? '' : keypairSigner[0]}
+                    id="export-ccip"
+                    disabled
+                  />
+                  <button 
+                    className="button-empty"
+                    onClick={() => {
+                      copyToClipboard('export-ccip'),
+                      setColor('lime'),
+                      setKeypairSigner(['', '']),
+                      setKeypairSigner([])
+                    }} 
+                    data-tooltip='Copy Manager Key'
+                    style={{
+                      marginLeft: '-25px',
+                      color: color && !keypairSigner[0] && !keypairSigner[1] ? color : 'cyan'   
+                    }}
+                  >
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700'
+                      }}
+                    >
+                      content_copy
+                    </span>
+                  </button>
+                </div>
+                <button 
+                  className="button"
+                  style={{
+                    height: '38px',
+                    width: '115px',
+                    marginLeft: '15px',
+                    marginTop: '15px'
+                  }}
+                  type="submit"
+                  data-tooltip='Export Keys'
+                  onClick={() => { 
+                    setSalt(true),
+                    setChoice('export')
+                  }}
+                >
+                  <div
+                    className="flex-sans-direction"
+                  >
+                    <span>{'EXPORT'}</span>
+                    <span 
+                      className="material-icons"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '700',
+                        marginLeft: '5px'
+                      }}
+                    >
+                      file_download
+                    </span>
+                  </div>
+                </button>
               </div>
             </div>
           )}
-          {!loading && tab === 'SEARCH' && !success && meta && isConnected && (
+          {!loading && activeTab === 'SEARCH' && meta && (isConnected || !isDisconnected) && (
             <div>
               <div
+                className="flex-sans-direction"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
                   fontSize: '18px',
-                  color: 'skyblue',
-                  marginBottom: '25px'
+                  color: 'cyan',
+                  marginBottom: '25px',
+                  marginTop: meta ? '-15px' : '0px'
                 }}
               >
                 <span
@@ -1147,16 +1648,17 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
+                    setHelpModal(true),
                     setIcon('info'),
-                    setColor('skyblue'),
-                    setHelp('search for a name')
+                    setColor('cyan'),
+                    setHelp('<span>Search for a name that you <span style="color: cyan">own</span></span>')
                   }}
+                  data-tooltip='Enlighten me'
                 >
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'skyblue'
+                      color: 'cyan'
                     }}
                   >
                     info_outline
@@ -1177,14 +1679,11 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!loading && empty && tab === 'OWNER' && (
+          {!loading && empty && activeTab === 'OWNER' && !errorModal && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   fontSize: '22px',
                   color: '#fc6603',
                   marginBottom: '25px',
@@ -1201,14 +1700,11 @@ const Account: NextPage = () => {
               </div>
             </div>
           )}
-          {!response && !manager && query && tab !== 'OWNER' && !loading && (
+          {!response && !manager && query && activeTab !== 'OWNER' && !loading && !errorModal && (
             <div>
               <div
+                className="flex-column"
                 style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
                   fontSize: '22px',
                   color: '#fc6603',
                   marginBottom: '25px',
@@ -1227,20 +1723,19 @@ const Account: NextPage = () => {
           )}
           {/* Footer */}
           <div
+            className="flex-sans-direction"
             style={{
               color: '#fc6603',
               top: 'auto',
               left: '50%',
               transform: 'translateX(-50%)',
               bottom: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              display: 'flex',
               position: 'fixed'
             }}>
             <span
               className="material-icons">folder_open
-            </span>&nbsp;
+            </span>
+            &nbsp;
             <a
               href="https://github.com/namesys-eth/ccip2-eth-client"
               className="footer-text"
@@ -1258,8 +1753,8 @@ const Account: NextPage = () => {
                 show={previewModal}
                 _ENS_={nameToPreviewModal}
                 chain={_Chain_}
-                handleParentTrigger={handleParentTrigger}
-                handleParentModalData={handleParentModalData}
+                handleParentTrigger={handlePreviewTrigger}
+                handleParentModalData={handlePreviewModalData}
               />
             )}
             <Faq
@@ -1271,13 +1766,26 @@ const Account: NextPage = () => {
               show={termsModal}
             />
             <Error
+                onClose={() => {
+                  setCrash(false),
+                  setRecentCrash(true)
+                }}
+                color={'red'}
+                show={crash && !loading}
+                title={'cancel'}
+              >
+                { message }
+            </Error>
+            <Error
               onClose={() => {
                 setErrorModal(false),
-                  setTokenID(''),
-                  setQuery(''),
-                  setManager('')
+                setTokenIDLegacy(''),
+                setTokenIDWrapper(''),
+                setQuery(''),
+                setManager('')
               }}
-              show={errorModal && searchType === 'MANAGER' && manager && !loading}
+              color={'red'}
+              show={errorModal && !isSearch && !loading}
               title={'block'}
             >
               { errorMessage }
@@ -1285,20 +1793,39 @@ const Account: NextPage = () => {
             <Error
               onClose={() => {
                 setErrorModal(false),
-                  setTokenID(''),
-                  setQuery(''),
-                  setManager('')
+                setTokenIDLegacy(''),
+                setTokenIDWrapper(''),
+                setQuery(''),
+                setManager('')
               }}
-              show={errorModal && searchType === 'SEARCH' && manager && !loading}
+              color={'red'}
+              show={errorModal && isSearch && !loading}
               title={'block'}
             >
-              {'Not Owner or Manager'}
+              { errorMessage }
             </Error>
+            <Salt
+                handleTrigger={handleSaltTrigger}
+                handleModalData={handleSaltModalData}
+                onClose={() => setSalt(false)}
+                show={salt}
+              >
+            </Salt>
+            <Confirm
+              handleTrigger={handleConfirmTrigger}
+              handleModalData={handleConfirmModalData}
+              onClose={() => {
+                setConfirm(false)
+                }}
+              show={confirm && !salt}
+            >
+              {'0'}
+            </Confirm>
             <Help
                 color={ color }
                 _ENS_={ icon }
-                onClose={() => setModal(false)}
-                show={modal}
+                onClose={() => setHelpModal(false)}
+                show={helpModal}
               >
                 { help }
             </Help>
