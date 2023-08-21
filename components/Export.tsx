@@ -11,7 +11,7 @@ interface ModalProps {
   handleTrigger: (data: boolean) => void
 }
 
-const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
+const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
@@ -66,14 +66,14 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontSize: '66px'
               }}
             >
-              cloud_upload
+              import_export
             </div>
             <div
               style={{
                 marginTop: '15px'
               }}
             >
-              Please choose your Storage
+              Choose Storage to Export Key For
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
@@ -94,8 +94,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontWeight: '700'
               }}
               onClick={ handleOwnerhashSubmit }
-              data-tooltip={ children ? 'Uses Preset Global Ownerhash' : 'No Global Ownerhash Found' }
-              disabled={ !children }
+              data-tooltip='Export Ownerhash Key'
             >
               <div 
                 className="flex-row"
@@ -107,9 +106,9 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: cyan">Ownerhash</span> works for all your names in a wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: cyan">Ownerhash</span></span>')
+                setHelp('<span>Exports Key for <span style="color: cyan">Ownerhash</span></span>')
               }}
-              data-tooltip={ 'Cheaper but Slower IPNS' }
+              data-tooltip='Export Ownerhash Key'
             >
               <div 
                 className="material-icons smol"
@@ -140,7 +139,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontWeight: '700'
               }}
               onClick={ handleRecordhashSubmit }
-              data-tooltip='Sets New On-chain Recordhash'
+              data-tooltip='Export Recordhash Key'
             >
               <div 
                 className="flex-row"
@@ -152,9 +151,9 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: cyan">Recordhash</span> is specific to each name and it is a faster but expensive option</span>')
+                setHelp('<span>Exports Key for <span style="color: cyan">Recordhash</span></span>')
               }}
-              data-tooltip={ 'Faster but Expensive IPNS' }
+              data-tooltip='Export Recordhash Key'
             >
               <div 
                 className="material-icons smol"
@@ -185,7 +184,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontWeight: '700'
               }}
               onClick={ handleGatewaySubmit }
-              data-tooltip='Sets New On-chain Gateway'
+              data-tooltip='Export Gateway Key'
               disabled
             >
               <div 
@@ -198,9 +197,9 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: orange">COMING SOON<span style="font-family: \'SF Mono\'; font-size: 16px">!</span></span> <span style="color: cyan">HTTP Gateway</span> could point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
+                setHelp('<span>Exports Key for <span style="color: cyan">HTTP Gateway</span></span>')
               }}
-              data-tooltip={ 'Satanic and Evil Middleware' }
+              data-tooltip='Export Gateway Key'
             >
               <div 
                 className="material-icons smol"
@@ -299,4 +298,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 0.85);
 `
 
-export default Options
+export default Export

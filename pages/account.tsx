@@ -27,6 +27,7 @@ import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
 import SearchBox from '../components/SearchBox'
 import Confirm from '../components/Confirm'
+import Export from '../components/Export'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
 import { _KEYGEN } from '../utils/keygen'
@@ -78,6 +79,8 @@ const Account: NextPage = () => {
   const [keypairIPNS, setKeypairIPNS] = React.useState<string[]>(['', '']) // Exported IPNS keypairs [ed25519-priv,ed25519-pub]
   const [keypairSigner, setKeypairSigner] = React.useState<string[]>(['', '']) // Exported Signer keypairs [secp256k1-priv, secp256k1-pub]
   const [salt, setSalt] = React.useState(false) // Trigger signature for key export
+  const [exportKey, setExportKey] = React.useState(false) // Trigger export procedure
+  const [username, setUsername] = React.useState('') // Username for salt modal
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
   const [choice, setChoice] = React.useState(''); // Records active process
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
@@ -94,6 +97,10 @@ const Account: NextPage = () => {
     modalData: undefined,
     trigger: false
   }); // Confirm modal state
+  const [exportModalState, setExportModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }); // Export modal state
   const recoveredAddress = React.useRef<string>()
   
   // Copy text
@@ -126,14 +133,23 @@ const Account: NextPage = () => {
     setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
 
-    // Handle Confirm modal data return
-    const handleConfirmModalData = (data: string | undefined) => {
-      setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
-    }
-    // Handle Confirm modal trigger
-    const handleConfirmTrigger = (trigger: boolean) => {
-      setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
-    }
+  // Handle Confirm modal data return
+  const handleConfirmModalData = (data: string | undefined) => {
+    setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Confirm modal trigger
+  const handleConfirmTrigger = (trigger: boolean) => {
+    setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
+
+  // Handle Confirm modal data return
+  const handleExportModalData = (data: string | undefined) => {
+    setExportModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Confirm modal trigger
+  const handleExportTrigger = (trigger: boolean) => {
+    setExportModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
 
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
@@ -314,7 +330,7 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, keypairIPNS, choice])
   React.useEffect(() => {
-    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && sigIPNS) {
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && sigIPNS && keygen) {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
@@ -328,44 +344,49 @@ const Account: NextPage = () => {
 
   // Triggers S4(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
+    if (saltModalState.trigger && saltModalState.modalData && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
       if (choice === 'export_IPNS') {
         setChoice('export_Signer')
+        let _origin = 'eth:' + _Wallet_
+        let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+        setSigCount(2)
+        signMessage({ 
+          message: statementSignerKey(
+            exportModalState.modalData === '1' ? saltModalState.modalData.split(':')[0] : _origin,
+            _caip10,
+            ethers.utils.keccak256(ethers.utils.solidityPack(
+              ['bytes32', 'address'], 
+              [
+                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
+                _Wallet_
+              ]
+            ))
+          ) 
+        })
       } else if (choice === 'ownerhash_IPNS') {
         setChoice('ownerhash_Signer')
       }
-      let _origin = 'eth:' + _Wallet_
-      let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-      setSigCount(2)
-      signMessage({ 
-        message: statementSignerKey(
-          _origin,
-          _caip10,
-          ethers.utils.keccak256(ethers.utils.solidityPack(
-            ['bytes32', 'address'], 
-            [
-              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])), 
-              _Wallet_
-            ]
-          ))
-        ) 
-      })
-      setKeygen(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, keypairSigner, keypairIPNS, choice])
+  }, [saltModalState, keypairSigner, keypairIPNS, choice, exportModalState])
   React.useEffect(() => {
     if (saltModalState.trigger && !keypairSigner[0] && !keypairSigner[1] && sigSigner && keypairIPNS[0] && keypairIPNS[1]) {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-        const __keypair = await _KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
-        setKeypairSigner(__keypair[1])
+        if (choice === 'export_Signer') {
+          // Sign S2 if export is requested
+          const __keypair = await _KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
+          setKeypairSigner(__keypair[1])
+        } else if (choice === 'ownerhash_Signer') {
+          // Don't sign S2
+          setKeypairSigner(['0x', '0x'])
+        }
       }
       keygen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, sigSigner, keypairSigner])
+  }, [keypairIPNS, sigSigner, keypairSigner, choice])
 
   // Trigger end of export
   React.useEffect(() => {
@@ -418,7 +439,7 @@ const Account: NextPage = () => {
 
   // Get all tokens for connected wallet
   React.useEffect(() => {
-    if (!finish && !success && length === 0 && _Wallet_) {
+    if (!finish && !success && length === 0 && _Wallet_ && activeTab === 'OWNER') {
       setLoading(true); // Show loading state when calling logTokens
       // Call logTokens directly here
       const loadTokens = async () => {
@@ -489,7 +510,7 @@ const Account: NextPage = () => {
       loadTokens()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Wallet_, finish, length])
+  }, [_Wallet_, finish, length, activeTab])
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -611,6 +632,10 @@ const Account: NextPage = () => {
     if (confirmModalState.trigger && confirmModalState.modalData) {
       setConfirm(false)
       if (confirmModalState.modalData === '0') {
+        setUsername(`eth:${_Wallet_}`)
+        setSalt(true)
+      } else if (confirmModalState.modalData === '1') {
+        setUsername('0')
         setSalt(true)
       } else {
         setGateway(true)
@@ -618,6 +643,23 @@ const Account: NextPage = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [confirmModalState])
+
+  // Sets option between Ownerhash and Recordhash
+  React.useEffect(() => {
+    if (exportModalState.trigger && exportModalState.modalData) {
+      setExportKey(false)
+      if (exportModalState.modalData === '0') {
+        setUsername(`eth:${_Wallet_}`)
+        setSalt(true)
+      } else if (exportModalState.modalData === '1') {
+        setUsername('')
+        setSalt(true)
+      } else {
+        setUsername('0')
+      } 
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exportModalState])
 
   // Capture Recordhash hook
   React.useEffect(() => {
@@ -733,6 +775,7 @@ const Account: NextPage = () => {
         setCID('')
         setLoading(false)
         setMessage('Transaction Declined By User')
+        setSuccess(false)
       } else {
         if (recentCrash) setRecentCrash(false)
       }
@@ -1198,7 +1241,7 @@ const Account: NextPage = () => {
                     }}
                   >
                     { 
-                      activeTab === 'UTILS' ? (sigCount > 0 ? `${sigCount}/2` : '') : 
+                      activeTab === 'UTILS' ? (sigCount > 0 ? `${sigCount}/${choice.startsWith('export') ? '2' : '1'}` : '') : 
                       ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${progress}/${length}`) : '')
                     }
                   </div>
@@ -1436,9 +1479,12 @@ const Account: NextPage = () => {
                   data-tooltip='Set New Ownerhash'
                   onClick={() => { 
                     setConfirm(true),
+                    setChoice('ownerhash'),
                     setKeypairIPNS([]),
                     setKeypairSigner([]),
-                    setChoice('ownerhash')
+                    setSigIPNS(''),
+                    setSigSigner(''),
+                    setSuccess(false)
                   }}
                 >
                   <div
@@ -1514,7 +1560,7 @@ const Account: NextPage = () => {
                       paddingRight: '32px',
                       fontWeight: '400',
                       textAlign: 'left',
-                      color: 'rgb(255, 255, 255, 0.75)'
+                      color: keypairIPNS[0] === 'IPNS PRIVATE KEY COPIED!' ? 'lime' : 'rgb(255, 255, 255, 0.75)'
                     }}
                     type="text"
                     placeholder={"IPNS Private Key"}
@@ -1527,8 +1573,7 @@ const Account: NextPage = () => {
                     onClick={() => {
                       copyToClipboard('export-ipns'),
                       setColor('lime'),
-                      setKeypairIPNS(['', '']),
-                      setKeypairIPNS([])
+                      setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
                     }} 
                     data-tooltip='Copy IPNS Key'
                     style={{
@@ -1560,7 +1605,7 @@ const Account: NextPage = () => {
                       paddingRight: '32px',
                       fontWeight: '400',
                       textAlign: 'left',
-                      color: 'rgb(255, 255, 255, 0.75)'
+                      color: keypairSigner[0] === 'RECORDS SIGNER KEY COPIED!' ? 'lime' : 'rgb(255, 255, 255, 0.75)'
                     }}
                     type="text"
                     placeholder={"CCIP Manager Key"}
@@ -1573,8 +1618,7 @@ const Account: NextPage = () => {
                     onClick={() => {
                       copyToClipboard('export-ccip'),
                       setColor('lime'),
-                      setKeypairSigner(['', '']),
-                      setKeypairSigner([])
+                      setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
                     }} 
                     data-tooltip='Copy Manager Key'
                     style={{
@@ -1604,8 +1648,12 @@ const Account: NextPage = () => {
                   type="submit"
                   data-tooltip='Export Keys'
                   onClick={() => { 
-                    setSalt(true),
-                    setChoice('export')
+                    setExportKey(true),
+                    setChoice('export'),
+                    setKeypairIPNS([]),
+                    setKeypairSigner([]),
+                    setSigIPNS(''),
+                    setSigSigner('')
                   }}
                 >
                   <div
@@ -1809,7 +1857,8 @@ const Account: NextPage = () => {
                 handleModalData={handleSaltModalData}
                 onClose={() => setSalt(false)}
                 show={salt}
-              >
+            >
+              { username }
             </Salt>
             <Confirm
               handleTrigger={handleConfirmTrigger}
@@ -1821,6 +1870,16 @@ const Account: NextPage = () => {
             >
               {'0'}
             </Confirm>
+            <Export
+              handleTrigger={handleExportTrigger}
+              handleModalData={handleExportModalData}
+              onClose={() => {
+                setExportKey(false)
+                }}
+              show={exportKey}
+            >
+              { '' }
+            </Export>
             <Help
                 color={ color }
                 _ENS_={ icon }

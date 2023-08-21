@@ -13,7 +13,8 @@ interface ModalProps {
 }
 
 const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState("")
+  const [password, setPassword] = React.useState("")
+  const [username, setUsername] = React.useState("")
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
@@ -25,15 +26,17 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     handleModalData(undefined)
     handleTrigger(false)
-    setInputValue('')
+    setPassword('')
+    setUsername('')
     e.preventDefault()
     onClose()
   }
 
   const handleSubmit = () => {
-    handleModalData(inputValue)
+    handleModalData(children ? password : `${username}:${password}`)
     handleTrigger(true)
-    setInputValue('')
+    setPassword('')
+    setUsername('')
     onClose()
   }
 
@@ -65,7 +68,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 marginTop: '5px'
               }}
             >
-              enter secret IPNS key identifier
+              <span style={{ fontSize: '16px', fontWeight: '700' }}>enter secret IPNS key identifier</span>
               <button 
                 className="button-tiny"
                 style={{
@@ -90,50 +93,143 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
-          <input 
-            id='keyid'
-            key='0'
-            placeholder='secret key identifier'
-            type='password'
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value)
-            }}
-
+          <form
+            className='flex-column'
             style={{
-              background: 'black',
-              outline: 'none',
-              border: 'none',
-              padding: '5px',
-              borderRadius: '3px',
-              fontFamily: 'SF Mono',
-              letterSpacing: '-0.5px',
-              fontWeight: '400',
-              fontSize: '14px',
-              width: '100%',
-              wordWrap: 'break-word',
-              textAlign: 'left',
-              color: 'rgb(255, 255, 255, 0.6)',
-              cursor: 'copy'
+              marginLeft: '13px',
+              marginTop: '7px'
             }}
-          />
+          >
+            <div
+              className='flex-row'
+              style={{
+                width: '150%'
+              }}
+            >
+              <input 
+                id='username'
+                key='0'
+                placeholder='username (ENS Domain)'
+                type='text'
+                value={username || children}
+                readOnly={children ? true : false}
+                onChange={(e) => {
+                  setUsername(e.target.value)
+                }}
+                style={{
+                  background: 'black',
+                  outline: 'none',
+                  border: 'none',
+                  padding: '7px',
+                  borderRadius: '3px',
+                  fontFamily: 'SF Mono',
+                  letterSpacing: '-0.5px',
+                  fontWeight: '400',
+                  fontSize: '15px',
+                  width: '150%',
+                  wordWrap: 'break-word',
+                  textAlign: 'left',
+                  color: username ? 'white' : (children ? 'cyan' : 'rgb(255, 255, 255, 0.6)'),
+                  cursor: 'copy',
+                  marginBottom: '10px'
+                }}
+              />
+              <button 
+                className="button-tiny"
+                style={{
+                  marginTop: '-12.5px'
+                }}
+                disabled
+                onClick={() => { 
+                  setHelpModal(true),
+                  setHelp('<span><span style="color: cyan">Username</span></span>')
+                }}
+                data-tooltip={ 'Username' }
+              >
+                <div 
+                  className="material-icons smol"
+                  style={{ 
+                    color: 'cyan',
+                    marginLeft: '5px'
+                  }}
+                >
+                  info_outline 
+                </div>
+              </button>
+            </div>
+            <div
+              className='flex-row'
+              style={{
+                width: '150%'
+              }}
+            >
+              <input 
+                id='password'
+                key='1'
+                placeholder='password (IPNS Key Identifier)'
+                type='password'
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                }}
+                style={{
+                  background: 'black',
+                  outline: 'none',
+                  border: 'none',
+                  padding: '7px',
+                  borderRadius: '3px',
+                  fontFamily: 'SF Mono',
+                  letterSpacing: '-0.5px',
+                  fontWeight: '400',
+                  fontSize: '15px',
+                  width: '150%',
+                  wordWrap: 'break-word',
+                  textAlign: 'left',
+                  color: password ? 'white' : 'rgb(255, 255, 255, 0.6)',
+                  cursor: 'copy'
+                }}
+              />
+              <button 
+                className="button-tiny"
+                style={{
+                  marginTop: '0px'
+                }}
+                disabled
+                onClick={() => { 
+                  setHelpModal(true),
+                  setHelp('<span><span style="color: cyan">Secret IPNS identifier</span></span>')
+                }}
+                data-tooltip={ 'Password' }
+              >
+                <div 
+                  className="material-icons smol"
+                  style={{ 
+                    color: 'cyan',
+                    marginLeft: '5px'
+                  }}
+                >
+                  info_outline 
+                </div>
+              </button>
+            </div>
+          </form>
           <button 
             className="button"
             style={{
-              height: '28px',
-              width: '130px',
+              height: '33px',
+              width: '140px',
               padding: '5px',
               marginTop: '20px',
-              fontSize: '16px'
+              fontSize: '17px',
+              fontWeight: '700'
             }}
-            disabled={!inputValue.length}
             onClick={ handleSubmit }
             data-tooltip='Click to proceed'
           >
             <div 
               className="flex-row"
               style={{
-                fontSize: '15px'
+                fontSize: '17px'
               }}
             >
               { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
@@ -193,6 +289,7 @@ const StyledModalTitle = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   color: cyan;
+  margin-left: 10px;
 `
 
 const StyledModalHeader = styled.div`
@@ -203,9 +300,9 @@ const StyledModalHeader = styled.div`
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
-  width: 400px;
+  width: 460px;
   max-width: ${isMobile ? '90%' : '60%'};
-  height: 235px;
+  height: 310px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
