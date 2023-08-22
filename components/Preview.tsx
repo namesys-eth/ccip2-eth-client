@@ -184,6 +184,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
+  const [goodSalt, setGoodSalt] = React.useState(false) // If generated CID matches the available storage
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
@@ -432,7 +433,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function ___signMessage(_value: string) {
     setSigCount(2) // Trigger S3(K1)
     setProcessCount(3)
-    if (keypairIPNS && (!states.includes('recordhash') && !states.includes('resolver'))) {
+    if (keypairIPNS && states.length > 0 && (!states.includes('recordhash') && !states.includes('resolver'))) {
       const SignS4 = async () => {
         signMessage({ 
           message: statementSignerKey(
@@ -773,7 +774,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (sigIPNS && !keypairIPNS) {
+    if (sigIPNS && !keypairIPNS && goodSalt) {
       setLoading(true)
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
@@ -783,16 +784,38 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setMessage(['IPNS Keypair Generated', ''])
       }
       keygen()
-    } else if (sigIPNS && keypairIPNS) {
+    } else if (sigIPNS && keypairIPNS && goodSalt) {
       setLoading(true)
       setMessage(['IPNS Keypair Exists', ''])
+    } else if (sigIPNS && !keypairIPNS && !goodSalt) {
+      setIsConfig(true)
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setMessage(['Seems Like Bad Password', ''])
+      setCrash(true)
+      setTrigger('')
+      setStates([])
+      setCID('')
+      setSigSigner('')
+      setKeypairSigner(undefined)
+      setKeypairIPNS(undefined)
+      setLoading(false)
+      setSigIPNS('')
+      setSalt(false)
+      setColor('orangered')
+      setGoodSalt(true)
+      setSigCount(0)
+      setProcessCount(0)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, sigIPNS])
+  }, [keygen, sigIPNS, goodSalt])
 
   // Triggers S4(K1) after password is set
   React.useEffect(() => {
-    if (keypairIPNS && saltModalState.trigger && !sigSigner) {
+    if (keypairIPNS && saltModalState.trigger && !sigSigner && goodSalt) {
+      setMessage(['Waiting For Signature', '2'])
       const _sigSigner = async () => {
         if (saltModalState.modalData !== undefined) {
           ___signMessage(saltModalState.modalData)
@@ -801,39 +824,46 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       _sigSigner()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, saltModalState, sigIPNS])
+  }, [keypairIPNS, saltModalState, sigIPNS, goodSalt])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    if (sigSigner && keypairIPNS && !signer && CID && !keypairSigner) {
-      // Set query for on-chain manager [v2]
-      setOnChainManagerQuery(
-        [
-          getOwner(),
-          ethers.utils.namehash(ENS),
-          keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress
-        ]
-      ) // Checks if connected wallet is on-chain manager
-      setLoading(true)
-      setMessage(['Generating Signer Key', ''])
-      const keygen = async () => {
-        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
-        if (!states.includes('recordhash') && !states.includes('resolver')) {
-          const __keypair = await _KEYGEN(_origin, caip10, sigSigner, saltModalState.modalData)
-          setKeypairSigner(__keypair[1])
-          setSigner(true)
-          setMessage(['Signer Keypair Generated', ''])
-        } else {
-          setKeypairSigner(['0x0', '0x0'])
-        } 
+    let _Recordhash = recordhash || ''
+    let _Ownerhash = ownerhash || ''
+    if (CID && (CID === _Recordhash.split('ipns://')[1] || CID === _Ownerhash.split('ipns://')[1]) && (!_Recordhash && !_Ownerhash)) {
+      setGoodSalt(true)
+      if (sigSigner && keypairIPNS && !signer && !keypairSigner) {
+        // Set query for on-chain manager [v2]
+        setOnChainManagerQuery(
+          [
+            getOwner(),
+            ethers.utils.namehash(ENS),
+            keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress
+          ]
+        ) // Checks if connected wallet is on-chain manager
+        setLoading(true)
+        setMessage(['Generating Signer Key', ''])
+        const keygen = async () => {
+          const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ ? _Wallet_ : constants.zeroAddress}` : _ENS_
+          if (!states.includes('recordhash') && !states.includes('resolver')) {
+            const __keypair = await _KEYGEN(_origin, caip10, sigSigner, saltModalState.modalData)
+            setKeypairSigner(__keypair[1])
+            setSigner(true)
+            setMessage(['Signer Keypair Generated', ''])
+          } else {
+            setKeypairSigner(['0x0', '0x0'])
+          } 
+        }
+        keygen()
+      } else if (sigSigner && keypairSigner && signer) {
+        setLoading(true)
+        setMessage(['Signer Keypair Exists', ''])
       }
-      keygen()
-    } else if (sigSigner && keypairSigner && signer) {
-      setLoading(true)
-      setMessage(['Signer Keypair Exists', ''])
+    } else if (CID && CID !== _Recordhash.split('ipns://')[1] && CID !== _Ownerhash.split('ipns://')[1] && (_Recordhash || _Ownerhash)) {
+      setGoodSalt(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, sigSigner, CID])
+  }, [keypairIPNS, sigSigner, CID, recordhash, ownerhash])
 
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
@@ -844,7 +874,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
           const CID_IPNS = w3name.toString()
           setCID(CID_IPNS)
-          setMessage(['Waiting For Signature', '2'])
         }
         CIDGen()
       } else if (hashType === 'gateway') {
@@ -929,7 +958,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else if (CID.startsWith('https://')) {
         initRecordhash()
       }
-      setProcessCount(2)
+      if (states.includes('recordhash')) {
+        setProcessCount(1)
+      } else {
+        setProcessCount(2)
+      }
     } else {
       setMessage(message)
     }
@@ -1620,7 +1653,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
           setCrash(true)
           setLoading(false)
           setSustain(true)
-          setColor('red')
+          setColor('orangered')
         }
       }
       editRecord()
@@ -1910,7 +1943,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   React.useEffect(() => {
     if (signLoading && !signError && trigger) {
       setLoading(true)
-      setMessage(['Waiting for Signature', sigCount.toString()])
+      if (goodSalt) setMessage(['Waiting for Signature', sigCount.toString()])
       if (recentCrash) setRecentCrash(false)
     } else if (signError && !signLoading && trigger) {
       if (!recentCrash) {
@@ -1952,27 +1985,33 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signLoading, signError, trigger, sigCount, states])
+  }, [signLoading, signError, trigger, sigCount, states, goodSalt])
 
   /// Modal Content
   const modalContent = show ? (
-    <StyledModalOverlay>
+    <StyledModalOverlay
+      style={{
+        backgroundColor: !loading ? 'rgba(0, 0, 0, 1)' : 'black'
+      }}
+    >
       <StyledModal
         style={{
-          background: 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+          background: loading ? 'none' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
         }}
       >
         <StyledModalHeader>
-          <a href="#" onClick={handleCloseClick}>
-            <span 
-              className="material-icons"
-              style={{
-                marginTop: '7px'
-              }}
-            >
-              close
-            </span>
-          </a>
+          {!loading && (
+            <a href="#" onClick={handleCloseClick}>
+              <span 
+                className="material-icons"
+                style={{
+                  marginTop: '7px'
+                }}
+              >
+                close
+              </span>
+            </a>
+          )}
         </StyledModalHeader>
         {_ENS_ && loading && 
           <StyledModalTitle>
@@ -2026,13 +2065,13 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
               </div>
               <div
                 style={{
-                  marginTop: '60px'
+                  marginTop: '20px'
                 }}
               >
                 <span 
                   style={{
-                    color: 'white',
-                    fontSize: '18px',
+                    color: '#fc6603',
+                    fontSize: '20px',
                     fontWeight: '700'
                   }}
                 >
@@ -2382,7 +2421,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                             <div 
                               className="material-icons smol"
                               style={{ 
-                                color: crash && sustain ? 'cancel' : 'lime',
+                                color: crash && sustain ? 'orangered' : 'lime',
                                 marginLeft: '-5px'
                               }}
                             >
@@ -2441,7 +2480,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                           wordWrap: 'break-word',
                           textAlign: 'left',
                           marginBottom: '-5px',
-                          color: 'rgb(255, 255, 255, 0.75)',
+                          color: !sigApproved ? 'rgb(255, 255, 255, 0.85)' : 'lightgreen',
                           cursor: 'copy'
                         }}
                         onChange={(e) => {
@@ -2585,7 +2624,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 1);
 `
 
 export default Preview

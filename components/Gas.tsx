@@ -64,7 +64,8 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
             <div
               style={{
                 fontSize: '26px',
-                marginTop: '5px'
+                marginTop: '10px',
+                color: 'lime'
               }}
             >
               Records set
@@ -137,9 +138,9 @@ const StyledModalBody = styled.div`
   padding-right: ${isMobile ? '10px' : '20px'};
   padding-bottom: ${isMobile ? '10px' : '20px'};
   margin-top: 0px;
-  margin-left: ${isMobile ? '20px' : '40px'};
-  margin-right: ${isMobile ? '20px' : '40px'};
-  margin-bottom: ${isMobile ? '20px' : '40px'};
+  margin-left: ${isMobile ? '10px' : '20px'};
+  margin-right: ${isMobile ? '10px' : '20px'};
+  margin-bottom: ${isMobile ? '10px' : '20px'};
   display: flex;
   justify-content: center;
   height: auto;
@@ -152,7 +153,7 @@ const StyledModalBody = styled.div`
 `;
 
 const StyledModalTitle = styled.div`
-  margin-top: 15px;
+  margin-top: -15px;
   font-size: 20px;
   display: flex;
   justify-content: center;
@@ -171,7 +172,7 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: ${isMobile ? '90%' : '60%'};
-  height: 300px;
+  height: 275px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
@@ -188,7 +189,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 1);
 `;
 
 export default Gas;

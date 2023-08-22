@@ -58,7 +58,7 @@ const Account: NextPage = () => {
   const [icon, setIcon] = React.useState('') // Set Icon inside help modal
   const [color, setColor] = React.useState('cyan') // Set Color of help modal
   const [getting, setGetting] = React.useState(0) // Count in process
-  const [sigCount, setSigCount] = React.useState(0) // Signature count
+  const [sigCount, setSigCount] = React.useState(-1) // Signature count
   const [length, setLength] = React.useState(0) // Stores number of ENS names for an address
   const [help, setHelp] = React.useState('') // Set Help modal
   const [sigIPNS, setSigIPNS] = React.useState('') // IPNS Signature for local storage
@@ -344,7 +344,7 @@ const Account: NextPage = () => {
 
   // Triggers S4(K1) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && saltModalState.modalData && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
+    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
       if (choice === 'export_IPNS') {
         setChoice('export_Signer')
         let _origin = 'eth:' + _Wallet_
@@ -386,7 +386,7 @@ const Account: NextPage = () => {
       keygen()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, sigSigner, keypairSigner, choice])
+  }, [keypairIPNS, sigSigner, keypairSigner, choice, saltModalState])
 
   // Trigger end of export
   React.useEffect(() => {
@@ -1233,17 +1233,51 @@ const Account: NextPage = () => {
                       (previewModalState.modalData ? 'Please wait' : `${message}`)
                     }
                   </div>
+                  {loading && sigCount === 0 && activeTab === 'UTILS' && (
+                    <div
+                      style={{
+                        marginTop: '10px'
+                      }}
+                    >
+                      <span 
+                        style={{
+                          color: 'white',
+                          fontSize: '18px',
+                          fontWeight: '700'
+                        }}
+                      >
+                        <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{'1'}</span>
+                        <span>{' Of '}</span>
+                        <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}
+                        >{ '1' }</span>
+                      </span>
+                    </div>
+                  )}
                   <div
                     style={{
-                      color: '#fc6603',
+                      color: 'white',
                       fontWeight: '700',
-                      fontFamily: 'SF Mono'
+                      marginTop: '10px'
                     }}
                   >
-                    { 
-                      activeTab === 'UTILS' ? (sigCount > 0 ? `${sigCount}/${choice.startsWith('export') ? '2' : '1'}` : '') : 
-                      ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${progress}/${length}`) : '')
-                    }
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>
+                      { 
+                        activeTab === 'UTILS' ? (sigCount > 0 ? `${sigCount}` : '') : 
+                        ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${progress}`) : '')
+                      }
+                    </span>
+                    <span style={{ fontSize: '19px' }}>
+                      { 
+                        activeTab === 'UTILS' ? (sigCount > 0 ? ` Of ` : '') : 
+                        ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : ` Of `) : '')
+                      }
+                    </span>
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>
+                      { 
+                        activeTab === 'UTILS' ? (sigCount > 0 ? `${choice.startsWith('export') ? '2' : '1'}` : '') : 
+                        ( activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${length}`) : '')
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1467,42 +1501,59 @@ const Account: NextPage = () => {
                   value={ownerhash}
                   id="owner-hash"
                 />
-                <button 
-                  className="button"
-                  style={{
-                    height: '38px',
-                    width: '80px',
-                    marginTop: '15px',
-                    marginLeft: '15px'
-                  }}
-                  type="submit"
-                  data-tooltip='Set New Ownerhash'
-                  onClick={() => { 
-                    setConfirm(true),
-                    setChoice('ownerhash'),
-                    setKeypairIPNS([]),
-                    setKeypairSigner([]),
-                    setSigIPNS(''),
-                    setSigSigner(''),
-                    setSuccess(false)
-                  }}
+                <div
+                  className='flex-row'
                 >
-                  <div
-                    className="flex-sans-direction"
+                  <button 
+                    className="button"
+                    style={{
+                      height: '38px',
+                      width: '80px',
+                      marginTop: '15px',
+                      marginLeft: '15px'
+                    }}
+                    type="submit"
+                    data-tooltip='Set New Ownerhash'
+                    onClick={() => { 
+                      setConfirm(true),
+                      setChoice('ownerhash'),
+                      setKeypairIPNS([]),
+                      setKeypairSigner([]),
+                      setSigIPNS(''),
+                      setSigSigner(''),
+                      setSuccess(false)
+                    }}
                   >
-                    <span>{'SET'}</span>
-                    <span 
-                      className="material-icons"
-                      style={{
-                        fontSize: '22px',
-                        fontWeight: '700',
-                        marginLeft: '3px'
+                    <div
+                      className="flex-sans-direction"
+                    >
+                      <span>{'SET'}</span>
+                      <span 
+                        className="material-icons"
+                        style={{
+                          fontSize: '22px',
+                          fontWeight: '700',
+                          marginLeft: '3px'
+                        }}
+                      >
+                        settings
+                      </span>
+                    </div>
+                  </button>
+                  {(txSuccess1of1 || txError1of1) && !txLoading1of1 && (
+                    <div 
+                      className="material-icons smol"
+                      style={{ 
+                        color: txSuccess1of1 ? 'lime' : 'orangered',
+                        marginLeft: '10px',
+                        marginTop: '14px',
+                        fontSize: '20px'
                       }}
                     >
-                      settings
-                    </span>
-                  </div>
-                </button>
+                      { txSuccess1of1 ? 'task_alt' : 'cancel' }
+                    </div>
+                  )}
+                </div>
               </div>
               <div
                 className='hash-container flex-column'
@@ -1580,6 +1631,7 @@ const Account: NextPage = () => {
                       marginLeft: '-25px',
                       color: color && !keypairIPNS[0] && !keypairIPNS[1] ? color : 'cyan'   
                     }}
+                    hidden={!keypairIPNS[0]}
                   >
                     <span 
                       className="material-icons"
@@ -1625,6 +1677,7 @@ const Account: NextPage = () => {
                       marginLeft: '-25px',
                       color: color && !keypairSigner[0] && !keypairSigner[1] ? color : 'cyan'   
                     }}
+                    hidden={!keypairSigner[0]}
                   >
                     <span 
                       className="material-icons"
