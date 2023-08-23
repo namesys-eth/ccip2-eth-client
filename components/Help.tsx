@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import { isMobile } from 'react-device-detect'
 
-const Help = ({ _ENS_, color, show, onClose, children }) => {
+const Help = ({ icon, color, show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false)
   React.useEffect(() => {
     setBrowser(true)
@@ -29,7 +29,7 @@ const Help = ({ _ENS_, color, show, onClose, children }) => {
             </span>
           </a>
         </StyledModalHeader>
-        {_ENS_ && 
+        {icon && 
           <StyledModalTitle>
             <span 
               className="material-icons"
@@ -39,7 +39,7 @@ const Help = ({ _ENS_, color, show, onClose, children }) => {
                 color: color
               }}
             >
-              { _ENS_ }
+              { icon }
             </span>
           </StyledModalTitle>}
           <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />

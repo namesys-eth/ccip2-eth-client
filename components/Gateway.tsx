@@ -139,7 +139,7 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       <div id="modal-inner">
         <Help
           color={ 'lightblue' }
-          _ENS_={ 'info' }
+          icon={ 'info' }
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >
@@ -164,7 +164,7 @@ const StyledModalBody = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   padding-bottom: 25px;
-  display: flex;
+  display: flex;_
   justify-content: center;
   flex-direction: column;
   justify-content: center;

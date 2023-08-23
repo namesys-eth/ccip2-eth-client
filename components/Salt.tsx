@@ -240,7 +240,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
       <div id="modal-inner">
         <Help
           color={ 'lightblue' }
-          _ENS_={ 'info' }
+          icon={ 'info' }
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >

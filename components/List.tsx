@@ -208,7 +208,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
               </div>
               <Help
                 color={ color }
-                _ENS_={ icon }
+                icon={ icon }
                 onClose={() => setHelpModal(false)}
                 show={helpModal}
               >

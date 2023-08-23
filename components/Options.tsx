@@ -219,7 +219,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       <div id="modal-inner">
         <Help
           color={ 'cyan' }
-          _ENS_={ 'info' }
+          icon={ 'info' }
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >

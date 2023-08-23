@@ -85,7 +85,7 @@ const Account: NextPage = () => {
   const [choice, setChoice] = React.useState(''); // Records active process
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
-  const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
+  const [previewModalState, setPreviewModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
   }) // Preview modal state
@@ -220,7 +220,7 @@ const Account: NextPage = () => {
       address: `0x${ccip2Config.addressOrName.slice(2)}`,
       abi: ccip2Config.contractInterface,
       functionName: 'getRecordhash',
-      args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+      args: [ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase()]
     })
 
   // Sets Ownerhash in CCIP2 Resolver
@@ -279,14 +279,14 @@ const Account: NextPage = () => {
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (previewModalState.trigger) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger && previewModalState.modalData) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData.slice(0, -1))
       const _update = async () => {
         if (previewModalState.modalData) {
-          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
-          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
-          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData.slice(0, -1)) // Get updated Resolver
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.slice(0, -1), ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Ownerhash
           _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
             _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
             _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
@@ -297,9 +297,22 @@ const Account: NextPage = () => {
       setMeta(_LIST)
       setFlash(_LIST)
       setCache(_LIST)
+      setPreviewModal(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewModalState])
+
+  // Preserve metadata across pageloads
+  React.useEffect(() => {
+    if (previewModalState.trigger && previewModalState.modalData && !previewModal) {
+      setPreviewModal(true)
+      if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '#') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}-`)
+      }
+    }
+  }, [previewModal, previewModalState])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -459,7 +472,7 @@ const Account: NextPage = () => {
           setEmpty(true)
         } else {
           const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
-          const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase())
+          const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase())
           let _Recordhash_: any
           let __Recordhash: boolean = false
           let __Ownerhash: boolean = false
@@ -784,6 +797,7 @@ const Account: NextPage = () => {
         trigger: false
       })
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetOwnerhashLoading, isSetOwnerhashError])
 
   // Handles signature loading and error
@@ -974,7 +988,12 @@ const Account: NextPage = () => {
           margin: '50px 0 0 0'
         }}>
         {/* Content */}
-        <div className={ !isMobile && !isSearch ? 'heading-alt' : 'none' } style={{ flex: '1 1 auto' }}>
+        <div className={ !isMobile && !isSearch ? 'heading-alt' : 'none' } 
+          style={{ 
+            flex: '1 1 auto',
+            marginTop: isDisconnected ? '30px' : '0'
+          }}
+        >
           <div style={{ marginTop: '-120px' }}>
             <div
               className="flex-column"
@@ -982,35 +1001,42 @@ const Account: NextPage = () => {
                 paddingTop: '100px'
               }}>
               {!isMobile && isDisconnected && (
-                <div>
+                <div
+                >
                   <img
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
                     hidden
                   />
-                  <h4
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: '70px',
                       color: '#fc6603',
-                      marginBottom: '20px'
+                      marginBottom: '20px',
+                      fontWeight: '700'
                     }}
                   >
                     NameSys
-                  </h4>
-                  <h4
+                  </div>
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: 26,
-                      color: '#eb8634'
-                    }}>
+                      color: '#eb8634',
+                      marginTop: isMobile ? '-30px' : '10px',
+                      fontWeight: '700'
+                    }}
+                  >
                     Off-chain Records Manager
-                  </h4>
+                  </div>
                 </div>
               )}
               {!isMobile && (isConnected || !isDisconnected) && (
                 <div 
                   style={{ 
-                    marginTop: '-35px',
+                    marginTop: '-30px',
                     marginBottom: '10px' 
                   }}
                 >
@@ -1020,16 +1046,18 @@ const Account: NextPage = () => {
                     src="logo.png"
                     hidden
                   />
-                  <h4
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: '52px',
                       color: '#fc6603',
                       marginBottom: '20px',
-                      marginTop: '30px'
+                      marginTop: '30px',
+                      fontWeight: '700'
                     }}
                   >
                     NameSys
-                  </h4>
+                  </div>
                 </div>
               )}
               {isMobile && isDisconnected && (
@@ -1044,22 +1072,39 @@ const Account: NextPage = () => {
                       marginBottom: '7px' 
                     }}
                   />
-                  <h4
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: '52px',
                       color: '#fc6603',
-                      marginBottom: '20px'
+                      marginBottom: '20px',
+                      fontWeight: '700'
                     }}
                   >
                     NameSys
-                  </h4>
-                  <h4
+                  </div>
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: 26,
-                      color: '#eb8634'
-                    }}>
-                    Off-chain Records Manager
-                  </h4>
+                      color: '#eb8634',
+                      marginTop: '-10px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    Off-chain Records
+                  </div>
+                  <div
+                    className="flex-column"
+                    style={{
+                      fontSize: 26,
+                      color: '#eb8634',
+                      marginTop: '0px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    Manager
+                  </div>
                 </div>
               )}
               {isMobile && (isConnected || !isDisconnected) && (
@@ -1067,7 +1112,7 @@ const Account: NextPage = () => {
                   className="flex-column"
                   style={{ 
                     marginTop: '-30px',
-                    marginBottom: isMobile ? '10px' : '2px'
+                    marginBottom: '50px'
                   }}
                 >
                   <img
@@ -1078,15 +1123,17 @@ const Account: NextPage = () => {
                       marginBottom: '7px' 
                     }}
                   />
-                  <h4
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: '40px',
                       color: '#fc6603',
-                      marginTop: '10px' 
+                      marginTop: '10px',
+                      fontWeight: '700' 
                     }}
                   >
                     NameSys
-                  </h4>
+                  </div>
                 </div>
               )}
             </div>
@@ -1331,7 +1378,8 @@ const Account: NextPage = () => {
                   fontSize: '18px',
                   color: 'cyan',
                   marginBottom: '25px',
-                  fontWeight: '700'
+                  fontWeight: '700',
+                  marginTop: isMobile ? '-10px' : '0'
                 }}
               >
                 <span
@@ -1828,23 +1876,54 @@ const Account: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              bottom: 10,
-              position: 'fixed'
-            }}>
-            <span
-              className="material-icons">folder_open
-            </span>
-            &nbsp;
-            <a
-              href="https://github.com/namesys-eth/ccip2-eth-client"
-              className="footer-text"
-              target='_blank'
-              rel="noreferrer"
+              left: !isMobile ? '14%' : '32%',
+              transform: !isMobile ? 'translateX(-92%)' : 'translateX(-72%)',
+              bottom: 10
+            }}
+          >
+            <div
+              className='flex-row'
+              style={{
+                marginRight: '15px'
+              }}
             >
-              GitHub
-            </a>
+              <span
+                className="material-icons"
+                style={{
+                  marginRight: '3px'
+                }}
+              >
+                source
+              </span>
+              <a
+                href="https://github.com/namesys-eth/ccip2-eth-client"
+                className="footer-text"
+                target='_blank'
+                rel="noreferrer"
+              >
+                GitHub
+              </a>
+            </div>
+            <div
+              className='flex-row'
+            >
+              <span
+                className="material-icons"
+                style={{
+                  marginRight: '3px'
+                }}
+              >
+                info_outline
+              </span>
+              <a
+                href="https://github.com/namesys-eth/ccip2-eth-resources/blob/main/docs/GUIDE.md"
+                className="footer-text"
+                target='_blank'
+                rel="noreferrer"
+              >
+                Help
+              </a>
+            </div>
           </div>
           {/* Modals */}
           <div id="modal">
@@ -1935,7 +2014,7 @@ const Account: NextPage = () => {
             </Export>
             <Help
                 color={ color }
-                _ENS_={ icon }
+                icon={ icon }
                 onClose={() => setHelpModal(false)}
                 show={helpModal}
               >

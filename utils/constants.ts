@@ -24,18 +24,22 @@ export interface MainBodyState {
   modalData: string | undefined
   trigger: boolean
 }
+export interface CustomBodyState {
+  modalData: string
+  trigger: boolean
+}
 let network = process.env.NEXT_PUBLIC_NETWORK
 export const alchemyConfig = {
-  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID,
+  apiKey: network === 'goerli' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET,
   network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
-  chainId: network === 'goerli' ? '5': '1',
+  chainId: network === 'goerli' ? '5' : '1',
 }
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey)
 export const ccip2 = [
-  '0xAd6146De3db15784Fe0D8B6E57EB2D34Fd7665E1', // CCIP2 Resolver Goerli
+  '0x3F2521AC2D9ea1bFd6110CA563FcD067E6E47deb', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
- ]
+]
 export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 60) * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
@@ -70,7 +74,7 @@ export const ccip2Interface = [
   iCCIP2Mainnet,
 ]
 export const ensConfig = [
-  { 
+  {
     addressOrName: ensContracts[0],
     contractInterface: ensInterface[0]
   },
@@ -78,27 +82,27 @@ export const ensConfig = [
     addressOrName: ensContracts[1],
     contractInterface: ensInterface[1]
   },
-  { 
+  {
     addressOrName: ensContracts[2],
     contractInterface: ensInterface[2]
   },
-  { 
+  {
     addressOrName: ensContracts[3],
     contractInterface: ensInterface[3]
   },
-  { 
+  {
     addressOrName: ensContracts[4],
     contractInterface: ensInterface[4]
   },
-  { 
+  {
     addressOrName: ensContracts[5],
     contractInterface: ensInterface[5]
   },
-  { 
+  {
     addressOrName: ensContracts[6],
     contractInterface: ensInterface[6]
   },
-  { 
+  {
     addressOrName: ensContracts[7],
     contractInterface: ensInterface[7]
   }
@@ -128,22 +132,22 @@ export const blocked = [
 export const types = [
   'recordhash', // On-Chain Record
   'resolver', // Exception: Not a Record type
-	'addr',
-	'contenthash',
-	'avatar',
+  'addr',
+  'contenthash',
+  'avatar',
   'zonehash',
-	'revision' // Extra local history; Not a Record type
-] 
+  'revision' // Extra local history; Not a Record type
+]
 // Record filenames corresponding to record types
 export const files = [
   '', // No associated record file; Not a Record
   '', // No associated record file; Not a Record
-	'address/60',
-	'contenthash',
-	'text/avatar',
-	'dns/zonehash',
-	'revision' // No associated record file; Not a Record
-] 
+  'address/60',
+  'contenthash',
+  'text/avatar',
+  'dns/zonehash',
+  'revision' // No associated record file; Not a Record
+]
 // Overlay 
 export function showOverlay(durationInSeconds: number) {
   const overlay = document.getElementById('overlay')
