@@ -36,7 +36,7 @@ const Home: NextPage = () => {
   const [errorModal, setErrorModal] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState('')
   const [previewModal, setPreviewModal] = React.useState(false)
-  const [nameToPreviewModal, setNameToPreview] = React.useState('')
+  const [nameToPreview, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
@@ -191,10 +191,9 @@ const Home: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewModalState])
 
-  // Preserve metadata across pageloads
+  // Preview modal state
   React.useEffect(() => {
     if (previewModalState.trigger && previewModalState.modalData && !previewModal) {
-      setPreviewModal(true)
       if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '#') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
@@ -206,6 +205,15 @@ const Home: NextPage = () => {
       })
     }
   }, [previewModal, previewModalState])
+
+  // Trigger refresh
+  React.useEffect(() => {
+    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
+      setPreviewModal(true)
+    } else {
+      setPreviewModal(false)
+    }
+  }, [nameToPreview])
 
   // Preserve metadata across pageloads
   React.useEffect(() => {
@@ -219,8 +227,7 @@ const Home: NextPage = () => {
 
   // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
-    setPreviewModal(true)
-    setNameToPreview(name)
+     setNameToPreview(`${name}:`)
   }
 
   /// ENS Domain Search Functionality
@@ -934,7 +941,7 @@ const Home: NextPage = () => {
               <Preview
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
-                _ENS_={nameToPreviewModal}
+                _ENS_={nameToPreview}
                 chain={constants.alchemyConfig.chainId}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}

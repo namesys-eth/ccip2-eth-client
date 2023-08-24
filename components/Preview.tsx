@@ -836,9 +836,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Modal load
   React.useEffect(() => {
-    setBrowser(true)
-    setENS(_ENS_.endsWith('#') || _ENS_.endsWith('-') ? _ENS_.slice(0, -1) : _ENS_)
-    setMessage([_ENS_.endsWith('-') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
+    if (_ENS_.endsWith('#') || _ENS_.endsWith('-') || _ENS_.endsWith(':')) {
+      setBrowser(true)
+      setENS(_ENS_.slice(0, -1))
+      setMessage([_ENS_.endsWith('-') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
+    } else {
+      setBrowser(false)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

@@ -45,7 +45,7 @@ const Account: NextPage = () => {
   const [errorModal, setErrorModal] = React.useState(false) // Controls Error modal
   const [errorMessage, setErrorMessage] = React.useState('') // Sets Error message
   const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
-  const [nameToPreviewModal, setNameToPreview] = React.useState('') // Sets name to expand in preview
+  const [nameToPreview, setNameToPreview] = React.useState('') // Sets name to expand in preview
   const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
   const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
@@ -302,10 +302,9 @@ const Account: NextPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewModalState])
 
-  // Preserve metadata across pageloads
+  // Preview modal state
   React.useEffect(() => {
     if (previewModalState.trigger && previewModalState.modalData && !previewModal) {
-      setPreviewModal(true)
       if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '#') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
@@ -313,6 +312,15 @@ const Account: NextPage = () => {
       }
     }
   }, [previewModal, previewModalState])
+
+  // Trigger refresh
+  React.useEffect(() => {
+    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
+      setPreviewModal(true)
+    } else {
+      setPreviewModal(false)
+    }
+  }, [nameToPreview])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -538,8 +546,7 @@ const Account: NextPage = () => {
 
   // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
-    setPreviewModal(true)
-    setNameToPreview(name)
+    setNameToPreview(`${name}:`)
   }
 
   React.useEffect(() => {
@@ -1931,7 +1938,7 @@ const Account: NextPage = () => {
               <Preview
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
-                _ENS_={nameToPreviewModal}
+                _ENS_={nameToPreview}
                 chain={_Chain_}
                 handleParentTrigger={handlePreviewTrigger}
                 handleParentModalData={handlePreviewModalData}
