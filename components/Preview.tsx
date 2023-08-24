@@ -874,7 +874,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if ((saltModalState.trigger || gatewayModalState.trigger) && !keypairIPNS && trigger && safeTrigger) {
       setSigCount(1)
       setMessage(['Waiting For Signature', '1'])
-      setProcessCount(!write && states[0] === 'resolver' ? 1 : 1)
+      setProcessCount(!write && states.includes('resolver') ? 1 : 1)
       signMessage({ 
         message: statementIPNSKey(
           ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -1695,7 +1695,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
     if (isMigrateSuccess && txSuccess1of2 && migrated && !write && !crash) {
-      if (states[0] === 'resolver') {
+      if (states.includes('resolver') && optionsModalState.modalData === '1') {
         setSuccess('<span><span style="color: lightgreen">Resolver Migrated</span>! You may now set <span style="color: cyan">IPNS Storage</span> next</span>')
         setSuccessModal(true)
         doEnjoy()
