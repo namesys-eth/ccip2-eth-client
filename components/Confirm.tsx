@@ -211,7 +211,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       <div id="modal-inner">
         <Help
           color={ 'lightblue' }
-          _ENS_={ 'info' }
+          icon={ 'info' }
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >
@@ -288,7 +288,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 1);
 `
 
 export default Confirm

@@ -13,7 +13,7 @@ function sumValues(obj: { [key: string]: number }): number {
   return total;
 }
 
-const Gas = ({ _ENS_, color, show, onClose, children }) => {
+const Gas = ({ icon, color, show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false);
   React.useEffect(() => {
     setBrowser(true);
@@ -39,7 +39,7 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
             </span>
           </a>
         </StyledModalHeader>
-        {_ENS_ &&
+        {icon &&
           <StyledModalTitle>
             <span
               className="material-icons"
@@ -49,34 +49,34 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
                 color: color
               }}
             >
-              { _ENS_ }
+              { 'verified' }
             </span>
           </StyledModalTitle>}
         <StyledModalBody>
           <div
+            className='flex-column'
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
+              marginBottom: '15px'
             }}
           >
             <div
               style={{
-                fontSize: '26px',
-                marginTop: '5px'
+                fontSize: '24px',
+                marginTop: '10px',
+                color: 'lime',
+                fontWeight: '700'
               }}
             >
-              Records set
+              Off-Chain Records set
             </div>
             <div 
               style={{
-                marginTop: '30px',
+                marginTop: '20px',
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'center',
-                fontSize: '18px',
+                fontSize: '20px',
                 fontWeight: '700'
               }}
             >
@@ -85,7 +85,7 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
                 className="material-icons"
                 style={{
                   marginBottom: '3px',
-                  fontSize: '24px',
+                  fontSize: '28px',
                   color: color
                 }}
               >
@@ -97,10 +97,11 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
             </div>
             <div
               style={{
-                marginTop: '15px',
+                marginTop: '18px',
                 fontFamily: 'SF Mono',
-                fontSize: '20px',
-                fontWeight: '600'
+                fontSize: '24px',
+                fontWeight: '600',
+                color: 'lime'
               }}
             >
               { sumValues(children).toPrecision(3) } 
@@ -108,8 +109,8 @@ const Gas = ({ _ENS_, color, show, onClose, children }) => {
               <span
                 style={{
                   fontFamily: 'Spotnik',
-                  fontSize: '17px',
-                  fontWeight: '800'
+                  fontSize: '21px',
+                  fontWeight: '700'
                 }}
               >
                 ETH
@@ -137,9 +138,9 @@ const StyledModalBody = styled.div`
   padding-right: ${isMobile ? '10px' : '20px'};
   padding-bottom: ${isMobile ? '10px' : '20px'};
   margin-top: 0px;
-  margin-left: ${isMobile ? '20px' : '40px'};
-  margin-right: ${isMobile ? '20px' : '40px'};
-  margin-bottom: ${isMobile ? '20px' : '40px'};
+  margin-left: ${isMobile ? '10px' : '20px'};
+  margin-right: ${isMobile ? '10px' : '20px'};
+  margin-bottom: ${isMobile ? '10px' : '20px'};
   display: flex;
   justify-content: center;
   height: auto;
@@ -148,11 +149,11 @@ const StyledModalBody = styled.div`
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;
-  max-width: 400px;
+  max-width: 450px;
 `;
 
 const StyledModalTitle = styled.div`
-  margin-top: 15px;
+  margin-top: -15px;
   font-size: 20px;
   display: flex;
   justify-content: center;
@@ -171,12 +172,13 @@ const StyledModal = styled.div`
   background-size: 400% 400%;
   width: auto;
   max-width: ${isMobile ? '90%' : '60%'};
-  height: 300px;
+  height: 275px;
   border-radius: 6px;
   overflow-y: initial !important
   display: flex;
   text-align: center;
   justify-content: center;
+  width: 450px;
 `;
 
 const StyledModalOverlay = styled.div`
@@ -188,7 +190,7 @@ const StyledModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(0, 0, 0, 1);
 `;
 
 export default Gas;

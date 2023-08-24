@@ -86,12 +86,12 @@ const { chains, publicClient } = configureChains(
     process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? goerli : mainnet
   ],
   [
-    alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID ? process.env.NEXT_PUBLIC_ALCHEMY_ID : '' }),
+    alchemyProvider({ apiKey: (process.env.NEXT_PUBLIC_NETWORK === 'goerli' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET) || ''}),
     publicProvider()
   ]
 )
 
-const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ? process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID : ''
+const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || ''
 const { connectors } = getDefaultWallets({
   appName: 'NameSys',
   projectId,

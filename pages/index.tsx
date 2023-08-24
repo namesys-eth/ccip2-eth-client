@@ -36,7 +36,7 @@ const Home: NextPage = () => {
   const [errorModal, setErrorModal] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState('')
   const [previewModal, setPreviewModal] = React.useState(false)
-  const [nameToPreviewModal, setNameToPreview] = React.useState('')
+  const [nameToPreview, setNameToPreview] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
@@ -54,7 +54,7 @@ const Home: NextPage = () => {
   const [ownerhash, setOwnerhash] = React.useState('')
   const [owner, setOwner] = React.useState('')
   const [onSearch, setOnSearch] = React.useState(false)
-  const [previewModalState, setPreviewModalState] = React.useState<constants.MainBodyState>({
+  const [previewModalState, setPreviewModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
   })
@@ -170,14 +170,14 @@ const Home: NextPage = () => {
 
   // Handle migration from Preview modal
   React.useEffect(() => {
-    if (previewModalState.trigger) { // Trigger update when one of the names is migrated
+    if (previewModalState.trigger && previewModalState.modalData) { // Trigger update when one of the names is migrated
       let _LIST = meta
-      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData)
+      const index = _LIST.findIndex(item => `${item.name}.eth` === previewModalState.modalData.slice(0, -1))
       const _update = async () => {
         if (previewModalState.modalData) {
-          const _Resolver = await constants.provider.getResolver(previewModalState.modalData) // Get updated Resolver
-          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData, ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Recordhash
-          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ ? _Wallet_ : constants.zeroAddress) // Get updated Ownerhash
+          const _Resolver = await constants.provider.getResolver(previewModalState.modalData.slice(0, -1)) // Get updated Resolver
+          const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.slice(0, -1), ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Recordhash
+          const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Ownerhash
           _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
             _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
             _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
@@ -186,9 +186,36 @@ const Home: NextPage = () => {
       }
       _update()
       setMeta(_LIST)
+      setPreviewModal(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewModalState])
+
+  // Preview modal state
+  React.useEffect(() => {
+    if (previewModalState.trigger && previewModalState.modalData && !previewModal) {
+      if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '#') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}-`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '+') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}+`)
+      }
+      setPreviewModalState({
+        modalData: '',
+        trigger: false
+      })
+    }
+  }, [previewModal, previewModalState])
+
+  // Trigger refresh
+  React.useEffect(() => {
+    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
+      setPreviewModal(true)
+    } else {
+      setPreviewModal(false)
+    }
+  }, [nameToPreview])
 
   // Preserve metadata across pageloads
   React.useEffect(() => {
@@ -202,8 +229,7 @@ const Home: NextPage = () => {
 
   // Open Preview modal for chosen ENS domain
   const onItemClick = (name: string) => {
-    setPreviewModal(true)
-    setNameToPreview(name)
+     setNameToPreview(`${name}:`)
   }
 
   /// ENS Domain Search Functionality
@@ -244,7 +270,7 @@ const Home: NextPage = () => {
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: 'getRecordhash',
-    args: [ethers.utils.hexZeroPad(_Wallet_ ? _Wallet_ : constants.zeroAddress, 32).toLowerCase()]
+    args: [ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase()]
   })
 
   // Set in-app manager for the ENS domain
@@ -465,6 +491,7 @@ const Home: NextPage = () => {
       <Head>
         <title>NameSys - Off-Chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <meta name="description" content="NameSys" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
         <link rel="preload" href="SF-Mono.woff2"  as="font" type="font/woff2" crossOrigin="anonymous"  />
@@ -494,7 +521,8 @@ const Home: NextPage = () => {
         </div>
       </div>
       {/* Buttons */}
-      <div>
+      <div
+      >
         <div
           style={{
             display: 'flex',
@@ -522,6 +550,7 @@ const Home: NextPage = () => {
                 onClick={() => { window.location.href = isProduction ? '/account.html' : '/account' }}
                 data-tooltip='My Names'
                 disabled={isDisconnected}
+                hidden={isMobile}
               >
                 <div
                   className="flex-sans-direction"
@@ -532,7 +561,8 @@ const Home: NextPage = () => {
             </div>
             <div
               style={{
-                marginLeft: !isMobile ? '-30px' : '-9px'
+                marginLeft: !isMobile ? '-30px' : '-9px',
+                marginTop: !isMobile ? '0px' : '-15px'
               }}
             >
               <Ticker variable={ savings }/>
@@ -627,7 +657,11 @@ const Home: NextPage = () => {
           marginTop: onSearch ? '0px' : '40px'
         }}>
         {/* Content */}
-        <div className={ !isMobile && !onSearch ? 'heading' : 'none' } style={{ flex: '1 1 auto' }}>
+        <div className={ !isMobile && !onSearch ? 'heading' : (!isMobile && onSearch ? 'heading' : 'none') } 
+          style={{ 
+            flex: '1 1 auto'
+          }}
+        >
           <div style={{ marginTop: '-120px' }}>
             <div
               style={{
@@ -645,24 +679,29 @@ const Home: NextPage = () => {
                     src="logo.png"
                     hidden
                   />
-                  <h4
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: onSearch ? '46px' : '50px',
-                      marginTop: onSearch ? '20px' : '25px',
+                      marginTop: onSearch ? '20px' : '28px',
                       color: '#fc6603',
-                      marginBottom: '10px'
+                      marginBottom: '10px',
+                      fontWeight: '700'
                     }}
                   >
                     NameSys
-                  </h4>
-                  <h4
+                  </div>
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: onSearch ? '24px' : '28px',
-                      color: '#eb8634'
+                      marginTop: '0px',
+                      color: '#eb8634',
+                      fontWeight: '700'
                     }}
                   >
                     Off-chain Records Manager
-                  </h4>
+                  </div>
                 </div>
               )}
               {isMobile && (
@@ -672,7 +711,8 @@ const Home: NextPage = () => {
                     alt="sample-icon"
                     src="logo.png"
                   />
-                  <h4
+                  <div
+                    className="flex-column"
                     style={{
                       fontSize: onSearch ? '36px' : '44px',
                       marginTop: onSearch ? '12px' : '10px',
@@ -680,15 +720,38 @@ const Home: NextPage = () => {
                     }}
                   >
                     NameSys
-                  </h4> 
+                  </div> 
                   <div
+                    className="flex-column"
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
                       fontWeight: 700,
-                      color: '#eb8634'
+                      color: '#eb8634',
+                      marginTop: '5px'
                     }}
                   >
                     Off-chain Records Manager
+                  </div>
+                  <div
+                    style={{
+                    }}
+                  >
+                    <button
+                      className='button'
+                      onClick={() => { window.location.href = isProduction ? '/account.html' : '/account' }}
+                      data-tooltip='My Names'
+                      disabled={isDisconnected}
+                      style={{
+                        marginTop: '15px',
+                        marginBottom: '-10px'
+                      }}
+                    >
+                      <div
+                        className="flex-sans-direction"
+                      >
+                        {'My Names'}&nbsp;<span className="material-icons">admin_panel_settings</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
               )}
@@ -824,22 +887,55 @@ const Home: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              left: !isMobile ? '13%' : '32%',
+              transform: !isMobile ? 'translateX(-93%)' : 'translateX(-72%)',
               bottom: 10,
               position: 'fixed'
-            }}>
-            <span
-              className="material-icons">folder_open
-            </span>&nbsp;
-            <a
-              href="https://github.com/namesys-eth/ccip2-eth-client"
-              className="footer-text"
-              target='_blank'
-              rel="noreferrer"
+            }}
+          >
+            <div
+              className='flex-row'
+              style={{
+                marginRight: '15px'
+              }}
             >
-              GitHub
-            </a>
+              <span
+                className="material-icons"
+                style={{
+                  marginRight: '3px'
+                }}
+              >
+                source
+              </span>
+              <a
+                href="https://github.com/namesys-eth/ccip2-eth-client"
+                className="footer-text"
+                target='_blank'
+                rel="noreferrer"
+              >
+                GitHub
+              </a>
+            </div>
+            <div
+              className='flex-row'
+            >
+              <span
+                className="material-icons"
+                style={{
+                  marginRight: '3px'
+                }}
+              >
+                info_outline
+              </span>
+              <a
+                href="https://github.com/namesys-eth/ccip2-eth-resources/blob/main/docs/GUIDE.md"
+                className="footer-text"
+                target='_blank'
+                rel="noreferrer"
+              >
+                Help
+              </a>
+            </div>
           </div>
           {/* Modals */}
           <div id="modal">
@@ -847,7 +943,7 @@ const Home: NextPage = () => {
               <Preview
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
-                _ENS_={nameToPreviewModal}
+                _ENS_={nameToPreview}
                 chain={constants.alchemyConfig.chainId}
                 handleParentTrigger={handleParentTrigger}
                 handleParentModalData={handleParentModalData}
@@ -877,7 +973,7 @@ const Home: NextPage = () => {
             </Error>
             <Help
                 color={ color }
-                _ENS_={ icon }
+                icon={ icon }
                 onClose={() => setModal(false)}
                 show={modal}
               >

@@ -208,7 +208,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
               </div>
               <Help
                 color={ color }
-                _ENS_={ icon }
+                icon={ icon }
                 onClose={() => setHelpModal(false)}
                 show={helpModal}
               >
@@ -258,7 +258,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                 >
                     { label }&nbsp;
                     <span className="material-icons smoller">
-                      {label === "view" ? 'visibility' : 'manage_history'}
+                      {label === "view" ? 'visibility' : 'edit'}
                     </span>
                   </div>
               </button>
