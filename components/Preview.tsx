@@ -228,6 +228,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const web3 = new Web3(alchemyEndpoint)
   const caip10 = `eip155:${chain}:${_Wallet_}`  // CAIP-10
   const origin = `eth:${_Wallet_ || constants.zeroAddress}`
+  const PORT = process.env.NEXT_PUBLIC_PORT
+  const SERVER = process.env.NEXT_PUBLIC_SERVER
   const { 
     data: signature, 
     error: signError, 
@@ -829,9 +831,25 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles loading of avatar
   React.useEffect(() => {
-    checkImageURL(avatar)
+    let _avatar: string = ''
+    if (avatar.startsWith('ipfs://')) {
+      _avatar = `https://ipfs.io/ipfs/${avatar.split('ipfs://')[1]}`
+    } else if (avatar.startsWith(`eip155:${chain}`)) {
+      let _contract = avatar.split(':')[2].split('/')[0]
+      let _tokenID = avatar.split(':')[2].split('/')[1]
+      constants.alchemy.nft.getNftMetadata(
+        _contract,
+        _tokenID
+      ).then((_response) => {
+        _avatar = _response.media[0].gateway
+      })
+    } else if (avatar.startsWith('https://')) {
+      _avatar = avatar
+    }
+    checkImageURL(_avatar)
       .then(() => setImageLoaded(true))
       .catch(() => setImageLoaded(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatar])
 
   // Modal load
@@ -1006,8 +1024,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function getGas(key: string, value: string) {
     const getGasAmountForContractCall = async () => {
       const contract = new web3.eth.Contract(
-        constants.ensConfig[chain === '1' ? 4 : 6].contractInterface as AbiItem[], 
-        constants.ensConfig[chain === '1' ? 4 : 6].addressOrName
+        constants.ensConfig[chain === '1' ? 6 : 6].contractInterface as AbiItem[], 
+        constants.ensConfig[chain === '1' ? 6 : 6].addressOrName
       )
       let gasAmount: any
       if (key === 'contenthash') {
@@ -1070,6 +1088,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setKeypairIPNS(undefined)
     setSigSigner('')
     setSigIPNS('')
+    handleParentModalData(`${ENS}+`)
+    handleParentTrigger(true)
     e.preventDefault()
     onClose()
   }
@@ -1214,7 +1234,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     }
     try {
       await fetch(
-        "https://ipfs.namesys.xyz:3003/revision",
+        `${SERVER}:${PORT}/revision`,
         {
           method: "post",
           headers: {
@@ -1333,7 +1353,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
     }
     try{
       await fetch(
-        "https://ipfs.namesys.xyz:3003/read",
+        `${SERVER}:${PORT}/read`,
         {
           method: "POST",
           headers: {
@@ -1480,18 +1500,20 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       }, 30000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh])
+  }, [refresh, refreshedValue, refreshedItem])
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
     // Handle Signature S2(K0) to add as extradata
-    if (write && (keypairSigner && keypairSigner[0]) && newValues && newValues !== EMPTY_STRING() && states.length > 0) {
+    if (write && (keypairSigner && keypairSigner[0]) && newValues && !isEmpty(newValues) && states.length > 0) {
       let __signatures = EMPTY_STRING()
       states.forEach(async (_recordType) => {
         let _signature: any
-        _signature = await _signMessage({ 
-          message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0]) 
-        }) // Sign with K0
+        if (newValues[_recordType]) {
+          _signature = await _signMessage({ 
+            message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0]) 
+          }) // Sign with K0
+        }
         if (_signature) __signatures[_recordType] = _signature
       })
       setSignatures(__signatures)
@@ -1550,7 +1572,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setMessage(['Writing Records', ''])
         try {
           await fetch(
-            "https://ipfs.namesys.xyz:3003/write",
+            `${SERVER}:${PORT}/write`,
             {
               method: "post",
               headers: {
@@ -1574,7 +1596,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                     await _promise()	
                     _gas.then((value: number) => {	
                       let _gasData = gasData && gasData.formatted && gasData.formatted.gasPrice ? Number(gasData.formatted.gasPrice) : 0
-                      gas[item.type] = value * _gasData * 0.000000001 * 0.000000001	
+                      gas[item.type] = value * _gasData * 0.000000001	
                     })	
                     if (item.type === 'avatar') {	
                       setAvatar(data.response.avatar)	
@@ -1651,7 +1673,6 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                           return item
                         }
                       })
-                      console.log(_updatedList)
                       setPreCache(_updatedList)
                       setNewValues(EMPTY_STRING())
                       setSignatures(EMPTY_STRING())
@@ -2314,7 +2335,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                                 refresh !== '' ? '' : refreshRecord(item.type, resolveCall),
                                 setRefreshedItem(item.type)
                               }}
-                              data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? 'Click to Refresh' : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
+                              data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? 'Click to Refresh' : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
                             >
                               <div 
                                 className="material-icons smol"
@@ -2377,6 +2398,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                         </button>
                       </div>
                       <input 
+                        className={ !['resolver', 'recordhash'].includes(item.type) ? 'inputextra' : 'inputextra_' }
                         id={ item.key }
                         key={ item.key }
                         placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
@@ -2392,7 +2414,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                           wordWrap: 'break-word',
                           textAlign: 'left',
                           marginBottom: '-5px',
-                          color: signatures[item.type] === '' ? 'rgb(255, 255, 255, 0.85)' : 'lightgreen',
+                          color: !legit[item.type] ? 'white' : 'lightgreen',
                           cursor: 'copy'
                         }}
                         onChange={(e) => {

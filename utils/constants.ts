@@ -40,11 +40,11 @@ export const ccip2 = [
   '0x3F2521AC2D9ea1bFd6110CA563FcD067E6E47deb', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
-export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 60) * 60 // 60 mins
+export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 1) * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
   "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar (Goerli & Mainnet)
-  "0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329", // Public Legacy Resolver 1 (Mainnet)
+  "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63", // Public Legacy Resolver 1 (Mainnet)
   "0x114D4603199df73e7D157787f8778E21fCd13066", // Name Wrapper (Goerli)
   "0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750", // Universal Resolver (Goerli)
   "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41", // Public Legacy Resolver 2 (Mainnet)

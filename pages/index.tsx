@@ -198,6 +198,8 @@ const Home: NextPage = () => {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}-`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '+') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}+`)
       }
       setPreviewModalState({
         modalData: '',
