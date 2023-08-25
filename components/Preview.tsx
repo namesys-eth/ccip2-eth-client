@@ -1065,8 +1065,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         { 
           return { 
             ...item, 
-            label: 'Edit All',
-            help: 'set multiple records in one click'
+            label: 'Edit',
+            help: 'Set Record'
           }
         } else {
           return { 
@@ -1798,9 +1798,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
 
   // Handles second transaction wait
   React.useEffect(() => {
-    if (!isSetRecordhashError && isSetRecordhashLoading && states) {
+    if (!isSetRecordhashError && isSetRecordhashLoading) {
       setLoading(true) 
-      setMessage(['Waiting for Transaction', states.includes('recordhash') ? '1' : '2'])
+      setMessage(['Waiting for Transaction', '1'])
       if (recentCrash) setRecentCrash(false)
     } else if (isSetRecordhashError && !isSetRecordhashLoading) {
       if (!recentCrash) {
@@ -1819,7 +1819,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
       })
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetRecordhashLoading, isSetRecordhashError, states])
+  }, [isSetRecordhashLoading, isSetRecordhashError])
 
   // Handles first transaction loading and error
   React.useEffect(() => {
@@ -2364,6 +2364,9 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                         </span>
                         <button
                           className="button"
+                          hidden={
+                            !['resolver', 'recordhash'].includes(item.type) && states.length > 1
+                          }
                           disabled={
                             constants.blocked.includes(item.type) ||
                             !list[item.key].active ||
@@ -2427,6 +2430,46 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
                 ))}
               </div>
             </ul>
+            <div
+              style={{
+                marginTop: '-10px',
+                marginBottom: '40px'
+              }}
+            >
+              <button
+                className="button flex-column"
+                hidden={
+                  states.length < 2
+                }
+                disabled={
+                  !_Wallet_ ||
+                  !managers.includes(_Wallet_ || '0c0cac01ac0ffeecafeNOTHEX') ||
+                  (newValues === EMPTY_STRING())
+                }
+                style={{
+                  alignSelf: 'flex-end',
+                  height: '25px',
+                  width: 'auto',
+                  marginTop: '-3px',
+                }}
+                onClick={() => { 
+                  setWrite(true)
+                  setTrigger('records'),
+                  setSafeTrigger('1'),
+                  setWrite(true)
+                }}
+                data-tooltip={ 'Set Multiple Records in One Click' }
+              >
+                <div 
+                  className="flex-sans-direction"
+                  style={{
+                    fontSize: '15px'
+                  }}
+                >
+                    {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                </div>
+              </button>
+            </div>
           </div>
           </StyledModalBody>
         }

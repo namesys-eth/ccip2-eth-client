@@ -1,5 +1,9 @@
-/** @type {import('next').NextConfig} */
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  swSrc: 'service-worker.js'
+})
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   assetPrefix: "",
@@ -10,7 +14,8 @@ const nextConfig = {
   exportPathMap: async function (defaultPathMap) {
     return {
       '/': { page: '/' },
-      '/account': { page: '/account' }
+      '/account': { page: '/account' },
+      '/fallback': { page: '/fallback' }
     }
   },
   externals: {
@@ -25,4 +30,6 @@ const nextConfig = {
   }
 }
 
-module.exports = nextConfig
+module.exports = withPWA({
+  ...nextConfig
+})
