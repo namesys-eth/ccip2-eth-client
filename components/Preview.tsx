@@ -574,15 +574,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
   
   /// Preview Domain Metadata
-  // Read ENS Legacy Registrar for Owner record of ENS domain
+  // Read Legacy ENS Registry for ENS domain Owner
   const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
-    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[1].contractInterface,
-    functionName: 'ownerOf',
-    args: [tokenIDLegacy]
-  })
-   // Read Legacy ENS Registry for ENS domain Owner
-   const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
     address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
     abi: constants.ensConfig[0].contractInterface,
     functionName: 'owner',
@@ -677,15 +670,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         return _OwnerLegacy_.toString()
       }
     } else {
-      if (_OwnerDomain_) {
-        if (_OwnerDomain_ && _OwnerDomain_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
-          return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
-        } else {
-          return _OwnerDomain_.toString()
-        }
-      } else {
-        return constants.zeroAddress
-      }
+      return constants.zeroAddress
     }
   }
 
@@ -805,7 +790,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager, _OwnerDomain_, tokenIDWrapper])
+  }, [tokenIDLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager, tokenIDWrapper])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
@@ -815,16 +800,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else {
         setWrapped(false)
       }
-    } else {
-      if (_OwnerDomain_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
-        setWrapped(true)
-      } else {
-        setWrapped(false)
-      }
     }
-    
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_OwnerLegacy_, _OwnerDomain_])
+  }, [_OwnerLegacy_])
 
   // Send data to Home/Account-page and trigger update
   function handleSuccess(_output: string) {
@@ -894,13 +872,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers upon Preview load and attempts to get Resolver for ENS domain
   React.useEffect(() => {
     if (browser && ENS) {
-      let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(ENS.split('.eth')[0]))
       let namehash = ethers.utils.namehash(ENS)
-      if (ENS.split('.').length > 2) {
-        setTokenIDLegacy(namehash)
-      } else {
-        setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
-      }
+      setTokenIDLegacy(namehash)
       setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
       getResolver()
       
