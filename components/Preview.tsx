@@ -99,6 +99,7 @@ function checkImageURL(url: string) {
   return new Promise(function(resolve, reject) {
     var img = new Image()
     img.onload = function() {
+      console.log('Image Loaded Successfully')
       resolve(true)
     }
     img.onerror = function() {
@@ -147,6 +148,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [resolveCall, setResolveCall] = React.useState<any>(); // Resolver object for querying records
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
+  const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
   const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
@@ -835,6 +837,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _avatar: string = ''
     if (avatar.startsWith('ipfs://')) {
       _avatar = `https://ipfs.io/ipfs/${avatar.split('ipfs://')[1]}`
+      checkImageURL(_avatar)
+        .then(() => {
+          setImageLoaded(true)
+          setThumbnail(_avatar)
+        })
+        .catch(() => {
+          setImageLoaded(false)
+          setThumbnail('')
+        })
     } else if (avatar.startsWith(`eip155:${chain}`)) {
       let _contract = avatar.split(':')[2].split('/')[0]
       let _tokenID = avatar.split(':')[2].split('/')[1]
@@ -843,13 +854,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         _tokenID
       ).then((_response) => {
         _avatar = _response.media[0].thumbnail || _response.media[0].gateway
+        checkImageURL(_avatar)
+          .then(() => {
+            setImageLoaded(true)
+            setThumbnail(_avatar)
+          })
+          .catch(() => {
+            setImageLoaded(false)
+            setThumbnail('')
+          })
       })
     } else if (avatar.startsWith('https://')) {
       _avatar = avatar
+      checkImageURL(_avatar)
+        .then(() => {
+          setImageLoaded(true)
+          setThumbnail(_avatar)
+        })
+        .catch(() => {
+          setImageLoaded(false)
+          setThumbnail('')
+        })
     }
-    checkImageURL(_avatar)
-      .then(() => setImageLoaded(true))
-      .catch(() => setImageLoaded(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatar])
 
@@ -1972,7 +1998,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
             <img 
               // TODO: async-await for resolution across multiple public gateways 
               //src={ avatar.replace('ipfs.io', 'pinata.cloud') } 
-              src={ avatar }
+              src={ thumbnail || avatar }
               width={ '100px' }
               alt={ ENS }
               onError={() => setImageLoaded(false)}
@@ -2459,46 +2485,48 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                 ))}
               </div>
             </ul>
-            <div
-              style={{
-                marginTop: '-10px',
-                marginBottom: '40px'
-              }}
-            >
-              <button
-                className="button flex-column"
-                hidden={
-                  states.length < 2
-                }
-                disabled={
-                  !_Wallet_ ||
-                  !managers.includes(_Wallet_ || '0c0cac01ac0ffeecafeNOTHEX') ||
-                  (newValues === EMPTY_STRING())
-                }
+            {states.length > 1 && (
+              <div
                 style={{
-                  alignSelf: 'flex-end',
-                  height: '25px',
-                  width: 'auto',
-                  marginTop: '-3px',
+                  marginTop: '-10px',
+                  marginBottom: '40px'
                 }}
-                onClick={() => { 
-                  setWrite(true)
-                  setTrigger('records'),
-                  setSafeTrigger('1'),
-                  setWrite(true)
-                }}
-                data-tooltip={ 'Set Multiple Records in One Click' }
               >
-                <div 
-                  className="flex-sans-direction"
+                <button
+                  className="button flex-column"
+                  hidden={
+                    states.length < 2
+                  }
+                  disabled={
+                    !_Wallet_ ||
+                    !managers.includes(String(_Wallet_)) ||
+                    (newValues === EMPTY_STRING())
+                  }
                   style={{
-                    fontSize: '15px'
+                    alignSelf: 'flex-end',
+                    height: '25px',
+                    width: 'auto',
+                    marginTop: '-3px',
                   }}
+                  onClick={() => { 
+                    setWrite(true)
+                    setTrigger('records'),
+                    setSafeTrigger('1'),
+                    setWrite(true)
+                  }}
+                  data-tooltip={ 'Set Multiple Records in One Click' }
                 >
-                    {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
-                </div>
-              </button>
-            </div>
+                  <div 
+                    className="flex-sans-direction"
+                    style={{
+                      fontSize: '15px'
+                    }}
+                  >
+                      {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
           </StyledModalBody>
         }
