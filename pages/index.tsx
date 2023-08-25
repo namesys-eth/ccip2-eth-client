@@ -69,7 +69,7 @@ const Home: NextPage = () => {
   }
 
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
-  const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
+  const _Chain_ = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
@@ -111,8 +111,10 @@ const Home: NextPage = () => {
     const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, provider)
     let _recordhash: string = ''
     try {
+      console.log(ccip2Config)
       _recordhash = await contract.getRecordhash(ethers.utils.namehash(name))
     } catch (error) {
+      console.error('Error in getRecordhash():', error)
     }
     if (_recordhash === null) { return '' }
     return `ipns://${ensContent.decodeContenthash(_recordhash.toString()).decoded}`
@@ -125,6 +127,7 @@ const Home: NextPage = () => {
     try {
       _ownerhash = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase())
     } catch (error) {
+      console.error('Error in getRecordhash():', error)
     }
     if (_ownerhash === null) { return '' }
     return `ipns://${ensContent.decodeContenthash(_ownerhash.toString()).decoded}`
@@ -471,7 +474,8 @@ const Home: NextPage = () => {
       style={{
         maxWidth: '100vw',
         top: '20px'
-      }}>
+      }}
+    >
       {/* Avatar */}
       {!isMobile && (
         <div
@@ -492,6 +496,7 @@ const Home: NextPage = () => {
         <title>NameSys - Off-Chain Records Manager</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
         <meta name="description" content="NameSys" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
         <link rel="preload" href="SF-Mono.woff2"  as="font" type="font/woff2" crossOrigin="anonymous"  />

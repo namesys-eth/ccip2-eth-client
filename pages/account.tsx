@@ -850,7 +850,8 @@ const Account: NextPage = () => {
       style={{
         maxWidth: '100%',
         top: '20px'
-      }}>
+      }}
+    >
       {/* Avatar */}
       {!isMobile && (
         <div
@@ -999,7 +1000,8 @@ const Account: NextPage = () => {
         style={{
           maxWidth: `inherit`,
           margin: '50px 0 0 0'
-        }}>
+        }}
+      >
         {/* Content */}
         <div className={ !isMobile && !isSearch ? 'heading-alt' : 'none' } 
           style={{ 
