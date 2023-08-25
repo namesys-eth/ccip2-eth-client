@@ -605,7 +605,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: 'getRecordhash',
-    args: [ethers.utils.hexZeroPad(_Wallet_ || getOwner(), 32).toLowerCase()]
+    args: [ethers.utils.hexZeroPad(getOwner(), 32).toLowerCase()]
   })
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead({
@@ -2402,7 +2402,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                             !legit[item.type] ||
                             item.state ||
                             !_Wallet_ ||
-                            !managers.includes(_Wallet_ || '0c0cac01ac0ffeecafeNOTHEX') ||
+                            !managers.includes(String(_Wallet_)) ||
                             (!['resolver', 'recordhash'].includes(item.type) && newValues === EMPTY_STRING())
                           }
                           style={{
@@ -2436,7 +2436,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                         placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
                         type='text'
                         disabled={ 
-                          !item.editable || constants.blocked.includes(item.type)
+                          !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                         }
                         style={{ 
                           fontFamily: 'SF Mono',
