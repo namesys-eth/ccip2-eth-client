@@ -102,6 +102,7 @@ function checkImageURL(url: string) {
       resolve(true)
     }
     img.onerror = function() {
+      console.error('Image Failed to Load')
       reject(false)
     }
     img.src = url
@@ -841,7 +842,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         _contract,
         _tokenID
       ).then((_response) => {
-        _avatar = _response.media[0].gateway
+        _avatar = _response.media[0].thumbnail || _response.media[0].gateway
       })
     } else if (avatar.startsWith('https://')) {
       _avatar = avatar
@@ -1105,24 +1106,40 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Get Contenthash for ENS domain first
   async function getContenthash(resolver: ethers.providers.Resolver) {
     await resolver.getContentHash()
-      .then((response: string) => {
+      .then((response) => {
         if (!response) {
           setContenthash('')
         } else {
           setContenthash(response)
         }
-        getAvatar()
+        getAvatar(resolver)
       })
       .catch(() => {
         setContenthash('')
-        getAvatar()
+        getAvatar(resolver)
       })
   }
 
   // Get Avatar for ENS domain second
-  async function getAvatar() {
+  async function getAvatar(resolver: ethers.providers.Resolver) {
     await provider.getAvatar(ENS)
       .then(response => {
+        if (!response) {
+          getText(resolver, 'avatar')
+        } else {
+          setAvatar(response)
+        }
+        getAddr()
+      })
+      .catch(() => {
+        getText(resolver, 'avatar')
+      })
+  }
+
+  // Get Avatar for ENS domain second
+  async function getText(resolver: ethers.providers.Resolver, key: string) {
+    await resolver.getText(key)
+      .then((response) => {
         if (!response) {
           setAvatar('')
         } else {
@@ -1163,11 +1180,15 @@ async function getResolver() {
       if (_response.address === ccip2Contract) {
         getContenthash(_response)
       } else {
-        const _contenthash = await refreshRecord('contenthash', _response)
+        const _contenthash = await refreshRecord(['contenthash', ''], _response)
         setContenthash(_contenthash || '')
-        const _avatar = await refreshRecord('avatar', _response)
+        let _avatar: string
+        _avatar = await refreshRecord(['avatar', ''], _response)
+        if (!_avatar) {
+          _avatar = await refreshRecord(['text', 'avatar'], _response)
+        }
         setAvatar(_avatar || '')
-        const _addr = await refreshRecord('addr', _response)
+        const _addr = await refreshRecord(['addr', ''], _response)
         setAddr(_addr || '')
         setFinish(true)
       }
@@ -1178,10 +1199,10 @@ async function getResolver() {
 }
 
 // Re-try empty records
-async function refreshRecord(_record: string, _resolver: Resolver) {
-  setRefresh(_record)
+async function refreshRecord(_record: string[], _resolver: Resolver) {
+  setRefresh(_record[0])
   try {
-    if (_record === 'addr') {
+    if (_record[0] === 'addr') {
       const response = await provider.resolveName(ENS)
       if (response) {
         setAddr(response)
@@ -1189,7 +1210,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setRefresh('1')
         return response
       }
-    } else if (_record === 'avatar') {
+    } else if (_record[0] === 'avatar') {
       const response = await provider.getAvatar(ENS)
       if (response) {
         setAvatar(response)
@@ -1197,10 +1218,18 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
         setRefresh('1')
         return response
       }
-    } else if (_record === 'contenthash') {
+    } else if (_record[0] === 'contenthash') {
       const response = await _resolver.getContentHash()
       if (response) {
         setContenthash(response)
+        setRefreshedValue(response)
+        setRefresh('1')
+        return response
+      }
+    } else if (_record[0] === 'text') {
+      const response = await _resolver.getText(_record[1])
+      if (response) {
+        setAvatar(response)
         setRefreshedValue(response)
         setRefresh('1')
         return response
@@ -1274,7 +1303,7 @@ async function refreshRecord(_record: string, _resolver: Resolver) {
   // Check if value is a valid Avatar URL
   function isAvatar(value: string) {
     const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
-    return urlRegex.test(value)
+    return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
   }
   // Check if value is a valid Contenthash
   function isContenthash(value: string) {
