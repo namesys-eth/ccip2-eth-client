@@ -680,6 +680,7 @@ const Home: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
+                    hidden={onSearch}
                   />
                   <div
                     className="flex-column"

@@ -20,6 +20,7 @@ import { _KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
+import * as verifier from '../utils/verifier'
 import { isMobile } from 'react-device-detect'
 import {
   useAccount,
@@ -85,6 +86,7 @@ const EMPTY_HISTORY = {
   contenthash: '',
   avatar: '',
   revision: '',
+  version: '',
   type: '',
   timestamp: {...EMPTY_STRING()},
   queue: 1
@@ -119,6 +121,22 @@ function isEmpty(object: any) {
     }
   }
   return true
+}
+
+async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
+  try {
+    const response = await fetch(
+      `https://${ipnsKey}.ipfs2.eth.limo/version.json?t=${String(cacheBuster)}`
+    );
+    if (!response.ok) {
+      return ''
+    }
+    const data = await response.json();
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
 }
 
 /**
@@ -875,8 +893,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       let namehash = ethers.utils.namehash(ENS)
       setTokenIDLegacy(namehash)
       setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
-      getResolver()
-      
+      setFinish(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [browser, ENS])
@@ -1161,23 +1178,34 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setAddr(response)
         }
-        setFinish(true)
       })
       .catch(() => {
         setAddr('')
-        setFinish(true)
       })
   }
 
 // Get Resolver for ENS domain
-async function getResolver() {
+async function getResolver(_history: any) {
   try {
+    let _Storage = await verifier.quickRecordhash(ENS, ccip2Config, String(_Wallet_))
+    let _IPFS: any 
+    for (var i = 0; i < 5; i++) {
+      _IPFS = await getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
+    }
     const _response = await provider.getResolver(ENS)
     if (_response?.address) {
       setResolver(_response.address)
       setResolveCall(_response)
+      console.log(Number(_IPFS._sequence))
+      console.log(Number(_history.timestamp.version))
       if (_response.address === ccip2Contract) {
-        getContenthash(_response)
+        if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
+          setContenthash(_history.contenthash)
+          setAvatar(_history.avatar)
+          setAddr(_history.addr)
+        } else {
+          getContenthash(_response)
+        }
       } else {
         const _contenthash = await refreshRecord(['contenthash', ''], _response)
         setContenthash(_contenthash || '')
@@ -1189,7 +1217,6 @@ async function getResolver() {
         setAvatar(_avatar || '')
         const _addr = await refreshRecord(['addr', ''], _response)
         setAddr(_addr || '')
-        setFinish(true)
       }
     }
   } catch (error) {
@@ -1396,6 +1423,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
             addr: data.response.addr,
             avatar: data.response.avatar,
             contenthash: data.response.contenthash,
+            version: data.response.version,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
             queue: latestTimestamp(data.response.timestamp),
@@ -1429,6 +1457,14 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finish, ownerhash, recordhash])
+
+  // Triggers fetching resolver and records
+  React.useEffect(() => {
+    if (queue) {
+      getResolver(history)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, queue])
 
   // Triggers setting metadata
   React.useEffect(() => {
@@ -1667,14 +1703,10 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                       await Name.publish(_revision, w3name.key)
                       // Wrap up
                       setGas(gas)
-                      setTimeout(() => {
-                        setGasModal(true)
-                        setLoading(false)
-                        states.map((_state) => {
-                          setStates(prevState => prevState.filter(item => item !== _state))
-                        })
-                        setLegit(EMPTY_BOOL())
-                      }, 2000)
+                      setGasModal(true)
+                      setStates([])
+                      setLegit(EMPTY_BOOL())
+                      setLoading(false)
                       // Update values in the modal to new ones
                       setTimestamp(data.response.timestamp)
                       let _updatedList = list.map((item) => {
@@ -1942,18 +1974,16 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
         }}
       >
         <StyledModalHeader>
-          {!loading && (
-            <a href="#" onClick={handleCloseClick}>
-              <span 
-                className="material-icons"
-                style={{
-                  marginTop: '7px'
-                }}
-              >
-                close
-              </span>
-            </a>
-          )}
+          <a href="#" onClick={handleCloseClick}>
+            <span 
+              className="material-icons"
+              style={{
+                marginTop: '7px'
+              }}
+            >
+              close
+            </span>
+          </a>
         </StyledModalHeader>
         {ENS && loading && 
           <StyledModalTitle>
