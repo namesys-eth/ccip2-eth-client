@@ -24,6 +24,7 @@ import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
 import * as ensContent from '../utils/contenthash'
 import { isMainThread } from 'worker_threads'
+import namehash from '@ensdomains/eth-ens-namehash'
 
 /// Homepage
 const Home: NextPage = () => {
@@ -76,19 +77,11 @@ const Home: NextPage = () => {
   // Get Owner with ethers.js
   async function getOwner(provider: any) {
     let _OwnerLegacy: string = ''
-    if (query.split('.').length == 2) {
-      const contractLegacy = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider)
-      try {
-        _OwnerLegacy = await contractLegacy.ownerOf(tokenIDLegacy)
-      } catch (error) {
-      }  
-    } else {
-      const contractLegacy = new ethers.Contract(constants.ensConfig[0].addressOrName, constants.ensConfig[0].contractInterface, provider)
-      try {
-        _OwnerLegacy = await contractLegacy.owner(tokenIDLegacy)
-      } catch (error) {
-      } 
-    }   
+    const contractLegacy = new ethers.Contract(constants.ensConfig[0].addressOrName, constants.ensConfig[0].contractInterface, provider)
+    try {
+      _OwnerLegacy = await contractLegacy.owner(tokenIDLegacy)
+    } catch (error) {
+    } 
     const contractWrapper = new ethers.Contract(constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName, constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface, provider)
     let _OwnerWrapped: string = ''
     try {
@@ -236,16 +229,8 @@ const Home: NextPage = () => {
   }
 
   /// ENS Domain Search Functionality
-  // Read ENS Legacy Registrar for Owner record of ENS domain via TokenID
-  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
-    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[1].contractInterface,
-    functionName: 'ownerOf',
-    args: [tokenIDLegacy]
-  })
-
   // Read ENS Legacy Registry for Owner record of ENS domain via namehash
-  const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
     address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
     abi: constants.ensConfig[0].contractInterface,
     functionName: 'owner',
@@ -289,24 +274,10 @@ const Home: NextPage = () => {
         setOwner(_OwnerLegacy_.toString())
       }
     } else {
-      if (_OwnerDomain_ && _OwnerDomain_?.toString() !== constants.zeroAddress) {
-        if (_OwnerDomain_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
-          if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
-            setManager(_OwnerWrapped_.toString())
-            setOwner(_OwnerWrapped_.toString())
-          } else if (wrapperError) {
-            setOwner('0x')
-          }
-        } else {
-          setOwner(_OwnerDomain_.toString())
-          setManager(_OwnerDomain_.toString())
-        }
-      } else {
-        setOwner('0x')
-      }
+      setOwner('0x')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, _OwnerLegacy_, tokenIDWrapper, _OwnerWrapped_, _OwnerDomain_])
+  }, [tokenIDLegacy, _OwnerLegacy_, tokenIDWrapper, _OwnerWrapped_])
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
@@ -405,7 +376,7 @@ const Home: NextPage = () => {
         }, 5000)
         setEmpty(false)
       } else {
-        if (!wrapperLoading && !legacyLoading && !domainLoading) {
+        if (!wrapperLoading && !legacyLoading) {
           setTimeout(() => {
             setLoading(false)
           }, 2000)
@@ -434,14 +405,8 @@ const Home: NextPage = () => {
   React.useEffect(() => { 
     if (query) {
       try {
-        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let _token = ethers.BigNumber.from(_labelhash)
-        if (query.split('.').length == 2) {
-          setTokenIDLegacy(_token.toString())
-        } else {
-          setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
-        }
         let __labelhash = ethers.utils.namehash(query)
+        setTokenIDLegacy(__labelhash)
         let __token = ethers.BigNumber.from(__labelhash)
         setTokenIDWrapper(__token.toString())
       } catch (error) {

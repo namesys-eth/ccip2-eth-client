@@ -183,45 +183,37 @@ const Account: NextPage = () => {
   })  // Wagmi Signature hook
 
   /// ENS Domain Config
-    // Read ENS Legacy Registrar for Owner record of ENS domain via TokenID
-    const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
-      address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-      abi: constants.ensConfig[1].contractInterface,
-      functionName: 'ownerOf',
-      args: [tokenIDLegacy]
-    })
-  
-    // Read ENS Legacy Registry for Owner record of ENS domain via namehash
-    const { data: _OwnerDomain_, isLoading: domainLoading, isError: domainError } = useContractRead({
-      address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-      abi: constants.ensConfig[0].contractInterface,
-      functionName: 'owner',
-      args: [tokenIDLegacy]
-    })
-  
-    // Read ENS Wrapper for Owner record of ENS domain
-    const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
-      address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
-      abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
-      functionName: 'ownerOf',
-      args: [tokenIDWrapper]
-    })
-  
-    // Read Recordhash from CCIP2 Resolver
-    const { data: _Recordhash_ } = useContractRead({
-      address: `0x${ccip2Config.addressOrName.slice(2)}`,
-      abi: ccip2Config.contractInterface,
-      functionName: 'getRecordhash',
-      args: [ethers.utils.namehash(query)]
-    })
-  
-    // Read Ownerhash from CCIP2 Resolver
-    const { data: _Ownerhash_ } = useContractRead({
-      address: `0x${ccip2Config.addressOrName.slice(2)}`,
-      abi: ccip2Config.contractInterface,
-      functionName: 'getRecordhash',
-      args: [ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase()]
-    })
+  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
+  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[0].contractInterface,
+    functionName: 'owner',
+    args: [tokenIDLegacy]
+  })
+
+  // Read ENS Wrapper for Owner record of ENS domain
+  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+    address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDWrapper]
+  })
+
+  // Read Recordhash from CCIP2 Resolver
+  const { data: _Recordhash_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.namehash(query)]
+  })
+
+  // Read Ownerhash from CCIP2 Resolver
+  const { data: _Ownerhash_ } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'getRecordhash',
+    args: [ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase()]
+  })
 
   // Sets Ownerhash in CCIP2 Resolver
   const {
@@ -571,19 +563,7 @@ const Account: NextPage = () => {
       } else {
         setManager(_OwnerLegacy_.toString())
       }
-    } else {
-      if (_OwnerDomain_ && _OwnerDomain_?.toString() !== constants.zeroAddress) {
-        if (_OwnerDomain_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
-          if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
-            setManager(_OwnerWrapped_.toString())
-          } else if (wrapperError) {
-            setManager('')
-          }
-        } else {
-          setManager(_OwnerDomain_.toString())
-        }
-      }
-    } 
+    }
     if (activeTab !== 'OWNER') {
       setTimeout(() => {
         setLoading(false)
@@ -591,7 +571,7 @@ const Account: NextPage = () => {
       }, 2000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, _OwnerDomain_, wrapperError])
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, wrapperError])
 
   // Set signature
   React.useEffect(() => {
@@ -704,22 +684,10 @@ const Account: NextPage = () => {
   // Format query to ENS name and get tokenID
   React.useEffect(() => {
     if (query) {
-      try {
-        let _namehash = ethers.utils.namehash(query)
-        let _token = ethers.BigNumber.from(_namehash)
-        setTokenIDWrapper(_token.toString())
-      } catch (error) {
-      }
-      try {
-        let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
-        let _token = ethers.BigNumber.from(_labelhash)
-        if (query.split('.').length == 2) {
-          setTokenIDLegacy(_token.toString())
-        } else {
-          setTokenIDLegacy(ethers.utils.namehash(query)) // Exception
-        }
-      } catch (error) {
-      }
+      let _namehash = ethers.utils.namehash(query)
+      let _token = ethers.BigNumber.from(_namehash)
+      setTokenIDWrapper(_token.toString())
+      setTokenIDLegacy(_namehash)
     }
   }, [query])
 
