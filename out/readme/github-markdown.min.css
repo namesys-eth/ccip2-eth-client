@@ -61,8 +61,9 @@
     -webkit-text-size-adjust: 100%;
     line-height: 1.5;
     color: white;
-    font-family: 'Spotnik';
-    font-size: 13px;
+    font-family: 'SF Mono';
+    font-size: 14px;
+    letter-spacing: -0.5px;
     word-wrap: break-word;
 }
 .markdown-body details {
@@ -92,8 +93,9 @@
 .markdown-body code,
 .markdown-body kbd,
 .markdown-body pre {
-    font-family: monospace, monospace;
-    font-size: 1em;
+    font-family: 'SF Mono';
+    letter-spacing: auto;
+    font-size: 14px;
 }
 .markdown-body hr {
     box-sizing: initial;
@@ -195,17 +197,17 @@
     font-weight: 600;
 }
 .markdown-body h4 {
-    font-size: 16px;
+    font-size: 18px;
 }
 .markdown-body h5 {
-    font-size: 14px;
+    font-size: 16px;
 }
 .markdown-body h5,
 .markdown-body h6 {
     font-weight: 600;
 }
 .markdown-body h6 {
-    font-size: 12px;
+    font-size: 14px;
 }
 .markdown-body p {
     margin-top: 0;
@@ -315,7 +317,7 @@
     padding-left: 40px !important;
 }
 .markdown-body .f6 {
-    font-size: 12px !important;
+    font-size: 14px !important;
 }
 .markdown-body .lh-condensed {
     line-height: 1.25 !important;
@@ -643,7 +645,7 @@
 .markdown-body code {
     padding: 0.2em 0.4em;
     margin: 0;
-    font-size: 85%;
+    font-size: 100%;
     background-color: rgba(76, 86, 95, 0.75);
     border-radius: 3px;
 }
@@ -670,7 +672,7 @@
 .markdown-body pre {
     padding: 16px;
     overflow: auto;
-    font-size: 90%;
+    font-size: 100%;
     line-height: 1.45;
     background-color: #3d3d3d;
     border-radius: 3px;
@@ -689,7 +691,7 @@
 .markdown-body .commit-tease-sha {
     display: inline-block;
     font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
-    font-size: 90%;
+    font-size: 100%;
     color: #728190;
 }
 .markdown-body .full-commit .btn-outline:not(:disabled):hover {
@@ -710,7 +712,8 @@
     padding-right: 10px;
     padding-left: 10px;
     font-family: 'SF Mono';
-    font-size: 12px;
+    font-size: 14px;
+    letter-spacing: auto;
     line-height: 20px;
     color: rgba(180, 202, 223, 0.7);
     text-align: right;
@@ -737,8 +740,9 @@
 }
 .markdown-body .blob-code-inner {
     overflow: visible;
-    font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
-    font-size: 12px;
+    font-family: 'SF Mono';
+    font-size: 14px;
+    letter-spacing: auto;
     color: #4e5760;
     word-wrap: normal;
     white-space: pre;
