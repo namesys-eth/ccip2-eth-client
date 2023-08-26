@@ -32,14 +32,10 @@ body {
   padding: 15px;
 }
 
-h1 {
-  font-family: 'Spotnik';
-  font-weight: 700;
-}
-
-h3 {
-  font-family: 'Spotnik';
-  font-weight: 700;
+h1 h2 h3 h4 h5 h6 {
+  font-family: 'Spotnik' !important;
+  font-weight: 700 !important;
+  color: white !important;
 }
 
 .header {
