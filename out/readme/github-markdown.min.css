@@ -62,8 +62,7 @@
     line-height: 1.5;
     color: white;
     font-family: 'Spotnik';
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 13px;
     word-wrap: break-word;
 }
 .markdown-body details {
@@ -160,7 +159,7 @@
 .markdown-body kbd {
     display: inline-block;
     padding: 3px 5px;
-    font: 11px 'SF Mono';
+    font: 14px 'SF Mono';
     line-height: 10px;
     color: #cdd9e6;
     vertical-align: middle;
@@ -236,8 +235,8 @@
 }
 .markdown-body code,
 .markdown-body pre {
-    font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
-    font-size: 12px;
+    font-family: 'SF Mono';
+    font-size: 14px;
 }
 .markdown-body pre {
     margin-top: 0;
@@ -261,7 +260,7 @@
     border: 0 !important;
 }
 .markdown-body .border-bottom {
-    border-bottom: 1px solid #000000 !important;
+    border-bottom: 1px solid #292929 !important;
 }
 .markdown-body .rounded-1 {
     border-radius: 3px !important;
@@ -270,10 +269,10 @@
     background-color: #fff !important;
 }
 .markdown-body .bg-gray-light {
-    background-color: #000000 !important;
+    background-color: #3d3d3d !important;
 }
 .markdown-body .text-gray-light {
-    color: #858c94 !important;
+    color: #a8b2bc !important;
 }
 .markdown-body .mb-0 {
     margin-bottom: 0 !important;
@@ -325,7 +324,7 @@
     font-weight: 600 !important;
 }
 .markdown-body .pl-c {
-    color: #97a3b0;
+    color: #a6b6c6;
 }
 .markdown-body .pl-c1,
 .markdown-body .pl-s .pl-v {
@@ -391,7 +390,7 @@
 }
 .markdown-body .pl-mb {
     font-weight: 700;
-    color: #626e7b;
+    color: #819bb7;
 }
 .markdown-body .pl-md {
     color: #f1303d;
@@ -417,11 +416,11 @@
     color: #9faebf;
 }
 .markdown-body .pl-sg {
-    color: #5d6164;
+    color: #6c7074;
 }
 .markdown-body .pl-corl {
     text-decoration: underline;
-    color: #34373b;
+    color: #8d97a3;
 }
 .markdown-body .mb-0 {
     margin-bottom: 0 !important;
@@ -485,7 +484,7 @@
 .markdown-body kbd {
     display: inline-block;
     padding: 3px 5px;
-    font: 11px 'SF Mono';
+    font: 14px 'SF Mono';
     line-height: 10px;
     color: #a8c1da;
     vertical-align: middle;
@@ -532,7 +531,7 @@
 }
 .markdown-body blockquote {
     padding: 0 1em;
-    color: #6a737d;
+    color: #8a97a4;
     border-left: 0.25em solid #181818;
 }
 .markdown-body blockquote > :first-child {
@@ -624,16 +623,16 @@
     border: 1px solid #282828;
 }
 .markdown-body table tr {
-    background-color: #262729;
-    border-top: 1px solid #262729;
+    background-color: #585b5f;
+    border-top: 1px solid #61666f;
 }
 .markdown-body table tr:nth-child(2n) {
-    background-color: #202020;
+    background-color: #515151;
 }
 .markdown-body img {
     max-width: 100%;
     box-sizing: initial;
-    background-color: #191919;
+    background-color: #3d3d3d;
 }
 .markdown-body img[align="right"] {
     padding-left: 20px;
@@ -645,7 +644,7 @@
     padding: 0.2em 0.4em;
     margin: 0;
     font-size: 85%;
-    background-color: rgba(83, 95, 107, 0.75);
+    background-color: rgba(76, 86, 95, 0.75);
     border-radius: 3px;
 }
 .markdown-body pre {
@@ -671,7 +670,7 @@
 .markdown-body pre {
     padding: 16px;
     overflow: auto;
-    font-size: 85%;
+    font-size: 90%;
     line-height: 1.45;
     background-color: #3d3d3d;
     border-radius: 3px;
@@ -710,10 +709,10 @@
     min-width: 50px;
     padding-right: 10px;
     padding-left: 10px;
-    font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+    font-family: 'SF Mono';
     font-size: 12px;
     line-height: 20px;
-    color: rgba(181, 207, 232, 0.7);
+    color: rgba(180, 202, 223, 0.7);
     text-align: right;
     white-space: nowrap;
     vertical-align: top;
