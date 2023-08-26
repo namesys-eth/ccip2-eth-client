@@ -18,7 +18,7 @@
 body {
   font-family: 'Spotnik', sans-serif;
   color: white;
-  background: black;
+  background: rgb(45, 45, 45);
   background-size: auto;
   justify-content: center;
   display: inline;

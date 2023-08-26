@@ -160,10 +160,10 @@
 }
 .markdown-body kbd {
     display: inline-block;
-    padding: 3px 5px;
+    padding: 3px 3px;
     font: 14px 'SF Mono';
     line-height: 10px;
-    color: #cdd9e6;
+    color: #b5bbc2;
     vertical-align: middle;
     background-color: #202020;
     border: 1px solid none;
@@ -485,10 +485,10 @@
 }
 .markdown-body kbd {
     display: inline-block;
-    padding: 3px 5px;
+    padding: 3px 3px;
     font: 14px 'SF Mono';
     line-height: 10px;
-    color: #a8c1da;
+    color: #a6bdd3;
     vertical-align: middle;
     background-color: #363636;
     border: 1px solid none;
@@ -622,7 +622,7 @@
 .markdown-body table td,
 .markdown-body table th {
     padding: 6px 13px;
-    border: 1px solid #282828;
+    border: 1px solid #4b4b4b;
 }
 .markdown-body table tr {
     background-color: #585b5f;
@@ -690,7 +690,7 @@
 }
 .markdown-body .commit-tease-sha {
     display: inline-block;
-    font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+    font-family: 'SF Mono';
     font-size: 100%;
     color: #728190;
 }
@@ -743,7 +743,7 @@
     font-family: 'SF Mono';
     font-size: 14px;
     letter-spacing: auto;
-    color: #4e5760;
+    color: #454c53;
     word-wrap: normal;
     white-space: pre;
 }
