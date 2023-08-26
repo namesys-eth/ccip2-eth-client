@@ -18,7 +18,7 @@
 body {
   font-family: 'Spotnik', sans-serif;
   color: white;
-  background: rgb(45, 45, 45);
+  background: rgb(0, 0, 0);
   background-size: auto;
   justify-content: center;
   display: inline;
@@ -27,7 +27,7 @@ body {
 }
 
 .body-inner {
-  background: black;
+  background: rgb(23, 23, 23);
   border-radius: 10px;
   padding: 15px;
 }
