@@ -160,7 +160,7 @@
 }
 .markdown-body kbd {
     display: inline-block;
-    padding: 3px 3px;
+    padding: 1.5px 3px;
     font: 14px 'SF Mono';
     line-height: 10px;
     color: #b5bbc2;
@@ -485,7 +485,7 @@
 }
 .markdown-body kbd {
     display: inline-block;
-    padding: 3px 3px;
+    padding: 1.5px 3px;
     font: 14px 'SF Mono';
     line-height: 10px;
     color: #a6bdd3;
@@ -643,7 +643,7 @@
     padding-right: 20px;
 }
 .markdown-body code {
-    padding: 0.2em 0.2em;
+    padding: 0.1em 0.2em;
     margin: 0;
     font-size: 95%;
     background-color: rgba(76, 86, 95, 0.75);
