@@ -1,7 +1,7 @@
 {
-  "name": "CCIP2.eth",
-  "homepage": "https://ccip2.eth.limo",
-  "version": "0.0.1",
+  "name": "NameSys.eth",
+  "homepage": "https://namesys.eth.limo",
+  "version": "1.0.0",
   "scripts": {
     "postinstall": "patch-package",
     "dev": "next dev",
@@ -33,6 +33,7 @@
     "ethers": "^5.6.1",
     "framer-motion": "^6.3.3",
     "fs": "^0.0.1-security",
+    "ipfs-http-client": "^60.0.1",
     "libp2p-crypto": "^0.21.2",
     "multiformats": "^11.0.2",
     "next": "12.1.6",
