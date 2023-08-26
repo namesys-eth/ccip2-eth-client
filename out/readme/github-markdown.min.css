@@ -180,7 +180,7 @@
 }
 .markdown-body kbd {
     display: inline-block;
-    padding: 0.8px 3px;
+    padding: 0.8px 5px;
     font: 14px 'SF Mono';
     line-height: 10px;
     color: #b5bbc2;
@@ -505,7 +505,7 @@
 }
 .markdown-body kbd {
     display: inline-block;
-    padding: 0.8px 3px;
+    padding: 0.8px 5px;
     font: 14px 'SF Mono';
     line-height: 10px;
     color: #a6bdd3;
@@ -574,7 +574,7 @@
     line-height: 1.25;
 }
 .markdown-body h1 {
-    font-size: 2em;
+    font-size: 2.5em;
 }
 .markdown-body h1,
 .markdown-body h2 {
@@ -582,19 +582,19 @@
     border-bottom: 1px solid #474747;
 }
 .markdown-body h2 {
-    font-size: 1.5em;
+    font-size: 2.0em;
 }
 .markdown-body h3 {
-    font-size: 1.25em;
+    font-size: 1.5em;
 }
 .markdown-body h4 {
-    font-size: 1em;
+    font-size: 1.25em;
 }
 .markdown-body h5 {
-    font-size: 0.875em;
+    font-size: 1.125em;
 }
 .markdown-body h6 {
-    font-size: 0.85em;
+    font-size: 1em;
     color: #8a94a0;
 }
 .markdown-body ol,
@@ -663,9 +663,9 @@
     padding-right: 20px;
 }
 .markdown-body code {
-    padding: 0.05em 0.2em;
+    padding: 0.05em 0.3em;
     margin: 0;
-    font-size: 95%;
+    font-size: 100%;
     background-color: rgba(76, 86, 95, 0.75);
     border-radius: 3px;
 }
