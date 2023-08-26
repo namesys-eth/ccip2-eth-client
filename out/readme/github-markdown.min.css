@@ -122,7 +122,7 @@
     line-height: inherit;
 }
 .markdown-body a {
-    color: #5093e0;
+    color: #4597f5;
     text-decoration: none;
 }
 .markdown-body a:hover {
@@ -262,7 +262,7 @@
     border: 0 !important;
 }
 .markdown-body .border-bottom {
-    border-bottom: 1px solid #292929 !important;
+    border-bottom: 1px solid #474747 !important;
 }
 .markdown-body .rounded-1 {
     border-radius: 3px !important;
@@ -396,19 +396,19 @@
 }
 .markdown-body .pl-md {
     color: #f1303d;
-    background-color: #000000;
+    background-color: #353535;
 }
 .markdown-body .pl-mi1 {
     color: #31bc52;
-    background-color: #000000;
+    background-color: #353535;
 }
 .markdown-body .pl-mc {
     color: #ec650a;
-    background-color: #000000;
+    background-color: #353535;
 }
 .markdown-body .pl-mi2 {
     color: #2e74ff;
-    background-color: #000000;
+    background-color: #353535;
 }
 .markdown-body .pl-mdr {
     font-weight: 700;
@@ -534,7 +534,7 @@
 .markdown-body blockquote {
     padding: 0 1em;
     color: #8a97a4;
-    border-left: 0.25em solid #181818;
+    border-left: 0.25em solid #414141;
 }
 .markdown-body blockquote > :first-child {
     margin-top: 0;
@@ -559,7 +559,7 @@
 .markdown-body h1,
 .markdown-body h2 {
     padding-bottom: 0.3em;
-    border-bottom: 1px solid #121313;
+    border-bottom: 1px solid #474747;
 }
 .markdown-body h2 {
     font-size: 1.5em;
@@ -634,7 +634,7 @@
 .markdown-body img {
     max-width: 100%;
     box-sizing: initial;
-    background-color: #3d3d3d;
+    background-color: #393939;
 }
 .markdown-body img[align="right"] {
     padding-left: 20px;
@@ -643,9 +643,9 @@
     padding-right: 20px;
 }
 .markdown-body code {
-    padding: 0.2em 0.4em;
+    padding: 0.2em 0.2em;
     margin: 0;
-    font-size: 100%;
+    font-size: 95%;
     background-color: rgba(76, 86, 95, 0.75);
     border-radius: 3px;
 }
