@@ -1368,7 +1368,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
 
   // Get records from history on NameSys backend
   // Must get Revision for IPNS update
-  async function getUpdate(_storage: string, _type: string) {
+  async function getUpdate(_storage: string, _type: string, _hashType: string) {
     const request = {
       type: 'read',
       ens: ENS,
@@ -1377,8 +1377,9 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
       recordsValues: 'all',
       chain: chain,
       ownerhash: _storage,
-      hashType: hashType
+      hashType: _hashType
     }
+    console.log(request)
     try{
       await fetch(
         `${SERVER}:${PORT}/read`,
@@ -1402,6 +1403,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
+          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -1423,7 +1425,8 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
   React.useEffect(() => {
     if (finish) {
       getUpdate(
-        recordhash ? recordhash : ownerhash, 
+        recordhash || ownerhash, 
+        recordhash ? 'recordhash' : 'ownerhash',
         recordhash ? 'recordhash' : 'ownerhash'
       )
     }
@@ -2355,7 +2358,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
 
                           { // Refresh buttons
                           !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
-                          && resolver === ccip2Contract && 
+                          && resolver === ccip2Contract && _Wallet_ &&
                           (recordhash || ownerhash) && (
                             <button 
                               className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
@@ -2363,12 +2366,12 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                                 refresh !== '' ? '' : refreshRecord(item.type, resolveCall),
                                 setRefreshedItem(item.type)
                               }}
-                              data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? 'Click to Refresh' : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
+                              data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
                             >
                               <div 
                                 className="material-icons smol"
                                 style={{
-                                  color: ![item.type, '.', '0', '1'].includes(refresh) ? 'cyan' : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orange' : 'cyan')))),
+                                  color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
                                   marginLeft: '-5px'
                                 }}
                               >

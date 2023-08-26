@@ -23,8 +23,6 @@ import BigSearch from '../components/BigSearch'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
 import * as ensContent from '../utils/contenthash'
-import { isMainThread } from 'worker_threads'
-import namehash from '@ensdomains/eth-ens-namehash'
 
 /// Homepage
 const Home: NextPage = () => {
@@ -566,7 +564,7 @@ const Home: NextPage = () => {
               >
                 { 'v' } 
               </span>
-                { '1.0.0' } 
+                { '1.0.1' } 
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -878,7 +876,7 @@ const Home: NextPage = () => {
                 source
               </span>
               <a
-                href="https://github.com/namesys-eth/ccip2-eth-client"
+                href="https://github.com/namesys-eth"
                 className="footer-text"
                 target='_blank'
                 rel="noreferrer"
@@ -898,7 +896,7 @@ const Home: NextPage = () => {
                 info_outline
               </span>
               <a
-                href="https://github.com/namesys-eth/ccip2-eth-resources/blob/main/docs/GUIDE.md"
+                href="readme/readme.htm?src=https://namesys-eth.github.io/ccip2-eth-resources/GUIDE.md"
                 className="footer-text"
                 target='_blank'
                 rel="noreferrer"
