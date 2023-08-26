@@ -18,11 +18,31 @@
 .markdown-body .anchor:focus {
     outline: 0;
 }
-.markdown-body h1 .octicon-link,
-.markdown-body h2 .octicon-link,
-.markdown-body h3 .octicon-link,
-.markdown-body h4 .octicon-link,
-.markdown-body h5 .octicon-link,
+.markdown-body h1 .octicon-link {
+    color: rgb(255, 108, 68);
+    vertical-align: middle;
+    visibility: hidden;
+}
+.markdown-body h2 .octicon-link {
+    color: rgb(255, 134, 107);
+    vertical-align: middle;
+    visibility: hidden;
+}
+.markdown-body h3 .octicon-link {
+    color: rgb(255, 180, 150);
+    vertical-align: middle;
+    visibility: hidden;
+}
+.markdown-body h4 .octicon-link {
+    color: rgb(255, 191, 191);
+    vertical-align: middle;
+    visibility: hidden;
+}
+.markdown-body h5 .octicon-link {
+    color: rgb(255, 230, 230);
+    vertical-align: middle;
+    visibility: hidden;
+}
 .markdown-body h6 .octicon-link {
     color: white;
     vertical-align: middle;
