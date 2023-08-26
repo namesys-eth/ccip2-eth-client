@@ -575,24 +575,24 @@
 }
 .markdown-body h1 {
     font-size: 2.5em;
-    color: rgb(255, 55, 0);
+    color: orangered;
 }
 .markdown-body h1,
 .markdown-body h2 {
     padding-bottom: 0.3em;
     border-bottom: 1px solid #474747;
-    color: rgb(252, 126, 92);
+    color: rgb(255, 78, 29);
 }
 .markdown-body h2 {
     font-size: 2.0em;
 }
 .markdown-body h3 {
     font-size: 1.5em;
-    color: rgb(255, 190, 172);
+    color: rgb(255, 142, 111);
 }
 .markdown-body h4 {
     font-size: 1.25em;
-    color: rgb(255, 216, 216);
+    color: rgb(255, 191, 171);
 }
 .markdown-body h5 {
     font-size: 1.125em;
