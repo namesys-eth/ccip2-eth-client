@@ -575,32 +575,32 @@
 }
 .markdown-body h1 {
     font-size: 2.5em;
-    color: rgb(255, 83, 35);
+    color: orangered;
 }
 .markdown-body h1,
 .markdown-body h2 {
     padding-bottom: 0.3em;
     border-bottom: 1px solid #474747;
-    color: rgb(255, 119, 81);
+    color: rgb(255, 78, 29);
 }
 .markdown-body h2 {
     font-size: 2.0em;
 }
 .markdown-body h3 {
     font-size: 1.5em;
-    color: rgb(255, 133, 100);
+    color: rgb(255, 142, 111);
 }
 .markdown-body h4 {
     font-size: 1.25em;
-    color: rgb(255, 186, 167);
+    color: rgb(255, 191, 171);
 }
 .markdown-body h5 {
     font-size: 1.125em;
-    color: rgb(224, 188, 178);
+    color: rgb(255, 238, 233);
 }
 .markdown-body h6 {
-    font-size: 1em;
-    color: #ecd5d1;
+    font-size: 1.05em;
+    color: #fff6f5;
 }
 .markdown-body ol,
 .markdown-body ul {

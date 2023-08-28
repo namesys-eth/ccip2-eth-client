@@ -16,7 +16,7 @@ import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
 import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
-import { _KEYGEN } from '../utils/keygen'
+import { KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
@@ -934,7 +934,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
         const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
-        const __keypair = await _KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
+        const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
         setKeypairIPNS(__keypair[0])
         setMessage(['IPNS Keypair Generated', ''])
       }
@@ -975,7 +975,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setMessage(['Generating Signer Key', ''])
           const keygen = async () => {
             const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
-            const __keypair = await _KEYGEN(_origin, caip10, sigSigner, saltModalState.modalData)
+            const __keypair = await KEYGEN(_origin, caip10, sigSigner, saltModalState.modalData)
             setKeypairSigner(__keypair[1])
             setIsSigner(true)
             setMessage(['Signer Keypair Generated', ''])
@@ -1272,7 +1272,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
 
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
-  async function writeRevision(revision: Name.Revision, gas: {}) {
+  async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string) {
     const request = {
       ens: ENS,
       owner: _Wallet_,
@@ -1700,8 +1700,9 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                         let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
                         _revision = await Name.increment(_revision_, toPublish)
                       }
+                      setTimestamp(data.response.timestamp)
                       // Write revision to database
-                      await writeRevision(_revision, gas)
+                      await writeRevision(_revision, gas, data.response.timestamp)
                       // Publish IPNS
                       await Name.publish(_revision, w3name.key)
                       // Wrap up
@@ -1711,7 +1712,6 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
                       setLegit(EMPTY_BOOL())
                       setLoading(false)
                       // Update values in the modal to new ones
-                      setTimestamp(data.response.timestamp)
                       let _updatedList = list.map((item) => {
                         if (!['resolver', 'recordhash'].includes(item.type)) {
                           let _queue = Math.round(Date.now()/1000) - latestTimestamp(data.response.timestamp) - waitingPeriod

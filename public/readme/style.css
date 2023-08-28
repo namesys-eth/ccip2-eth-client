@@ -2,17 +2,17 @@
 
 @font-face {
 	font-family: 'Spotnik';
-	src: url('Spotnik.woff2') format('woff2');
+	src: url('../Spotnik.woff2') format('woff2');
 }
 
 @font-face {
 	font-family: 'SF Mono';
-	src: url('SF-Mono.woff2') format('woff2');
+	src: url('../SF-Mono.woff2') format('woff2');
 }
 
 @font-face {
 	font-family: 'Bioliquid';
-	src: url('Bioliquid.woff2') format('woff2');
+	src: url('../Bioliquid.woff2') format('woff2');
 }
 
 body {
