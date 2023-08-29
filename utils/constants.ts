@@ -130,7 +130,7 @@ export const blocked = [
 ]
 // Record types in Preview modal
 export const types = [
-  'recordhash', // On-Chain Record
+  'storage', // On-Chain Record
   'resolver', // Exception: Not a Record type
   'addr',
   'contenthash',
@@ -164,6 +164,7 @@ export function hideOverlay() {
     overlay.style.display = 'none'
   }
 }
+
 // Returns formatted ed25519/IPNS keypair
 export function formatkey(keypair: [string, string]) {
   return '08011240' + keypair[0] + keypair[1] // ed25519 keypair = keypairIPNS
@@ -176,4 +177,80 @@ export function encodeContenthash(contenthash: string) {
     return ensContentHash.encoded
   }
   return ''
+}
+
+// Copy text
+export function copyToClipboard(element: string) {
+  const copyText = document.getElementById(element) as HTMLInputElement
+  copyText.select()
+  copyText.setSelectionRange(0, 99999)
+  
+  navigator.clipboard.writeText(copyText.value).then(() => {
+  }).catch((error) => {
+      console.error('ERROR:', error)
+  })
+}
+
+// Check if image URL resolves
+export function checkImageURL(url: string) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image()
+    img.onload = function() {
+      console.log('Log:', 'Image Loaded Successfully')
+      resolve(true)
+    }
+    img.onerror = function() {
+      console.error('Image Failed to Load')
+      reject(false)
+    }
+    img.src = url
+  })
+}
+
+// Check for empty object
+export function isEmpty(object: any) {
+  for (const key in object) {
+    if (object.hasOwnProperty(key)) {
+      if (object[key] !== '') {
+        return false
+      }
+    }
+  }
+  return true
+}
+
+// Check if value is a valid Name
+export function isName(value: string) {
+  return value.endsWith('.eth') && value.length <= 32 + 4
+}
+
+// Check if value is a valid Addr
+export function isAddr(value: string) {
+  const hexRegex = /^[0-9a-fA-F]+$/
+  return value.startsWith('0x') && value.length === 42 && hexRegex.test(value.split('0x')[1])
+}
+
+// Check if value is a valid Avatar URL
+export function isAvatar(value: string) {
+  const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+  return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
+}
+// Check if value is a valid Contenthash
+export function isContenthash(value: string) {
+  const prefix = value.substring(0, 7)
+  const ipnsRegex = /^[a-z0-9]{62}$/
+  const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
+  const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{56}$/
+  return true
+  /*
+  return (
+    (prefix === 'ipns://') ||
+    (prefix === 'ipfs://')
+  )
+  return (
+    (prefix === 'ipns://' && ipnsRegex.test(value)) || // Check IPNS
+    (prefix === 'ipfs://' && ipfsRegexCID0.test(value)) || // Check IPFS CIDv0
+    (prefix === 'ipfs://' && ipfsRegexCID1.test(value)) // Check IPFS CIDv1
+  )
+  */
 }

@@ -103,18 +103,6 @@ const Account: NextPage = () => {
     trigger: false
   }); // Export modal state
   const recoveredAddress = React.useRef<string>()
-  
-  // Copy text
-  function copyToClipboard(element: string) {
-    const copyText = document.getElementById(element) as HTMLInputElement
-    copyText.select()
-    copyText.setSelectionRange(0, 99999)
-    
-    navigator.clipboard.writeText(copyText.value).then(() => {
-    }).catch((error) => {
-        console.error('ERROR:', error)
-    })
-  }
 
   // Handle Salt modal data return
   const handleSaltModalData = (data: string | undefined) => {
@@ -1662,7 +1650,7 @@ const Account: NextPage = () => {
                     <button 
                       className="button-empty"
                       onClick={() => {
-                        copyToClipboard('export-ipns'),
+                        constants.copyToClipboard('export-ipns'),
                         setColor('lime'),
                         setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
                       }} 
@@ -1725,7 +1713,7 @@ const Account: NextPage = () => {
                     <button 
                       className="button-empty"
                       onClick={() => {
-                        copyToClipboard('export-ccip'),
+                        constants.copyToClipboard('export-ccip'),
                         setColor('lime'),
                         setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
                       }} 
@@ -1788,7 +1776,7 @@ const Account: NextPage = () => {
                     <button 
                       className="button-empty"
                       onClick={() => {
-                        copyToClipboard('export-encoded'),
+                        constants.copyToClipboard('export-encoded'),
                         setColor('lime'),
                         setKeyIPNS('IPNS ENCODED KEY COPIED!')
                       }} 
