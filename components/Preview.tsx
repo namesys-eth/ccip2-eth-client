@@ -101,7 +101,7 @@ function checkImageURL(url: string) {
   return new Promise(function(resolve, reject) {
     var img = new Image()
     img.onload = function() {
-      console.log('Image Loaded Successfully')
+      console.log('Log:', 'Image Loaded Successfully')
       resolve(true)
     }
     img.onerror = function() {
@@ -125,17 +125,22 @@ function isEmpty(object: any) {
 
 async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
   try {
-    const response = await fetch(
+    const _response = await fetch(
       `https://${ipnsKey}.ipfs2.eth.limo/version.json?t=${String(cacheBuster)}`
     );
-    if (!response.ok) {
-      return ''
+    if (!_response.ok) {
+      console.error('Error:', 'Fetch Gone Wrong')
+      return { 
+        '_sequence': ''
+      }
     }
-    const data = await response.json();
+    const data = await _response.json();
     return data
   } catch (error) {
     console.error('Error:', error)
-    throw error
+    return { 
+      '_sequence': ''
+    }
   }
 }
 
@@ -161,9 +166,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
   const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
   const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
-  const [finish, setFinish] = React.useState(false); // Indicates when all records have finished fetching
+  const [conclude, setConclude] = React.useState(false); // Indicates when all records have finished fetching
   const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
   const [resolveCall, setResolveCall] = React.useState<any>(); // Resolver object for querying records
+  const [sync, setSync] = React.useState(false); // Records sync flag
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
   const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
@@ -264,7 +270,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   })  // Wagmi Signature hook
 
   // Initialises internal LIST[] object
-  function setMetadata(_recordhash: string) {
+  function setMetadata(_recordhash: string, _addr: string, _contenthash: string, _avatar: string) {
     let _LIST = [
       {
         key: 0,
@@ -294,9 +300,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 2,
         header: 'Avatar',
         type: 'avatar',
-        value: avatar,
+        value: _avatar,
         editable: resolver === ccip2Contract && queue > 0,
-        active: isAvatar(avatar) && queue > 0,
+        active: isAvatar(_avatar) && queue > 0,
         state: false,
         label: 'Edit',
         help: '<span>Set your <span style="color: cyan">avatar</span></span>',
@@ -306,9 +312,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 3,
         header: 'Address',
         type: 'addr',
-        value: addr,
+        value: _addr,
         editable: resolver === ccip2Contract && queue > 0,
-        active: isAddr(addr) && queue > 0,
+        active: isAddr(_addr) && queue > 0,
         state: false,
         label: 'Edit',
         help: '<span>Set your default <span style="color: cyan">address</span></span>',
@@ -318,16 +324,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         key: 4,
         header: 'Contenthash',
         type: 'contenthash',
-        value: contenthash,
+        value: _contenthash,
         editable: resolver === ccip2Contract && queue > 0,
-        active: isContenthash(contenthash) && queue > 0,
+        active: isContenthash(_contenthash) && queue > 0,
         state: false,
         label: 'Edit',
         help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
         tooltip: 'Set Contenthash'
       }
     ]
-    finishQuery(_LIST) // Assign _LIST
+    concludeGet(_LIST) // Assign _LIST
   }
 
   /// Keys & Signature Definitions
@@ -893,7 +899,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       let namehash = ethers.utils.namehash(ENS)
       setTokenIDLegacy(namehash)
       setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
-      setFinish(true)
+      setConclude(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [browser, ENS])
@@ -1112,12 +1118,27 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Finish query for ENS domain records
-  function finishQuery(data: React.SetStateAction<any[]> | undefined) {
+  function concludeGet(data: React.SetStateAction<any[]> | undefined) {
     if (data) {
-      setList(data)
-      setLoading(false)
+      setPreCache(data)
     }
   }
+
+  // Concludes fetching records
+  React.useEffect(() => {
+    if (sync) {
+      if (recordhash) {
+        setMetadata(recordhash, addr, contenthash, avatar)
+      } else if (ownerhash) {
+        setMetadata(ownerhash, addr, contenthash, avatar)
+      } else {
+        setMetadata('', addr, contenthash, avatar)
+      }
+      setLoading(false)
+      setSync(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sync, recordhash, ownerhash, resolver, addr, contenthash, avatar, hashType])
 
   // Get Contenthash for ENS domain first
   async function getContenthash(resolver: ethers.providers.Resolver) {
@@ -1175,101 +1196,111 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .then(response => {
         if (!response) {
           setAddr('')
+          setSync(true)
         } else {
           setAddr(response)
+          setSync(true)
         }
       })
       .catch(() => {
         setAddr('')
+        setSync(true)
       })
   }
 
-// Get Resolver for ENS domain
-async function getResolver(_history: any) {
-  try {
-    let _Storage = await verifier.quickRecordhash(ENS, ccip2Config, String(_Wallet_))
-    let _IPFS: any 
-    for (var i = 0; i < 5; i++) {
-      _IPFS = await getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
-    }
-    const _response = await provider.getResolver(ENS)
-    if (_response?.address) {
-      setResolver(_response.address)
-      setResolveCall(_response)
-      console.log(Number(_IPFS._sequence))
-      console.log(Number(_history.timestamp.version))
-      if (_response.address === ccip2Contract) {
-        if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
-          setContenthash(_history.contenthash)
-          setAvatar(_history.avatar)
-          setAddr(_history.addr)
+  // Get Resolver for ENS domain
+  async function getResolver(_history: any, _ENS: string) {
+    try {
+      const _response = await provider.getResolver(_ENS)
+      if (_response?.address) {
+        setResolver(_response.address)
+        setResolveCall(_response)
+        if (_response.address === ccip2Contract) {
+          let _Storage = await verifier.quickRecordhash(_ENS, ccip2Config, getOwner())
+          let _IPFS: any 
+          for (var i = 0; i < 2; i++) {
+            _IPFS = await getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
+          }
+          if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
+            setContenthash(_history.contenthash)
+            setAvatar(_history.avatar)
+            setAddr(_history.addr)
+            setSync(true)
+          } else {
+            getContenthash(_response)
+          }
         } else {
-          getContenthash(_response)
+          const _contenthash = await refreshRecord(['contenthash', ''], _response, _ENS, false)
+          setContenthash(_contenthash || '')
+          let _avatar: string
+          _avatar = await refreshRecord(['avatar', ''], _response, _ENS, false)
+          if (!_avatar) {
+            _avatar = await refreshRecord(['text', 'avatar'], _response, _ENS, false)
+          }
+          setAvatar(_avatar || '')
+          const _addr = await refreshRecord(['addr', ''], _response, _ENS, false)
+          setAddr(_addr || '')
+          setSync(true)
         }
-      } else {
-        const _contenthash = await refreshRecord(['contenthash', ''], _response)
-        setContenthash(_contenthash || '')
-        let _avatar: string
-        _avatar = await refreshRecord(['avatar', ''], _response)
-        if (!_avatar) {
-          _avatar = await refreshRecord(['text', 'avatar'], _response)
+      }
+    } catch (error) {
+      console.error('Error in getResolver():', error)
+    }
+  }
+
+  // Re-try empty records
+  async function refreshRecord(_record: string[], _resolver: Resolver, _ENS: string, _trigger: boolean) {
+    if (_trigger) setRefresh(_record[0])
+    try {
+      if (_record[0] === 'addr') {
+        const _response = await provider.resolveName(_ENS)
+        if (_response) {
+          setAddr(_response)
+          if (_trigger) {
+            setRefreshedValue(_response)
+            setRefresh('1')
+          }
+          return _response
         }
-        setAvatar(_avatar || '')
-        const _addr = await refreshRecord(['addr', ''], _response)
-        setAddr(_addr || '')
+      } else if (_record[0] === 'avatar') {
+        const _response = await provider.getAvatar(_ENS)
+        if (_response) {
+          setAvatar(_response)
+          if (_trigger) {
+            setRefreshedValue(_response)
+            setRefresh('1')
+          }
+          return _response
+        }
+      } else if (_record[0] === 'contenthash') {
+        const _response = await _resolver.getContentHash()
+        if (_response) {
+          setContenthash(_response)
+          if (_trigger) {
+            setRefreshedValue(_response)
+            setRefresh('1')
+          }
+          return _response
+        }
+      } else if (_record[0] === 'text') {
+        const _response = await _resolver.getText(_record[1])
+        if (_response) {
+          setAvatar(_response)
+          if (_trigger) {
+            setRefreshedValue(_response)
+            setRefresh('1')
+          }
+          return _response
+        }
       }
+      if (_trigger) setRefresh('0')
+      return ''
+    } catch (error) {
+      console.error(`Error in refreshRecord('${_record}'):`, error)
+      if (_trigger) setRefresh('0')
+      return ''
     }
-  } catch (error) {
-    console.error('Error in getResolver():', error)
   }
-}
-
-// Re-try empty records
-async function refreshRecord(_record: string[], _resolver: Resolver) {
-  setRefresh(_record[0])
-  try {
-    if (_record[0] === 'addr') {
-      const response = await provider.resolveName(ENS)
-      if (response) {
-        setAddr(response)
-        setRefreshedValue(response)
-        setRefresh('1')
-        return response
-      }
-    } else if (_record[0] === 'avatar') {
-      const response = await provider.getAvatar(ENS)
-      if (response) {
-        setAvatar(response)
-        setRefreshedValue(response)
-        setRefresh('1')
-        return response
-      }
-    } else if (_record[0] === 'contenthash') {
-      const response = await _resolver.getContentHash()
-      if (response) {
-        setContenthash(response)
-        setRefreshedValue(response)
-        setRefresh('1')
-        return response
-      }
-    } else if (_record[0] === 'text') {
-      const response = await _resolver.getText(_record[1])
-      if (response) {
-        setAvatar(response)
-        setRefreshedValue(response)
-        setRefresh('1')
-        return response
-      }
-    }
-    setRefresh('0')
-    return ''
-  } catch (error) {
-    console.error(`Error in refreshRecord('${_record}'):`, error)
-    setRefresh('0')
-    return ''
-  }
-}
-
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
   async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string) {
@@ -1399,14 +1430,13 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
     const request = {
       type: 'read',
       ens: ENS,
-      owner: _Wallet_,
+      owner: getOwner(),
       recordsTypes: 'all',
       recordsValues: 'all',
       chain: chain,
-      ownerhash: _storage,
+      storage: _storage,
       hashType: _hashType
     }
-    console.log(request)
     try{
       await fetch(
         `${SERVER}:${PORT}/read`,
@@ -1431,7 +1461,6 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
-          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -1451,7 +1480,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
 
   // Triggers fetching history from NameSys backend
   React.useEffect(() => {
-    if (finish) {
+    if (conclude) {
       getUpdate(
         recordhash || ownerhash, 
         recordhash ? 'recordhash' : 'ownerhash',
@@ -1459,35 +1488,32 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
       )
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finish, ownerhash, recordhash])
+  }, [conclude, ownerhash, recordhash])
 
   // Triggers fetching resolver and records
   React.useEffect(() => {
-    if (queue) {
-      getResolver(history)
+    if (queue && ENS) {
+      getResolver(history, ENS)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue])
+  }, [history, queue, ENS])
 
   // Triggers setting metadata
   React.useEffect(() => {
     if (history && queue && resolver) {
       if (recordhash) {
-        setMetadata(recordhash)
         if (recordhash.startsWith('https://')) {
           setHashType('gateway')
         } else {
           setHashType('recordhash')
         }
       } else if (ownerhash) {
-        setMetadata(ownerhash)
         if (ownerhash.startsWith('https://')) {
           setHashType('gateway')
         } else {
           setHashType('ownerhash')
         }
       } else {
-        setMetadata('')
         setHashType('storage')
       }
     }
@@ -2023,7 +2049,7 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
             </span>
           </StyledModalTitle>
         }
-        {loading && 
+        {ENS && loading && 
           <StyledModalBody>
             <div
               className='flex-column'
@@ -2095,445 +2121,445 @@ async function refreshRecord(_record: string[], _resolver: Resolver) {
             </div>
           </StyledModalBody>
         }
-        {list.length > 0 && !loading && 
+        {ENS && list.length > 0 && !loading && 
           <StyledModalBody>
-          <div
-            className='flex-column'
-          >
             <div
-              style={{
-                marginBottom: '15px',
-                marginTop: '-15px'
-              }}
-            >
-              <span
-                style={{
-                  color: 'white',
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  fontFamily: 'SF Mono'
-                }}
-              >
-                {ENS.split('.eth')[0]}
-              </span>
-              <span 
-                style={{ 
-                  fontFamily: 'SF Mono',
-                  fontSize: '15px', 
-                  color: 'cyan'
-                }}
-              >
-                .
-              </span>
-              <span 
-                style={{ 
-                  fontFamily: 'Spotnik',
-                  fontSize: '11px', 
-                  color: 'cyan',
-                  fontWeight: '700',
-                  letterSpacing: '0px',
-                  marginTop: '13px'
-                }}
-              >
-                ETH
-              </span>
-            </div>
-            <ul
-              style={{
-                listStyle: 'none',
-                color: 'white',
-                marginLeft: !isMobile ? '-5%' : '0'
-              }}
+              className='flex-column'
             >
               <div
-                className='flex-column'
                 style={{
-                  paddingBottom: !isMobile ? '15px' : '5px',
+                  marginBottom: '15px',
+                  marginTop: '-15px'
                 }}
               >
-                {list.map((item) => (
-                  <li
-                    key={item.key}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      width: !isMobile ? '500px' : '480px',
-                      maxWidth: !isMobile ? '95%' : '85%',
-                      paddingLeft: '5px',
-                      paddingRight: '5px'
-                    }}
-                  >
-                    <div id="modal-inner">
-                      <Help
-                        color={ color }
-                        icon={ icon }
-                        onClose={() => setHelpModal(false)}
-                        show={helpModal}
-                      >
-                        { help }
-                      </Help>
-                      <Success
-                        color={ color }
-                        icon={ icon }
-                        onClose={() => setSuccessModal(false)}
-                        show={successModal}
-                        handleTrigger={handleSuccessTrigger}
-                        handleModalData={handleSuccessModalData}
-                      >
-                        { success }
-                      </Success>
-                    </div>
-                    <div
+                <span
+                  style={{
+                    color: 'white',
+                    fontSize: '20px',
+                    fontWeight: '700',
+                    fontFamily: 'SF Mono'
+                  }}
+                >
+                  {ENS.split('.eth')[0]}
+                </span>
+                <span 
+                  style={{ 
+                    fontFamily: 'SF Mono',
+                    fontSize: '15px', 
+                    color: 'cyan'
+                  }}
+                >
+                  .
+                </span>
+                <span 
+                  style={{ 
+                    fontFamily: 'Spotnik',
+                    fontSize: '11px', 
+                    color: 'cyan',
+                    fontWeight: '700',
+                    letterSpacing: '0px',
+                    marginTop: '13px'
+                  }}
+                >
+                  ETH
+                </span>
+              </div>
+              <ul
+                style={{
+                  listStyle: 'none',
+                  color: 'white',
+                  marginLeft: !isMobile ? '-5%' : '0'
+                }}
+              >
+                <div
+                  className='flex-column'
+                  style={{
+                    paddingBottom: !isMobile ? '15px' : '5px',
+                  }}
+                >
+                  {list.map((item) => (
+                    <li
+                      key={item.key}
                       style={{
                         display: 'flex',
-                        alignItems: 'flex-start',
-                        flexDirection: 'column'
+                        flexDirection: 'column',
+                        width: !isMobile ? '500px' : '480px',
+                        maxWidth: !isMobile ? '95%' : '85%',
+                        paddingLeft: '5px',
+                        paddingRight: '5px'
                       }}
                     >
-                      <div 
-                        style={{                      
-                          marginBottom: '10px',
+                      <div id="modal-inner">
+                        <Help
+                          color={ color }
+                          icon={ icon }
+                          onClose={() => setHelpModal(false)}
+                          show={helpModal}
+                        >
+                          { help }
+                        </Help>
+                        <Success
+                          color={ color }
+                          icon={ icon }
+                          onClose={() => setSuccessModal(false)}
+                          show={successModal}
+                          handleTrigger={handleSuccessTrigger}
+                          handleModalData={handleSuccessModalData}
+                        >
+                          { success }
+                        </Success>
+                      </div>
+                      <div
+                        style={{
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          width: !isMobile ? '100%' : '90%'
+                          alignItems: 'flex-start',
+                          flexDirection: 'column'
                         }}
                       >
-                        <span 
-                          style={{ 
-                            fontFamily: 'Spotnik',
-                            fontWeight: '700',
-                            fontSize: '15px',
-                            color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
-                            marginRight: '15px'
+                        <div 
+                          style={{                      
+                            marginBottom: '10px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            width: !isMobile ? '100%' : '90%'
                           }}
                         >
-                          { // Label Recordhash/Ownerhash
-                          item.type === 'recordhash' && (
-                            <span>
-                              { hashType }
-                            </span>
-                          )}
-                          { // Label+
-                          item.type !== 'recordhash' && (
-                            <span>
-                              { item.header }
-                            </span>
-                          )}
-                          { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                          ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon('gpp_good'),
-                                setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> is Set</span>`)
-                              }}
-                              data-tooltip={ `Ready For Off-Chain Use With ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}` }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: item.type === 'resolver' ? 'lime' : 'cyan'
+                          <span 
+                            style={{ 
+                              fontFamily: 'Spotnik',
+                              fontWeight: '700',
+                              fontSize: '15px',
+                              color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
+                              marginRight: '15px'
+                            }}
+                          >
+                            { // Label Recordhash/Ownerhash
+                            item.type === 'recordhash' && (
+                              <span>
+                                { hashType }
+                              </span>
+                            )}
+                            { // Label+
+                            item.type !== 'recordhash' && (
+                              <span>
+                                { item.header }
+                              </span>
+                            )}
+                            { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
+                            ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon('gpp_good'),
+                                  setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
+                                  setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> is Set</span>`)
                                 }}
+                                data-tooltip={ `Ready For Off-Chain Use With ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}` }
                               >
-                                gpp_good
-                              </div>
-                            </button>
-                          )}
-                          { // Set Badge if Resolver is migrated and Recordhash is set
-                          ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && recordhash && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon('gpp_good'),
-                                setColor('lime'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span>Domain-specific <span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> is Set<span>`)
-                              }}
-                              data-tooltip={ `Ready For Off-Chain Use With ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}` }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: 'lime',
-                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: item.type === 'resolver' ? 'lime' : 'cyan'
+                                  }}
+                                >
+                                  gpp_good
+                                </div>
+                              </button>
+                            )}
+                            { // Set Badge if Resolver is migrated and Recordhash is set
+                            ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && recordhash && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon('gpp_good'),
+                                  setColor('lime'),
+                                  setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span>Domain-specific <span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> is Set<span>`)
                                 }}
+                                data-tooltip={ `Ready For Off-Chain Use With ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}` }
                               >
-                                gpp_good
-                              </div>
-                            </button>
-                          )}
-                          { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash or Gateway is set
-                          ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
-                                setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span style="color: cyan">Storage</span> <span style="color: orange">not Set</span>`)
-                              }}
-                              data-tooltip={ 'Resolver Migrated But Storage Not Set' }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: item.type === 'resolver' ? 'orange' : 'orangered',
-                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: 'lime',
+                                    marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                  }}
+                                >
+                                  gpp_good
+                                </div>
+                              </button>
+                            )}
+                            { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash or Gateway is set
+                            ['resolver', 'recordhash'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
+                                  setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
+                                  setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span style="color: cyan">Storage</span> <span style="color: orange">not Set</span>`)
                                 }}
+                                data-tooltip={ 'Resolver Migrated But Storage Not Set' }
                               >
-                                { item.type === 'resolver' ? 'gpp_good' : 'cancel' }
-                              </div>
-                            </button>
-                          )}
-                          { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                          ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
-                                setColor('orangered'),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Storage</span> <span style="color: orange">not Set</span></span>')
-                              }}
-                              data-tooltip={ 'Resolver Not Migrated And Storage Not Set' }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: 'orangered',
-                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: item.type === 'resolver' ? 'orange' : 'orangered',
+                                    marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                  }}
+                                >
+                                  { item.type === 'resolver' ? 'gpp_good' : 'cancel' }
+                                </div>
+                              </button>
+                            )}
+                            { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
+                            ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
+                                  setColor('orangered'),
+                                  setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Storage</span> <span style="color: orange">not Set</span></span>')
                                 }}
+                                data-tooltip={ 'Resolver Not Migrated And Storage Not Set' }
                               >
-                                { item.type === 'resolver' ? 'gpp_bad' : 'cancel' }
-                              </div>
-                            </button>
-                          )}
-                          { // Resolver is not migrated but Recordhash has been set in the past
-                          ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                                setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : (ownerhash && managers.includes(_Wallet_ || '0') ? 'cyan' : 'cyan'))),
-                                setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set</span></span>`))
-                              }}
-                              data-tooltip={ recordhash ? `Resolver not Migrated But ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} is Set` : `Resolver not Migrated But ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} is Set` }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'cyan'),
-                                  marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: 'orangered',
+                                    marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                  }}
+                                >
+                                  { item.type === 'resolver' ? 'gpp_bad' : 'cancel' }
+                                </div>
+                              </button>
+                            )}
+                            { // Resolver is not migrated but Recordhash has been set in the past
+                            ['resolver', 'recordhash'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
+                                  setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : (ownerhash && managers.includes(_Wallet_ || '0') ? 'cyan' : 'cyan'))),
+                                  setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set</span></span>`))
                                 }}
+                                data-tooltip={ recordhash ? `Resolver not Migrated But ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} is Set` : `Resolver not Migrated But ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} is Set` }
                               >
-                                { item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe' }
-                              </div>
-                            </button>
-                          )}
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'cyan'),
+                                    marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                  }}
+                                >
+                                  { item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe' }
+                                </div>
+                              </button>
+                            )}
 
-                          { // Help icons
-                          item.type !== 'resolver' && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon('info'),
-                                setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
-                                setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
-                              }}
-                              data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me' }
-                            >
+                            { // Help icons
+                            item.type !== 'resolver' && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon('info'),
+                                  setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
+                                  setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
+                                }}
+                                data-tooltip={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me' }
+                              >
+                                <div 
+                                  className="material-icons smol"
+                                  style={{ 
+                                    color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
+                                    marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
+                                  }}
+                                >
+                                  info_outline 
+                                </div>
+                              </button>
+                            )}    
+
+                            { // Countdown
+                            !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
+                            && resolver === ccip2Contract && 
+                            (recordhash || ownerhash) && (
+                              <button 
+                                className="button-tiny"
+                                onClick={() => { 
+                                  setHelpModal(true),
+                                  setIcon('timer'),
+                                  setColor(queue < 0 ? 'orange' : 'lime'),
+                                  setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
+                                }}
+                                data-tooltip={ 
+                                  queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
+                                }
+                              >
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: queue < 0 ? 'orange' : 'lime',
+                                    marginLeft: '-5px'
+                                  }}
+                                >
+                                  timer
+                                </div>
+                              </button>
+                            )}
+
+                            { // Refresh buttons
+                            !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
+                            && resolver === ccip2Contract && _Wallet_ &&
+                            (recordhash || ownerhash) && (
+                              <button 
+                                className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
+                                onClick={() => { 
+                                  refresh !== '' ? '' : refreshRecord(item.type, resolveCall, ENS, true),
+                                  setRefreshedItem(item.type)
+                                }}
+                                data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
+                              >
+                                <div 
+                                  className="material-icons smol"
+                                  style={{
+                                    color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
+                                    marginLeft: '-5px'
+                                  }}
+                                >
+                                  sync
+                                </div>
+                              </button>
+                            )}
+
+                            { // Updated State marker
+                            item.state && (
                               <div 
                                 className="material-icons smol"
                                 style={{ 
-                                  color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
-                                  marginLeft: item.type === 'recordhash' ? '-5px' : '5px'
-                                }}
-                              >
-                                info_outline 
-                              </div>
-                            </button>
-                          )}    
-
-                          { // Countdown
-                          !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
-                          && resolver === ccip2Contract && 
-                          (recordhash || ownerhash) && (
-                            <button 
-                              className="button-tiny"
-                              onClick={() => { 
-                                setHelpModal(true),
-                                setIcon('timer'),
-                                setColor(queue < 0 ? 'orange' : 'lime'),
-                                setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
-                              }}
-                              data-tooltip={ 
-                                queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
-                              }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: queue < 0 ? 'orange' : 'lime',
+                                  color: crash && sustain ? 'orangered' : 'lime',
                                   marginLeft: '-5px'
                                 }}
                               >
-                                timer
+                                { crash && sustain ? 'cancel' : 'task_alt' }
                               </div>
-                            </button>
-                          )}
-
-                          { // Refresh buttons
-                          !['resolver', 'recordhash'].includes(item.type) && !constants.blocked.includes(item.type) 
-                          && resolver === ccip2Contract && _Wallet_ &&
-                          (recordhash || ownerhash) && (
-                            <button 
-                              className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
-                              onClick={() => { 
-                                refresh !== '' ? '' : refreshRecord(item.type, resolveCall),
-                                setRefreshedItem(item.type)
-                              }}
-                              data-tooltip={ ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh')))) }
-                            >
-                              <div 
-                                className="material-icons smol"
-                                style={{
-                                  color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
-                                  marginLeft: '-5px'
-                                }}
-                              >
-                                sync
-                              </div>
-                            </button>
-                          )}
-
-                          { // Updated State marker
-                          item.state && (
-                            <div 
-                              className="material-icons smol"
-                              style={{ 
-                                color: crash && sustain ? 'orangered' : 'lime',
-                                marginLeft: '-5px'
-                              }}
-                            >
-                              { crash && sustain ? 'cancel' : 'task_alt' }
-                            </div>
-                          )}
-                        </span>
-                        <button
-                          className="button"
-                          hidden={
-                            !['resolver', 'recordhash'].includes(item.type) && states.length > 1
-                          }
-                          disabled={
-                            constants.blocked.includes(item.type) ||
-                            !list[item.key].active ||
-                            !legit[item.type] ||
-                            item.state ||
-                            !_Wallet_ ||
-                            !managers.includes(String(_Wallet_)) ||
-                            (!['resolver', 'recordhash'].includes(item.type) && newValues === EMPTY_STRING())
-                          }
-                          style={{
-                            alignSelf: 'flex-end',
-                            height: '25px',
-                            width: 'auto',
-                            marginTop: '-3px',
-                          }}
-                          onClick={() => { 
-                            setTrigger(item.type),
-                            setSafeTrigger('1'),
-                            ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
-                            ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update edited keys
-                          }}
-                          data-tooltip={ item.tooltip }
-                        >
-                          <div 
-                            className="flex-sans-direction"
+                            )}
+                          </span>
+                          <button
+                            className="button"
+                            hidden={
+                              !['resolver', 'recordhash'].includes(item.type) && states.length > 1
+                            }
+                            disabled={
+                              constants.blocked.includes(item.type) ||
+                              !list[item.key].active ||
+                              !legit[item.type] ||
+                              item.state ||
+                              !_Wallet_ ||
+                              !managers.includes(String(_Wallet_)) ||
+                              (!['resolver', 'recordhash'].includes(item.type) && newValues === EMPTY_STRING())
+                            }
                             style={{
-                              fontSize: '13px'
+                              alignSelf: 'flex-end',
+                              height: '25px',
+                              width: 'auto',
+                              marginTop: '-3px',
                             }}
+                            onClick={() => { 
+                              setTrigger(item.type),
+                              setSafeTrigger('1'),
+                              ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
+                              ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update edited keys
+                            }}
+                            data-tooltip={ item.tooltip }
                           >
-                              {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
-                          </div>
-                        </button>
+                            <div 
+                              className="flex-sans-direction"
+                              style={{
+                                fontSize: '13px'
+                              }}
+                            >
+                                {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
+                            </div>
+                          </button>
+                        </div>
+                        <input 
+                          className={ !['resolver', 'recordhash'].includes(item.type) ? 'inputextra' : 'inputextra_' }
+                          id={ item.key }
+                          key={ item.key }
+                          placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
+                          type='text'
+                          disabled={ 
+                            !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
+                          }
+                          style={{ 
+                            fontFamily: 'SF Mono',
+                            fontWeight: '400',
+                            fontSize: '14px',
+                            width: '100%',
+                            wordWrap: 'break-word',
+                            textAlign: 'left',
+                            marginBottom: '-5px',
+                            color: !legit[item.type] ? 'white' : 'lightgreen',
+                            cursor: 'copy'
+                          }}
+                          onChange={(e) => {
+                            setValues(item.type, e.target.value)
+                          }}
+                        />
                       </div>
-                      <input 
-                        className={ !['resolver', 'recordhash'].includes(item.type) ? 'inputextra' : 'inputextra_' }
-                        id={ item.key }
-                        key={ item.key }
-                        placeholder={ constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value }
-                        type='text'
-                        disabled={ 
-                          !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
-                        }
-                        style={{ 
-                          fontFamily: 'SF Mono',
-                          fontWeight: '400',
-                          fontSize: '14px',
-                          width: '100%',
-                          wordWrap: 'break-word',
-                          textAlign: 'left',
-                          marginBottom: '-5px',
-                          color: !legit[item.type] ? 'white' : 'lightgreen',
-                          cursor: 'copy'
-                        }}
-                        onChange={(e) => {
-                          setValues(item.type, e.target.value)
-                        }}
-                      />
-                    </div>
-                    <hr style={{ marginTop: '5px' }}></hr>
-                  </li>
-                ))}
-              </div>
-            </ul>
-            {states.length > 1 && (
-              <div
-                style={{
-                  marginTop: '-10px',
-                  marginBottom: '40px'
-                }}
-              >
-                <button
-                  className="button flex-column"
-                  hidden={
-                    states.length < 2
-                  }
-                  disabled={
-                    !_Wallet_ ||
-                    !managers.includes(String(_Wallet_)) ||
-                    (newValues === EMPTY_STRING())
-                  }
+                      <hr style={{ marginTop: '5px' }}></hr>
+                    </li>
+                  ))}
+                </div>
+              </ul>
+              {states.length > 1 && (
+                <div
                   style={{
-                    alignSelf: 'flex-end',
-                    height: '25px',
-                    width: 'auto',
-                    marginTop: '-3px',
+                    marginTop: '-10px',
+                    marginBottom: '40px'
                   }}
-                  onClick={() => { 
-                    setWrite(true)
-                    setTrigger('records'),
-                    setSafeTrigger('1'),
-                    setWrite(true)
-                  }}
-                  data-tooltip={ 'Set Multiple Records in One Click' }
                 >
-                  <div 
-                    className="flex-sans-direction"
+                  <button
+                    className="button flex-column"
+                    hidden={
+                      states.length < 2
+                    }
+                    disabled={
+                      !_Wallet_ ||
+                      !managers.includes(String(_Wallet_)) ||
+                      (newValues === EMPTY_STRING())
+                    }
                     style={{
-                      fontSize: '15px'
+                      alignSelf: 'flex-end',
+                      height: '25px',
+                      width: 'auto',
+                      marginTop: '-3px',
                     }}
+                    onClick={() => { 
+                      setWrite(true)
+                      setTrigger('records'),
+                      setSafeTrigger('1'),
+                      setWrite(true)
+                    }}
+                    data-tooltip={ 'Set Multiple Records in One Click' }
                   >
-                      {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
-                  </div>
-                </button>
-              </div>
-            )}
-          </div>
+                    <div 
+                      className="flex-sans-direction"
+                      style={{
+                        fontSize: '15px'
+                      }}
+                    >
+                        {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </StyledModalBody>
         }
         <div id="modal-inner">
