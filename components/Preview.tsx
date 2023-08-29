@@ -1117,7 +1117,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     onClose()
   }
 
-  // Finish query for ENS domain records
+  // Set Records to show for ENS domain
   function concludeGet(data: React.SetStateAction<any[]> | undefined) {
     if (data) {
       setPreCache(data)
@@ -1135,7 +1135,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setMetadata('', addr, contenthash, avatar)
       }
       setLoading(false)
-      setSync(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sync, recordhash, ownerhash, resolver, addr, contenthash, avatar, hashType])
@@ -1492,15 +1491,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Triggers fetching resolver and records
   React.useEffect(() => {
-    if (queue && ENS) {
+    if (queue && ENS && !sync) {
       getResolver(history, ENS)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue, ENS])
+  }, [history, queue, ENS, sync])
 
   // Triggers setting metadata
   React.useEffect(() => {
-    if (history && queue && resolver) {
+    if (history && queue && resolver && !sync) {
       if (recordhash) {
         if (recordhash.startsWith('https://')) {
           setHashType('gateway')
@@ -1518,7 +1517,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue, resolver, recordhash, ownerhash])
+  }, [history, queue, resolver, recordhash, ownerhash, sync])
 
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
