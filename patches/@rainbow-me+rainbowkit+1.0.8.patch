@@ -1,5 +1,5 @@
 diff --git a/node_modules/@rainbow-me/rainbowkit/dist/chunk-J4YCI7VT.js b/node_modules/@rainbow-me/rainbowkit/dist/chunk-J4YCI7VT.js
-index c79eeb4..9e0babc 100644
+index c79eeb4..f37abe7 100644
 --- a/node_modules/@rainbow-me/rainbowkit/dist/chunk-J4YCI7VT.js
 +++ b/node_modules/@rainbow-me/rainbowkit/dist/chunk-J4YCI7VT.js
 @@ -1064,7 +1064,7 @@ function useWalletConnectors() {
@@ -142,9 +142,12 @@ index c79eeb4..9e0babc 100644
      display: "flex",
      flexDirection: "column",
      gap: "32",
-@@ -2516,11 +2518,11 @@ function ConnectModalIntro({
+@@ -2514,13 +2516,13 @@ function ConnectModalIntro({
+     gap: "4"
+   }, /* @__PURE__ */ React39.createElement(Text, {
      color: "modalText",
-     size: "14",
+-    size: "14",
++    size: "16",
      weight: "bold"
 -  }, "A Home for your Digital Assets"), /* @__PURE__ */ React39.createElement(Text, {
 +  }, "ENS Off-Chain Records Manager"), /* @__PURE__ */ React39.createElement(Text, {
@@ -225,7 +228,7 @@ index c79eeb4..9e0babc 100644
      onClick: () => {
        onClose();
        showWalletConnectModal();
-     } 
+     }
    } : hasQrCode ? {
 -    description: `Don\u2019t have ${name}?`,
 +    description: `Get the ${name} app`,

@@ -30,7 +30,7 @@ import Confirm from '../components/Confirm'
 import Export from '../components/Export'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
-import { _KEYGEN } from '../utils/keygen'
+import { KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
@@ -353,7 +353,7 @@ const Account: NextPage = () => {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-        const __keypair = await _KEYGEN(_origin, _caip10, sigIPNS, saltModalState.modalData)
+        const __keypair = await KEYGEN(_origin, _caip10, sigIPNS, saltModalState.modalData)
         setKeypairIPNS(__keypair[0])
       }
       keygen()
@@ -395,7 +395,7 @@ const Account: NextPage = () => {
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
         if (choice === 'export_Signer') {
           // Sign S2 if export is requested
-          const __keypair = await _KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
+          const __keypair = await KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
           setKeypairSigner(__keypair[1])
         } else if (choice === 'ownerhash_Signer') {
           // Don't sign S2
@@ -476,6 +476,7 @@ const Account: NextPage = () => {
         setLength(_Cache.length)
         if (_Cache.length === 0) {
           setEmpty(true)
+          setLoading(false)
         } else {
           const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
           const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase())
