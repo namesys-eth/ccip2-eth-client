@@ -2471,7 +2471,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             onClick={() => { 
                               setTrigger(item.type),
                               setSafeTrigger('1'),
-                              ['resolver', 'recordhash'].includes(item.type) ? setOptions(true) : setWrite(true), // Trigger write for Records
+                              ['resolver', 'recordhash'].includes(item.type) ? (setOptions(true), setWrite(false)) : setWrite(true), // Trigger write for Records
                               ['resolver', 'recordhash'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update edited keys
                             }}
                             data-tooltip={ item.tooltip }

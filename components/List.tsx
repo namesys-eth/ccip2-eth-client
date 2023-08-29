@@ -228,7 +228,6 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                 />
               </a>
               <a 
-                style={{ marginRight: '15px' }}
                 href={`https://ens.vision/name/${item.name}`} 
                 target='_blank'            
                 rel="noreferrer"      
@@ -237,6 +236,18 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                   className="icon-vision-small"
                   alt="ensvision-icon"
                   src="ens-vision.png"
+                />
+              </a>
+              <a 
+                style={{ marginRight: '15px' }}
+                href={`https://godid.io/items/${item.name.toLowerCase()}.eth`} 
+                target='_blank'            
+                rel="noreferrer"      
+              >
+                <img
+                  className="icon-godid-small"
+                  alt="godid-icon"
+                  src="godid.svg"
                 />
               </a>
               <button

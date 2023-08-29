@@ -66,7 +66,7 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
                 fontSize: '66px'
               }}
             >
-              import_export
+              accessible_forward
             </div>
             <div
               style={{

@@ -242,6 +242,15 @@ input:disabled {
   margin-left: 13px;
 }
 
+.icon-godid-small {
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-bottom: -6px;
+  margin-left: 13px;
+}
+
 .icon {
   align-items: center;
   justify-content: center;
