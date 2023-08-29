@@ -791,7 +791,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             _IPFS = await getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
           }
           setHashIPFS(_history.version.split('/')[2])
-          if (Number(_IPFS._sequence) === Number(_history.timestamp.version) - 1) {
+          /// @dev : REDUNDANT [!!!]
+          if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
             setContenthash(_history.contenthash)
             setAvatar(_history.avatar)
             setAddr(_history.addr)
