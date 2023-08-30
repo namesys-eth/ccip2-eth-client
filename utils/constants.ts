@@ -184,22 +184,22 @@ export function copyToClipboard(element: string) {
   const copyText = document.getElementById(element) as HTMLInputElement
   copyText.select()
   copyText.setSelectionRange(0, 99999)
-  
+
   navigator.clipboard.writeText(copyText.value).then(() => {
   }).catch((error) => {
-      console.error('ERROR:', error)
+    console.error('ERROR:', error)
   })
 }
 
 // Check if image URL resolves
 export function checkImageURL(url: string) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var img = new Image()
-    img.onload = function() {
+    img.onload = function () {
       console.log('Log:', 'Image Loaded Successfully')
       resolve(true)
     }
-    img.onerror = function() {
+    img.onerror = function () {
       console.error('Image Failed to Load')
       reject(false)
     }
@@ -253,4 +253,71 @@ export function isContenthash(value: string) {
     (prefix === 'ipfs://' && ipfsRegexCID1.test(value)) // Check IPFS CIDv1
   )
   */
+}
+
+// Get latest timestamp from all records
+export function latestTimestamp(list: string[]) {
+  var _Timestamps: number[] = []
+  for (const key in list) {
+    if (list.hasOwnProperty(key) && list[key] !== '' && list[key]) {
+      _Timestamps.push(Number(list[key]))
+    }
+  }
+  return Math.max(..._Timestamps)
+}
+
+/// Init 
+// Types object with empty strings
+export function EMPTY_STRING() {
+  const EMPTY_STRING = {}
+  for (const key of types) {
+    if (!['resolver', 'storage'].includes(key)) {
+      EMPTY_STRING[key] = ''
+    }
+  }
+  return EMPTY_STRING
+}
+
+// Types object with empty bools
+export function EMPTY_BOOL() {
+  const EMPTY_BOOL = {}
+  for (const key of types) {
+    EMPTY_BOOL[key] = ['resolver', 'storage', 'revision'].includes(key) ? true : false
+  }
+  return EMPTY_BOOL
+}
+
+// History object with empty strings
+export const EMPTY_HISTORY = {
+  addr: '',
+  contenthash: '',
+  avatar: '',
+  revision: '',
+  version: '',
+  type: '',
+  timestamp: { ...EMPTY_STRING() },
+  queue: 1,
+  ownerstamp: []
+}
+
+/// Library
+export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
+  try {
+    const _response = await fetch(
+      `https://${ipnsKey}.ipfs2.eth.limo/version.json?t=${String(cacheBuster)}`
+    );
+    if (!_response.ok) {
+      console.error('Error:', 'Fetch Gone Wrong')
+      return {
+        '_sequence': ''
+      }
+    }
+    const data = await _response.json();
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    return {
+      '_sequence': ''
+    }
+  }
 }

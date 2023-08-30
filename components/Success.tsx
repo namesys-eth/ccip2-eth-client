@@ -31,7 +31,7 @@ const Success: React.FC<ModalProps> = ({ icon, color, show, onClose, children, h
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
               style={{
                 margin: '4px'
@@ -41,9 +41,9 @@ const Success: React.FC<ModalProps> = ({ icon, color, show, onClose, children, h
             </span>
           </a>
         </StyledModalHeader>
-        {icon && 
+        {icon &&
           <StyledModalTitle>
-            <span 
+            <span
               className="material-icons"
               style={{
                 marginTop: '4px',
@@ -51,38 +51,38 @@ const Success: React.FC<ModalProps> = ({ icon, color, show, onClose, children, h
                 color: color
               }}
             >
-              { icon }
+              {icon}
             </span>
           </StyledModalTitle>}
         <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
         <StyledModalBody>
           <div
-              className="flex-row"
+            className="flex-row"
+            style={{
+              marginLeft: '25px'
+            }}
+          >
+            <button
+              className="button-option"
               style={{
-                marginLeft: '25px'
+                height: '35px',
+                width: '105px'
               }}
+              onClick={handleCloseClick}
+              data-tooltip='Continue'
             >
-              <button 
-                className="button-option"
+              <div
+                className="flex-row"
                 style={{
-                  height: '35px',
-                  width: '105px'
+                  fontSize: '15px',
+                  fontWeight: '700'
                 }}
-                onClick={ handleCloseClick }
-                data-tooltip='Continue'
               >
-                <div 
-                  className="flex-row"
-                  style={{
-                    fontSize: '15px',
-                    fontWeight: '700'
-                  }}
-                >
-                  { 'OK' }&nbsp;<span className="material-icons chonk">done_all</span>
-                </div>
-              </button>
-            </div>
-          </StyledModalBody>
+                {'OK'}&nbsp;<span className="material-icons chonk">done_all</span>
+              </div>
+            </button>
+          </div>
+        </StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
   ) : null

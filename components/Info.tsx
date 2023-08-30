@@ -84,7 +84,7 @@ const Info: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 width: '150%',
                 wordWrap: 'break-word',
                 textAlign: 'left',
-                color: 'white',
+                color: color,
                 cursor: 'copy',
                 paddingRight: '32px'
               }}

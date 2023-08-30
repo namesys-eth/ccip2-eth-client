@@ -43,75 +43,6 @@ interface ModalProps {
   handleParentTrigger: (data: boolean) => void
 }
 
-// Get latest timestamp from all records
-function latestTimestamp(list: string[]) {
-  var _Timestamps: number[] = []
-  for (const key in list) {
-    if (list.hasOwnProperty(key) && list[key] !== '' && list[key]) {
-      _Timestamps.push(Number(list[key]))
-    }
-  }
-  return Math.max(..._Timestamps)
-}
-
-/// Init 
-// Types object with empty strings
-function EMPTY_STRING() {
-  const EMPTY_STRING = {}
-  for (const key of constants.types) {
-    if (!['resolver', 'storage'].includes(key)) {
-      EMPTY_STRING[key] = ''
-    }
-  }
-  return EMPTY_STRING
-}
-
-// Types object with empty bools
-function EMPTY_BOOL() {
-  const EMPTY_BOOL = {}
-  for (const key of constants.types) {
-    EMPTY_BOOL[key] = ['resolver', 'storage', 'revision'].includes(key) ? true : false
-  }
-  return EMPTY_BOOL
-}
-
-// History object with empty strings
-const EMPTY_HISTORY = {
-  addr: '',
-  contenthash: '',
-  avatar: '',
-  revision: '',
-  version: '',
-  type: '',
-  timestamp: { ...EMPTY_STRING() },
-  queue: 1
-}
-
-// Waiting period between updates
-const waitingPeriod = constants.waitingPeriod
-
-/// Library
-async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
-  try {
-    const _response = await fetch(
-      `https://${ipnsKey}.ipfs2.eth.limo/version.json?t=${String(cacheBuster)}`
-    );
-    if (!_response.ok) {
-      console.error('Error:', 'Fetch Gone Wrong')
-      return {
-        '_sequence': ''
-      }
-    }
-    const data = await _response.json();
-    return data
-  } catch (error) {
-    console.error('Error:', error)
-    return {
-      '_sequence': ''
-    }
-  }
-}
-
 /**
 * Preview Modal
 * @param show : Show modal trigger
@@ -166,16 +97,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(EMPTY_STRING()); // Contains new values for the active records in {a:b} format
+  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
   const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [infoModal, setInfoModal] = React.useState(false); // Info modal
-  const [signatures, setSignatures] = React.useState(EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
-  const [legit, setLegit] = React.useState(EMPTY_BOOL()); // Whether record edit is legitimate
+  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
@@ -202,7 +133,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     modalData: undefined,
     trigger: false
   }); // Confirm modal state
-  const [history, setHistory] = React.useState(EMPTY_HISTORY); // Record history from last update
+  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
   const [sigSigner, setSigSigner] = React.useState(''); // Signature S4(K1) for Signer
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
@@ -398,7 +329,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     setSigApproved('') // Purge Manager Signature S2 from local storage 
-    setSignatures(EMPTY_STRING()) // Purge Record Signatures from local storage 
+    setSignatures(constants.EMPTY_STRING()) // Purge Record Signatures from local storage 
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setSigSigner('')
@@ -414,7 +345,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _LIST = [
       {
         key: 0,
-        header: hashType === 'storage' ? 'Recordhash' : (hashType === 'gateway' ? 'Gateway' : 'Ownerhash'),
+        header: hashType === 'recordhash' ? 'Recordhash' : (hashType === 'gateway' ? 'Gateway' : 'Ownerhash'),
         type: 'storage',
         value: _recordhash,
         editable: false,
@@ -495,7 +426,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['storage', 'storage'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -611,7 +542,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function doEnjoy() {
     setIcon('gpp_good'),
       setColor('lime')
-    setLegit(EMPTY_BOOL())
+    setLegit(constants.EMPTY_BOOL())
     setSalt(false)
     setLoading(false)
     setQueue(1)
@@ -680,7 +611,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 _Wallet_
               ]
             )),
-            hashType === 'storage' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'storage') : hashType)
+            hashType === 'recordhash' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'recordhash') : hashType)
           )
         })
       }
@@ -787,18 +718,35 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (_response.address === ccip2Contract) {
           let _Storage = await verifier.quickRecordhash(_ENS, ccip2Config, getOwner())
           let _IPFS: any
-          for (var i = 0; i < 2; i++) {
-            _IPFS = await getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
-          }
-          setHashIPFS(_history.version.split('/')[2])
-          /// @dev : REDUNDANT [!!!]
-          if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
-            setContenthash(_history.contenthash)
-            setAvatar(_history.avatar)
-            setAddr(_history.addr)
-            setSync(true)
+          if (_history.ownerstamp.length > 1) {
+            for (var i = 0; i < 2; i++) {
+              _IPFS = await constants.getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
+            }
+          } else if (_history.ownerstamp.length === 1) {
+            _IPFS = {
+              '_sequence': '0'
+            }
           } else {
-            getContenthash(_response)
+            _IPFS = {
+              '_sequence': ''
+            }
+          }
+          if (_history.version) setHashIPFS(_history.version.split('/')[2])
+          if (_history.ownerstamp.length >= 1) {
+            /// @dev : REDUNDANT [!!!]
+            if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
+              setContenthash(_history.contenthash)
+              setAvatar(_history.avatar)
+              setAddr(_history.addr)
+              setSync(true)
+            } else {
+              getContenthash(_response)
+            }
+          } else {
+            setContenthash('')
+            setAvatar('')
+            setAddr('')
+            setSync(true)
           }
         } else {
           const _contenthash = await refreshRecord(['contenthash', ''], _response, _ENS, false)
@@ -972,6 +920,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       storage: _storage,
       hashType: _hashType
     }
+    console.log(request)
     try {
       await fetch(
         `${SERVER}:${PORT}/read`,
@@ -992,7 +941,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             version: data.response.version,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
-            queue: latestTimestamp(data.response.timestamp),
+            queue: constants.latestTimestamp(data.response.timestamp),
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
@@ -1003,9 +952,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           }
           if (_storage && _Ownerstamps.length > 0 && _type === 'ownerhash') {
-            setQueue(Math.round(Date.now() / 1000) - Math.max(..._Ownerstamps) - waitingPeriod)
+            setQueue(Math.round(Date.now() / 1000) - Math.max(..._Ownerstamps) - constants.waitingPeriod)
           } else {
-            setQueue(Math.round(Date.now() / 1000) - latestTimestamp(data.response.timestamp) - waitingPeriod)
+            setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
           }
         })
     } catch (error) {
@@ -1134,10 +1083,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (trigger && !write) {
         if (trigger === 'storage') {
           setConfirm(true)
-          setHashType('storage')
+          setHashType('recordhash')
         } else {
           if (optionsModalState.trigger) {
-            setHashType(optionsModalState.modalData === '1' ? 'storage' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
+            setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
             setProcessCount(optionsModalState.modalData === '1' ? 1 : 1)
             migrate()
           }
@@ -1147,7 +1096,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           if (recordhash.startsWith('https://')) {
             setHashType('gateway')
           } else {
-            setHashType('storage')
+            setHashType('recordhash')
           }
         }
         if (ownerhash && !recordhash) {
@@ -1259,7 +1208,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               _Wallet_
             ]
           )),
-          hashType === 'storage' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'storage') : hashType)
+          hashType === 'recordhash' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'recordhash') : hashType)
         )
       })
       setKeygen(true)
@@ -1273,7 +1222,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLoading(true)
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
-        const _origin = hashType !== 'storage' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
         const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
         setKeypairIPNS(__keypair[0])
         setMessage(['IPNS Keypair Generated', ''])
@@ -1314,7 +1263,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setLoading(true)
           setMessage(['Generating Signer Key', ''])
           const keygen = async () => {
-            const _origin = hashType !== 'storage' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+            const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
             const __keypair = await KEYGEN(_origin, caip10, sigSigner, saltModalState.modalData)
             setKeypairSigner(__keypair[1])
             setIsSigner(true)
@@ -1435,8 +1384,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (conclude) {
       getUpdate(
         recordhash || ownerhash,
-        recordhash ? 'storage' : 'ownerhash',
-        recordhash ? 'storage' : 'ownerhash'
+        recordhash ? 'recordhash' : 'ownerhash',
+        recordhash ? 'recordhash' : 'ownerhash'
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1457,7 +1406,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (recordhash.startsWith('https://')) {
           setHashType('gateway')
         } else {
-          setHashType('storage')
+          setHashType('recordhash')
         }
       } else if (ownerhash) {
         if (ownerhash.startsWith('https://')) {
@@ -1466,7 +1415,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setHashType('ownerhash')
         }
       } else {
-        setHashType('storage')
+        setHashType('recordhash')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1551,7 +1500,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     // Handle Signature S2(K0) to add as extradata
     if (write && (keypairSigner && keypairSigner[0]) && newValues && !constants.isEmpty(newValues) && states.length > 0) {
-      let __signatures = EMPTY_STRING()
+      let __signatures = constants.EMPTY_STRING()
       states.forEach(async (_recordType) => {
         let _signature: any
         if (newValues[_recordType]) {
@@ -1592,7 +1541,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       count > 0 &&
       sigApproved
     ) {
-      let _encodedValues = EMPTY_STRING()
+      let _encodedValues = constants.EMPTY_STRING()
       for (const key in newValues) {
         if (newValues.hasOwnProperty(key) && newValues[key] !== '') {
           _encodedValues[key] = encodeValue(key, newValues[key])
@@ -1688,12 +1637,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       setGas(gas)
                       setGasModal(true)
                       setStates([])
-                      setLegit(EMPTY_BOOL())
+                      setLegit(constants.EMPTY_BOOL())
                       setLoading(false)
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
                         if (!['resolver', 'storage'].includes(item.type)) {
-                          let _queue = Math.round(Date.now() / 1000) - latestTimestamp(data.response.timestamp) - waitingPeriod
+                          let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
                           setQueue(_queue)
                           if (data.response.meta[item.type]) {
                             return {
@@ -1716,8 +1665,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         }
                       })
                       setPreCache(_updatedList)
-                      setNewValues(EMPTY_STRING())
-                      setSignatures(EMPTY_STRING())
+                      setNewValues(constants.EMPTY_STRING())
+                      setSignatures(constants.EMPTY_STRING())
                       setUpdateRecords(false) // Reset
                       setSigCount(0)
                       setSaltModalState({
@@ -1908,8 +1857,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         doCrash()
         setWrite(false)
         setUpdateRecords(false) // Reset
-        setLegit(EMPTY_BOOL())
-        setNewValues(EMPTY_STRING())
+        setLegit(constants.EMPTY_BOOL())
+        setNewValues(constants.EMPTY_STRING())
         let _updatedList = list.map((item) => {
           if (item.type !== 'storage') {
             return item
@@ -2361,11 +2310,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             { // Refresh buttons
                               !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
                               && resolver === ccip2Contract && _Wallet_ &&
-                              (recordhash || ownerhash) && (
+                              (recordhash || ownerhash) && history.ownerstamp.length > 0 && (
                                 <button
                                   className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
                                   onClick={() => {
-                                    refresh !== '' ? '' : refreshRecord(item.type, resolveCall, ENS, true),
+                                    refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true),
                                       setRefreshedItem(item.type)
                                   }}
                                   data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
@@ -2407,7 +2356,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               item.state ||
                               !_Wallet_ ||
                               !managers.includes(String(_Wallet_)) ||
-                              (!['resolver', 'storage'].includes(item.type) && newValues === EMPTY_STRING())
+                              (!['resolver', 'storage'].includes(item.type) && newValues === constants.EMPTY_STRING())
                             }
                             style={{
                               alignSelf: 'flex-end',
@@ -2478,7 +2427,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     disabled={
                       !_Wallet_ ||
                       !managers.includes(String(_Wallet_)) ||
-                      (newValues === EMPTY_STRING())
+                      (newValues === constants.EMPTY_STRING())
                     }
                     style={{
                       alignSelf: 'flex-end',
