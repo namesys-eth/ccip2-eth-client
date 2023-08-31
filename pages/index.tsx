@@ -324,7 +324,7 @@ const Home: NextPage = () => {
               'name': query.split('.eth')[0],
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
-            if (items.length > 0 && _RESPONSE?.address) {
+            if (items.length > 0) {
               if (recordhash && recordhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               } else if (ownerhash && ownerhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
@@ -332,9 +332,6 @@ const Home: NextPage = () => {
               }
               setMeta(items)
               setSuccess(true)
-              setFinish(true)
-            } else {
-              setSuccess(false)
               setFinish(true)
             }
           })

@@ -761,6 +761,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setAddr(_addr || '')
           setSync(true)
         }
+      } else {
+        setResolveCall(_response)
+        setResolver('')
+        setContenthash('')
+        setAvatar('')
+        setAddr('')
+        setSync(true)
       }
     } catch (error) {
       console.error('Error in getResolver():', error)
@@ -920,7 +927,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       storage: _storage,
       hashType: _hashType
     }
-    console.log(request)
     try {
       await fetch(
         `${SERVER}:${PORT}/read`,
@@ -1401,7 +1407,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Triggers setting metadata
   React.useEffect(() => {
-    if (history && queue && resolver && !sync) {
+    if (history && queue && !sync) {
       if (recordhash) {
         if (recordhash.startsWith('https://')) {
           setHashType('gateway')

@@ -593,7 +593,7 @@ const Account: NextPage = () => {
               'name': query.split('.eth')[0],
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
-            if (items.length > 0 && _RESPONSE?.address) {
+            if (items.length > 0) {
               if (recordhash && recordhash.toString() !== '0x' && (recordhash.toString() !== ownerhash.toString()) && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
@@ -605,11 +605,6 @@ const Account: NextPage = () => {
               setTimeout(() => {
                 setLoading(false)
               }, 1000)
-            } else {
-              setSuccess(false)
-              setErrorMessage('Name not Registered')
-              setErrorModal(true)
-              setLoading(false)
             }
           })
       }
