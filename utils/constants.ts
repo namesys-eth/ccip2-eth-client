@@ -289,12 +289,12 @@ export function EMPTY_BOOL() {
 
 // History object with empty strings
 export const EMPTY_HISTORY = {
+  type: '',
   addr: '',
   contenthash: '',
   avatar: '',
   revision: '',
   version: '',
-  type: '',
   timestamp: { ...EMPTY_STRING() },
   queue: 1,
   ownerstamp: []

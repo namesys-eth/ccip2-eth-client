@@ -51,6 +51,7 @@ const Account: NextPage = () => {
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
   const [activeTab, setActiveTab] = React.useState('OWNER') // Set active tab
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
+  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
   const [manager, setManager] = React.useState('') // Set manager of name
   const [query, setQuery] = React.useState('') // Store name in query
@@ -172,20 +173,28 @@ const Account: NextPage = () => {
   })  // Wagmi Signature hook
 
   /// ENS Domain Config
-  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
-  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
-    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[0].contractInterface,
-    functionName: 'owner',
+  // Read ENS Legacy Registrar for Owner record of ENS domain via namehash
+  const { data: _OwnerLegacy_, isLoading: legacyOwnerLoading, isError: legacyOwnerError } = useContractRead({
+    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[1].contractInterface,
+    functionName: 'ownerOf',
     args: [tokenIDLegacy]
   })
 
   // Read ENS Wrapper for Owner record of ENS domain
-  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+  const { data: _OwnerWrapped_, isLoading: wrapperOwnerLoading, isError: wrapperOwnerError } = useContractRead({
     address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
     abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
     functionName: 'ownerOf',
     args: [tokenIDWrapper]
+  })
+
+  // Read Legacy ENS Registry for ENS domain Manager
+  const { data: _ManagerLegacy_, isLoading: legacyManagerLoading, isError: legacyManagerError } = useContractRead({
+    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[0].contractInterface,
+    functionName: 'owner',
+    args: [namehashLegacy]
   })
 
   // Read Recordhash from CCIP2 Resolver
@@ -469,37 +478,40 @@ const Account: NextPage = () => {
           setLoading(false)
         } else {
           const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
+          const contractLegacy = new ethers.Contract(constants.ensConfig[0].addressOrName, constants.ensConfig[0].contractInterface, constants.provider)
           const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase())
           let _Recordhash_: any
           let __Recordhash: boolean = false
           let __Ownerhash: boolean = false
           for (var i = 0; i < allTokens.length; i++) {
-            // ISSUE: ENS Metadata service is broken and not showing all the names
             if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-              count = count + 1
-              setGetting(count)
-              allEns.push(allTokens[i].title.split('.eth')[0])
-              const _Resolver = await constants.provider.getResolver(allTokens[i].title)
-              items.push({
-                'key': count,
-                'name': allTokens[i].title.split('.eth')[0],
-                'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
-              })
-              setProcess(allTokens[i].title)
-              _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
-              if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
-                __Recordhash = false
-                if (_Ownerhash_ && _Ownerhash_ !== '0x') {
-                  __Ownerhash = true
+              const _ManagerLegacy = await contractLegacy.owner(ethers.utils.namehash(allTokens[i].title))
+              if (_ManagerLegacy === _Wallet_) {
+                count = count + 1
+                setGetting(count)
+                allEns.push(allTokens[i].title.split('.eth')[0])
+                const _Resolver = await constants.provider.getResolver(allTokens[i].title)
+                items.push({
+                  'key': count,
+                  'name': allTokens[i].title.split('.eth')[0],
+                  'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
+                })
+                setProcess(allTokens[i].title)
+                _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
+                if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
+                  __Recordhash = false
+                  if (_Ownerhash_ && _Ownerhash_ !== '0x') {
+                    __Ownerhash = true
+                  }
+                } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
+                  __Recordhash = true
                 }
-              } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
-                __Recordhash = true
-              }
-              items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
-                __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
-                items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
+                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
+                  __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
+                  items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
+                  )
                 )
-              )
+              }
             }
             if (i === allTokens.length - 1) {
               setFinish(true) // Flag finish of process
@@ -546,13 +558,15 @@ const Account: NextPage = () => {
   }, [getting])
 
   React.useEffect(() => {
-    if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
+    if (_OwnerLegacy_ && _ManagerLegacy_ 
+      && _OwnerLegacy_?.toString() !== constants.zeroAddress 
+      && _ManagerLegacy_?.toString() !== constants.zeroAddress) {
       if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
           setManager(_OwnerWrapped_.toString())
         }
       } else {
-        setManager(_OwnerLegacy_.toString())
+        setManager(_ManagerLegacy_.toString())
       }
     }
     if (activeTab !== 'OWNER') {
@@ -562,7 +576,7 @@ const Account: NextPage = () => {
       }, 2000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, wrapperError])
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, wrapperOwnerError, _ManagerLegacy_])
 
   // Set signature
   React.useEffect(() => {
@@ -613,7 +627,7 @@ const Account: NextPage = () => {
       setLoading(false)
       setSuccess(false)
       setEmpty(true)
-      setErrorMessage('You are not Owner')
+      setErrorMessage('Wrong Permissions')
       setErrorModal(true)
     } 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -672,8 +686,10 @@ const Account: NextPage = () => {
     if (query) {
       let _namehash = ethers.utils.namehash(query)
       let _token = ethers.BigNumber.from(_namehash)
+      let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+      setNamehashLegacy(_namehash)
       setTokenIDWrapper(_token.toString())
-      setTokenIDLegacy(_namehash)
+      setTokenIDLegacy(ethers.BigNumber.from(_labelhash).toString())
     }
   }, [query])
 
@@ -1157,7 +1173,7 @@ const Account: NextPage = () => {
                 }}
                 className='button-header'
                 disabled={activeTab === 'OWNER' || loading}
-                data-tooltip='Show names you own'
+                data-tooltip='Show names that you can manage'
               >
                 <div
                   className="flex-sans-direction"
@@ -1345,7 +1361,7 @@ const Account: NextPage = () => {
                     marginRight: '5px'
                   }}
                 >
-                  names you own
+                  Names You Manage
                 </span>
                 <button
                   className="button-tiny"
@@ -1353,7 +1369,7 @@ const Account: NextPage = () => {
                     setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
-                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: cyan">search</span> tab for missing names</span>')
+                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
                   }}
                   data-tooltip='Enlighten me'
                 >
@@ -1872,7 +1888,7 @@ const Account: NextPage = () => {
                     setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
-                    setHelp('<span>Search for a name that you <span style="color: cyan">own</span></span>')
+                    setHelp('<span>Search for a <span style="color: cyan">Subdomain</span> or a <span style="color: cyan">Wrapped Domain</span> or a <span style="color: cyan">Legacy name that you Manage but do not Own</span></span>')
                   }}
                   data-tooltip='Enlighten me'
                 >

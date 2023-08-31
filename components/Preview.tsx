@@ -74,6 +74,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
   const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
+  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState(''); // Wrapper Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
@@ -172,21 +173,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   /// Preview Domain Metadata
   // Read Legacy ENS Registry for ENS domain Owner
-  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
+  const { data: _OwnerLegacy_, isLoading: legacyOwnerLoading, isError: legacyOwnerError } = useContractRead({
+    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[1].contractInterface,
+    functionName: 'ownerOf',
+    args: [tokenIDLegacy]
+  })
+  // Read Legacy ENS Registry for ENS domain Manager
+  const { data: _ManagerLegacy_, isLoading: legacyManagerLoading, isError: legacyManagerError } = useContractRead({
     address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
     abi: constants.ensConfig[0].contractInterface,
     functionName: 'owner',
-    args: [tokenIDLegacy]
+    args: [namehashLegacy]
   })
   // Read CCIP2 for ENS domain on-chain manager
   const { data: _CCIP2Manager_ } = useContractRead({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: 'isApprovedSigner',
-    args: [getOwner(), ethers.utils.namehash(ENS), keypairSigner && keypairSigner[0] ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress]
+    args: [getManager(), ethers.utils.namehash(ENS), keypairSigner && keypairSigner[0] ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress]
   })
   // Read ownership of a domain from ENS Wrapper
-  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+  const { data: _OwnerWrapped_, isLoading: wrapperOwnerLoading, isError: wrapperOwnerError } = useContractRead({
     address: `0x${constants.ensConfig[chain === '1' ? 7 : 3].addressOrName.slice(2)}`,
     abi: constants.ensConfig[chain === '1' ? 7 : 3].contractInterface,
     functionName: 'ownerOf',
@@ -197,7 +205,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: 'getRecordhash',
-    args: [ethers.utils.hexZeroPad(getOwner(), 32).toLowerCase()]
+    args: [ethers.utils.hexZeroPad(getManager(), 32).toLowerCase()]
   })
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead({
@@ -510,12 +518,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Returns Owner of wrapped/legacy ENS Domain
-  function getOwner() {
-    if (_OwnerLegacy_) {
+  function getManager() {
+    if (_OwnerLegacy_ && _ManagerLegacy_) {
       if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
         return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
       } else {
-        return _OwnerLegacy_.toString()
+        return _ManagerLegacy_.toString()
       }
     } else {
       return constants.zeroAddress
@@ -716,11 +724,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setResolver(_response.address)
         setResolveCall(_response)
         if (_response.address === ccip2Contract) {
-          let _Storage = await verifier.quickRecordhash(_ENS, ccip2Config, getOwner())
+          let _Storage = await verifier.quickRecordhash(_ENS, ccip2Config, getManager())
           let _IPFS: any
           if (_history.ownerstamp.length > 1) {
             for (var i = 0; i < 2; i++) {
-              _IPFS = await constants.getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage).decoded, i)
+              _IPFS = await constants.getIPFSHashFromIPNS(ensContent.decodeContenthash(_Storage[0]).decoded, i)
             }
           } else if (_history.ownerstamp.length === 1) {
             _IPFS = {
@@ -733,11 +741,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
           if (_history.version) setHashIPFS(_history.version.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
-            /// @dev : REDUNDANT [!!!]
-            if (Number(_IPFS._sequence) === Number(_history.timestamp.version)) {
-              setContenthash(_history.contenthash)
-              setAvatar(_history.avatar)
-              setAddr(_history.addr)
+            if (Number(_IPFS._sequence) === Number(_history.timestamp.version) - 1 && _Storage[1]) {
+              if (_history.revision.contenthash) {
+                setContenthash(_history.contenthash)
+              } else {
+                setContenthash('')
+              }
+              if (_history.revision.avatar) {
+                setAvatar(_history.avatar)
+              } else {
+                setAvatar('')
+              }
+              if (_history.revision.addr) {
+                setAddr(_history.addr)
+              } else {
+                setAddr('')
+              }      
               setSync(true)
             } else {
               getContenthash(_response)
@@ -832,7 +851,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string) {
     const request = {
       ens: ENS,
-      owner: _Wallet_,
+      controller: _Wallet_,
       manager: keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress,
       managerSignature: sigApproved,
       revision: Revision.encode(revision),
@@ -920,7 +939,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     const request = {
       type: 'read',
       ens: ENS,
-      owner: getOwner(),
+      controller: getManager(),
       recordsTypes: 'all',
       recordsValues: 'all',
       chain: chain,
@@ -984,7 +1003,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (browser && ENS) {
       let namehash = ethers.utils.namehash(ENS)
-      setTokenIDLegacy(namehash)
+      let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(ENS.split('.eth')[0]))
+      setNamehashLegacy(namehash)
+      setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
       setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
       setConclude(true)
     }
@@ -1127,12 +1148,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setManagers([_Wallet_])
       } else {
         // Set owner as in-app managers if no on-chain manager exists
-        let _Owner_ = getOwner()
-        setManagers([_Owner_])
+        let _Manager_ = getManager()
+        setManagers([_Manager_])
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager, tokenIDWrapper])
+  }, [namehashLegacy, _OwnerLegacy_, _OwnerWrapped_, onChainManager, tokenIDWrapper])
 
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
@@ -1261,7 +1282,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           // Set query for on-chain manager [v2]
           setOnChainManagerQuery(
             [
-              getOwner(),
+              getManager(),
               ethers.utils.namehash(ENS),
               keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress
             ]
@@ -1421,7 +1442,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setHashType('ownerhash')
         }
       } else {
-        setHashType('recordhash')
+        setHashType('storage')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1559,7 +1580,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         manager: keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress,
         managerSignature: sigApproved,
         ens: ENS,
-        owner: _Wallet_ || constants.zeroAddress,
+        controller: _Wallet_ || constants.zeroAddress,
         ipns: CID,
         recordsTypes: states,
         recordsValues: _encodedValues,
@@ -2315,7 +2336,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
                             { // Refresh buttons
                               !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
-                              && resolver === ccip2Contract && _Wallet_ &&
+                              && resolver === ccip2Contract && _Wallet_ && item.value &&
                               (recordhash || ownerhash) && history.ownerstamp.length > 0 && (
                                 <button
                                   className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
@@ -2323,12 +2344,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true),
                                       setRefreshedItem(item.type)
                                   }}
-                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
+                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
+                                      color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
                                       marginLeft: '-5px'
                                     }}
                                   >
