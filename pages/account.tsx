@@ -627,9 +627,15 @@ const Account: NextPage = () => {
       setLoading(false)
       setSuccess(false)
       setEmpty(true)
-      setErrorMessage('Wrong Permissions')
+      setErrorMessage('You do not have Manager permission')
       setErrorModal(true)
-    } 
+    } else if (!manager && query.length > 0) {
+      setLoading(false)
+      setSuccess(false)
+      setEmpty(true)
+      setErrorMessage('Name not Registered or Expired')
+      setErrorModal(true)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
 

@@ -387,11 +387,19 @@ const Home: NextPage = () => {
         }, 5000)
         setEmpty(false)
       } else {
-        if (!wrapperOwnerLoading && !legacyOwnerLoading) {
+        if (legacyOwnerError) {
           setTimeout(() => {
             setLoading(false)
           }, 2000)
-          setErrorMessage('Failed to Fetch')
+          setErrorMessage('Name not Registered Or Expired Or in Grace')
+          setErrorModal(true)
+          setEmpty(true)
+          setQuery('')
+        } else {
+          setTimeout(() => {
+            setLoading(false)
+          }, 2000)
+          setErrorMessage('Name not Registered Or Expired Or in Grace')
           setErrorModal(true)
           setEmpty(true)
           setQuery('')
@@ -402,7 +410,7 @@ const Home: NextPage = () => {
         setTimeout(() => {
           setLoading(false)
         }, 2000)
-        setErrorMessage('Name not Registered')
+        setErrorMessage('Name not Registered Or Expired Or in Grace')
         setErrorModal(true)
         setEmpty(true)
       } else {
@@ -579,7 +587,7 @@ const Home: NextPage = () => {
               >
                 { 'v' } 
               </span>
-                { '1.0.1' } 
+                { '1.0.2' } 
               <span
                 style={{
                   fontFamily: 'Spotnik',

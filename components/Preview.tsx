@@ -2396,7 +2396,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               alignSelf: 'flex-end',
                               height: '25px',
                               width: 'auto',
-                              marginTop: '-3px',
+                              marginBottom: '6px',
                             }}
                             onClick={() => {
                               setTrigger(item.type),
@@ -2432,6 +2432,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             width: '100%',
                             wordWrap: 'break-word',
                             textAlign: 'left',
+                            marginTop: '-10px',
                             marginBottom: '-5px',
                             color: !legit[item.type] ? 'white' : 'lightgreen',
                             cursor: 'copy'

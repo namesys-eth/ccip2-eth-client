@@ -454,21 +454,6 @@ input:disabled {
   background: rgb(255, 255, 255, 0.2);
   color: white;
   cursor: not-allowed;
-  content: attr(data-tooltip);
-  background-color: black;
-  color: white;
-  padding: 4px;
-  border-radius: 2px;
-  position: absolute;
-  max-width: 250px;
-  top: -40%;
-  left: -25%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  visibility: visible;
-  opacity: 0;
-  font-size: 10px;
-  transition: opacity 0.2s ease-in-out;
 }
 .button-empty::after {
   content: attr(data-tooltip);
@@ -510,21 +495,6 @@ input:disabled {
   background: rgb(255, 255, 255, 0.2);
   color: white;
   cursor: not-allowed;
-  content: attr(data-tooltip);
-  background-color: black;
-  color: white;
-  padding: 4px;
-  border-radius: 2px;
-  position: absolute;
-  top: -50%;
-  left: -25%;
-  max-width: 250px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  visibility: visible;
-  opacity: 0;
-  font-size: 10px;
-  transition: opacity 0.2s ease-in-out;
 }
 .button::after {
   content: attr(data-tooltip);
@@ -566,21 +536,6 @@ input:disabled {
   background: rgb(255, 255, 255, 0.2);
   color: white;
   cursor: not-allowed;
-  content: attr(data-tooltip);
-  background-color: black;
-  color: white;
-  padding: 4px;
-  border-radius: 2px;
-  position: absolute;
-  top: -50%;
-  left: 5%;
-  max-width: 250px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  visibility: visible;
-  opacity: 0;
-  font-size: 10px;
-  transition: opacity 0.2s ease-in-out;
 }
 .button-option::after {
   content: attr(data-tooltip);
@@ -644,21 +599,6 @@ input:disabled {
 }
 .button-header:disabled {
   background-image: linear-gradient(112deg, rgba(190,95,65,0.1) 0%, rgba(191,41,36,0.1) 48%, rgba(203,111,0,0.1) 100%);
-  content: attr(data-tooltip);
-  background-color: black;
-  color: white;
-  padding: 4px;
-  border-radius: 2px;
-  position: absolute;
-  top: -40%;
-  left: 50%;
-  max-width: 250px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  visibility: hidden;
-  opacity: 0;
-  font-size: 10px;
-  transition: opacity 0.2s ease-in-out;
 }
 .button-header::after {
   content: attr(data-tooltip);
