@@ -44,7 +44,7 @@ const Info: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             <div 
               className="material-icons"
               style={{
-                marginTop: '4px',
+                marginTop: '10px',
                 fontSize: '66px'
               }}
             >
@@ -52,8 +52,8 @@ const Info: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             </div>
             <div
               style={{
-                marginTop: '20px',
-                marginBottom: '10px'
+                marginTop: '17px',
+                marginBottom: '8px'
               }}
             >
               <span style={{ fontSize: '24px', fontWeight: '700' }}>Your IPFS Hash</span>
@@ -98,6 +98,7 @@ const Info: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               }} 
               style={{
                 marginLeft: '-25px',
+                marginTop: '2px',
                 color: color || 'cyan'   
               }}
             >
@@ -123,7 +124,7 @@ const Info: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               fontWeight: '700'
             }}
             onClick={ handleCloseClick }
-            data-tooltip='Ok'
+            data-tooltip='Roger That'
           >
             <div 
               className="flex-row"

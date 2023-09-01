@@ -391,7 +391,7 @@ const Home: NextPage = () => {
           setTimeout(() => {
             setLoading(false)
           }, 2000)
-          setErrorMessage('Name not Registered')
+          setErrorMessage('Failed to Fetch')
           setErrorModal(true)
           setEmpty(true)
           setQuery('')
@@ -699,7 +699,7 @@ const Home: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: onSearch ? '36px' : '44px',
-                      marginTop: onSearch ? '24px' : '10px',
+                      marginTop: onSearch ? '24px' : '30px',
                       color: '#fc6603'
                     }}
                   >

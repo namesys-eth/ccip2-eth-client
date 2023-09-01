@@ -32,6 +32,7 @@ import {
   useContractRead
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
+import { zeroAddress } from "viem"
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -1430,10 +1431,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (history && queue && !sync) {
       if (recordhash) {
-        if (recordhash.startsWith('https://')) {
-          setHashType('gateway')
+        if (_Recordhash_ && _Ownerhash_ === '0x' && getManager() === constants.zeroAddress) {
+          setHashType('storage')
+          setRecordhash('')
+          setOwnerhash('')
         } else {
-          setHashType('recordhash')
+          if (recordhash.startsWith('https://')) {
+            setHashType('gateway')
+          } else {
+            setHashType('recordhash')
+          }
         }
       } else if (ownerhash) {
         if (ownerhash.startsWith('https://')) {
@@ -1446,7 +1453,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue, resolver, recordhash, ownerhash, sync])
+  }, [history, queue, resolver, recordhash, ownerhash, sync, _Recordhash_, _Ownerhash_])
 
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {

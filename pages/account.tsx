@@ -1531,7 +1531,7 @@ const Account: NextPage = () => {
                     style={{
                       height: '38px',
                       width: '80px',
-                      marginTop: '15px',
+                      marginTop: '18px',
                       marginLeft: '15px'
                     }}
                     type="submit"
@@ -1819,7 +1819,7 @@ const Account: NextPage = () => {
                       height: '38px',
                       width: '115px',
                       marginLeft: '15px',
-                      marginTop: '15px'
+                      marginTop: '20px'
                     }}
                     type="submit"
                     data-tooltip='Export Keys'

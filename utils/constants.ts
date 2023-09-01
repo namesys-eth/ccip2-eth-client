@@ -19,6 +19,12 @@ export const zeroBytes = '0x' + '0'.repeat(64)
 export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
 export const prefix = '0xe5010172002408011220'
+const ipnsRegex = /^[a-z0-9]{62}$/
+const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
+const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{55}$/
+const onionRegex = /^[a-z2-7]{16,56}$/
+const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+const hexRegex = /^[0-9a-fA-F]+$/
 
 export interface MainBodyState {
   modalData: string | undefined
@@ -40,7 +46,7 @@ export const ccip2 = [
   '0x3F2521AC2D9ea1bFd6110CA563FcD067E6E47deb', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
-export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 1) * 60 // 60 mins
+export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 60) * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
   "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar (Goerli & Mainnet)
@@ -226,33 +232,23 @@ export function isName(value: string) {
 
 // Check if value is a valid Addr
 export function isAddr(value: string) {
-  const hexRegex = /^[0-9a-fA-F]+$/
   return value.startsWith('0x') && value.length === 42 && hexRegex.test(value.split('0x')[1])
 }
 
 // Check if value is a valid Avatar URL
 export function isAvatar(value: string) {
-  const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
   return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
 }
 // Check if value is a valid Contenthash
 export function isContenthash(value: string) {
-  const prefix = value.substring(0, 7)
-  const ipnsRegex = /^[a-z0-9]{62}$/
-  const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
-  const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{56}$/
-  return true
-  /*
+  const prefixIPFS = value.substring(0, 7)
+  const prefixOnion = value.substring(0, 8)
   return (
-    (prefix === 'ipns://') ||
-    (prefix === 'ipfs://')
+    (prefixIPFS === 'ipns://' && ipnsRegex.test(value.substring(7,))) || // Check IPNS
+    (prefixIPFS === 'ipfs://' && ipfsRegexCID0.test(value.substring(7,))) || // Check IPFS CIDv0
+    (prefixIPFS === 'ipfs://' && ipfsRegexCID1.test(value.substring(7,))) || // Check IPFS CIDv1
+    (prefixOnion === 'onion://' && onionRegex.test(value.substring(8,))) // Check Onion v2 & v3
   )
-  return (
-    (prefix === 'ipns://' && ipnsRegex.test(value)) || // Check IPNS
-    (prefix === 'ipfs://' && ipfsRegexCID0.test(value)) || // Check IPFS CIDv0
-    (prefix === 'ipfs://' && ipfsRegexCID1.test(value)) // Check IPFS CIDv1
-  )
-  */
 }
 
 // Get latest timestamp from all records
