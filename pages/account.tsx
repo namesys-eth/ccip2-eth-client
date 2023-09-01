@@ -51,6 +51,7 @@ const Account: NextPage = () => {
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
   const [activeTab, setActiveTab] = React.useState('OWNER') // Set active tab
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
+  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
   const [manager, setManager] = React.useState('') // Set manager of name
   const [query, setQuery] = React.useState('') // Store name in query
@@ -78,6 +79,7 @@ const Account: NextPage = () => {
   const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
   const [keypairIPNS, setKeypairIPNS] = React.useState<string[]>(['', '']) // Exported IPNS keypairs [ed25519-priv,ed25519-pub]
   const [keypairSigner, setKeypairSigner] = React.useState<string[]>(['', '']) // Exported Signer keypairs [secp256k1-priv, secp256k1-pub]
+  const [keyIPNS, setKeyIPNS] = React.useState('') // IPNS Encoded Key: '08011240' + privKey + pubKey
   const [salt, setSalt] = React.useState(false) // Trigger signature for key export
   const [exportKey, setExportKey] = React.useState(false) // Trigger export procedure
   const [username, setUsername] = React.useState('') // Username for salt modal
@@ -102,18 +104,6 @@ const Account: NextPage = () => {
     trigger: false
   }); // Export modal state
   const recoveredAddress = React.useRef<string>()
-  
-  // Copy text
-  function copyToClipboard(element: string) {
-    const copyText = document.getElementById(element) as HTMLInputElement
-    copyText.select()
-    copyText.setSelectionRange(0, 99999)
-    
-    navigator.clipboard.writeText(copyText.value).then(() => {
-    }).catch((error) => {
-        console.error('ERROR:', error)
-    })
-  }
 
   // Handle Salt modal data return
   const handleSaltModalData = (data: string | undefined) => {
@@ -183,20 +173,28 @@ const Account: NextPage = () => {
   })  // Wagmi Signature hook
 
   /// ENS Domain Config
-  // Read ENS Legacy Registry for Owner record of ENS domain via namehash
-  const { data: _OwnerLegacy_, isLoading: legacyLoading, isError: legacyError } = useContractRead({
-    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[0].contractInterface,
-    functionName: 'owner',
+  // Read ENS Legacy Registrar for Owner record of ENS domain via namehash
+  const { data: _OwnerLegacy_, isLoading: legacyOwnerLoading, isError: legacyOwnerError } = useContractRead({
+    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[1].contractInterface,
+    functionName: 'ownerOf',
     args: [tokenIDLegacy]
   })
 
   // Read ENS Wrapper for Owner record of ENS domain
-  const { data: _OwnerWrapped_, isLoading: wrapperLoading, isError: wrapperError } = useContractRead({
+  const { data: _OwnerWrapped_, isLoading: wrapperOwnerLoading, isError: wrapperOwnerError } = useContractRead({
     address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
     abi: constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface,
     functionName: 'ownerOf',
     args: [tokenIDWrapper]
+  })
+
+  // Read Legacy ENS Registry for ENS domain Manager
+  const { data: _ManagerLegacy_, isLoading: legacyManagerLoading, isError: legacyManagerError } = useContractRead({
+    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
+    abi: constants.ensConfig[0].contractInterface,
+    functionName: 'owner',
+    args: [namehashLegacy]
   })
 
   // Read Recordhash from CCIP2 Resolver
@@ -355,6 +353,7 @@ const Account: NextPage = () => {
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
         const __keypair = await KEYGEN(_origin, _caip10, sigIPNS, saltModalState.modalData)
         setKeypairIPNS(__keypair[0])
+        setKeyIPNS(`08011240${__keypair[1]}${__keypair[0]}`)
       }
       keygen()
     }
@@ -396,7 +395,7 @@ const Account: NextPage = () => {
         if (choice === 'export_Signer') {
           // Sign S2 if export is requested
           const __keypair = await KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
-          setKeypairSigner(__keypair[1])
+          setKeypairSigner(__keypair[1])         
         } else if (choice === 'ownerhash_Signer') {
           // Don't sign S2
           setKeypairSigner(['0x', '0x'])
@@ -479,37 +478,40 @@ const Account: NextPage = () => {
           setLoading(false)
         } else {
           const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
+          const contractLegacy = new ethers.Contract(constants.ensConfig[0].addressOrName, constants.ensConfig[0].contractInterface, constants.provider)
           const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(_Wallet_ || constants.zeroAddress, 32).toLowerCase())
           let _Recordhash_: any
           let __Recordhash: boolean = false
           let __Ownerhash: boolean = false
           for (var i = 0; i < allTokens.length; i++) {
-            // ISSUE: ENS Metadata service is broken and not showing all the names
             if (constants.ensContracts.includes(allTokens[i].contract.address) && allTokens[i].title) {
-              count = count + 1
-              setGetting(count)
-              allEns.push(allTokens[i].title.split('.eth')[0])
-              const _Resolver = await constants.provider.getResolver(allTokens[i].title)
-              items.push({
-                'key': count,
-                'name': allTokens[i].title.split('.eth')[0],
-                'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
-              })
-              setProcess(allTokens[i].title)
-              _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
-              if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
-                __Recordhash = false
-                if (_Ownerhash_ && _Ownerhash_ !== '0x') {
-                  __Ownerhash = true
+              const _ManagerLegacy = await contractLegacy.owner(ethers.utils.namehash(allTokens[i].title))
+              if (_ManagerLegacy === _Wallet_) {
+                count = count + 1
+                setGetting(count)
+                allEns.push(allTokens[i].title.split('.eth')[0])
+                const _Resolver = await constants.provider.getResolver(allTokens[i].title)
+                items.push({
+                  'key': count,
+                  'name': allTokens[i].title.split('.eth')[0],
+                  'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
+                })
+                setProcess(allTokens[i].title)
+                _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
+                if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
+                  __Recordhash = false
+                  if (_Ownerhash_ && _Ownerhash_ !== '0x') {
+                    __Ownerhash = true
+                  }
+                } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
+                  __Recordhash = true
                 }
-              } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
-                __Recordhash = true
-              }
-              items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
-                __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
-                items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
+                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
+                  __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
+                  items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
+                  )
                 )
-              )
+              }
             }
             if (i === allTokens.length - 1) {
               setFinish(true) // Flag finish of process
@@ -556,13 +558,15 @@ const Account: NextPage = () => {
   }, [getting])
 
   React.useEffect(() => {
-    if (_OwnerLegacy_ && _OwnerLegacy_?.toString() !== constants.zeroAddress) {
+    if (_OwnerLegacy_ && _ManagerLegacy_ 
+      && _OwnerLegacy_?.toString() !== constants.zeroAddress 
+      && _ManagerLegacy_?.toString() !== constants.zeroAddress) {
       if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
           setManager(_OwnerWrapped_.toString())
         }
       } else {
-        setManager(_OwnerLegacy_.toString())
+        setManager(_ManagerLegacy_.toString())
       }
     }
     if (activeTab !== 'OWNER') {
@@ -572,7 +576,7 @@ const Account: NextPage = () => {
       }, 2000)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, wrapperError])
+  }, [tokenIDLegacy, tokenIDWrapper, _OwnerLegacy_, activeTab, _OwnerWrapped_, wrapperOwnerError, _ManagerLegacy_])
 
   // Set signature
   React.useEffect(() => {
@@ -603,7 +607,7 @@ const Account: NextPage = () => {
               'name': query.split('.eth')[0],
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
-            if (items.length > 0 && _RESPONSE?.address) {
+            if (items.length > 0) {
               if (recordhash && recordhash.toString() !== '0x' && (recordhash.toString() !== ownerhash.toString()) && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
               } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
@@ -615,11 +619,6 @@ const Account: NextPage = () => {
               setTimeout(() => {
                 setLoading(false)
               }, 1000)
-            } else {
-              setSuccess(false)
-              setErrorMessage('Name not Registered')
-              setErrorModal(true)
-              setLoading(false)
             }
           })
       }
@@ -628,9 +627,15 @@ const Account: NextPage = () => {
       setLoading(false)
       setSuccess(false)
       setEmpty(true)
-      setErrorMessage('You are not Owner')
+      setErrorMessage('You do not have Manager permission')
       setErrorModal(true)
-    } 
+    } else if (!manager && query.length > 0) {
+      setLoading(false)
+      setSuccess(false)
+      setEmpty(true)
+      setErrorMessage('Name not Registered or Expired')
+      setErrorModal(true)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
 
@@ -687,8 +692,10 @@ const Account: NextPage = () => {
     if (query) {
       let _namehash = ethers.utils.namehash(query)
       let _token = ethers.BigNumber.from(_namehash)
+      let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
+      setNamehashLegacy(_namehash)
       setTokenIDWrapper(_token.toString())
-      setTokenIDLegacy(_namehash)
+      setTokenIDLegacy(ethers.BigNumber.from(_labelhash).toString())
     }
   }, [query])
 
@@ -729,6 +736,7 @@ const Account: NextPage = () => {
     })
     setKeypairIPNS([])
     setKeypairSigner([])
+    setKeyIPNS('')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSuccess1of1, isSetOwnerhashSuccess, flash])
 
@@ -766,6 +774,7 @@ const Account: NextPage = () => {
         setSigSigner('')
         setKeypairIPNS([])
         setKeypairSigner([])
+        setKeyIPNS('')
         setSalt(false)
         setCID('')
         setLoading(false)
@@ -796,6 +805,7 @@ const Account: NextPage = () => {
           setSigCount(0)
           setKeypairIPNS([])
           setKeypairSigner([])
+          setKeyIPNS('')
           setSigIPNS('')
           setSigSigner('')
           setSalt(false)
@@ -893,7 +903,7 @@ const Account: NextPage = () => {
             >
               <button
                 className='button'
-                onClick={() => { window.location.href = '/', setKeypairSigner([]), setKeypairIPNS([]) }}
+                onClick={() => { window.location.href = '/', setKeypairSigner([]), setKeypairIPNS([]), setKeyIPNS('') }}
                 data-tooltip='Homepage'
               >
                 <div
@@ -923,7 +933,7 @@ const Account: NextPage = () => {
           >
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setFaqModal(true), setKeypairSigner([]), setKeypairIPNS([]) }}
+              onClick={() => { window.scrollTo(0, 0); setFaqModal(true), setKeypairSigner([]), setKeypairIPNS([]), setKeyIPNS('') }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Learn more'
             >
@@ -936,7 +946,7 @@ const Account: NextPage = () => {
             </button>
             <button
               className='button clear'
-              onClick={() => { window.scrollTo(0, 0); setTermsModal(true), setKeypairSigner([]), setKeypairIPNS([]) }}
+              onClick={() => { window.scrollTo(0, 0); setTermsModal(true), setKeypairSigner([]), setKeypairIPNS([]), setKeyIPNS('') }}
               style={{ marginRight: 10, display: 'none' }}
               data-tooltip='Terms of Use'
             >
@@ -1163,11 +1173,13 @@ const Account: NextPage = () => {
                   setErrorModal(false),
                   setKeypairSigner([]), 
                   setKeypairIPNS([]),
+                  setKeyIPNS(''),
+                  setSigCount(0),
                   !cache ? '' : setSuccess(true)
                 }}
                 className='button-header'
                 disabled={activeTab === 'OWNER' || loading}
-                data-tooltip='Show names you own'
+                data-tooltip='Show names that you can manage'
               >
                 <div
                   className="flex-sans-direction"
@@ -1188,7 +1200,9 @@ const Account: NextPage = () => {
                   setErrorModal(false),
                   setKeypairSigner([]), 
                   setKeypairIPNS([]),
-                  setMessage('Please Wait')
+                  setKeyIPNS(''),
+                  setMessage('Please Wait'),
+                  setSigCount(0)
                 }}
                 className='button-header'
                 disabled={activeTab === 'UTILS' || loading}
@@ -1212,8 +1226,10 @@ const Account: NextPage = () => {
                   setQuery(''),
                   setKeypairIPNS([]),
                   setKeypairSigner([]),
+                  setKeyIPNS(''),
                   setErrorModal(false),
-                  setMessage('Please Wait')
+                  setMessage('Please Wait'),
+                  setSigCount(0)
                 }}
                 className='button-header'
                 disabled={activeTab === 'SEARCH' || loading}
@@ -1264,26 +1280,6 @@ const Account: NextPage = () => {
                       (previewModalState.modalData ? 'Please wait' : `${message}`)
                     }
                   </div>
-                  {loading && sigCount === 0 && activeTab === 'UTILS' && (
-                    <div
-                      style={{
-                        marginTop: '10px'
-                      }}
-                    >
-                      <span 
-                        style={{
-                          color: 'white',
-                          fontSize: '18px',
-                          fontWeight: '700'
-                        }}
-                      >
-                        <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{'1'}</span>
-                        <span>{' Of '}</span>
-                        <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}
-                        >{ '1' }</span>
-                      </span>
-                    </div>
-                  )}
                   <div
                     style={{
                       color: 'white',
@@ -1371,7 +1367,7 @@ const Account: NextPage = () => {
                     marginRight: '5px'
                   }}
                 >
-                  names you own
+                  Names You Manage
                 </span>
                 <button
                   className="button-tiny"
@@ -1379,7 +1375,7 @@ const Account: NextPage = () => {
                     setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
-                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span>. Please use the <span style="color: cyan">search</span> tab for missing names</span>')
+                    setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
                   }}
                   data-tooltip='Enlighten me'
                 >
@@ -1525,7 +1521,7 @@ const Account: NextPage = () => {
                 <input
                   style={{
                     width: '90%',
-                    color: 'rgb(255, 255, 255, 0.75)'
+                    color: 'rgb(50, 205, 50, 0.75)'
                   }}
                   type="text"
                   placeholder={"ipns://"}
@@ -1541,7 +1537,7 @@ const Account: NextPage = () => {
                     style={{
                       height: '38px',
                       width: '80px',
-                      marginTop: '15px',
+                      marginTop: '18px',
                       marginLeft: '15px'
                     }}
                     type="submit"
@@ -1551,6 +1547,7 @@ const Account: NextPage = () => {
                       setChoice('ownerhash'),
                       setKeypairIPNS([]),
                       setKeypairSigner([]),
+                      setKeyIPNS(''),
                       setSigIPNS(''),
                       setSigSigner(''),
                       setSuccess(false)
@@ -1632,131 +1629,244 @@ const Account: NextPage = () => {
                   </button>
                 </div>
                 <div
-                  className="flex-sans-direction"
                   style={{
-                    width: '90%'
+                    width: '90%',
+                    alignItems: 'flex-start'
                   }}
                 >
-                  <input
+                  <span
                     style={{
-                      width: '100%',
-                      paddingRight: '32px',
-                      fontWeight: '400',
-                      textAlign: 'left',
-                      color: keypairIPNS[0] === 'IPNS PRIVATE KEY COPIED!' ? 'lime' : 'rgb(255, 255, 255, 0.75)'
+                      color: 'skyblue',
+                      fontSize: '12px',
+                      fontWeight: '700'
                     }}
-                    type="text"
-                    placeholder={"IPNS Private Key"}
-                    value={!choice.startsWith('export') ? '' : keypairIPNS[0]}
-                    id="export-ipns"
-                    disabled
-                  />
-                  <button 
-                    className="button-empty"
-                    onClick={() => {
-                      copyToClipboard('export-ipns'),
-                      setColor('lime'),
-                      setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
-                    }} 
-                    data-tooltip='Copy IPNS Key'
-                    style={{
-                      marginLeft: '-25px',
-                      color: color && !keypairIPNS[0] && !keypairIPNS[1] ? color : 'cyan'   
-                    }}
-                    hidden={!keypairIPNS[0]}
                   >
-                    <span 
-                      className="material-icons"
-                      style={{
-                        fontSize: '22px',
-                        fontWeight: '700'
-                      }}
-                    >
-                      content_copy
-                    </span>
-                  </button>
-                </div>
-                <div
-                  className="flex-sans-direction"
-                  style={{
-                    marginTop: '10px',
-                    width: '90%'
-                  }}
-                >
-                  <input
-                    style={{
-                      width: '100%',
-                      paddingRight: '32px',
-                      fontWeight: '400',
-                      textAlign: 'left',
-                      color: keypairSigner[0] === 'RECORDS SIGNER KEY COPIED!' ? 'lime' : 'rgb(255, 255, 255, 0.75)'
-                    }}
-                    type="text"
-                    placeholder={"CCIP Manager Key"}
-                    value={!choice.startsWith('export') ? '' : keypairSigner[0]}
-                    id="export-ccip"
-                    disabled
-                  />
-                  <button 
-                    className="button-empty"
-                    onClick={() => {
-                      copyToClipboard('export-ccip'),
-                      setColor('lime'),
-                      setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
-                    }} 
-                    data-tooltip='Copy Manager Key'
-                    style={{
-                      marginLeft: '-25px',
-                      color: color && !keypairSigner[0] && !keypairSigner[1] ? color : 'cyan'   
-                    }}
-                    hidden={!keypairSigner[0]}
-                  >
-                    <span 
-                      className="material-icons"
-                      style={{
-                        fontSize: '22px',
-                        fontWeight: '700'
-                      }}
-                    >
-                      content_copy
-                    </span>
-                  </button>
-                </div>
-                <button 
-                  className="button"
-                  style={{
-                    height: '38px',
-                    width: '115px',
-                    marginLeft: '15px',
-                    marginTop: '15px'
-                  }}
-                  type="submit"
-                  data-tooltip='Export Keys'
-                  onClick={() => { 
-                    setExportKey(true),
-                    setChoice('export'),
-                    setKeypairIPNS([]),
-                    setKeypairSigner([]),
-                    setSigIPNS(''),
-                    setSigSigner('')
-                  }}
-                >
+                    IPNS PRIVATE KEY
+                  </span>
                   <div
                     className="flex-sans-direction"
+                    style={{
+                      marginTop: '2px',
+                      width: '100%'
+                    }}
                   >
-                    <span>{'EXPORT'}</span>
-                    <span 
-                      className="material-icons"
+                    <input
                       style={{
-                        fontSize: '22px',
-                        fontWeight: '700',
-                        marginLeft: '5px'
+                        width: '100%',
+                        paddingRight: '32px',
+                        fontWeight: '400',
+                        textAlign: 'left',
+                        color: keypairIPNS[0] === 'IPNS PRIVATE KEY COPIED!' ? 'lime' : 'rgb(255, 255, 150, 0.75)'
                       }}
+                      type="text"
+                      placeholder={"IPNS Private Key"}
+                      value={!choice.startsWith('export') ? '' : keypairIPNS[0]}
+                      id="export-ipns"
+                      disabled
+                    />
+                    <button 
+                      className="button-empty"
+                      onClick={() => {
+                        constants.copyToClipboard('export-ipns'),
+                        setColor('lime'),
+                        setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
+                      }} 
+                      data-tooltip='Copy IPNS Key'
+                      style={{
+                        marginLeft: '-25px',
+                        color: color && !keypairIPNS[0] && !keypairIPNS[1] ? color : 'cyan'   
+                      }}
+                      hidden={!keypairIPNS[0]}
                     >
-                      file_download
-                    </span>
+                      <span 
+                        className="material-icons"
+                        style={{
+                          fontSize: '22px',
+                          fontWeight: '700'
+                        }}
+                      >
+                        content_copy
+                      </span>
+                    </button>
                   </div>
-                </button>
+                </div>
+                <div
+                  style={{
+                    width: '90%',
+                    alignItems: 'flex-start',
+                    marginTop: '10px'
+                  }}
+                >
+                  <span
+                    style={{
+                      color: 'skyblue',
+                      fontSize: '12px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    CCIP MANAGER KEY
+                  </span>
+                  <div
+                    className="flex-sans-direction"
+                    style={{
+                      marginTop: '2px',
+                      width: '100%'
+                    }}
+                  >
+                    <input
+                      style={{
+                        width: '100%',
+                        paddingRight: '32px',
+                        fontWeight: '400',
+                        textAlign: 'left',
+                        color: keypairSigner[0] === 'RECORDS SIGNER KEY COPIED!' ? 'lime' : 'rgb(255, 255, 150, 0.75)'
+                      }}
+                      type="text"
+                      placeholder={"CCIP Manager Key"}
+                      value={!choice.startsWith('export') ? '' : keypairSigner[0]}
+                      id="export-ccip"
+                      disabled
+                    />
+                    <button 
+                      className="button-empty"
+                      onClick={() => {
+                        constants.copyToClipboard('export-ccip'),
+                        setColor('lime'),
+                        setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
+                      }} 
+                      data-tooltip='Copy Manager Key'
+                      style={{
+                        marginLeft: '-25px',
+                        color: color && !keypairSigner[0] && !keypairSigner[1] ? color : 'cyan'   
+                      }}
+                      hidden={!keypairSigner[0]}
+                    >
+                      <span 
+                        className="material-icons"
+                        style={{
+                          fontSize: '22px',
+                          fontWeight: '700'
+                        }}
+                      >
+                        content_copy
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: '90%',
+                    alignItems: 'flex-start',
+                    marginTop: '10px'
+                  }}
+                >
+                  <span
+                    style={{
+                      color: 'skyblue',
+                      fontSize: '12px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    IPNS ENCODED KEY
+                  </span>
+                  <div
+                    className="flex-sans-direction"
+                    style={{
+                      marginTop: '2px',
+                      width: '100%'
+                    }}
+                  >
+                    <input
+                      style={{
+                        width: '100%',
+                        paddingRight: '32px',
+                        fontWeight: '400',
+                        textAlign: 'left',
+                        color: keyIPNS === 'IPNS ENCODED KEY COPIED!' ? 'lime' : 'rgb(255, 255, 150, 0.75)'
+                      }}
+                      type="text"
+                      placeholder={"IPNS Encoded Key"}
+                      value={!choice.startsWith('export') ? '' : keyIPNS}
+                      id="export-encoded"
+                      disabled
+                    />
+                    <button 
+                      className="button-empty"
+                      onClick={() => {
+                        constants.copyToClipboard('export-encoded'),
+                        setColor('lime'),
+                        setKeyIPNS('IPNS ENCODED KEY COPIED!')
+                      }} 
+                      data-tooltip='Copy Manager Key'
+                      style={{
+                        marginLeft: '-25px',
+                        color: color && !keyIPNS ? color : 'cyan'   
+                      }}
+                      hidden={!keyIPNS}
+                    >
+                      <span 
+                        className="material-icons"
+                        style={{
+                          fontSize: '22px',
+                          fontWeight: '700'
+                        }}
+                      >
+                        content_copy
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className='flex-row'
+                >
+                  <button 
+                    className="button"
+                    style={{
+                      height: '38px',
+                      width: '115px',
+                      marginLeft: '15px',
+                      marginTop: '20px'
+                    }}
+                    type="submit"
+                    data-tooltip='Export Keys'
+                    onClick={() => { 
+                      setExportKey(true),
+                      setChoice('export'),
+                      setKeypairIPNS([]),
+                      setKeypairSigner([]),
+                      setKeyIPNS(''),
+                      setSigIPNS(''),
+                      setSigSigner('')
+                    }}
+                  >
+                    <div
+                      className="flex-sans-direction"
+                    >
+                      <span>{'EXPORT'}</span>
+                      <span 
+                        className="material-icons"
+                        style={{
+                          fontSize: '22px',
+                          fontWeight: '700',
+                          marginLeft: '5px'
+                        }}
+                      >
+                        file_download
+                      </span>
+                    </div>
+                  </button>
+                  <div 
+                    className="material-icons smol"
+                    style={{ 
+                      color: keyIPNS ? 'lime' : (signError ? 'orangered' : ''),
+                      marginLeft: '10px',
+                      marginTop: '13px',
+                      fontSize: '20px'
+                    }}
+                  >
+                    { keyIPNS ? 'task_alt' : (signError ? 'cancel' : '') }
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1784,7 +1894,7 @@ const Account: NextPage = () => {
                     setHelpModal(true),
                     setIcon('info'),
                     setColor('cyan'),
-                    setHelp('<span>Search for a name that you <span style="color: cyan">own</span></span>')
+                    setHelp('<span>Search for a <span style="color: cyan">Subdomain</span> or a <span style="color: cyan">Wrapped Domain</span> or a <span style="color: cyan">Legacy name that you Manage but do not Own</span></span>')
                   }}
                   data-tooltip='Enlighten me'
                 >

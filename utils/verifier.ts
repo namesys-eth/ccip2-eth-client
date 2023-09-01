@@ -17,15 +17,15 @@ export async function verifyRecordhash(input: string, ccip2Config: any, address:
   })
 }
 
-export async function quickRecordhash(input: string, ccip2Config: any, address: string): Promise<string> {
+export async function quickRecordhash(input: string, ccip2Config: any, address: string): Promise<[string, boolean]> {
   // Read Recordhash from CCIP2 Resolver
   const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
   const _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(input))
   const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase())
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<[string, boolean]>((resolve, reject) => {
     if (_Recordhash_) {
-      resolve(_Recordhash_.toString() === '0x' ? '0x' : (
-        String(_Recordhash_) === String(_Ownerhash_) ? _Ownerhash_.toString() : _Recordhash_.toString()
+      resolve(_Recordhash_.toString() === '0x' ? ['0x', false] : (
+        String(_Recordhash_) === String(_Ownerhash_) ? [_Ownerhash_.toString(), false] : [_Recordhash_.toString(), true]
       ))
     } else {
       reject(new Error('Failed to fetch Recordhash'))

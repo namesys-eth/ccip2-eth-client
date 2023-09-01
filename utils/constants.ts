@@ -19,6 +19,12 @@ export const zeroBytes = '0x' + '0'.repeat(64)
 export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
 export const prefix = '0xe5010172002408011220'
+const ipnsRegex = /^[a-z0-9]{62}$/
+const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
+const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{55}$/
+const onionRegex = /^[a-z2-7]{16,56}$/
+const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+const hexRegex = /^[0-9a-fA-F]+$/
 
 export interface MainBodyState {
   modalData: string | undefined
@@ -40,7 +46,7 @@ export const ccip2 = [
   '0x3F2521AC2D9ea1bFd6110CA563FcD067E6E47deb', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
-export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 1) * 60 // 60 mins
+export const waitingPeriod = 1 * (network === 'goerli' ? 10 : 60) * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
   "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85", // Legacy Registrar (Goerli & Mainnet)
@@ -130,7 +136,7 @@ export const blocked = [
 ]
 // Record types in Preview modal
 export const types = [
-  'recordhash', // On-Chain Record
+  'storage', // On-Chain Record
   'resolver', // Exception: Not a Record type
   'addr',
   'contenthash',
@@ -164,6 +170,7 @@ export function hideOverlay() {
     overlay.style.display = 'none'
   }
 }
+
 // Returns formatted ed25519/IPNS keypair
 export function formatkey(keypair: [string, string]) {
   return '08011240' + keypair[0] + keypair[1] // ed25519 keypair = keypairIPNS
@@ -176,4 +183,137 @@ export function encodeContenthash(contenthash: string) {
     return ensContentHash.encoded
   }
   return ''
+}
+
+// Copy text
+export function copyToClipboard(element: string) {
+  const copyText = document.getElementById(element) as HTMLInputElement
+  copyText.select()
+  copyText.setSelectionRange(0, 99999)
+
+  navigator.clipboard.writeText(copyText.value).then(() => {
+  }).catch((error) => {
+    console.error('ERROR:', error)
+  })
+}
+
+// Check if image URL resolves
+export function checkImageURL(url: string) {
+  return new Promise(function (resolve, reject) {
+    var img = new Image()
+    img.onload = function () {
+      console.log('Log:', 'Image Loaded Successfully')
+      resolve(true)
+    }
+    img.onerror = function () {
+      console.error('Image Failed to Load')
+      reject(false)
+    }
+    img.src = url
+  })
+}
+
+// Check for empty object
+export function isEmpty(object: any) {
+  for (const key in object) {
+    if (object.hasOwnProperty(key)) {
+      if (object[key] !== '') {
+        return false
+      }
+    }
+  }
+  return true
+}
+
+// Check if value is a valid Name
+export function isName(value: string) {
+  return value.endsWith('.eth') && value.length <= 32 + 4
+}
+
+// Check if value is a valid Addr
+export function isAddr(value: string) {
+  return value.startsWith('0x') && value.length === 42 && hexRegex.test(value.split('0x')[1])
+}
+
+// Check if value is a valid Avatar URL
+export function isAvatar(value: string) {
+  return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
+}
+// Check if value is a valid Contenthash
+export function isContenthash(value: string) {
+  const prefixIPFS = value.substring(0, 7)
+  const prefixOnion = value.substring(0, 8)
+  return (
+    (prefixIPFS === 'ipns://' && ipnsRegex.test(value.substring(7,))) || // Check IPNS
+    (prefixIPFS === 'ipfs://' && ipfsRegexCID0.test(value.substring(7,))) || // Check IPFS CIDv0
+    (prefixIPFS === 'ipfs://' && ipfsRegexCID1.test(value.substring(7,))) || // Check IPFS CIDv1
+    (prefixOnion === 'onion://' && onionRegex.test(value.substring(8,))) // Check Onion v2 & v3
+  )
+}
+
+// Get latest timestamp from all records
+export function latestTimestamp(list: string[]) {
+  var _Timestamps: number[] = []
+  for (const key in list) {
+    if (list.hasOwnProperty(key) && list[key] !== '' && list[key]) {
+      _Timestamps.push(Number(list[key]))
+    }
+  }
+  return Math.max(..._Timestamps)
+}
+
+/// Init 
+// Types object with empty strings
+export function EMPTY_STRING() {
+  const EMPTY_STRING = {}
+  for (const key of types) {
+    if (!['resolver', 'storage'].includes(key)) {
+      EMPTY_STRING[key] = ''
+    }
+  }
+  return EMPTY_STRING
+}
+
+// Types object with empty bools
+export function EMPTY_BOOL() {
+  const EMPTY_BOOL = {}
+  for (const key of types) {
+    EMPTY_BOOL[key] = ['resolver', 'storage', 'revision'].includes(key) ? true : false
+  }
+  return EMPTY_BOOL
+}
+
+// History object with empty strings
+export const EMPTY_HISTORY = {
+  type: '',
+  addr: '',
+  contenthash: '',
+  avatar: '',
+  revision: '',
+  version: '',
+  timestamp: { ...EMPTY_STRING() },
+  queue: 1,
+  ownerstamp: []
+}
+
+/// Library
+export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
+  try {
+    const _response = await fetch(
+      `https://${ipnsKey}.ipfs2.eth.limo/version.json?t=${String(cacheBuster)}`
+    );
+    if (!_response.ok) {
+      console.error('Error:', 'Fetch Gone Wrong')
+      return {
+        '_sequence': ''
+      }
+    }
+    const data = await _response.json();
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    return {
+      '_sequence': ''
+    }
+  }
 }
