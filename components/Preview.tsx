@@ -850,6 +850,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
   async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string) {
+    const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
+      return typeof value === 'bigint' ? value.toString() : value
+    }))
+    _revision._name._privKey._key = {}
+    const __revision = JSON.stringify(_revision)
     const request = {
       ens: ENS,
       controller: _Wallet_,
@@ -858,9 +863,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       revision: Revision.encode(revision),
       chain: chain,
       gas: JSON.stringify(gas),
-      version: JSON.stringify(revision, (key, value) => {
-        return typeof value === 'bigint' ? value.toString() : value
-      }),
+      version: __revision,
       timestamp: timestamp,
       hashType: hashType
     }
