@@ -62,7 +62,7 @@ export async function KEYGEN(
  * @returns Deterministic private/public keypair
  * [RSA.priv, RSA.pub]
  */
-export async function RSA(
+export async function RSAGEN(
   username: string,
   caip10: string,
   signature: string,
@@ -83,5 +83,5 @@ export async function RSA(
   let hashKey = hkdf(sha256, inputKey, salt, info, 42)
   let privKey = cryptico.generateRSAKey(hashKey, BITS)
   let pubKey = cryptico.publicKeyString(privKey)
-  return [privKey, pubKey]
+  return [privKey, pubKey] // [RSA.priv, RSA.pub]
 }

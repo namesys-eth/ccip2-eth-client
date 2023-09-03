@@ -58,7 +58,8 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '66px'
+                fontSize: '66px',
+                color: 'lightgreen'
               }}
             >
               key
@@ -239,7 +240,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'lightblue' }
+          color={ 'cyan' }
           icon={ 'info' }
           onClose={() => setHelpModal(false)}
           show={helpModal}

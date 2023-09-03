@@ -12,7 +12,8 @@ interface ListItem {
 interface ListProps {
   label: string
   items: ListItem[]
-  onItemClick: (value: string) => void
+  onItemClickStealth: (value: string) => void
+  onItemClickPreview: (value: string) => void
 }
 
 const alphabets: string[] = []; // List of all alphabets except 'x'
@@ -24,7 +25,7 @@ for (let i = 65; i <= 90; i++) {
 
 const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
+const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemClickPreview }) => {
   const [icon, setIcon] = React.useState('')
   const [help, setHelp] = React.useState('')
   const [color, setColor] = React.useState('')
@@ -254,21 +255,50 @@ const List: React.FC<ListProps> = ({ label, items, onItemClick }) => {
                 className="button"
                 style={{
                   alignSelf: 'flex-end',
-                  height: '30px',
-                  width: '80px'
+                  height: '40px',
+                  width: '40px'
                 }}
-                onClick={() => onItemClick(item.name + '.eth')}
-                data-tooltip={`Click to ${label} off-chain records`}
+                onClick={() => onItemClickStealth(item.name + '.eth')}
+                disabled={item.migrated === '0'}
+                data-tooltip={`Stealth Payments`}
               >
                 <div 
                   className="flex-sans-direction"
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: '700'
-                  }}
                 >
-                    { label }&nbsp;
-                    <span className="material-icons smoller">
+                    {}
+                    <span 
+                      className="material-icons smoller"
+                      style={{
+                        fontSize: '25px',
+                        fontWeight: '700'
+                      }}
+                    >
+                      {label === "view" ? 'visibility' : 'account_balance_wallet'}
+                    </span>
+                  </div>
+              </button>
+              <button
+                className="button"
+                style={{
+                  alignSelf: 'flex-end',
+                  height: '40px',
+                  width: '40px',
+                  marginLeft: '5px'
+                }}
+                onClick={() => onItemClickPreview(item.name + '.eth')}
+                data-tooltip={`${label} Your Records`}
+              >
+                <div 
+                  className="flex-sans-direction"
+                >
+                    {}
+                    <span 
+                      className="material-icons smoller"
+                      style={{
+                        fontSize: '25px',
+                        fontWeight: '700'
+                      }}
+                    >
                       {label === "view" ? 'visibility' : 'edit'}
                     </span>
                   </div>

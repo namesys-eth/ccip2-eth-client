@@ -21,6 +21,7 @@
     "@ensdomains/eth-ens-namehash": "^2.0.15",
     "@ethersproject/providers": "^5.7.2",
     "@ipld/dag-pb": "^4.0.2",
+    "@noble/curves": "^1.2.0",
     "@noble/hashes": "1.2.0",
     "@rainbow-me/rainbowkit": "^1.0.8",
     "alchemy-sdk": "^2.2.0",

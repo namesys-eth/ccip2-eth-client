@@ -724,6 +724,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setResolveCall(_response)
         if (_response.address === ccip2Contract) {
           let _Storage = await verifier.quickRecordhash(_ENS, ccip2Config, getManager())
+          console.log(ensContent.decodeContenthash(_Storage[0]).decoded)
           let _IPFS: any
           if (_history.ownerstamp.length > 1) {
             for (var i = 0; i < 2; i++) {
@@ -731,14 +732,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           } else if (_history.ownerstamp.length === 1) {
             _IPFS = {
+              '_value': '//',
               '_sequence': '0'
             }
           } else {
             _IPFS = {
+              '_value': '//',
               '_sequence': ''
             }
           }
-          if (_history.version) setHashIPFS(_history.version.split('/')[2])
+          setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
             if (Number(_IPFS._sequence) === Number(_history.timestamp.version) - 1 && _Storage[1]) {
               if (_history.revision.contenthash) {
@@ -1064,6 +1067,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (_String.startsWith('https://')) {
           setRecordhash(`${_String}`)
         } else {
+          console.log(`${_String}`)
           setRecordhash(`${_String}`)
         }
         setMessage(['This May Take a While', ''])
