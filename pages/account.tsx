@@ -19,6 +19,7 @@ import { verifyMessage } from 'ethers/lib/utils'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
 import Preview from '../components/Preview'
+import Stealth from '../components/Stealth'
 import Faq from '../components/FAQ'
 import Salt from '../components/Salt'
 import Error from '../components/Error'
@@ -45,7 +46,9 @@ const Account: NextPage = () => {
   const [errorModal, setErrorModal] = React.useState(false) // Controls Error modal
   const [errorMessage, setErrorMessage] = React.useState('') // Sets Error message
   const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
+  const [stealthModal, setStealthModal] = React.useState(false) // Controls Stealth modal
   const [nameToPreview, setNameToPreview] = React.useState('') // Sets name to expand in preview
+  const [nameToStealth, setNameToStealth] = React.useState('') // Sets name to expand in stealth
   const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
   const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
@@ -91,6 +94,10 @@ const Account: NextPage = () => {
     modalData: '',
     trigger: false
   }) // Preview modal state
+  const [stealthModalState, setStealthModalState] = React.useState<constants.CustomBodyState>({
+    modalData: '',
+    trigger: false
+  }) // Stealth modal state
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
@@ -121,6 +128,15 @@ const Account: NextPage = () => {
   // Handle Preview modal trigger return
   const handlePreviewTrigger = (trigger: boolean) => {
     setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
+
+  // Handle Stealth modal data return
+  const handleStealthModalData = (data: string) => {
+    setStealthModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Stealth modal trigger return
+  const handleStealthTrigger = (trigger: boolean) => {
+    setStealthModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
 
   // Handle Confirm modal data return
@@ -309,7 +325,18 @@ const Account: NextPage = () => {
     }
   }, [previewModal, previewModalState])
 
-  // Trigger refresh
+  // Stealth modal state
+  React.useEffect(() => {
+    if (stealthModalState.trigger && stealthModalState.modalData && !stealthModal) {
+      setNameToStealth('')
+      setStealthModalState({
+        modalData: '',
+        trigger: false
+      })
+    }
+  }, [stealthModal, stealthModalState])
+
+  // Trigger Preview modal
   React.useEffect(() => {
     if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
       setPreviewModal(true)
@@ -317,6 +344,15 @@ const Account: NextPage = () => {
       setPreviewModal(false)
     }
   }, [nameToPreview])
+
+  // Trigger Stealth modal
+  React.useEffect(() => {
+    if (nameToStealth.endsWith('.eth')) {
+      setStealthModal(true)
+    } else {
+      setStealthModal(false)
+    }
+  }, [nameToStealth])
 
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
@@ -546,8 +582,13 @@ const Account: NextPage = () => {
   }, [meta])
 
   // Open Preview modal for chosen ENS domain
-  const onItemClick = (name: string) => {
+  const onItemClickPreview = (name: string) => {
     setNameToPreview(`${name}:`)
+  }
+
+  // Open Stealth modal for chosen ENS domain
+  const onItemClickStealth = (name: string) => {
+    setNameToStealth(`${name}:`)
   }
 
   React.useEffect(() => {
@@ -1401,7 +1442,8 @@ const Account: NextPage = () => {
                   <List
                     label='edit'
                     items={meta}
-                    onItemClick={onItemClick}
+                    onItemClickStealth={onItemClickStealth}
+                    onItemClickPreview={onItemClickPreview}
                   />
                 </div>
               )}
@@ -1431,7 +1473,8 @@ const Account: NextPage = () => {
                 <List
                   label='edit'
                   items={meta}
-                  onItemClick={onItemClick}
+                  onItemClickStealth={onItemClickStealth}
+                  onItemClickPreview={onItemClickPreview}
                 />
               </div>
             </div>
@@ -2029,6 +2072,16 @@ const Account: NextPage = () => {
                 chain={_Chain_}
                 handleParentTrigger={handlePreviewTrigger}
                 handleParentModalData={handlePreviewModalData}
+              />
+            )}
+            {stealthModal && (
+              <Stealth
+                onClose={() => setStealthModal(false)}
+                show={stealthModal}
+                _ENS_={nameToStealth}
+                chain={_Chain_}
+                handleParentTrigger={handleStealthTrigger}
+                handleParentModalData={handleStealthModalData}
               />
             )}
             <Faq

@@ -1,15 +1,15 @@
 import { Alchemy, Network } from "alchemy-sdk"
 import { ethers } from 'ethers'
-import iEnsLegacyRegistry from '../ABI/Contract-ABI-ENSLegacyRegistry.json'
-import iEnsLegacyRegistrar from '../ABI/Contract-ABI-ENSLegacyRegistrar.json'
-import iEnsLegacyResolver from '../ABI/Contract-ABI-ENSLegacyResolver.json'
-import iEnsUniversalResolverGoerli from '../ABI/Contract-ABI-ENSUniversalResolverGoerli.json'
-import iEnsPublicResolverMainnet from '../ABI/Contract-ABI-ENSPublicResolverMainnet.json'
-import iEnsUniversalResolverMainnet from '../ABI/Contract-ABI-ENSUniversalResolverMainnet.json'
-import iEnsWrapperGoerli from '../ABI/Contract-ABI-ENSWrapperGoerli.json'
-import iEnsWrapperMainnet from '../ABI/Contract-ABI-ENSWrapperMainnet.json'
-import iCCIP2Goerli from '../ABI/Contract-ABI-CCIP2Goerli.json'
-import iCCIP2Mainnet from '../ABI/Contract-ABI-CCIP2Mainnet.json'
+import iEnsLegacyRegistry from '../ABI/ENSLegacyRegistry.json'
+import iEnsLegacyRegistrar from '../ABI/ENSLegacyRegistrar.json'
+import iEnsLegacyResolver from '../ABI/ENSLegacyResolver.json'
+import iEnsUniversalResolverGoerli from '../ABI/ENSUniversalResolverGoerli.json'
+import iEnsPublicResolverMainnet from '../ABI/ENSPublicResolverMainnet.json'
+import iEnsUniversalResolverMainnet from '../ABI/ENSUniversalResolverMainnet.json'
+import iEnsWrapperGoerli from '../ABI/ENSWrapperGoerli.json'
+import iEnsWrapperMainnet from '../ABI/ENSWrapperMainnet.json'
+import iCCIP2Goerli from '../ABI/CCIP2Goerli.json'
+import iCCIP2Mainnet from '../ABI/CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
 
 export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
@@ -43,7 +43,7 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey)
 export const ccip2 = [
-  '0x3F2521AC2D9ea1bFd6110CA563FcD067E6E47deb', // CCIP2 Resolver Goerli
+  '0x4697b8672ceAe60E130BD39435cAb9eD7C630c81', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
 export const waitingPeriod = 1 * (network === 'goerli' ? 1 : 60) * 60 // 60 mins
@@ -296,6 +296,17 @@ export const EMPTY_HISTORY = {
   ownerstamp: []
 }
 
+// History object with empty strings
+export const EMPTY_HISTORY_STEALTH = {
+  type: '',
+  stealth: '',
+  revision: '',
+  version: '',
+  timestamp: { ...EMPTY_STRING() },
+  queue: 1,
+  ownerstamp: []
+}
+
 /// Library
 export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
   try {
@@ -305,6 +316,7 @@ export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) 
     if (!_response.ok) {
       console.error('Error:', 'Fetch Gone Wrong')
       return {
+        '_value': '//',
         '_sequence': ''
       }
     }
@@ -313,6 +325,7 @@ export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) 
   } catch (error) {
     console.error('Error:', error)
     return {
+      '_value': '//',
       '_sequence': ''
     }
   }
