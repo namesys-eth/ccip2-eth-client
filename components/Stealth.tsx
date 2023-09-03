@@ -8,14 +8,10 @@ import { AbiItem } from 'web3-utils'
 import { verifyMessage } from 'ethers/lib/utils'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
-import Gateway from '../components/Gateway'
-import Options from '../components/Options'
 import Error from '../components/Error'
 import Info from '../components/Info'
-import Gas from '../components/Gas'
 import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
-import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
 import { KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
@@ -52,7 +48,7 @@ interface ModalProps {
 * @interface handleParentModalData : Send modal data to Home/Account page
 * @interface handleParentTrigger : Send modal state to Home/Account page
 **/
-const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
+const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
   // React States
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
@@ -64,23 +60,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [ENS, setENS] = React.useState(''); // ENS name; used to trigger useContractRead()
   const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
   const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
-  const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
   const [conclude, setConclude] = React.useState(false); // Indicates when all records have finished fetching
   const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
   const [resolveCall, setResolveCall] = React.useState<any>(); // Resolver object for querying records
   const [sync, setSync] = React.useState(false); // Records sync flag
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
   const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
   const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState(''); // Wrapper Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
-  const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
+  const [contenthash, setStealth] = React.useState(''); // Contenthash record for ENS Domain
   const [salt, setSalt] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
-  const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
   const [refresh, setRefresh] = React.useState(''); // Refresh record trigger
   const [refreshedItem, setRefreshedItem] = React.useState(''); // Refresh record item
   const [refreshedValue, setRefreshedValue] = React.useState(''); // Refresh record value
@@ -102,8 +95,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
-  const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
-  const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [infoModal, setInfoModal] = React.useState(false); // Info modal
   const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
@@ -111,25 +102,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
-  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [goodSalt, setGoodSalt] = React.useState(false) // If generated CID matches the available storage
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
   }); // Salt modal state
-  const [optionsModalState, setOptionsModalState] = React.useState<constants.MainBodyState>({
-    modalData: undefined,
-    trigger: false
-  }); // Options modal state
-  const [confirmModalState, setConfirmModalState] = React.useState<constants.MainBodyState>({
-    modalData: undefined,
-    trigger: false
-  }); // Confirm modal state
-  const [gatewayModalState, setGatewayModalState] = React.useState<constants.MainBodyState>({
-    modalData: undefined,
-    trigger: false
-  }); // Confirm modal state
   const [successModalState, setSuccessModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
@@ -215,78 +193,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     args: [ethers.utils.namehash(ENS)]
   })
 
-  // Sets new ENS Resolver
-  const {
-    data: response1of2,
-    write: migrate,
-    isLoading: isMigrateLoading,
-    isSuccess: isMigrateSuccess,
-    isError: isMigrateError
-  } = useContractWrite({
-    address: `0x${!wrapped ? constants.ensConfig[0].addressOrName.slice(2) : constants.ensConfig[chain === '1' ? 7 : 3].addressOrName.slice(2)}`,
-    abi: !wrapped ? constants.ensConfig[0].contractInterface : constants.ensConfig[chain === '1' ? 7 : 3].contractInterface,
-    functionName: 'setResolver',
-    args: [ethers.utils.namehash(ENS), ccip2Contract]
-  })
-
-  // Sets Short Recordhash in CCIP2 Resolver
-  const {
-    data: response2of2,
-    write: initRecordhash,
-    isLoading: isSetRecordhashLoading,
-    isSuccess: isSetRecordhashSuccess,
-    isError: isSetRecordhashError
-  } = useContractWrite({
-    address: `0x${ccip2Config.addressOrName.slice(2)}`,
-    abi: ccip2Config.contractInterface,
-    functionName: 'setShortRecordhash',
-    args: [
-      ethers.utils.namehash(ENS),
-      ethers.utils.defaultAbiCoder.encode(
-        ['bytes32'],
-        [CID ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
-      )
-    ]
-  })
-
-  // Wagmi hook for awaiting transaction processing
-  const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
-    hash: response1of2?.hash,
-  })
-  const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
-    hash: response2of2?.hash,
-  })
-
-  // Handle Options modal data return
-  const handleOptionsModalData = (data: string | undefined) => {
-    setOptionsModalState(prevState => ({ ...prevState, modalData: data }))
-  }
-  // Handle Options modal trigger
-  const handleOptionsTrigger = (trigger: boolean) => {
-    setOptionsModalState(prevState => ({ ...prevState, trigger: trigger }))
-    if (trigger) {
-      setSafeTrigger('1')
-    } else {
-      setSafeTrigger('0')
-      setTrigger('')
-    }
-  }
-
-  // Handle Confirm modal data return
-  const handleConfirmModalData = (data: string | undefined) => {
-    setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
-  }
-  // Handle Confirm modal trigger
-  const handleConfirmTrigger = (trigger: boolean) => {
-    setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
-    if (trigger) {
-      setSafeTrigger('1')
-    } else {
-      setSafeTrigger('0')
-      setTrigger('')
-    }
-  }
-
   // Handle Success modal data return
   const handleSuccessModalData = (data: string | undefined) => {
     setSuccessModalState(prevState => ({ ...prevState, modalData: data }))
@@ -312,21 +218,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSalt(false)
   }
 
-  // Handle Salt modal data return
-  const handleGatewayModalData = (data: string | undefined) => {
-    setGatewayModalState(prevState => ({ ...prevState, modalData: data }))
-  }
-  // Handle Salt modal trigger
-  const handleGatewayTrigger = (trigger: boolean) => {
-    setGatewayModalState(prevState => ({ ...prevState, trigger: trigger }))
-    if (trigger) {
-      setSafeTrigger('1')
-    } else {
-      setSafeTrigger('0')
-      setTrigger('')
-    }
-  }
-
   // Handle Info modal data return
   const handleInfoModalData = (data: string | undefined) => {
   }
@@ -349,67 +240,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Initialises internal LIST[] object
-  function setMetadata(_recordhash: string, _addr: string, _contenthash: string, _avatar: string) {
+  function setMetadata(_encrypted: string) {
     let _LIST = [
       {
         key: 0,
-        header: hashType === 'recordhash' ? 'Recordhash' : (hashType === 'gateway' ? 'Gateway' : 'Ownerhash'),
-        type: 'storage',
-        value: _recordhash,
+        header: 'Steath Payment',
+        type: 'stealth',
+        value: _encrypted,
         editable: false,
         active: resolver === ccip2Contract,
         state: false,
         label: 'Set',
-        help: '<span>On-chain Record <span style="color: cyan">Storage</span> Pointer</span>',
-        tooltip: 'Set New Storage'
-      },
-      {
-        key: 1,
-        header: 'Resolver',
-        type: 'resolver',
-        value: resolver,
-        editable: false,
-        active: resolver !== ccip2Contract,
-        state: false,
-        label: 'Migrate',
-        help: '<span>Please <span style="color: cyan">migrate resolver</span> to enjoy off-chain records</span>',
-        tooltip: 'Please Migrate Resolver'
-      },
-      {
-        key: 2,
-        header: 'Avatar',
-        type: 'avatar',
-        value: _avatar,
-        editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAvatar(_avatar) && queue > 0,
-        state: false,
-        label: 'Edit',
-        help: '<span>Set your <span style="color: cyan">avatar</span></span>',
-        tooltip: 'Set Avatar'
-      },
-      {
-        key: 3,
-        header: 'Address',
-        type: 'addr',
-        value: _addr,
-        editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAddr(_addr) && queue > 0,
-        state: false,
-        label: 'Edit',
-        help: '<span>Set your default <span style="color: cyan">address</span></span>',
-        tooltip: 'Set Address'
-      },
-      {
-        key: 4,
-        header: 'Contenthash',
-        type: 'contenthash',
-        value: _contenthash,
-        editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isContenthash(_contenthash) && queue > 0,
-        state: false,
-        label: 'Edit',
-        help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
-        tooltip: 'Set Contenthash'
+        help: '<span><span style="color: cyan">Encrypted</span> Payment Address</span>',
+        tooltip: 'Set New Stealth Payment'
       }
     ]
     concludeGet(_LIST) // Assign _LIST
@@ -426,10 +269,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   /* K0 = Generated secp256k1 Keypair 
    * K1 = Wallet secp256k1 Keypair 
    * K2 = Generated ed25519 Keypair
+   * K3 = Generate RSA Keypair
    * S1 = Signature for K2 Generation (Signed by K1)
    * S2 = Signature for Records (Signed by K0)
    * S3 = Signature for Manager Approval (Signed by K1)
    * S4 = Signature for K0 Generation (Signed by K1)
+   * S5 = Signature for K3 Generation (Signed by K1)
    */
   // Signature S1 statement; S1(K1) [IPNS Keygen]
   // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
@@ -459,6 +304,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _digest = _toSign
     return _digest
   }
+  // Signature S5 statement; S5(K1) [Signer Keygen]
+  // S5 generates AES-encrypted text
+  function statementEncryptionKey(extradata: string, type: string) {
+    let _toSign = `Requesting Signature To Generate Encryption Key\n\nOrigin: ${ENS}\nKey Type: RSA-1048\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    return _digest
+  }
 
   /// Encode string values of records
   // returns abi.encodeWithSelector(iCallbackType.signedRecord.selector, _signer, _recordSignature, _approvedSignature, result)
@@ -466,16 +318,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let encoded: string
     let _value: string = ''
     let type: string = ''
-    if (key === 'avatar') {
+    if (key === 'stealth') {
       type = 'string'
-      _value = value
-    }
-    if (key === 'contenthash') {
-      type = 'bytes'
-      _value = ensContent.encodeContenthash(value).encoded
-    }
-    if (key === 'addr') {
-      type = 'address'
       _value = value
     }
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value])
@@ -499,16 +343,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     let type: string = ''
     let _value: string = ''
-    if (key === 'avatar') {
+    if (key === 'stealth') {
       type = 'string'
-      _value = _recordValue
-    }
-    if (key === 'contenthash') {
-      type = 'bytes'
-      _value = ensContent.encodeContenthash(_recordValue).encoded
-    }
-    if (key === 'addr') {
-      type = 'address'
       _value = _recordValue
     }
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value])
@@ -561,10 +397,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setCID('')
     setIsSigner(false)
     setSaltModalState({
-      modalData: undefined,
-      trigger: false
-    })
-    setOptionsModalState({
       modalData: undefined,
       trigger: false
     })
@@ -635,7 +467,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       )
       let gasAmount: any
       if (key === 'contenthash') {
-        gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
+        gasAmount = await contract.methods.setStealth(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
       } else if (key === 'avatar') {
         gasAmount = await contract.methods.setText(ethers.utils.namehash(ENS), key, value).estimateGas({ from: _Wallet_ })
       } else if (key === 'addr') {
@@ -647,70 +479,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return gas
   }
 
-  // Get Contenthash for ENS domain first
-  async function getContenthash(resolver: ethers.providers.Resolver) {
-    await resolver.getContentHash()
-      .then((response) => {
-        if (!response) {
-          setContenthash('')
-        } else {
-          setContenthash(response)
-        }
-        getAvatar(resolver)
-      })
-      .catch(() => {
-        setContenthash('')
-        getAvatar(resolver)
-      })
-  }
-
-  // Get Avatar for ENS domain second
-  async function getAvatar(resolver: ethers.providers.Resolver) {
-    await provider.getAvatar(ENS)
-      .then(response => {
-        if (!response) {
-          getText(resolver, 'avatar')
-        } else {
-          setAvatar(response)
-        }
-        getAddr()
-      })
-      .catch(() => {
-        getText(resolver, 'avatar')
-      })
-  }
-
-  // Get Avatar for ENS domain second
-  async function getText(resolver: ethers.providers.Resolver, key: string) {
-    await resolver.getText(key)
-      .then((response) => {
-        if (!response) {
-          setAvatar('')
-        } else {
-          setAvatar(response)
-        }
-        getAddr()
-      })
-      .catch(() => {
-        setAvatar('')
-        getAddr()
-      })
-  }
-
   // Get Addr for ENS domain at last
-  async function getAddr() {
-    await provider.resolveName(ENS)
+  async function getStealth(resolver: ethers.providers.Resolver) {
+    await resolver.getText('stealth')
       .then(response => {
         if (!response) {
-          setAddr('')
+          setStealth('')
           setSync(true)
         } else {
-          setAddr(response)
+          setStealth(response)
           setSync(true)
         }
       })
       .catch(() => {
-        setAddr('')
+        setStealth('')
         setSync(true)
       })
   }
@@ -741,50 +523,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           if (_history.version) setHashIPFS(_history.version.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
             if (Number(_IPFS._sequence) === Number(_history.timestamp.version) - 1 && _Storage[1]) {
-              if (_history.revision.contenthash) {
-                setContenthash(_history.contenthash)
+              if (_history.revision.stealth) {
+                setStealth(_history.stealth)
               } else {
-                setContenthash('')
+                setStealth('')
               }
-              if (_history.revision.avatar) {
-                setAvatar(_history.avatar)
-              } else {
-                setAvatar('')
-              }
-              if (_history.revision.addr) {
-                setAddr(_history.addr)
-              } else {
-                setAddr('')
-              }      
               setSync(true)
             } else {
-              getContenthash(_response)
+              getStealth(_response)
             }
           } else {
-            setContenthash('')
-            setAvatar('')
-            setAddr('')
+            setStealth('')
             setSync(true)
           }
         } else {
-          const _contenthash = await refreshRecord(['contenthash', ''], _response, _ENS, false)
-          setContenthash(_contenthash || '')
-          let _avatar: string
-          _avatar = await refreshRecord(['avatar', ''], _response, _ENS, false)
-          if (!_avatar) {
-            _avatar = await refreshRecord(['text', 'avatar'], _response, _ENS, false)
-          }
-          setAvatar(_avatar || '')
-          const _addr = await refreshRecord(['addr', ''], _response, _ENS, false)
-          setAddr(_addr || '')
+          const _stealth = await refreshRecord(['text', 'stealth'], _response, _ENS, false)
+          setStealth(_stealth || '')
           setSync(true)
         }
       } else {
         setResolveCall(_response)
         setResolver('')
-        setContenthash('')
-        setAvatar('')
-        setAddr('')
+        setStealth('')
         setSync(true)
       }
     } catch (error) {
@@ -796,40 +556,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function refreshRecord(_record: string[], _resolver: Resolver, _ENS: string, _trigger: boolean) {
     if (_trigger) setRefresh(_record[0])
     try {
-      if (_record[0] === 'addr') {
-        const _response = await provider.resolveName(_ENS)
-        if (_response) {
-          setAddr(_response)
-          if (_trigger) {
-            setRefreshedValue(_response)
-            setRefresh('1')
-          }
-          return _response
-        }
-      } else if (_record[0] === 'avatar') {
-        const _response = await provider.getAvatar(_ENS)
-        if (_response) {
-          setAvatar(_response)
-          if (_trigger) {
-            setRefreshedValue(_response)
-            setRefresh('1')
-          }
-          return _response
-        }
-      } else if (_record[0] === 'contenthash') {
-        const _response = await _resolver.getContentHash()
-        if (_response) {
-          setContenthash(_response)
-          if (_trigger) {
-            setRefreshedValue(_response)
-            setRefresh('1')
-          }
-          return _response
-        }
-      } else if (_record[0] === 'text') {
+      if (_record[0] === 'text') {
         const _response = await _resolver.getText(_record[1])
         if (_response) {
-          setAvatar(_response)
+          setStealth(_response)
           if (_trigger) {
             setRefreshedValue(_response)
             setRefresh('1')
@@ -1086,19 +816,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [successModalState, txSuccess1of2, txSuccess2of2])
-
-  // Sets option between Ownerhash and Recordhash
-  React.useEffect(() => {
-    if (confirmModalState.trigger && confirmModalState.modalData) {
-      setConfirm(false)
-      if (confirmModalState.modalData === '0') {
-        setSalt(true)
-      } else {
-        setGateway(true)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmModalState])
 
   // Send data to Home/Account-page and trigger update
   function handleSuccess(_output: string) {
@@ -1942,40 +1659,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               close
             </span>
           </a>
-        </StyledModalHeader>
-        {ENS && loading &&
-          <StyledModalTitle>
-            <span
-              className="material-icons miui-small"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-            </span>
-          </StyledModalTitle>
-        }
-        {ENS && avatar && imageLoaded && !loading && list.length > 0 &&
-          <StyledModalTitle>
-            <img
-              src={thumbnail || avatar}
-              width={'100px'}
-              alt={ENS}
-              onError={() => setImageLoaded(false)}
-            />
-          </StyledModalTitle>
-        }
-        {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
-          <StyledModalTitle>
-            <span
-              className="material-icons miui"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-              portrait
-            </span>
-          </StyledModalTitle>
-        }
+        </StyledModalHeader>  
         {ENS && loading &&
           <StyledModalBody>
             <div
@@ -2512,17 +2196,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           >
             {success}
           </Success>
-          <Gas
-            color={'lime'}
-            icon={'free_breakfast'}
-            onClose={() => {
-              setGasModal(false),
-                setLoading(false)
-            }}
-            show={gasModal}
-          >
-            {gas}
-          </Gas>
           <Info
             handleTrigger={handleInfoTrigger}
             handleModalData={handleInfoModalData}
@@ -2543,35 +2216,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           >
             {ENS}
           </Salt>
-          <Gateway
-            handleTrigger={handleGatewayTrigger}
-            handleModalData={handleGatewayModalData}
-            onClose={() => {
-              setSalt(false)
-            }}
-            show={gateway}
-          >
-          </Gateway>
-          <Options
-            handleTrigger={handleOptionsTrigger}
-            handleModalData={handleOptionsModalData}
-            onClose={() => {
-              setOptions(false)
-            }}
-            show={options && trigger === 'resolver'}
-          >
-            {ownerhash ? true : false}
-          </Options>
-          <Confirm
-            handleTrigger={handleConfirmTrigger}
-            handleModalData={handleConfirmModalData}
-            onClose={() => {
-              setConfirm(false)
-            }}
-            show={confirm && !salt}
-          >
-            {'1'}
-          </Confirm>
           <Error
             onClose={() => {
               setCrash(false),
@@ -2652,4 +2296,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 1);
 `
 
-export default Preview
+export default Stealth
