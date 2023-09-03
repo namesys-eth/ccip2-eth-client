@@ -707,7 +707,7 @@ const Home: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: onSearch ? '36px' : '44px',
-                      marginTop: onSearch ? '24px' : '30px',
+                      marginTop: onSearch ? '44px' : '10px',
                       color: '#fc6603'
                     }}
                   >
