@@ -990,7 +990,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         })
       }
     } else if (trigger === 'stealth') {
-      if (payToModalState.trigger && !keypairIPNS && safeTrigger) {
+      if (payToModalState.trigger && !keypairIPNS && safeTrigger && !constants.isEmpty(newValues)) {
         setSigCount(1)
         setMessage(['Waiting For Signature', '1'])
         signMessage({
@@ -1235,6 +1235,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // RSA keypair is generated
   React.useEffect(() => {
     if (payToModalState.trigger && payToModalState.modalData) {
+      setMessage(['Fetching Payer Encryption Record', ''])
+      setLoading(true)
       let _Payer = payToModalState.modalData.split(':')[0]
       let _Payee = payToModalState.modalData.split(':')[1]
       let _Amount = payToModalState.modalData.split(':')[2]
@@ -1246,12 +1248,14 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             .then((response) => {
               if (!response) {
                 _RSA = ''
+                setLoading(false)
                 setMessage(['Payer Has No Encryption Record', ''])
                 doCrash()
                 setColor('orangered')
                 setSigCount(0)
                 setProcessCount(0)
               } else {
+                setMessage(['Encrypting Your Receiver Address', ''])
                 _RSA = response
                 const _encryptionResult = cryptico.encrypt(`{payer:${_Payer},payee:${_Payee},amount:${_Amount}}`, _RSA)
                 const _THIS = newValues
@@ -1267,12 +1271,20 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
             .catch(() => {
               _RSA = ''
-              setMessage(['Payer Has No Encryption Record', ''])
+              setLoading(false)
+              setMessage(['Failed To Fetch Encryption Record', ''])
               doCrash()
               setColor('orangered')
               setSigCount(0)
               setProcessCount(0)
             })
+        } else {
+          setMessage(['Payer Has No Fucking Resolver', ''])
+          setLoading(false)
+          doCrash()
+          setColor('orangered')
+          setSigCount(0)
+          setProcessCount(0)
         }
       }
       lookup()
@@ -2227,7 +2239,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               fontSize: '14px'
                             }}
                           >
-                            {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons smoller">done_all</span>
+                            {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons smoller">lock_open</span>
                           </div>
                         </button>
                         <button

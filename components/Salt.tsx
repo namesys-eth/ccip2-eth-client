@@ -218,10 +218,10 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             className="button"
             style={{
               height: '33px',
-              width: '140px',
+              width: '130px',
               padding: '5px',
               marginTop: '20px',
-              fontSize: '17px',
+              fontSize: '16px',
               fontWeight: '700'
             }}
             onClick={ handleSubmit }
@@ -230,7 +230,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
             <div 
               className="flex-row"
               style={{
-                fontSize: '17px'
+                fontSize: '15px'
               }}
             >
               { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>

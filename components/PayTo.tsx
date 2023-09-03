@@ -62,7 +62,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
   }
 
   function setPayeeAmount(_value: string) {
-    if (_value === '0' || _value === '0.') {
+    if (_value === '0' || _value === '0.' || /[a-zA-Z]/.test(_value)) {
       setAmount('')
       setColor([color[0], color[1], 'white'])
     } else {
@@ -97,10 +97,10 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
           <div
             style={{
               marginTop: '17px',
-              marginBottom: '5px'
+              marginBottom: '0px'
             }}
           >
-            <span style={{ fontSize: '20px', fontWeight: '700' }}>Enter Payment Info</span>
+            <span style={{ fontSize: '18px', fontWeight: '700' }}>Enter Payment Info</span>
             <button 
                 className="button-tiny"
                 style={{
@@ -130,7 +130,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             className='flex-row'
             style={{
               width: '400px',
-              marginTop: '0px'
+              marginTop: '5px'
             }}
           >
             <input 
@@ -292,7 +292,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             className="button"
             style={{
               height: '33px',
-              width: '100px',
+              width: '90px',
               padding: '5px',
               marginTop: '17px',
               fontSize: '16px',
@@ -305,10 +305,10 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             <div 
               className="flex-row"
               style={{
-                fontSize: '17px'
+                fontSize: '15px'
               }}
             >
-              { 'Next' }&nbsp;<span className="material-icons smoller">done_all</span>
+              { 'Next' }&nbsp;<span className="material-icons smoller">navigate_next</span>
             </div>
           </button>
         </StyledModalBody>
