@@ -27,7 +27,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
 
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     handleTrigger(false)
-    handleModalData('')
+    handleModalData(undefined)
     setColor(['white', 'white'])
     e.preventDefault()
     onClose()
@@ -52,7 +52,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
   }
 
   function setPayeeValue(_value: string) {
-    if (constants.isAddr(_value)) {
+    if (constants.isAddr(_value) || constants.isName(_value)) {
       setPayee(_value)
       setColor([color[0], 'lime', color[2]])
     } else {
@@ -136,7 +136,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             <input 
               id='info'
               key='0'
-              placeholder={'enter payee .eth'}
+              placeholder={'enter payer .eth'}
               type='text'
               style={{
                 background: 'black',
@@ -190,7 +190,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             <input 
               id='info'
               key='1'
-              placeholder={'enter payee address'}
+              placeholder={'enter payee address or .eth'}
               type='text'
               style={{
                 background: 'black',

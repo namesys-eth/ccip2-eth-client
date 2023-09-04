@@ -285,7 +285,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setLoading(false)
         setPayeeAddr(constants.zeroAddress)
         setPayeeAmount('0.0')
-        setMessage(['Payer Has No Fucking Resolver', ''])
+        setMessage(['Payer Has No Resolver', ''])
         doCrash()
         setColor('orangered')
       }
@@ -477,10 +477,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   /// Trigger Enjoy
   function doEnjoy() {
-    setIcon('gpp_good'),
-      setColor('lime')
+    setIcon('gpp_good')
+    setColor('lime')
     setSaltModal(false)
-    setLoading(false)
     setQueue(1)
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
@@ -500,6 +499,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     })
     setGoodSalt(false)
     setTrigger('')
+    setLoading(false)
   }
 
   // Signature S2 with K0 
@@ -1021,6 +1021,19 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, trigger])
 
+  // Triggers PayTo modal
+  React.useEffect(() => {
+    if (trigger === 'stealth') {
+      if (!payToModalState.trigger && !payToModalState.modalData) {
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payToModalState, trigger])
+
   // Triggers Decryption Signature
   React.useEffect(() => {
     if (isPayment) {
@@ -1087,7 +1100,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setMessage(['IPNS Keypair Generated', ''])
       }
       keygen()
-    } else if (sigRSA && !keypairRSA && isSigner && isPayment) {
+    } else if (sigRSA && !keypairRSA && isSigner) {
       setLoading(true)
       setMessage(['Generating Encryption Key', ''])
       const keygen = async () => {
@@ -1279,7 +1292,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               setProcessCount(0)
             })
         } else {
-          setMessage(['Payer Has No Fucking Resolver', ''])
+          setMessage(['Payer Has No Resolver', ''])
           setLoading(false)
           doCrash()
           setColor('orangered')
@@ -1594,7 +1607,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         modalData: undefined,
                         trigger: false
                       })
-                      setLoading(false)
                       setSuccess(trigger === 'stealth' ? '<span><span style="color: lightgreen">Stealth Record Set</span>! You may now <span style="color: cyan">Receive</span> Private Payments</span>' : '<span><span style="color: lightgreen">Encryption Key Set</span>! You may now <span style="color: cyan">Send</span> Private Payments</span>')
                       setSuccessModal(true)
                       doEnjoy()
@@ -2049,7 +2061,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             fontSize: '76px'
                           }}
                         >
-                          price_check
+                          security
                         </span>
                       </StyledModalTitle>
                       <span

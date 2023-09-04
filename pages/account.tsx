@@ -588,7 +588,7 @@ const Account: NextPage = () => {
 
   // Open Stealth modal for chosen ENS domain
   const onItemClickStealth = (name: string) => {
-    setNameToStealth(`${name}:`)
+    setNameToStealth(`${name}`)
   }
 
   React.useEffect(() => {
