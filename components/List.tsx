@@ -56,44 +56,44 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
               alignItems: 'center'
             }}
           >
-            <span 
-              style={{ 
+            <span
+              style={{
                 marginBottom: '-3px',
                 color: 'white'
               }}
             >
               <div>
                 {item.name.split('').map((char, index) => (
-                  <span 
+                  <span
                     key={index}
-                    style={{ 
+                    style={{
                       fontFamily: 'SF Mono',
                       letterSpacing: '-0.5px',
                       fontWeight: '600',
                       fontSize: lang.arabic.includes(char) ||
-                        lang.hindi.includes(char) || 
+                        lang.hindi.includes(char) ||
                         lang.persian.includes(char) ||
-                        lang.chinese.includes(char) || 
+                        lang.chinese.includes(char) ||
                         lang.korean.includes(char)
                         ? '24px' : '21px'
                     }}
                   >
-                    { char.toLowerCase() }
+                    {char.toLowerCase()}
                   </span>
                 ))}
-                <span 
-                  style={{ 
+                <span
+                  style={{
                     fontFamily: 'SF Mono',
-                    fontSize: '15px', 
+                    fontSize: '15px',
                     color: 'cyan'
                   }}
                 >
                   .
                 </span>
-                <span 
-                  style={{ 
+                <span
+                  style={{
                     fontFamily: 'Spotnik',
-                    fontSize: '11px', 
+                    fontSize: '11px',
                     color: 'cyan',
                     fontWeight: '700',
                     letterSpacing: '0px'
@@ -101,18 +101,18 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                 >
                   ETH
                 </span>
-                { item.migrated === '1' &&
-                  <button 
+                {item.migrated === '1' &&
+                  <button
                     className="button-tiny"
-                    onClick={() => { 
+                    onClick={() => {
                       setHelpModal(true),
-                      setIcon('gpp_good'),
-                      setColor('lime'),
-                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
+                        setIcon('gpp_good'),
+                        setColor('lime'),
+                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
                     }}
-                    data-tooltip={ 'Ready For Off-chain Use With Recordhash' }
+                    data-tooltip={'Ready For Off-chain Use With Recordhash'}
                   >
-                    <div 
+                    <div
                       className="material-icons smol"
                       style={{
                         color: 'lime'
@@ -122,18 +122,18 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     </div>
                   </button>
                 }
-                { item.migrated === '3/4' &&
-                  <button 
+                {item.migrated === '3/4' &&
+                  <button
                     className="button-tiny"
-                    onClick={() => { 
+                    onClick={() => {
                       setHelpModal(true),
-                      setIcon('gpp_good'),
-                      setColor('cyan'),
-                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
+                        setIcon('gpp_good'),
+                        setColor('cyan'),
+                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
                     }}
-                    data-tooltip={ 'Ready For Off-chain Use With Ownerhash' }
+                    data-tooltip={'Ready For Off-chain Use With Ownerhash'}
                   >
-                    <div 
+                    <div
                       className="material-icons smol"
                       style={{
                         color: 'cyan'
@@ -143,18 +143,18 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     </div>
                   </button>
                 }
-                { item.migrated === '4/5' &&
-                  <button 
+                {item.migrated === '4/5' &&
+                  <button
                     className="button-tiny"
-                    onClick={() => { 
+                    onClick={() => {
                       setHelpModal(true),
-                      setIcon('gpp_good'),
-                      setColor('cyan'),
-                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">HTTP Gateway</span> is Set</span>')
+                        setIcon('gpp_good'),
+                        setColor('cyan'),
+                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">HTTP Gateway</span> is Set</span>')
                     }}
-                    data-tooltip={ 'Ready For Off-chain Use With HTTP Gateway' }
+                    data-tooltip={'Ready For Off-chain Use With HTTP Gateway'}
                   >
-                    <div 
+                    <div
                       className="material-icons smol"
                       style={{
                         color: 'cyan'
@@ -164,18 +164,18 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     </div>
                   </button>
                 }
-                { item.migrated === '1/2' &&
-                  <button 
+                {item.migrated === '1/2' &&
+                  <button
                     className="button-tiny"
-                    onClick={() => { 
+                    onClick={() => {
                       setHelpModal(true),
-                      setIcon('gpp_good'),
-                      setColor('orange'),
-                      setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
+                        setIcon('gpp_good'),
+                        setColor('orange'),
+                        setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
                     }}
-                    data-tooltip={ 'No Storage Found' }
+                    data-tooltip={'No Storage Found'}
                   >
-                    <div 
+                    <div
                       className="material-icons smol"
                       style={{
                         color: 'orange'
@@ -185,18 +185,18 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     </div>
                   </button>
                 }
-                { item.migrated === '0' &&
-                  <button 
+                {item.migrated === '0' &&
+                  <button
                     className="button-tiny"
-                    onClick={() => { 
+                    onClick={() => {
                       setHelpModal(true),
-                      setIcon('gpp_maybe'),
-                      setColor('orangered'),
-                      setHelp('<span>Resolver is <span style="color: orange">not migrated</span>. Please <span style="color: cyan">MIGRATE</span> to enable off-chain Records</span>')
+                        setIcon('gpp_maybe'),
+                        setColor('orangered'),
+                        setHelp('<span>Resolver is <span style="color: orange">not migrated</span>. Please <span style="color: cyan">MIGRATE</span> to enable off-chain Records</span>')
                     }}
-                    data-tooltip={ 'Resolver Not Migrated' }
+                    data-tooltip={'Resolver Not Migrated'}
                   >
-                    <div 
+                    <div
                       className="material-icons smol"
                       style={{
                         color: 'orangered'
@@ -208,17 +208,17 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                 }
               </div>
               <Help
-                color={ color }
-                icon={ icon }
+                color={color}
+                icon={icon}
                 onClose={() => setHelpModal(false)}
                 show={helpModal}
               >
-                { help }
+                {help}
               </Help>
             </span>
             <div>
-              <a 
-                href={`https://app.ens.domains/name/${item.name.toLowerCase()}.eth`} 
+              <a
+                href={`https://app.ens.domains/name/${item.name.toLowerCase()}.eth`}
                 target='_blank'
                 rel="noreferrer"
               >
@@ -228,10 +228,10 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   src="ens.png"
                 />
               </a>
-              <a 
-                href={`https://ens.vision/name/${item.name}`} 
-                target='_blank'            
-                rel="noreferrer"      
+              <a
+                href={`https://ens.vision/name/${item.name}`}
+                target='_blank'
+                rel="noreferrer"
               >
                 <img
                   className="icon-vision-small"
@@ -239,11 +239,11 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   src="ens-vision.png"
                 />
               </a>
-              <a 
+              <a
                 style={{ marginRight: '15px' }}
-                href={`https://godid.io/items/${item.name.toLowerCase()}.eth`} 
-                target='_blank'            
-                rel="noreferrer"      
+                href={`https://godid.io/items/${item.name.toLowerCase()}.eth`}
+                target='_blank'
+                rel="noreferrer"
               >
                 <img
                   className="icon-godid-small"
@@ -259,23 +259,23 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   width: '40px'
                 }}
                 onClick={() => onItemClickStealth(item.name + '.eth')}
-                disabled={item.migrated === '0'}
+                disabled={['0', '1/2'].includes(item.migrated) }
                 data-tooltip={`Stealth Payments`}
               >
-                <div 
+                <div
                   className="flex-sans-direction"
                 >
-                    {}
-                    <span 
-                      className="material-icons smoller"
-                      style={{
-                        fontSize: '25px',
-                        fontWeight: '700'
-                      }}
-                    >
-                      {label === "view" ? 'visibility' : 'account_balance_wallet'}
-                    </span>
-                  </div>
+                  { }
+                  <span
+                    className="material-icons smoller"
+                    style={{
+                      fontSize: '25px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    {label === "view" ? 'visibility' : 'account_balance_wallet'}
+                  </span>
+                </div>
               </button>
               <button
                 className="button"
@@ -288,20 +288,20 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                 onClick={() => onItemClickPreview(item.name + '.eth')}
                 data-tooltip={`${label} Your Records`}
               >
-                <div 
+                <div
                   className="flex-sans-direction"
                 >
-                    {}
-                    <span 
-                      className="material-icons smoller"
-                      style={{
-                        fontSize: '25px',
-                        fontWeight: '700'
-                      }}
-                    >
-                      {label === "view" ? 'visibility' : 'edit'}
-                    </span>
-                  </div>
+                  { }
+                  <span
+                    className="material-icons smoller"
+                    style={{
+                      fontSize: '25px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    {label === "view" ? 'visibility' : 'edit'}
+                  </span>
+                </div>
               </button>
             </div>
           </div>

@@ -18,7 +18,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
-  
+
   React.useEffect(() => {
     setBrowser(true)
   }, [])
@@ -45,16 +45,16 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
             >
               close
             </span>
           </a>
         </StyledModalHeader>
-        {show && 
+        {show &&
           <StyledModalTitle>
-            <div 
+            <div
               className="material-icons"
               style={{
                 marginTop: '4px',
@@ -70,25 +70,25 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               }}
             >
               <span style={{ fontSize: '16px', fontWeight: '700' }}>enter secret IPNS key identifier</span>
-              <button 
+              <button
                 className="button-tiny"
                 style={{
                   marginTop: '-7.5px'
                 }}
-                onClick={() => { 
+                onClick={() => {
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">Secret identifier</span> is required to generate a secure IPNS key. <span style="color: orange">You will need it to make record updates in the future</span>. <span style="color: orangered">Please remember your choice</span></span>')
+                    setHelp('<span><span style="color: cyan">Secret identifier</span> is required to generate a secure IPNS key. <span style="color: orange">You will need it to make record updates in the future</span>. <span style="color: orangered">Please remember your choice</span></span>')
                 }}
-                data-tooltip={ 'Enlighten Me' }
+                data-tooltip={'Enlighten Me'}
               >
-                <div 
+                <div
                   className="material-icons smol"
-                  style={{ 
+                  style={{
                     color: 'cyan',
                     marginLeft: '5px'
                   }}
                 >
-                  info_outline 
+                  info_outline
                 </div>
               </button>
             </div>
@@ -107,7 +107,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 width: '150%'
               }}
             >
-              <input 
+              <input
                 id='username'
                 key='0'
                 placeholder='username (ENS Domain)'
@@ -135,26 +135,26 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                   marginBottom: '10px'
                 }}
               />
-              <button 
+              <button
                 className="button-tiny"
                 style={{
                   marginTop: '-12.5px'
                 }}
                 disabled
-                onClick={() => { 
+                onClick={() => {
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">Username</span></span>')
+                    setHelp('<span><span style="color: cyan">Username</span></span>')
                 }}
-                data-tooltip={ 'Username' }
+                data-tooltip={'Username'}
               >
-                <div 
+                <div
                   className="material-icons smol"
-                  style={{ 
+                  style={{
                     color: 'cyan',
                     marginLeft: '5px'
                   }}
                 >
-                  info_outline 
+                  info_outline
                 </div>
               </button>
             </div>
@@ -164,7 +164,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 width: '150%'
               }}
             >
-              <input 
+              <input
                 id='password'
                 key='1'
                 placeholder='password (IPNS Key Identifier)'
@@ -190,31 +190,31 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                   cursor: 'copy'
                 }}
               />
-              <button 
+              <button
                 className="button-tiny"
                 style={{
                   marginTop: '0px'
                 }}
                 disabled
-                onClick={() => { 
+                onClick={() => {
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">Secret IPNS identifier</span></span>')
+                    setHelp('<span><span style="color: cyan">Secret IPNS identifier</span></span>')
                 }}
-                data-tooltip={ 'Password' }
+                data-tooltip={'Password'}
               >
-                <div 
+                <div
                   className="material-icons smol"
-                  style={{ 
+                  style={{
                     color: 'cyan',
                     marginLeft: '5px'
                   }}
                 >
-                  info_outline 
+                  info_outline
                 </div>
               </button>
             </div>
           </form>
-          <button 
+          <button
             className="button"
             style={{
               height: '33px',
@@ -224,28 +224,28 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               fontSize: '16px',
               fontWeight: '700'
             }}
-            onClick={ handleSubmit }
+            onClick={handleSubmit}
             data-tooltip='Click to proceed'
           >
-            <div 
+            <div
               className="flex-row"
               style={{
                 fontSize: '15px'
               }}
             >
-              { 'proceed' }&nbsp;<span className="material-icons smoller">vpn_key</span>
+              {'proceed'}&nbsp;<span className="material-icons smoller">vpn_key</span>
             </div>
           </button>
         </StyledModalBody>
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'cyan' }
-          icon={ 'info' }
+          color={'cyan'}
+          icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >
-          { help }
+          {help}
         </Help>
       </div>
     </StyledModalOverlay>

@@ -44,7 +44,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
   function setENSValue(_value: string) {
     if (_value.endsWith('.eth')) {
       setENS(_value)
-      setColor(['lime', color[1],  color[2]])
+      setColor(['lime', color[1], color[2]])
     } else {
       setENS('')
       setColor(['white', color[1], color[2]])
@@ -76,7 +76,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
             >
               close
@@ -84,7 +84,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
           </a>
         </StyledModalHeader>
         <StyledModalTitle>
-          <div 
+          <div
             className="material-icons"
             style={{
               marginTop: '10px',
@@ -101,28 +101,28 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             }}
           >
             <span style={{ fontSize: '18px', fontWeight: '700' }}>Enter Payment Info</span>
-            <button 
-                className="button-tiny"
+            <button
+              className="button-tiny"
+              style={{
+                marginTop: '-7.5px',
+                marginLeft: '5px'
+              }}
+              onClick={() => {
+                setHelpModal(true),
+                  setHelp('<span>Please Specify the Requested Details To Receive Private Payment</span>')
+              }}
+              data-tooltip={'Enlighten Me'}
+            >
+              <div
+                className="material-icons smol"
                 style={{
-                  marginTop: '-7.5px',
+                  color: 'cyan',
                   marginLeft: '5px'
                 }}
-                onClick={() => { 
-                  setHelpModal(true),
-                  setHelp('<span>Please Specify the Requested Details To Receive Private Payment</span>')
-                }}
-                data-tooltip={ 'Enlighten Me' }
               >
-                <div 
-                  className="material-icons smol"
-                  style={{ 
-                    color: 'cyan',
-                    marginLeft: '5px'
-                  }}
-                >
-                  info_outline 
-                </div>
-              </button>
+                info_outline
+              </div>
+            </button>
           </div>
         </StyledModalTitle>
         <StyledModalBody>
@@ -133,7 +133,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
               marginTop: '5px'
             }}
           >
-            <input 
+            <input
               id='info'
               key='0'
               placeholder={'enter payer .eth'}
@@ -158,25 +158,25 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 setENSValue(e.target.value)
               }}
             />
-            <button 
+            <button
               className="button-tiny"
               style={{
                 marginTop: '0px'
               }}
-              onClick={() => { 
+              onClick={() => {
                 setHelpModal(true),
-                setHelp('<span>ENS Of <span style="color: cyan">Sender</span></span>')
+                  setHelp('<span>ENS Of <span style="color: cyan">Sender</span></span>')
               }}
-              data-tooltip={ 'Sender' }
+              data-tooltip={'Sender'}
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
+                style={{
                   color: 'cyan',
                   marginLeft: '5px'
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -187,7 +187,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
               marginTop: '7px'
             }}
           >
-            <input 
+            <input
               id='info'
               key='1'
               placeholder={'enter payee address or .eth'}
@@ -212,25 +212,25 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 setPayeeValue(e.target.value)
               }}
             />
-            <button 
+            <button
               className="button-tiny"
               style={{
                 marginTop: '0px'
               }}
-              onClick={() => { 
+              onClick={() => {
                 setHelpModal(true),
-                setHelp('<span>Private Address Of <span style="color: cyan">Receiver</span></span>')
+                  setHelp('<span>Private Address Of <span style="color: cyan">Receiver</span></span>')
               }}
-              data-tooltip={ 'Receiver' }
+              data-tooltip={'Receiver'}
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
+                style={{
                   color: 'cyan',
                   marginLeft: '5px'
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -241,7 +241,7 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
               marginTop: '7px'
             }}
           >
-            <input 
+            <input
               id='info'
               key='2'
               placeholder={'enter amount to receive'}
@@ -266,29 +266,29 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 setPayeeAmount(e.target.value)
               }}
             />
-            <button 
+            <button
               className="button-tiny"
               style={{
                 marginTop: '0px'
               }}
-              onClick={() => { 
+              onClick={() => {
                 setHelpModal(true),
-                setHelp('<span>Amount To <span style="color: cyan">Receiver</span></span>')
+                  setHelp('<span>Amount To <span style="color: cyan">Receiver</span></span>')
               }}
-              data-tooltip={ 'Ether' }
+              data-tooltip={'Ether'}
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
+                style={{
                   color: 'cyan',
                   marginLeft: '5px'
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
-          <button 
+          <button
             className="button"
             style={{
               height: '33px',
@@ -298,29 +298,29 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
               fontSize: '16px',
               fontWeight: '700'
             }}
-            onClick={ handleSubmit }
+            onClick={handleSubmit}
             disabled={!ENS || !payee || !amount}
             data-tooltip='Confirm'
           >
-            <div 
+            <div
               className="flex-row"
               style={{
                 fontSize: '15px'
               }}
             >
-              { 'Next' }&nbsp;<span className="material-icons smoller">navigate_next</span>
+              {'Next'}&nbsp;<span className="material-icons smoller">navigate_next</span>
             </div>
           </button>
         </StyledModalBody>
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'cyan' }
-          icon={ 'info' }
+          color={'cyan'}
+          icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >
-          { help }
+          {help}
         </Help>
       </div>
     </StyledModalOverlay>

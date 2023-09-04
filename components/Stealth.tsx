@@ -24,7 +24,7 @@ import {
   useFeeData,
   useSignMessage,
   useContractRead,
-  usePrepareSendTransaction, 
+  usePrepareSendTransaction,
   useSendTransaction
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
@@ -314,18 +314,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _LIST = [
       {
         key: 0,
-        header: 'Encrypted Payment',
-        type: 'stealth',
-        value: _encrypted,
-        editable: false,
-        active: resolver === ccip2Contract,
-        state: false,
-        label: 'Set',
-        help: '<span><span style="color: cyan">Encrypted</span> Payment Address To <span style="color: lime">Receive</span> Money</span>',
-        tooltip: 'Set New Stealth Payment'
-      },
-      {
-        key: 1,
         header: 'Encryption Key',
         type: 'rsa',
         value: _pubkey,
@@ -335,6 +323,18 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         label: 'Set',
         help: '<span>Set <span style="color: cyan">Encryption</span> Public Key To <span style="color: orange">Send</span> Money</span>',
         tooltip: 'Set New RSA PubKey'
+      },
+      {
+        key: 1,
+        header: 'Encrypted Payment',
+        type: 'stealth',
+        value: _encrypted,
+        editable: false,
+        active: resolver === ccip2Contract,
+        state: false,
+        label: 'Set',
+        help: '<span><span style="color: cyan">Encrypted</span> Payment Address To <span style="color: lime">Receive</span> Money</span>',
+        tooltip: 'Set New Stealth Payment'
       }
     ]
     concludeGet(_LIST) // Assign _LIST
@@ -578,7 +578,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .then(response => {
         if (!response) {
           setStealth('')
-          setRSA('')
+          setRSA('0')
           setSync(true)
         } else {
           setStealth(response)
@@ -587,7 +587,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       })
       .catch(() => {
         setStealth('')
-        setRSA('')
+        setRSA('0')
         setSync(true)
       })
   }
@@ -597,7 +597,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     await resolver.getText('rsa')
       .then(response => {
         if (!response) {
-          setRSA('')
+          setRSA('0')
           setSync(true)
         } else {
           setRSA(response)
@@ -605,7 +605,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
       })
       .catch(() => {
-        setRSA('')
+        setRSA('0')
         setSync(true)
       })
   }
@@ -641,7 +641,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 setRSA(_history.rsa)
               } else {
                 setStealth('')
-                setRSA('')
+                setRSA('0')
               }
               setSync(true)
             } else {
@@ -649,7 +649,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           } else {
             setStealth('')
-            setRSA('')
+            setRSA('0')
             setSync(true)
           }
         } else {
@@ -663,7 +663,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setResolveCall(_response)
         setResolver('')
         setStealth('')
-        setRSA('')
+        setRSA('0')
         setSync(true)
       }
     } catch (error) {
@@ -1775,7 +1775,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               className="material-icons miui"
               style={{
                 marginTop: '-15px',
-                color: 'lightgreen',
+                color: RSA ? 'lightgreen' : 'orange',
                 fontSize: '86px'
               }}
             >
@@ -1920,7 +1920,29 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </div>
                                 </button>
                               )}
-
+                            { // Badges
+                              ['stealth', 'rsa'].includes(item.type) && (
+                                <button
+                                  className="button-tiny"
+                                  onClick={() => {
+                                    setHelpModal(true),
+                                      setIcon(RSA ? 'gpp_good' : 'gpp_bad'),
+                                      setColor(RSA ? 'lime' : 'orangered'),
+                                      setHelp(RSA ? '<span>Encryption Key <span style="color: lime">Set</span><span>' : `<span>Please <span style="color: orange">Set Encryption Key</span> To Enable Private Payments<span>`)
+                                  }}
+                                  data-tooltip={RSA ? 'Encryption Key Set' : 'Encryption Key Missing'}
+                                >
+                                  <div
+                                    className="material-icons smol"
+                                    style={{
+                                      color: RSA ? 'lime' : 'orangered',
+                                      marginLeft: '-5px'
+                                    }}
+                                  >
+                                    {RSA ? 'gpp_good' : 'gpp_bad'}
+                                  </div>
+                                </button>
+                              )}
                             { // Countdown
                               ['stealth', 'rsa'].includes(item.type) && !constants.blocked.includes(item.type)
                               && resolver === ccip2Contract &&
@@ -1993,7 +2015,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               !list[item.key].active ||
                               item.state ||
                               !_Wallet_ ||
-                              !managers.includes(String(_Wallet_))
+                              !managers.includes(String(_Wallet_)) ||
+                              (item.type === 'stealth' && !RSA)
                             }
                             style={{
                               alignSelf: 'flex-end',
@@ -2045,83 +2068,90 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     </li>
                   ))}
                   <hr style={{ marginTop: '5px' }}></hr>
-                  {!RSA && (
-                    <div
-                      className="flex-column"
+                  <div
+                    className="flex-column"
+                    style={{
+                      marginBottom: '15px',
+                      marginTop: '-15px'
+                    }}
+                  >
+                    <StyledModalTitle>
+                      <span
+                        className="material-icons-round miui"
+                        style={{
+                          color: RSA ? 'lightgreen' : 'orange',
+                          fontSize: '76px'
+                        }}
+                      >
+                        security
+                      </span>
+                    </StyledModalTitle>
+                    <span
                       style={{
-                        marginBottom: '15px',
-                        marginTop: '-25px'
+                        color: 'cyan',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        marginTop: '5px'
                       }}
                     >
-                      <StyledModalTitle>
-                        <span
-                          className="material-icons-round miui"
-                          style={{
-                            color: 'lightgreen',
-                            fontSize: '76px'
-                          }}
-                        >
-                          security
-                        </span>
-                      </StyledModalTitle>
+                      {'Send Stealth Payment From'}
+                    </span>
+                    <div
+                      style={{
+                        marginBottom: '15px',
+                        marginTop: '5px'
+                      }}
+                    >
                       <span
                         style={{
-                          color: 'cyan',
-                          fontSize: '13px',
-                          fontWeight: '700'
+                          color: 'white',
+                          fontSize: '20px',
+                          fontWeight: '700',
+                          fontFamily: 'SF Mono'
                         }}
                       >
-                        {'Send Stealth Payment From'}
+                        {ENS.split('.eth')[0]}
                       </span>
-                      <div
+                      <span
                         style={{
-                          marginBottom: '15px',
-                          marginTop: '5px'
+                          fontFamily: 'SF Mono',
+                          fontSize: '15px',
+                          color: 'cyan'
                         }}
                       >
-                        <span
-                          style={{
-                            color: 'white',
-                            fontSize: '20px',
-                            fontWeight: '700',
-                            fontFamily: 'SF Mono'
-                          }}
-                        >
-                          {ENS.split('.eth')[0]}
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: 'SF Mono',
-                            fontSize: '15px',
-                            color: 'cyan'
-                          }}
-                        >
-                          .
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: 'Spotnik',
-                            fontSize: '11px',
-                            color: 'cyan',
-                            fontWeight: '700',
-                            letterSpacing: '0px',
-                            marginTop: '13px'
-                          }}
-                        >
-                          ETH
-                        </span>
-                      </div>
-                      {!payeeAddr && (
+                        .
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'Spotnik',
+                          fontSize: '11px',
+                          color: 'cyan',
+                          fontWeight: '700',
+                          letterSpacing: '0px',
+                          marginTop: '13px'
+                        }}
+                      >
+                        ETH
+                      </span>
+                    </div>
+                    {!payeeAddr && (
+                      <div
+                        className='flex-column'
+                        style={{
+                          width: '100%',
+                          marginLeft: '3px'
+                        }}
+                      >
                         <input
-                          id={'send'}
-                          key={'send'}
+                          id={'decrypt'}
+                          key={'decrypt'}
                           placeholder={'enter payee .eth'}
                           type='text'
-                          //disabled={!RSA}
+                          disabled={!RSA}
                           style={{
-                            background: 'black',
+                            background: !RSA ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
                             outline: 'none',
-                            border: '0.5px solid lightblue',
+                            border: 'none',
                             padding: '7px',
                             borderRadius: '3px',
                             fontFamily: 'SF Mono',
@@ -2130,55 +2160,66 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             fontSize: '15px',
                             width: '130%',
                             wordWrap: 'break-word',
-                            textAlign: 'left',
+                            textAlign: 'center',
                             color: payee ? 'lime' : 'white',
-                            cursor: 'copy'
+                            cursor: 'copy',
+                            marginLeft: '-15%',
+                            marginTop: '15px'
                           }}
                           onChange={(e) => {
                             setPayeeValue(e.target.value)
                           }}
                         />
-                      )}
-                      {payeeAddr && (
+                        <hr style={{ marginTop: '0', marginLeft: '-15%', width: '130%' }}></hr>
+                      </div>
+                    )}
+                    {payeeAddr && (
+                      <div
+                        className='flex-column'
+                      >
                         <div
                           className='flex-column'
+                          style={{
+                            width: '450px',
+                            marginLeft: '3px'
+                          }}
+                        >
+                          <input
+                            id={'amount'}
+                            key={'amount'}
+                            type='text'
+                            value={payeeAmount}
+                            style={{
+                              background: payeeAmount === '0.0' ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                              marginBottom: '10px',
+                              outline: 'none',
+                              padding: '7px',
+                              borderRadius: '3px',
+                              fontFamily: 'SF Mono',
+                              letterSpacing: '-0.5px',
+                              fontWeight: '400',
+                              fontSize: '15px',
+                              width: '90%',
+                              paddingRight: '32px',
+                              wordWrap: 'break-word',
+                              textAlign: 'left',
+                              color: payeeAmount === '0.0' ? 'grey' : 'lime',
+                              cursor: 'copy'
+                            }}
+                          />
+                          <hr style={{ marginTop: '-5px', marginLeft: '0', width: '90%' }}></hr>
+                        </div>
+                        <div
+                          className='flex-row'
+                          style={{
+                            width: '200%'
+                          }}
                         >
                           <div
                             className='flex-column'
                             style={{
-                              width: '200%',
+                              width: '450px',
                               marginLeft: '3px'
-                            }}
-                          >
-                            <input
-                              id={'amount'}
-                              key={'amount'}
-                              type='text'
-                              value={payeeAmount}
-                              style={{
-                                marginBottom: '10px',
-                                background: 'black',
-                                outline: 'none',
-                                border: '0.5px solid lightgreen',
-                                padding: '7px',
-                                borderRadius: '3px',
-                                fontFamily: 'SF Mono',
-                                letterSpacing: '-0.5px',
-                                fontWeight: '400',
-                                fontSize: '15px',
-                                width: '90%',
-                                paddingRight: '32px',
-                                wordWrap: 'break-word',
-                                textAlign: 'left',
-                                color: payeeAmount === '0.0' ? 'grey' : 'lime',
-                                cursor: 'copy'
-                              }}
-                            />
-                          </div>
-                          <div
-                            className='flex-row'
-                            style={{
-                              width: '200%'
                             }}
                           >
                             <input
@@ -2187,9 +2228,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               type='text'
                               value={payeeAddr}
                               style={{
-                                background: 'black',
+                                background: payeeAddr === constants.zeroAddress ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
                                 outline: 'none',
-                                border: '0.5px solid lightgreen',
                                 padding: '7px',
                                 borderRadius: '3px',
                                 fontFamily: 'SF Mono',
@@ -2204,85 +2244,87 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 cursor: 'copy'
                               }}
                             />
-                            <button 
-                              className="button-empty"
-                              onClick={() => {
-                                constants.copyToClipboard('pay')
-                              }} 
-                              hidden={payeeAddr === constants.zeroAddress}
-                              data-tooltip='Copy Address'
+                            <hr style={{ marginTop: '5px', marginLeft: '0', width: '90%' }}></hr>
+                          </div>
+                          <button
+                            className="button-empty"
+                            onClick={() => {
+                              constants.copyToClipboard('pay')
+                            }}
+                            hidden={payeeAddr === constants.zeroAddress}
+                            data-tooltip='Copy Address'
+                            style={{
+                              marginLeft: '-25px',
+                              color: 'lime'
+                            }}
+                          >
+                            <span
+                              className="material-icons"
                               style={{
-                                marginLeft: '-25px',
-                                color: 'lime'   
+                                fontSize: '22px',
+                                fontWeight: '700'
                               }}
                             >
-                              <span 
-                                className="material-icons"
-                                style={{
-                                  fontSize: '22px',
-                                  fontWeight: '700'
-                                }}
-                              >
-                                content_copy
-                              </span>
-                            </button>
-                          </div>
+                              content_copy
+                            </span>
+                          </button>
                         </div>
-                      )}
-                      <div>
-                        <button
-                          className="button"
-                          style={{
-                            height: '33px',
-                            width: payeeAddr ? '80px' : '120px',
-                            padding: '5px',
-                            marginTop: '20px',
-                            fontSize: '16px',
-                            fontWeight: '700',
-                            backgroundImage: payeeAddr && payeeAddr !== constants.zeroAddress ? 'linear-gradient(81deg, rgba(0,154,0,1) 0%, rgba(0,182,24,1) 52%, rgba(0,154,0,1) 100%)' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)'
-                          }}
-                          onClick={() => payeeAddr && payeeAddr !== constants.zeroAddress ? sendTransaction?.() : decrypt()}
-                          disabled={!payee || payeeAddr === constants.zeroAddress}
-                          data-tooltip='Confirm'
-                        >
-                          <div
-                            className="flex-row"
-                            style={{
-                              fontSize: '14px'
-                            }}
-                          >
-                            {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons smoller">lock_open</span>
-                          </div>
-                        </button>
-                        <button
-                          className="button"
-                          style={{
-                            height: '33px',
-                            width: '110px',
-                            padding: '5px',
-                            marginTop: '20px',
-                            fontSize: '16px',
-                            fontWeight: '700',
-                            marginLeft: '20px',
-                            background: 'red'
-                          }}
-                          onClick={() => setPayeeAddr('')}
-                          disabled={!payee}
-                          hidden={payeeAddr ? false : true}
-                          data-tooltip='Cancel'
-                        >
-                          <div
-                            className="flex-row"
-                            style={{
-                              fontSize: '14px'
-                            }}
-                          >
-                            {'Cancel'}&nbsp;<span className="material-icons smoller">cancel</span>
-                          </div>
-                        </button>
                       </div>
+                    )}
+                    <div>
+                      <button
+                        className="button"
+                        style={{
+                          height: '33px',
+                          width: payeeAddr ? '80px' : '120px',
+                          padding: '5px',
+                          marginTop: '10px',
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          backgroundImage: payeeAddr && payeeAddr !== constants.zeroAddress ? 'linear-gradient(81deg, rgba(0,154,0,1) 0%, rgba(0,182,24,1) 52%, rgba(0,154,0,1) 100%)' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)'
+                        }}
+                        onClick={() => payeeAddr && payeeAddr !== constants.zeroAddress ? sendTransaction?.() : decrypt()}
+                        disabled={!payee || payeeAddr === constants.zeroAddress}
+                        hidden={!RSA}
+                        data-tooltip='Fetch and Decrypt'
+                      >
+                        <div
+                          className="flex-row"
+                          style={{
+                            fontSize: '14px'
+                          }}
+                        >
+                          {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons smoller">lock_open</span>
+                        </div>
+                      </button>
+                      <button
+                        className="button"
+                        style={{
+                          height: '33px',
+                          width: '110px',
+                          padding: '5px',
+                          marginTop: '20px',
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          marginLeft: '20px',
+                          background: 'red'
+                        }}
+                        onClick={() => setPayeeAddr('')}
+                        disabled={!payee}
+                        hidden={payeeAddr ? false : true}
+                        data-tooltip='Cancel'
+                      >
+                        <div
+                          className="flex-row"
+                          style={{
+                            fontSize: '14px'
+                          }}
+                        >
+                          {'Cancel'}&nbsp;<span className="material-icons smoller">cancel</span>
+                        </div>
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </ul>
               {states.length > 1 && (

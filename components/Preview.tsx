@@ -758,7 +758,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 setAddr(_history.addr)
               } else {
                 setAddr('')
-              }      
+              }
               setSync(true)
             } else {
               getContenthash(_response)
