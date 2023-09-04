@@ -2051,6 +2051,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                           }
                           style={{
+                            background: constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
                             fontFamily: 'SF Mono',
                             fontWeight: '400',
                             fontSize: '14px',

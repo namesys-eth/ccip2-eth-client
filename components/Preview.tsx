@@ -548,8 +548,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   /// Trigger Enjoy
   function doEnjoy() {
-    setIcon('gpp_good'),
-      setColor('lime')
+    setIcon('gpp_good')
+    setColor('lime')
     setLegit(constants.EMPTY_BOOL())
     setSalt(false)
     setLoading(false)
@@ -2422,7 +2422,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           </button>
                         </div>
                         <input
-                          className={!['resolver', 'storage'].includes(item.type) ? 'inputextra' : 'inputextra_'}
+                         className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra')}
                           id={item.key}
                           key={item.key}
                           placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
@@ -2431,6 +2431,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                           }
                           style={{
+                            background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
                             fontFamily: 'SF Mono',
                             fontWeight: '400',
                             fontSize: '14px',
