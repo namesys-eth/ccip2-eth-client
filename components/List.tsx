@@ -110,7 +110,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                         setColor('lime'),
                         setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
                     }}
-                    data-tooltip={'Ready For Off-chain Use With Recordhash'}
+                    data-tooltip={'Ready For Dedicated Off-chain Use'}
                   >
                     <div
                       className="material-icons smol"
@@ -173,7 +173,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                         setColor('orange'),
                         setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
                     }}
-                    data-tooltip={'No Storage Found'}
+                    data-tooltip={'Default Gateway In Use'}
                   >
                     <div
                       className="material-icons smol"

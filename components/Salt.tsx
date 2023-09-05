@@ -130,7 +130,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                   width: '150%',
                   wordWrap: 'break-word',
                   textAlign: 'left',
-                  color: username ? 'white' : (children ? 'cyan' : 'rgb(255, 255, 255, 0.6)'),
+                  color: username ? (username.endsWith('.eth') ? 'lime' : 'white') : (children ? 'cyan' : 'rgb(255, 255, 255, 0.6)'),
                   cursor: 'copy',
                   marginBottom: '10px'
                 }}

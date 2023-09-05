@@ -72,8 +72,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
   const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
-  const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
-  const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
+  const [recordhash, setRecordhash] = React.useState<string>(''); // Recordhash for CCIP2 Resolver
+  const [ownerhash, setOwnerhash] = React.useState<string>(''); // Ownerhash for CCIP2 Resolver
   const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState(''); // Wrapper Token ID of ENS Domain
@@ -93,8 +93,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
-  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K2 keys
-  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K2 and K0 keys
+  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K_IPNS keys
+  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K_IPNS and K_SIGNER keys
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
@@ -105,11 +105,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [infoModal, setInfoModal] = React.useState(false); // Info modal
-  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains S2(K0) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
   const [legit, setLegit] = React.useState(constants.EMPTY_BOOL_RECORDS()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
-  const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
+  const [hashType, setHashType] = React.useState('gateway'); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
@@ -117,27 +117,27 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Salt modal state
+  }) // Salt modal state
   const [optionsModalState, setOptionsModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Options modal state
+  }) // Options modal state
   const [confirmModalState, setConfirmModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Confirm modal state
+  }) // Confirm modal state
   const [gatewayModalState, setGatewayModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Confirm modal state
+  }) // Gateway modal state
   const [successModalState, setSuccessModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
   }); // Confirm modal state
   const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_RECORDS); // Record history from last update
-  const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
-  const [sigSigner, setSigSigner] = React.useState(''); // Signature S4(K1) for Signer
-  const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
+  const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S_IPNS(K_WALLET) for IPNS keygen
+  const [sigSigner, setSigSigner] = React.useState(''); // Signature S_SIGNER(K_WALLET) for Signer
+  const [sigApproved, setSigApproved] = React.useState(''); // Signature S_APPROVE(K_WALLET) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature Count
   const [processCount, setProcessCount] = React.useState(0); // Process Count
   const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
@@ -229,7 +229,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     args: [ethers.utils.namehash(ENS), ccip2Contract]
   })
 
-  // Sets Short Recordhash in CCIP2 Resolver
+  // Sets IPNS Short Recordhash in CCIP2 Resolver
   const {
     data: response2of3,
     write: initRecordhash,
@@ -335,11 +335,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSalt(false)
   }
 
-  // Handle Salt modal data return
+  // Handle Gateway modal data return
   const handleGatewayModalData = (data: string | undefined) => {
     setGatewayModalState(prevState => ({ ...prevState, modalData: data }))
   }
-  // Handle Salt modal trigger
+  // Handle Gateway modal trigger
   const handleGatewayTrigger = (trigger: boolean) => {
     setGatewayModalState(prevState => ({ ...prevState, trigger: trigger }))
     if (trigger) {
@@ -359,7 +359,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    setSigApproved('') // Purge Manager Signature S2 from local storage 
+    setSigApproved('') // Purge Manager Signature S_RECORDS from local storage 
     setSignatures(constants.EMPTY_STRING_RECORDS()) // Purge Record Signatures from local storage 
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
@@ -435,7 +435,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         tooltip: 'Set Contenthash'
       }
     ]
-    concludeGet(_LIST) // Assign _LIST
+    concludeGet(_LIST) // Assign to LIST[]
   }
 
   // Set Records to show for ENS domain
@@ -446,37 +446,37 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   /// Keys & Signature Definitions
-  /* K0 = Generated secp256k1 Keypair 
-   * K1 = Wallet secp256k1 Keypair 
-   * K2 = Generated ed25519 Keypair
-   * S1 = Signature for K2 Generation (Signed by K1)
-   * S2 = Signature for Records (Signed by K0)
-   * S3 = Signature for Manager Approval (Signed by K1)
-   * S4 = Signature for K0 Generation (Signed by K1)
+  /* K_SIGNER = Generated secp256k1 Keypair 
+   * K_WALLET = Wallet secp256k1 Keypair 
+   * K_IPNS = Generated ed25519 Keypair
+   * S_IPNS = Signature for K_IPNS Generation (Signed by K_WALLET)
+   * S_RECORDS = Signature for Records (Signed by K_SIGNER)
+   * S_APPROVE = Signature for Manager Approval (Signed by K_WALLET)
+   * S_SIGNER = Signature for K_SIGNER Generation (Signed by K_WALLET)
    */
-  // Signature S1 statement; S1(K1) [IPNS Keygen]
-  // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
+  // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
     let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
-  // Signature S2 statement; S2(K0) [Record Signature]
-  // S2 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
+  // Signature S_RECORDS statement; S_RECORDS(K_SIGNER) [Record Signature]
+  // S_RECORDS is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementRecords(recordType: string, extradata: string, signer: string) {
     let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`)
     let _toSign = `Requesting Signature To Update ENS Record\n\nOrigin: ${ENS}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
     return _toSign
   }
-  // Signature S3 statement; S3(K1) [Approved Signature]
-  // S3 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
+  // Signature S_APPROVE statement; S_APPROVE(K_WALLET) [Approved Signature]
+  // S_APPROVE is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementManager(signer: string) {
     let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
     let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${ENS}\nApproved Signer: ${_signer}\nApproved By: ${caip10}`
     return _toSign
   }
-  // Signature S4 statement; S4(K1) [Signer Keygen]
-  // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  // Signature S_SIGNER statement; S_SIGNER(K_WALLET) [Signer Keygen]
+  // S_SIGNER is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementSignerKey(extradata: string) {
     let _toSign = `Requesting Signature To Generate ENS Records Signer\n\nOrigin: ${ENS}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
@@ -517,7 +517,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return encoded
   }
 
-  // Generate extradata for S2(K0)
+  // Generate extradata for S_RECORDS(K_SIGNER)
   function genExtradata(key: string, _recordValue: string) {
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     let type: string = ''
@@ -540,13 +540,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return _extradata
   }
 
-  // Returns Owner of wrapped/legacy ENS Domain
+  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
   function getManager() {
     if (_OwnerLegacy_ && _ManagerLegacy_) {
-      if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
-        return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
+      if (String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3]) {
+        return _OwnerWrapped_ ? String(_OwnerWrapped_) : constants.zeroAddress
       } else {
-        return _ManagerLegacy_.toString()
+        return String(_ManagerLegacy_)
       }
     } else {
       return constants.zeroAddress
@@ -567,6 +567,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSalt(false)
     setGoodSalt(false)
     if (write) setWrite(false)
+    setConfirmModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setOptionsModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setGatewayModalState({
+      modalData: undefined,
+      trigger: false
+    })
   }
 
   /// Trigger Enjoy
@@ -587,6 +599,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       modalData: undefined,
       trigger: false
     })
+    setConfirmModalState({
+      modalData: undefined,
+      trigger: false
+    })
     setOptionsModalState({
       modalData: undefined,
       trigger: false
@@ -599,27 +615,27 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setTrigger('')
   }
 
-  // Signature S2 with K0 
-  // K0 = keypairSigner; secp256k1
-  // K2 = keypairIPNS; ed25519
+  // Signature S_RECORDS with K_SIGNER 
+  // K_SIGNER = keypairSigner; secp256k1
+  // K_IPNS = keypairIPNS; ed25519
   async function _signMessage(input: any) {
     if (keypairSigner) {
-      const SignS2 = async () => {
+      const SignS_RECORDS = async () => {
         const _signer = new ethers.Wallet('0x' + keypairSigner[0], provider)
         const __signature = await _signer.signMessage(input.message)
         if (__signature) return __signature
       }
-      const _signature = SignS2()
+      const _signature = SignS_RECORDS()
       return _signature
     }
   }
 
-  // Signature S3 with K1
+  // Signature S_APPROVE with K_WALLET
   async function __signMessage() {
-    setSigCount(3) // Trigger S3(K1)
+    setSigCount(3) // Trigger S_APPROVE(K_WALLET)
     setMessage(['Waiting For Signature', '3'])
     if (keypairSigner) {
-      const SignS3 = async () => {
+      const SignS_APPROVE = async () => {
         signMessage({
           message:
             statementManager(
@@ -627,13 +643,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             )
         })
       }
-      SignS3()
+      SignS_APPROVE()
     }
   }
 
-  // Signature S4 with K1
+  // Signature S_SIGNER with K_WALLET
   async function ___signMessage(_value: string) {
-    const SignS4 = async () => {
+    const SignS_SIGNER = async () => {
       signMessage({
         message: statementSignerKey(
           ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -646,7 +662,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         )
       })
     }
-    SignS4()
+    SignS_SIGNER()
   }
 
   // Get gas cost estimate for hypothetical on-chain record update
@@ -824,43 +840,47 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (_record[0] === 'addr') {
         const _response = await provider.resolveName(_ENS)
         if (_response) {
-          setAddr(_response)
           if (_trigger) {
+            setAddr(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
           return _response
         }
+        return ''
       } else if (_record[0] === 'avatar') {
         const _response = await provider.getAvatar(_ENS)
         if (_response) {
-          setAvatar(_response)
           if (_trigger) {
+            setAvatar(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
           return _response
         }
+        return ''
       } else if (_record[0] === 'contenthash') {
         const _response = await _resolver.getContentHash()
         if (_response) {
-          setContenthash(_response)
           if (_trigger) {
+            setContenthash(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
           return _response
         }
+        return ''
       } else if (_record[0] === 'text') {
         const _response = await _resolver.getText(_record[1])
         if (_response) {
-          setAvatar(_response)
           if (_trigger) {
+            setAvatar(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
           return _response
         }
+        return ''
       }
       if (_trigger) setRefresh('0')
       return ''
@@ -874,7 +894,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
   async function writeRevision(revision: Name.Revision | undefined, gas: {}, timestamp: string, _ipfs: string) {
     const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
-      return typeof value === 'bigint' ? value.toString() : value
+      return typeof value === 'bigint' ? String(value) : value
     }))
     _revision._name._privKey._key = {}
     const __revision = JSON.stringify(_revision)
@@ -999,7 +1019,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
-          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -1021,10 +1040,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Modal load
   React.useEffect(() => {
-    if (_ENS_.endsWith('#') || _ENS_.endsWith('-') || _ENS_.endsWith(':')) {
+    if (_ENS_.endsWith('#') || _ENS_.endsWith('-') || _ENS_.endsWith(':') || _ENS_.endsWith('&')) {
       setBrowser(true)
       setENS(_ENS_.slice(0, -1))
-      setMessage([_ENS_.endsWith('-') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
+      setMessage([_ENS_.endsWith('-') || _ENS_.endsWith('&') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
     } else {
       setBrowser(false)
     }
@@ -1037,8 +1056,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       let namehash = ethers.utils.namehash(ENS)
       let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(ENS.split('.eth')[0]))
       setNamehashLegacy(namehash)
-      setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
-      setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
+      setTokenIDLegacy(String(ethers.BigNumber.from(labelhash)))
+      setTokenIDWrapper(String(ethers.BigNumber.from(namehash)))
       setConclude(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1055,7 +1074,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Captures on-chain manager hook
   React.useEffect(() => {
     if (_CCIP2Manager_) {
-      setOnChainManager(_CCIP2Manager_.toString())
+      setOnChainManager(String(_CCIP2Manager_))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_CCIP2Manager_])
@@ -1063,60 +1082,65 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Capture Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_) {
-      if (_Ownerhash_.toString().length > 2) {
+      if (String(_Ownerhash_).length > 2) {
         let _String: string = ''
-        if (_Ownerhash_.toString().startsWith(constants.prefix)) {
-          _String = `ipns://${ensContent.decodeContenthash(_Ownerhash_!.toString()).decoded}`
+        if (String(_Ownerhash_).startsWith(constants.prefix)) {
+          _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
         } else {
-          _String = ethers.utils.toUtf8String('0x' + _Ownerhash_.toString().substring(130))
+          _String = ethers.utils.toUtf8String('0x' + String(_Ownerhash_).substring(130))
         }
         if (_String.startsWith('https://')) {
-          setOwnerhash(`${_String}`)
+          setOwnerhash(`${_String.replace(/\0/g, '')}`)
         } else {
           setOwnerhash(`${_String}`)
         }
-        setMessage(['This May Take a While', ''])
-        setMessage([_ENS_.endsWith('-') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
       } else {
-        setOwnerhash(undefined)
+        setOwnerhash('')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Ownerhash_])
 
-   // Capture Recordhash hook
+  // Capture Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_) {
-      console.log(_Recordhash_)
-      if (_Recordhash_.toString().length > 2 && (_Recordhash_ !== _Ownerhash_)) {
+      if (String(_Recordhash_).length > 2 && _Recordhash_ !== _Ownerhash_) {
         let _String: string = ''
-        if (_Recordhash_.toString().startsWith(constants.prefix)) {
-          _String = `ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`
+        if (String(_Recordhash_).startsWith(constants.prefix)) {
+          _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
         } else {
-          _String = ethers.utils.toUtf8String('0x' + _Recordhash_.toString().substring(130))
+          _String = ethers.utils.toUtf8String('0x' + String(_Recordhash_).substring(130))
         }
         if (_String.startsWith('https://')) {
-          setRecordhash(`${_String}`)
+          setRecordhash(`${_String.replace(/\0/g, '')}`)
         } else {
           setRecordhash(`${_String}`)
         }
         setMessage(['This May Take a While', ''])
-        setMessage([_ENS_.endsWith('-') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
+        setMessage([_ENS_.endsWith('-') || _ENS_.endsWith('&') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
+      } else if (String(_Recordhash_) === '0x' && _Recordhash_ === _Ownerhash_) {
+        if (resolver === ccip2Contract) {
+          setRecordhash(constants.defaultGateway)
+        } else {
+          setRecordhash('')
+        }
       } else {
-        setRecordhash(undefined)
+        setRecordhash('')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Recordhash_, _Ownerhash_])
+  }, [_Recordhash_, _Ownerhash_, resolver])
 
   // Sets Success modal refresh
   React.useEffect(() => {
     if (successModalState.trigger && successModalState.modalData) {
       if (txSuccess1of3) {
         handleSuccess(`${ENS}#`)
-      } else if (txSuccess2of3 || txSuccess3of3) {
+      } else if (txSuccess2of3) {
         handleSuccess(`${ENS}-`)
-      } 
+      } else if (txSuccess3of3) {
+        handleSuccess(`${ENS}&`)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [successModalState, txSuccess1of3, txSuccess2of3, txSuccess3of3])
@@ -1180,7 +1204,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (_Wallet_) {
       // Set Managers
-      if (onChainManager && onChainManager.toString() === 'true') {
+      if (onChainManager && String(onChainManager) === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([_Wallet_])
       } else {
@@ -1195,7 +1219,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
     if (_OwnerLegacy_) {
-      if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
+      if (String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3]) {
         setWrapped(true)
       } else {
         setWrapped(false)
@@ -1254,11 +1278,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers Gateway routine
   React.useEffect(() => {
     if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && write) {
-      console.log(gatewayModalState)
       setLoading(true)
       setMessage(['Waiting For Signature', hashType !== 'gateway' ? '1' : '2'])
       const _sigSigner = async () => {
-        setSigCount(2) // Trigger S4(K1)
+        setSigCount(2) // Trigger S_SIGNER(K_WALLET)
         setProcessCount(2)
         ___signMessage(constants.randomString(10))
       }
@@ -1269,7 +1292,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gatewayModalState, hashType, write])
 
-  // Triggers S1(K1) after password is set
+  // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
     if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairIPNS && trigger && safeTrigger) {
       setSigCount(1)
@@ -1307,13 +1330,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, keypairIPNS, goodSalt, write, sigIPNS])
 
-  // Triggers S4(K1) after password is set
+  // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
     if (write && saltModalState.trigger && goodSalt) {
       setMessage(['Waiting For Signature', '2'])
       const _sigSigner = async () => {
         if (saltModalState.modalData !== undefined) {
-          setSigCount(2) // Trigger S4(K1)
+          setSigCount(2) // Trigger S_SIGNER(K_WALLET)
           setProcessCount(3)
           ___signMessage(saltModalState.modalData)
         }
@@ -1323,7 +1346,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, goodSalt, write])
 
-  // Triggers S1(K1) after password is set
+  // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
     if (write) {
       if (goodSalt) {
@@ -1352,13 +1375,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sigSigner, goodSalt, write, isSigner])
 
-  // Triggers IPNS CID derivation with new S1(K1)
+  // Triggers IPNS CID derivation with new S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (keypairIPNS && sigIPNS) {
       const CIDGen = async () => {
         let key = constants.formatkey(keypairIPNS)
         const w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
-        const CID_IPNS = w3name.toString()
+        const CID_IPNS = String(w3name)
         let _Recordhash = recordhash ? recordhash.split('ipns://')[1] : ''
         let _Ownerhash = ownerhash ? ownerhash.split('ipns://')[1] : ''
         if (write) {
@@ -1386,7 +1409,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairIPNS, sigIPNS, recordhash, ownerhash, write])
 
-  // Sets signature from Wagmi signMessage() as S1(K1)
+  // Sets signature from Wagmi signMessage() as S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (signature && sigCount === 1) {
       setSigIPNS(signature)
@@ -1401,12 +1424,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers Resolver migration after IPNS CID is generated and validated 
   React.useEffect(() => {
     if (CID && !write) {
-      console.log(CID)
       setProcessCount(1)
       if (CID.startsWith('k5')) {
         initRecordhash()
       } else if (CID.startsWith('https://')) {
-        console.log(ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)))
         initGateway()
       }
     } else if (write) {
@@ -1451,7 +1472,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else if (ownerhash) {
         setMetadata(ownerhash, addr, contenthash, avatar)
       } else {
-        setMetadata('', addr, contenthash, avatar)
+        setMetadata(recordhash, addr, contenthash, avatar)
       }
       setLoading(false)
     }
@@ -1462,9 +1483,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (conclude) {
       getUpdate(
-        recordhash || ownerhash || 'gateway',
-        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway'),
-        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway')
+        recordhash || ownerhash,
+        recordhash && recordhash.startsWith('ipns://') ? 'recordhash' : (ownerhash && ownerhash.startsWith('ipns://') ? 'ownerhash' : 'gateway'),
+        recordhash && recordhash.startsWith('ipns://') ? 'recordhash' : (ownerhash && ownerhash.startsWith('ipns://') ? 'ownerhash' : 'gateway')
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1482,16 +1503,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (history && queue && !sync) {
       if (recordhash) {
-        if (_Recordhash_ && _Ownerhash_ === '0x' && getManager() === constants.zeroAddress) {
-          setHashType('storage')
-          setRecordhash('')
-          setOwnerhash('')
+        if (recordhash.startsWith('https://')) {
+          setHashType('gateway')
         } else {
-          if (recordhash.startsWith('https://')) {
-            setHashType('gateway')
-          } else {
-            setHashType('recordhash')
-          }
+          setHashType('recordhash')
         }
       } else if (ownerhash) {
         if (ownerhash.startsWith('https://')) {
@@ -1504,7 +1519,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue, resolver, recordhash, ownerhash, sync, _Recordhash_, _Ownerhash_])
+  }, [history, queue, resolver, recordhash, ownerhash, sync])
 
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
@@ -1536,7 +1551,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, resolver, states])
 
-  // Handles password prompt for S1(K1)
+  // Handles password prompt for S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (updateRecords && write) { // Check for false → true
       if (!keypairIPNS || (!keypairSigner || !keypairSigner[0]) || !CID) {
@@ -1545,7 +1560,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else {
         if (states.length > 0) {
           setLoading(true)
-          setMessage(['Setting Records', states.length.toString()])
+          setMessage(['Setting Records', String(states.length)])
           setProcessCount(states.length)
         }
       }
@@ -1583,7 +1598,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
-    // Handle Signature S2(K0) to add as extradata
+    // Handle Signature S_RECORDS(K_SIGNER) to add as extradata
     if (write && (keypairSigner && keypairSigner[0]) && newValues && !constants.isEmpty(newValues) && states.length > 0) {
       let __signatures = constants.EMPTY_STRING_RECORDS()
       states.forEach(async (_recordType) => {
@@ -1591,7 +1606,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (newValues[_recordType]) {
           _signature = await _signMessage({
             message: statementRecords(constants.filesStealth[constants.typesStealth.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
-          }) // Sign with K0
+          }) // Sign with K_SIGNER
         }
         if (_signature) __signatures[_recordType] = _signature
       })
@@ -1603,14 +1618,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   /* HANDLE SIGNER APPROVAL SIGNATURE */
   // Triggers signing Off-Chain Signer's approval by Controller
   React.useEffect(() => {
-    // Handle Signature S3(K1)
+    // Handle Signature S_APPROVE(K_WALLET)
     if (write && !onChainManager && !sigApproved && !constants.isEmpty(signatures)) {
       if (hashType !== 'gateway') {
         setProcessCount(2)
       } else {
         setProcessCount(3)
       }
-      __signMessage() // Sign with K1
+      __signMessage() // Sign with K_WALLET
     } else if (write && onChainManager && !constants.isEmpty(signatures)) {
       setSigApproved('0x')
     }
@@ -2076,7 +2091,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (recentCrash) setRecentCrash(false)
     } else if (signError && !signLoading && trigger) {
       if (!recentCrash) {
-        setMessage(['Signature Failed', sigCount.toString()])
+        setMessage(['Signature Failed', String(sigCount)])
         doCrash()
         setWrite(false)
         setUpdateRecords(false) // Reset
@@ -2346,21 +2361,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </span>
                               )}
                             { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
+                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && ownerhash && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : 'cyan'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> is Set</span>`)
+                                      setColor(item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan')),
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Gateway' : 'Custom Gateway') : 'Ownerhash'}</span> is in use</span>`)
                                   }}
-                                  data-tooltip={`Ready For Off-Chain Use With ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}`}
+                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? 'Custom Gateway' : 'Ownerhash'} In Use`}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: item.type === 'resolver' ? 'lime' : 'cyan'
+                                      color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan')
                                     }}
                                   >
                                     gpp_good
@@ -2368,21 +2383,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </button>
                               )}
                             { // Set Badge if Resolver is migrated and Recordhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && recordhash && (
+                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (recordhash && recordhash !== constants.defaultGateway) && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon('gpp_good'),
-                                      setColor('lime'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span>Domain-specific <span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> is Set<span>`)
+                                      setColor(item.type === 'resolver' ? 'lime' : 'lime'),
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Custom Gateway' : 'Recordhash'}</span> is in use<span>`)
                                   }}
-                                  data-tooltip={`Ready For Off-Chain Use With ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}`}
+                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : 'Recordhash Is Set'}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: 'lime',
+                                      color: item.type === 'resolver' ? 'lime' : 'lime',
                                       marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                     }}
                                   >
@@ -2390,31 +2405,31 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </div>
                                 </button>
                               )}
-                            { // Set Badge if Resolver is migrated and no Recordhash or Ownerhash or Gateway is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && !ownerhash && (
+                            { // Set Badge if Resolver is migrated and no custom Recordhash or Ownerhash or Gateway is set
+                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (recordhash && recordhash === constants.defaultGateway) && !ownerhash && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
-                                      setIcon(item.type === 'resolver' ? 'gpp_good' : 'cancel'),
-                                      setColor(item.type === 'resolver' ? 'orange' : 'orangered'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span style="color: cyan">Storage</span> <span style="color: orange">not Set</span>`)
+                                      setIcon(item.type === 'resolver' ? 'gpp_good' : 'gpp_good'),
+                                      setColor(item.type === 'resolver' ? 'green' : 'yellow'),
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span style="color: cyan">Default Storage</span> <span style="color: orange">is in use</span>`)
                                   }}
-                                  data-tooltip={'Resolver Migrated But Storage Not Set'}
+                                  data-tooltip={item.type === 'storage' ? ' Default Storage In Use' : 'Resolver Is Migrated'}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: item.type === 'resolver' ? 'orange' : 'orangered',
+                                      color: item.type === 'resolver' ? 'lime' : 'yellow',
                                       marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                     }}
                                   >
-                                    {item.type === 'resolver' ? 'gpp_good' : 'cancel'}
+                                    {item.type === 'resolver' ? 'gpp_good' : 'gpp_good'}
                                   </div>
                                 </button>
                               )}
                             { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
+                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && !ownerhash && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
@@ -2423,7 +2438,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       setColor('orangered'),
                                       setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Storage</span> <span style="color: orange">not Set</span></span>')
                                   }}
-                                  data-tooltip={'Resolver Not Migrated And Storage Not Set'}
+                                  data-tooltip={item.type === 'storage' ? 'Storage Not Set' : 'Resolver Not Migrated'}
                                 >
                                   <div
                                     className="material-icons smol"
@@ -2437,7 +2452,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </button>
                               )}
                             { // Resolver is not migrated but Recordhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
+                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && ((recordhash && recordhash !== constants.defaultGateway) || ownerhash) && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
@@ -2446,7 +2461,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : (ownerhash && managers.includes(_Wallet_ || '0') ? 'cyan' : 'cyan'))),
                                       setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set</span></span>`))
                                   }}
-                                  data-tooltip={recordhash ? `Resolver not Migrated But ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} is Set` : `Resolver not Migrated But ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} is Set`}
+                                  data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists`}
                                 >
                                   <div
                                     className="material-icons smol"
@@ -2473,7 +2488,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   <div
                                     className="material-icons smoller"
                                     style={{
-                                      color: !hashIPFS ? 'orange' : (recordhash ? 'lime' : 'cyan'),
+                                      color: !hashIPFS ? 'orange' : (recordhash && recordhash !== constants.defaultGateway ? 'lime' : 'cyan'),
                                       fontSize: '15px',
                                       marginLeft: '-5.5px'
                                     }}
@@ -2575,7 +2590,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           <button
                             className="button"
                             hidden={
-                              !['resolver', 'storage'].includes(item.type) && states.length > 1
+                              !['resolver', 'storage'].includes(item.type) && states.length > 1 && !states.includes('resolver') && !states.includes('storage')
                             }
                             disabled={
                               constants.blocked.includes(item.type) ||
@@ -2611,7 +2626,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           </button>
                         </div>
                         <input
-                          className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra')}
+                          className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
                           id={item.key}
                           key={item.key}
                           placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
@@ -2620,7 +2635,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                           }
                           style={{
-                            background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                            background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
                             fontFamily: 'SF Mono',
                             fontWeight: '400',
                             fontSize: '14px',
@@ -2629,7 +2644,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             textAlign: 'left',
                             marginTop: '-10px',
                             marginBottom: '-5px',
-                            color: !legit[item.type] ? 'white' : 'lightgreen',
+                            color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
                             cursor: 'copy'
                           }}
                           onChange={(e) => {
@@ -2642,7 +2657,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   ))}
                 </div>
               </ul>
-              {states.length > 1 && (
+              {states.length > 1 && !states.includes('resolver') && !states.includes('storage') && (
                 <div
                   style={{
                     marginTop: '-10px',
@@ -2754,7 +2769,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }}
             show={options && trigger === 'resolver'}
           >
-            {ownerhash ? true : false}
+            {ownerhash ? true : (recordhash ? true : false)}
           </Options>
           <Confirm
             handleTrigger={handleConfirmTrigger}
@@ -2768,8 +2783,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           </Confirm>
           <Error
             onClose={() => {
-              setCrash(false),
-                setRecentCrash(true)
+              setCrash(false)
+              setRecentCrash(true)
             }}
             color={color}
             show={crash && !loading}

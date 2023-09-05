@@ -23,6 +23,7 @@ import Stealth from '../components/Stealth'
 import Faq from '../components/FAQ'
 import Salt from '../components/Salt'
 import Error from '../components/Error'
+import Gateway from '../components/Gateway'
 import List from '../components/List'
 import Ticker from '../components/Ticker'
 import Loading from '../components/LoadingColors'
@@ -105,11 +106,15 @@ const Account: NextPage = () => {
   const [confirmModalState, setConfirmModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Confirm modal state
+  }) // Confirm modal state
   const [exportModalState, setExportModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Export modal state
+  }) // Export modal state
+  const [gatewayModalState, setGatewayModalState] = React.useState<constants.MainBodyState>({
+    modalData: undefined,
+    trigger: false
+  }) // Gateway modal state
   const recoveredAddress = React.useRef<string>()
 
   // Handle Salt modal data return
@@ -157,23 +162,76 @@ const Account: NextPage = () => {
     setExportModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
 
+  // Handle Gateway modal data return
+  const handleGatewayModalData = (data: string | undefined) => {
+    setGatewayModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Gateway modal trigger
+  const handleGatewayTrigger = (trigger: boolean) => {
+    setGatewayModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
+
   const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
 
-  // Signature S1 statement; S1(K1) [IPNS Keygen]
-  // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
+  // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(source: string, caip10: string, extradata: string) {
     let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${source}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
-  // Signature S4 statement; S4(K1) [Signer Keygen]
-  // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  // Signature S_SIGNER statement; S_SIGNER(K_WALLET) [Signer Keygen]
+  // S_SIGNER is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementSignerKey(source: string, caip10: string, extradata: string) {
     let _toSign = `Requesting Signature To Generate ENS Records Signer\n\nOrigin: ${source}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
+  }
+
+  // Crash Handler
+  function doCrash() {
+    setCrash(true)
+    setSigCount(0)
+    setSigIPNS('')
+    setSigSigner('')
+    setKeypairIPNS([])
+    setKeypairSigner([])
+    setKeyIPNS('')
+    setSalt(false)
+    setCID('')
+    setLoading(false)
+  }
+
+  function handleMeta(_success: boolean, _set: boolean, _flash: typeof meta, _CID: string) {
+    if (_success && _set) {
+      let _LIST = _flash
+      for (var i = 0; i < _flash.length; i++) {
+        if (_flash[i].migrated === '1/2') {
+          _LIST[i].migrated = '3/4'
+        }
+      }
+      setMeta(_LIST)
+      setFlash(_LIST)
+      setCache(_LIST)
+      setOwnerhash(_CID.startsWith('k') ? `ipns://${_CID}` : _CID)
+      setMessage('Transaction Confirmed')
+      setTimeout(() => {
+        setLoading(false)
+      }, 2000)
+    }
+    setSaltModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setExportModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setKeypairIPNS([])
+    setKeypairSigner([])
+    setKeyIPNS('')
   }
 
   const {
@@ -231,7 +289,7 @@ const Account: NextPage = () => {
 
   // Sets Ownerhash in CCIP2 Resolver
   const {
-    data: response1of1,
+    data: response1of2,
     write: initOwnerhash,
     isLoading: isSetOwnerhashLoading,
     isSuccess: isSetOwnerhashSuccess,
@@ -243,7 +301,26 @@ const Account: NextPage = () => {
     args: [
       ethers.utils.defaultAbiCoder.encode(
         ['bytes32'],
-        [CID ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+      )
+    ]
+  })
+
+  // Sets Gateway as Ownerhash in CCIP2 Resolver
+  const {
+    data: response2of2,
+    write: initGateway,
+    isLoading: isSetGatewayLoading,
+    isSuccess: isSetGatewaySuccess,
+    isError: isSetGatewayError
+  } = useContractWrite({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'setOwnerhash',
+    args: [
+      ethers.utils.defaultAbiCoder.encode(
+        ['bytes'],
+        [CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : constants.zeroBytes]
       )
     ]
   })
@@ -315,6 +392,8 @@ const Account: NextPage = () => {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}-`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '&') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}&`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '+') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}+`)
       }
@@ -338,7 +417,7 @@ const Account: NextPage = () => {
 
   // Trigger Preview modal
   React.useEffect(() => {
-    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
+    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-') || nameToPreview.endsWith('&')) {
       setPreviewModal(true)
     } else {
       setPreviewModal(false)
@@ -354,9 +433,9 @@ const Account: NextPage = () => {
     }
   }, [nameToStealth])
 
-  // Triggers S1(K1) after password is set
+  // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && !choice.endsWith('_IPNS')) {
+    if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && !choice.endsWith('_IPNS') && exportModalState.modalData !== '2') {
       if (choice === 'export') {
         setChoice('export_IPNS')
       } else if (choice === 'ownerhash') {
@@ -379,9 +458,13 @@ const Account: NextPage = () => {
         )
       })
       setKeygen(true)
+    } else if (exportModalState.modalData === '2' && saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && !choice.endsWith('_IPNS')) {
+      setKeypairIPNS(['0x', '0x'])
+      setChoice('export_HTTP')
+      setKeygen(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, keypairIPNS, choice])
+  }, [saltModalState, keypairIPNS, choice, exportModalState])
   React.useEffect(() => {
     if (saltModalState.trigger && !keypairIPNS[0] && !keypairIPNS[1] && sigIPNS && keygen) {
       const keygen = async () => {
@@ -396,17 +479,21 @@ const Account: NextPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, sigIPNS, keypairIPNS])
 
-  // Triggers S4(K1) after password is set
+  // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
-      if (choice === 'export_IPNS') {
+    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer') && exportModalState.modalData) {
+      if (['export_IPNS', 'export_HTTP'].includes(choice)) {
         setChoice('export_Signer')
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-        setSigCount(2)
+        if (choice === 'export_HTTP') {
+          setSigCount(1)
+        } else {
+          setSigCount(2)
+        }
         signMessage({
           message: statementSignerKey(
-            exportModalState.modalData === '1' ? saltModalState.modalData.split(':')[0] : _origin,
+            ['1', '2'].includes(exportModalState.modalData) ? saltModalState.modalData.split(':')[0] : _origin,
             _caip10,
             ethers.utils.keccak256(ethers.utils.solidityPack(
               ['bytes32', 'address'],
@@ -417,9 +504,10 @@ const Account: NextPage = () => {
             ))
           )
         })
-      } else if (choice === 'ownerhash_IPNS') {
+      } else if (!keypairSigner[0] && !keypairSigner[1] && choice === 'ownerhash_IPNS') {
         setChoice('ownerhash_Signer')
-      }
+        setKeypairSigner(['0x', '0x'])
+      } 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, keypairSigner, keypairIPNS, choice, exportModalState])
@@ -451,6 +539,10 @@ const Account: NextPage = () => {
           modalData: undefined,
           trigger: false
         })
+        setExportModalState({
+          modalData: undefined,
+          trigger: false
+        })
         setSigCount(0)
         setSigIPNS('')
         setSigSigner('')
@@ -460,20 +552,22 @@ const Account: NextPage = () => {
         setSigCount(0)
         if (CID.startsWith('k5')) {
           initOwnerhash()
-          setMessage('Waiting For Transaction')
+        } else if (CID.startsWith('https://')) {
+          initGateway()
         }
+        setMessage('Waiting For Transaction')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairSigner, keypairIPNS, CID, choice])
 
-  // Triggers IPNS CID derivation with new S1(K1)
+  // Triggers IPNS CID derivation with new S_IPNS(K_WALLET)
   React.useEffect(() => {
-    if (keypairIPNS.length > 0 && choice.startsWith('ownerhash')) {
+    if (keypairIPNS[0] && keypairIPNS[1] && choice.startsWith('ownerhash') && !choice.endsWith('HTTP')) {
       const CIDGen = async () => {
         let key = constants.formatkey([keypairIPNS[0], keypairIPNS[1]])
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key))
-        const CID_IPNS = w3name.toString()
+        const CID_IPNS = String(w3name)
         setCID(CID_IPNS)
       }
       CIDGen()
@@ -600,14 +694,14 @@ const Account: NextPage = () => {
 
   React.useEffect(() => {
     if (_OwnerLegacy_ && _ManagerLegacy_
-      && _OwnerLegacy_?.toString() !== constants.zeroAddress
-      && _ManagerLegacy_?.toString() !== constants.zeroAddress) {
-      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
-        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) {
-          setManager(_OwnerWrapped_.toString())
+      && String(_OwnerLegacy_) !== constants.zeroAddress
+      && String(_ManagerLegacy_) !== constants.zeroAddress) {
+      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
+          setManager(String(_OwnerWrapped_))
         }
       } else {
-        setManager(_ManagerLegacy_.toString())
+        setManager(String(_ManagerLegacy_))
       }
     }
     if (activeTab !== 'OWNER') {
@@ -649,9 +743,9 @@ const Account: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0) {
-              if (recordhash && recordhash.toString() !== '0x' && (recordhash.toString() !== ownerhash.toString()) && items[0].migrated === '1/2') {
+              if (recordhash && String(recordhash) !== '0x' && (String(recordhash) !== String(ownerhash)) && items[0].migrated === '1/2') {
                 items[0].migrated = '1'
-              } else if (ownerhash && ownerhash.toString() !== '0x' && items[0].migrated === '1/2') {
+              } else if (ownerhash && String(ownerhash) !== '0x' && items[0].migrated === '1/2') {
                 items[0].migrated = '3/4'
               }
               setCache(flash)
@@ -680,7 +774,7 @@ const Account: NextPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
 
-  // Sets option between Ownerhash and Recordhash
+  // Sets Option between IPNS Ownerhash and HTTP Gateway
   React.useEffect(() => {
     if (confirmModalState.trigger && confirmModalState.modalData) {
       setConfirm(false)
@@ -688,14 +782,22 @@ const Account: NextPage = () => {
         setUsername(`eth:${_Wallet_}`)
         setSalt(true)
       } else if (confirmModalState.modalData === '1') {
-        setUsername('0')
-        setSalt(true)
-      } else {
         setGateway(true)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [confirmModalState])
+
+  // Triggers Gateway routine
+  React.useEffect(() => {
+    if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined) {
+      setCID(gatewayModalState.modalData)
+      setChoice('ownerhash_HTTP')
+      setKeypairIPNS(['0x', '0x'])
+      setKeypairSigner(['0x', '0x'])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gatewayModalState])
 
   // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
@@ -704,7 +806,7 @@ const Account: NextPage = () => {
       if (exportModalState.modalData === '0') {
         setUsername(`eth:${_Wallet_}`)
         setSalt(true)
-      } else if (exportModalState.modalData === '1') {
+      } else if (['1', '2'].includes(exportModalState.modalData)) {
         setUsername('')
         setSalt(true)
       } else {
@@ -716,15 +818,35 @@ const Account: NextPage = () => {
 
   // Capture Recordhash hook
   React.useEffect(() => {
-    if (_Recordhash_) {
-      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
+    if (_Recordhash_ && String(_Recordhash_) !== '0x') {
+      let _String: string = ''
+      if (String(_Recordhash_).startsWith(constants.prefix)) {
+        _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
+      } else {
+        _String = ethers.utils.toUtf8String('0x' + String(_Recordhash_).substring(130))
+      }
+      if (_String.startsWith('https://')) {
+        setRecordhash(`${_String.replace(/\0/g, '')}`)
+      } else {
+        setRecordhash(`${_String}`)
+      }
     }
-  }, [_Recordhash_, _Ownerhash_])
+  }, [_Recordhash_])
 
   // Capture Ownerhash hook
   React.useEffect(() => {
-    if (_Ownerhash_) {
-      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
+    if (_Ownerhash_ && String(_Ownerhash_) !== '0x') {
+      let _String: string = ''
+      if (String(_Ownerhash_).startsWith(constants.prefix)) {
+        _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
+      } else {
+        _String = ethers.utils.toUtf8String('0x' + String(_Ownerhash_).substring(130))
+      }
+      if (_String.startsWith('https://')) {
+        setOwnerhash(`${_String.replace(/\0/g, '')}`)
+      } else {
+        setOwnerhash(`${_String}`)
+      }
     }
   }, [_Ownerhash_])
 
@@ -735,11 +857,12 @@ const Account: NextPage = () => {
       let _token = ethers.BigNumber.from(_namehash)
       let _labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
       setNamehashLegacy(_namehash)
-      setTokenIDWrapper(_token.toString())
-      setTokenIDLegacy(ethers.BigNumber.from(_labelhash).toString())
+      setTokenIDWrapper(String(_token))
+      setTokenIDLegacy(String(ethers.BigNumber.from(_labelhash)))
     }
   }, [query])
 
+  // Handle Query
   const handleNameSearch = (query: string) => {
     setMeta([])
     setLoading(true)
@@ -749,45 +872,33 @@ const Account: NextPage = () => {
     setEmpty(false)
   }
 
-  const { isSuccess: txSuccess1of1, isError: txError1of1, isLoading: txLoading1of1 } = useWaitForTransaction({
-    hash: response1of1?.hash,
+  // Wagmi hooks for transaction status
+  const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
+    hash: response1of2?.hash,
+  })
+  const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
+    hash: response2of2?.hash,
   })
 
-  // Handles setting Ownerhash after transaction 2 
+  // Handles setting Ownerhash after Transaction
   React.useEffect(() => {
-    if (txSuccess1of1 && isSetOwnerhashSuccess) {
-      let _LIST = flash
-      for (var i = 0; i < flash.length; i++) {
-        if (flash[i].migrated === '1/2') {
-          _LIST[i].migrated = '3/4'
-        }
-      }
-      setMeta(_LIST)
-      setFlash(_LIST)
-      setCache(_LIST)
-      setOwnerhash(`ipns://${CID}`)
-      setMessage('Transaction Confirmed')
-      setTimeout(() => {
-        setLoading(false)
-      }, 2000)
-    }
-    setSaltModalState({
-      modalData: undefined,
-      trigger: false
-    })
-    setKeypairIPNS([])
-    setKeypairSigner([])
-    setKeyIPNS('')
+    handleMeta(txSuccess1of2, isSetOwnerhashSuccess, flash, CID)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txSuccess1of1, isSetOwnerhashSuccess, flash])
+  }, [txSuccess1of2, isSetOwnerhashSuccess, flash, CID])
+
+  // Handles setting Gateway as Ownerhash after Transaction
+  React.useEffect(() => {
+    handleMeta(txSuccess2of2, isSetGatewaySuccess, flash, CID)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txSuccess2of2, isSetGatewaySuccess, flash, CID])
 
   // Handles Ownerhash transaction loading and error
   React.useEffect(() => {
-    if (txLoading1of1 && !txError1of1) {
+    if (txLoading1of2 && !txError1of2) {
       setLoading(true)
       setMessage('Waiting for Confirmation')
     }
-    if (!txLoading1of1 && txError1of1) {
+    if (!txLoading1of2 && txError1of2) {
       if (!recentCrash) {
         setMessage('Transaction Failed')
         setCrash(true)
@@ -798,9 +909,28 @@ const Account: NextPage = () => {
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading1of1, txError1of1])
+  }, [txLoading1of2, txError1of2])
 
-  // Handles transaction wait
+  // Handles Gateway as Ownerhash transaction loading and error
+  React.useEffect(() => {
+    if (txLoading2of2 && !txError2of2) {
+      setLoading(true)
+      setMessage('Waiting for Confirmation')
+    }
+    if (!txLoading2of2 && txError2of2) {
+      if (!recentCrash) {
+        setMessage('Transaction Failed')
+        setCrash(true)
+        setSigCount(0)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading2of2, txError2of2])
+
+  // Handles Ownerhash transaction wait
   React.useEffect(() => {
     if (isSetOwnerhashLoading && !isSetOwnerhashError) {
       setLoading(true)
@@ -809,16 +939,7 @@ const Account: NextPage = () => {
       if (recentCrash) setRecentCrash(false)
     } else if (!isSetOwnerhashLoading && isSetOwnerhashError) {
       if (!recentCrash) {
-        setCrash(true)
-        setSigCount(0)
-        setSigIPNS('')
-        setSigSigner('')
-        setKeypairIPNS([])
-        setKeypairSigner([])
-        setKeyIPNS('')
-        setSalt(false)
-        setCID('')
-        setLoading(false)
+        doCrash()
         setMessage('Transaction Declined By User')
         setSuccess(false)
       } else {
@@ -832,6 +953,29 @@ const Account: NextPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetOwnerhashLoading, isSetOwnerhashError])
 
+  // Handles Gateway as Ownerhash transaction wait
+  React.useEffect(() => {
+    if (isSetGatewayLoading && !isSetGatewayError) {
+      setLoading(true)
+      setFinish(false)
+      setMessage('Waiting for Transaction')
+      if (recentCrash) setRecentCrash(false)
+    } else if (!isSetGatewayLoading && isSetGatewayError) {
+      if (!recentCrash) {
+        doCrash()
+        setMessage('Transaction Declined By User')
+        setSuccess(false)
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSetGatewayLoading, isSetGatewayError])
+
   // Handles signature loading and error
   React.useEffect(() => {
     if (activeTab === 'UTILS') {
@@ -842,20 +986,15 @@ const Account: NextPage = () => {
       } else if (signError && !signLoading) {
         if (!recentCrash) {
           setMessage('Signature Failed')
-          setCrash(true)
-          setSigCount(0)
-          setKeypairIPNS([])
-          setKeypairSigner([])
-          setKeyIPNS('')
-          setSigIPNS('')
-          setSigSigner('')
-          setSalt(false)
-          setLoading(false)
-          setCID('')
+          doCrash()
         } else {
           if (recentCrash) setRecentCrash(false)
         }
         setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
+        setExportModalState({
           modalData: undefined,
           trigger: false
         })
@@ -1342,7 +1481,7 @@ const Account: NextPage = () => {
                     </span>
                     <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>
                       {
-                        activeTab === 'UTILS' ? (sigCount > 0 ? `${choice.startsWith('export') ? '2' : '1'}` : '') :
+                        activeTab === 'UTILS' ? (sigCount > 0 ? `${choice.startsWith('export') ? (exportModalState.modalData === '2' ? '1' : '2') : '1'}` : '') :
                           (activeTab === 'OWNER' ? (previewModalState.modalData ? '' : `${length}`) : '')
                       }
                     </span>
@@ -1567,9 +1706,9 @@ const Account: NextPage = () => {
                     color: 'rgb(50, 205, 50, 0.75)'
                   }}
                   type="text"
-                  placeholder={"ipns://"}
+                  placeholder={'Click on \'SET\''}
                   disabled
-                  value={ownerhash}
+                  value={ownerhash === 'ipns://' ? '' : ownerhash}
                   id="owner-hash"
                 />
                 <div
@@ -1593,7 +1732,8 @@ const Account: NextPage = () => {
                         setKeyIPNS(''),
                         setSigIPNS(''),
                         setSigSigner(''),
-                        setSuccess(false)
+                        setSuccess(false),
+                        setMessage('')
                     }}
                   >
                     <div
@@ -1612,17 +1752,30 @@ const Account: NextPage = () => {
                       </span>
                     </div>
                   </button>
-                  {(txSuccess1of1 || txError1of1) && !txLoading1of1 && (
+                  {(txSuccess1of2 || txError1of2) && !txLoading1of2 && (
                     <div
                       className="material-icons smol"
                       style={{
-                        color: txSuccess1of1 ? 'lime' : 'orangered',
+                        color: txSuccess1of2 ? 'lime' : 'orangered',
                         marginLeft: '10px',
-                        marginTop: '14px',
+                        marginTop: '18px',
                         fontSize: '20px'
                       }}
                     >
-                      {txSuccess1of1 ? 'task_alt' : 'cancel'}
+                      {txSuccess1of2 ? 'task_alt' : 'cancel'}
+                    </div>
+                  )}
+                  {(txSuccess2of2 || txError2of2) && !txLoading2of2 && (
+                    <div
+                      className="material-icons smol"
+                      style={{
+                        color: txSuccess2of2 ? 'lime' : 'orangered',
+                        marginLeft: '10px',
+                        marginTop: '18px',
+                        fontSize: '20px'
+                      }}
+                    >
+                      {txSuccess2of2 ? 'task_alt' : 'cancel'}
                     </div>
                   )}
                 </div>
@@ -1703,7 +1856,7 @@ const Account: NextPage = () => {
                       }}
                       type="text"
                       placeholder={"IPNS Private Key"}
-                      value={!choice.startsWith('export') ? '' : keypairIPNS[0]}
+                      value={!choice.startsWith('export') ? '' : (!choice.endsWith('HTTP') ? (keypairIPNS[0] !== '0x' ? keypairIPNS[0] : '') : '')}
                       id="export-ipns"
                       disabled
                     />
@@ -1719,7 +1872,7 @@ const Account: NextPage = () => {
                         marginLeft: '-25px',
                         color: color && !keypairIPNS[0] && !keypairIPNS[1] ? color : 'cyan'
                       }}
-                      hidden={!keypairIPNS[0]}
+                      hidden={!keypairIPNS[0] || keypairIPNS[0] === '0x'}
                     >
                       <span
                         className="material-icons"
@@ -1879,7 +2032,8 @@ const Account: NextPage = () => {
                         setKeypairSigner([]),
                         setKeyIPNS(''),
                         setSigIPNS(''),
-                        setSigSigner('')
+                        setSigSigner(''),
+                        setMessage('')
                     }}
                   >
                     <div
@@ -1901,13 +2055,13 @@ const Account: NextPage = () => {
                   <div
                     className="material-icons smol"
                     style={{
-                      color: keyIPNS ? 'lime' : (signError ? 'orangered' : ''),
+                      color: keyIPNS || keypairIPNS[0] || keypairSigner[0] ? 'lime' : (signError ? 'orangered' : ''),
                       marginLeft: '10px',
-                      marginTop: '13px',
+                      marginTop: '18px',
                       fontSize: '20px'
                     }}
                   >
-                    {keyIPNS ? 'task_alt' : (signError ? 'cancel' : '')}
+                    {keyIPNS || keypairIPNS[0] || keypairSigner[0] ? 'task_alt' : (signError ? 'cancel' : '')}
                   </div>
                 </div>
               </div>
@@ -2131,10 +2285,21 @@ const Account: NextPage = () => {
             >
               {errorMessage}
             </Error>
+            <Gateway
+              handleTrigger={handleGatewayTrigger}
+              handleModalData={handleGatewayModalData}
+              onClose={() => {
+                setGateway(false)
+              }}
+              show={gateway}
+            >
+            </Gateway>
             <Salt
               handleTrigger={handleSaltTrigger}
               handleModalData={handleSaltModalData}
-              onClose={() => setSalt(false)}
+              onClose={() => {
+                setSalt(false)
+              }}
               show={salt}
             >
               {username}

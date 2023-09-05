@@ -46,6 +46,7 @@ export const ccip2 = [
   '0x4697b8672ceAe60E130BD39435cAb9eD7C630c81', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
+export const defaultGateway = 'https://ccip.namesys.xyz/'
 export const waitingPeriod = 1 * (network === 'goerli' ? 1 : 60) * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
@@ -190,7 +191,6 @@ export function formatkey(keypair: [string, string]) {
 
 // Encode ENS contenthash
 export function encodeContenthash(contenthash: string) {
-  console.log(contenthash)
   if (contenthash && !contenthash.startsWith('https://')) {
     const ensContentHash = ensContent.encodeContenthash(`ipns://${contenthash}`)
     return ensContentHash.encoded
@@ -215,7 +215,6 @@ export function checkImageURL(url: string) {
   return new Promise(function (resolve, reject) {
     var img = new Image()
     img.onload = function () {
-      console.log('Log:', 'Image Loaded Successfully')
       resolve(true)
     }
     img.onerror = function () {
@@ -266,7 +265,7 @@ export function isContenthash(value: string) {
 export function latestTimestamp(list: string[]) {
   var _Timestamps: number[] = []
   for (const key in list) {
-    if (list.hasOwnProperty(key) && list[key] !== '' && list[key]) {
+    if (list.hasOwnProperty(key) && !['revision', 'version'].includes(key) && list[key]) {
       _Timestamps.push(Number(list[key]))
     }
   }

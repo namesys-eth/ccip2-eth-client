@@ -60,7 +60,7 @@ const Home: NextPage = () => {
   const [previewModalState, setPreviewModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
-  })
+  }) // Preview modal state
   const [stealthModalState, setStealthModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
@@ -213,6 +213,8 @@ const Home: NextPage = () => {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}-`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '&') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}&`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '+') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}+`)
       }
@@ -236,7 +238,7 @@ const Home: NextPage = () => {
 
   // Trigger Preview modal
   React.useEffect(() => {
-    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
+    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-') || nameToPreview.endsWith('&')) {
       setPreviewModal(true)
     } else {
       setPreviewModal(false)
