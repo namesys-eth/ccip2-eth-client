@@ -135,7 +135,7 @@ export const blocked = [
   'none'
 ]
 // Record types in Preview modal
-export const types = [
+export const typesRecords = [
   'storage', // On-Chain Record
   'resolver', // Exception: Not a Record type
   'addr',
@@ -144,14 +144,26 @@ export const types = [
   'zonehash',
   'revision' // Extra local history; Not a Record type
 ]
+// Record types in Stealth modal
+export const typesStealth = [
+  'rsa',
+  'stealth',
+  'revision' // Extra local history; Not a Record type
+]
 // Record filenames corresponding to record types
-export const files = [
+export const filesRecords = [
   '', // No associated record file; Not a Record
   '', // No associated record file; Not a Record
   'address/60',
   'contenthash',
   'text/avatar',
   'dns/zonehash',
+  'revision' // No associated record file; Not a Record
+]
+// Record filenames corresponding to record types
+export const filesStealth = [
+  'text/rsa',
+  'text/stealth',
   'revision' // No associated record file; Not a Record
 ]
 // Overlay 
@@ -178,7 +190,8 @@ export function formatkey(keypair: [string, string]) {
 
 // Encode ENS contenthash
 export function encodeContenthash(contenthash: string) {
-  if (contenthash) {
+  console.log(contenthash)
+  if (contenthash && !contenthash.startsWith('https://')) {
     const ensContentHash = ensContent.encodeContenthash(`ipns://${contenthash}`)
     return ensContentHash.encoded
   }
@@ -229,12 +242,10 @@ export function isEmpty(object: any) {
 export function isName(value: string) {
   return value.endsWith('.eth') && value.length <= 32 + 4
 }
-
 // Check if value is a valid Addr
 export function isAddr(value: string) {
   return value.startsWith('0x') && value.length === 42 && hexRegex.test(value.split('0x')[1])
 }
-
 // Check if value is a valid Avatar URL
 export function isAvatar(value: string) {
   return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
@@ -262,11 +273,10 @@ export function latestTimestamp(list: string[]) {
   return Math.max(..._Timestamps)
 }
 
-/// Init 
-// Types object with empty strings
-export function EMPTY_STRING() {
+// Records Types object with empty strings
+export function EMPTY_STRING_RECORDS() {
   const EMPTY_STRING = {}
-  for (const key of types) {
+  for (const key of typesRecords) {
     if (!['resolver', 'storage'].includes(key)) {
       EMPTY_STRING[key] = ''
     }
@@ -274,45 +284,64 @@ export function EMPTY_STRING() {
   return EMPTY_STRING
 }
 
-// Types object with empty bools
-export function EMPTY_BOOL() {
+// Stealth Types object with empty strings
+export function EMPTY_STRING_STEALTH() {
+  const EMPTY_STRING = {}
+  for (const key of typesStealth) {
+    EMPTY_STRING[key] = ''
+  }
+  return EMPTY_STRING
+}
+
+// Records Types object with empty bools
+export function EMPTY_BOOL_RECORDS() {
   const EMPTY_BOOL = {}
-  for (const key of types) {
+  for (const key of typesRecords) {
     EMPTY_BOOL[key] = ['resolver', 'storage', 'revision'].includes(key) ? true : false
   }
   return EMPTY_BOOL
 }
 
-// History object with empty strings
-export const EMPTY_HISTORY = {
+// Stealth Types object with empty bools
+export function EMPTY_BOOL_STEALTH() {
+  const EMPTY_BOOL = {}
+  for (const key of typesStealth) {
+    EMPTY_BOOL[key] = false
+  }
+  return EMPTY_BOOL
+}
+
+// Records History object with empty strings
+export const EMPTY_HISTORY_RECORDS = {
   type: '',
   addr: '',
   contenthash: '',
   avatar: '',
   revision: '',
   version: '',
-  timestamp: { ...EMPTY_STRING() },
+  timestamp: { ...EMPTY_STRING_RECORDS() },
   queue: 1,
   ownerstamp: []
 }
 
-// History object with empty strings
+// Stealth History object with empty strings
 export const EMPTY_HISTORY_STEALTH = {
   type: '',
   stealth: '',
+  rsa: '',
   revision: '',
   version: '',
-  timestamp: { ...EMPTY_STRING() },
+  timestamp: { ...EMPTY_STRING_STEALTH() },
   queue: 1,
   ownerstamp: []
 }
 
-/// Library
+// Get IPFS hash from <IPNS>.IPFS2.eth.limo
 export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) {
   try {
     const _response = await fetch(
-      `https://${ipnsKey}.ipfs2.eth.limo/version.json?t=${String(cacheBuster)}`
-    );
+      `https://${ipnsKey}.ipfs2.eth.limo/revision.json?t=${String(cacheBuster)}`
+    )
     if (!_response.ok) {
       console.error('Error:', 'Fetch Gone Wrong')
       return {
@@ -320,8 +349,11 @@ export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) 
         '_sequence': ''
       }
     }
-    const data = await _response.json();
-    return data
+    const _data = await _response.json()
+    return {
+      '_value': _data.ipfs ? `/ipfs/${_data.ipfs}` : '//',
+      '_sequence': _data.sequence || ''
+    }
   } catch (error) {
     console.error('Error:', error)
     return {
@@ -329,4 +361,17 @@ export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) 
       '_sequence': ''
     }
   }
+}
+
+// Random string generator
+export function randomString(length: number) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
 }

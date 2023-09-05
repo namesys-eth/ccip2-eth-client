@@ -96,12 +96,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING()); // Contains new values for the active records in {a:b} format
+  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
   const [payToModal, setPayToModal] = React.useState(false); // PayTo modal
-  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains S2(K0) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
@@ -296,7 +296,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     setSigApproved('') // Purge Manager Signature S2 from local storage 
-    setSignatures(constants.EMPTY_STRING()) // Purge Record Signatures from local storage 
+    setSignatures(constants.EMPTY_STRING_STEALTH()) // Purge Record Signatures from local storage 
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setKeypairRSA(undefined)
@@ -520,7 +520,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S3 with K1
   async function __signMessage() {
     setSigCount(4) // Trigger S3(K1)
-    setMessage(['Waiting For Signature', '4'])
+    setMessage(['Waiting For Signature', trigger === 'rsa' ? '4' : '3'])
     if (keypairSigner) {
       const SignS3 = async () => {
         signMessage({
@@ -537,6 +537,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S4 with K1
   async function ___signMessage(_value: string) {
     setSigCount(2)
+    setMessage(['Waiting For Signature', '2'])
     if (keypairIPNS) {
       const SignS4 = async () => {
         signMessage({
@@ -578,8 +579,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .then(response => {
         if (!response) {
           setStealth('')
-          setRSA('0')
-          setSync(true)
+          getRSA(resolver)
         } else {
           setStealth(response)
           getRSA(resolver)
@@ -587,8 +587,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       })
       .catch(() => {
         setStealth('')
-        setRSA('0')
-        setSync(true)
+        getRSA(resolver)
       })
   }
 
@@ -597,7 +596,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     await resolver.getText('rsa')
       .then(response => {
         if (!response) {
-          setRSA('0')
+          setRSA('')
           setSync(true)
         } else {
           setRSA(response)
@@ -605,7 +604,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
       })
       .catch(() => {
-        setRSA('0')
+        setRSA('')
         setSync(true)
       })
   }
@@ -626,22 +625,24 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           } else if (_history.ownerstamp.length === 1) {
             _IPFS = {
-              '_sequence': '0'
+              '_value': '//',
+              '_sequence': '-1'
             }
           } else {
             _IPFS = {
+              '_value': '//',
               '_sequence': ''
             }
           }
-          if (_history.version) setHashIPFS(_history.version.split('/')[2])
+          setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
-            if (Number(_IPFS._sequence) === Number(_history.timestamp.version) - 1 && _Storage[1]) {
+            if (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
               if (_history.stealth && _history.rsa) {
                 setStealth(_history.stealth)
                 setRSA(_history.rsa)
               } else {
                 setStealth('')
-                setRSA('0')
+                setRSA('')
               }
               setSync(true)
             } else {
@@ -649,7 +650,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           } else {
             setStealth('')
-            setRSA('0')
+            setRSA('')
             setSync(true)
           }
         } else {
@@ -663,7 +664,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setResolveCall(_response)
         setResolver('')
         setStealth('')
-        setRSA('0')
+        setRSA('')
         setSync(true)
       }
     } catch (error) {
@@ -700,7 +701,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
-  async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string) {
+  async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string, _ipfs: string) {
     const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
       return typeof value === 'bigint' ? value.toString() : value
     }))
@@ -713,6 +714,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       managerSignature: sigApproved,
       revision: Revision.encode(revision),
       chain: chain,
+      ipns: CID,
+      ipfs: _ipfs,
       gas: JSON.stringify(gas),
       version: __revision,
       timestamp: timestamp,
@@ -762,7 +765,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       type: 'read',
       ens: ENS,
       controller: getManager(),
-      recordsTypes: ['stealth', 'rsa'],
+      recordsTypes: ['stealth', 'rsa', 'revision', 'version'],
       recordsValues: 'all',
       chain: chain,
       storage: _storage,
@@ -791,6 +794,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
+          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -799,8 +803,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
           if (_storage && _Ownerstamps.length > 0 && _type === 'ownerhash') {
             setQueue(Math.round(Date.now() / 1000) - Math.max(..._Ownerstamps) - constants.waitingPeriod)
-          } else {
+          } else if (_storage && _Ownerstamps.length > 0 && _type === 'recordhash') {
             setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
+          } else {
+            setQueue(1)
           }
         })
     } catch (error) {
@@ -1248,7 +1254,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // RSA keypair is generated
   React.useEffect(() => {
     if (payToModalState.trigger && payToModalState.modalData) {
-      setMessage(['Fetching Payer Encryption Record', ''])
+      setMessage(['Fetching Payer Encryption Key', ''])
       setLoading(true)
       let _Payer = payToModalState.modalData.split(':')[0]
       let _Payee = payToModalState.modalData.split(':')[1]
@@ -1268,11 +1274,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 setSigCount(0)
                 setProcessCount(0)
               } else {
-                setMessage(['Encrypting Your Receiver Address', ''])
+                setMessage(['Waiting For Signature', '2'])
                 _RSA = response
                 const _encryptionResult = cryptico.encrypt(`{payer:${_Payer},payee:${_Payee},amount:${_Amount}}`, _RSA)
                 const _THIS = newValues
-                _THIS['stealth'] = _encryptionResult
+                _THIS['stealth'] = _encryptionResult.cipher
                 setNewValues(_THIS)
                 const priorState = states
                 if (!priorState.includes('stealth') && newValues['stealth']) {
@@ -1328,9 +1334,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (conclude) {
       getUpdate(
-        recordhash || ownerhash,
-        recordhash ? 'recordhash' : 'ownerhash',
-        recordhash ? 'recordhash' : 'ownerhash'
+        recordhash || ownerhash || 'gateway',
+        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway'),
+        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway')
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1438,12 +1444,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     // Handle Signature S2(K0) to add as extradata
     if (write && (keypairSigner && keypairSigner[0]) && newValues && !constants.isEmpty(newValues) && states.length > 0) {
-      let __signatures = constants.EMPTY_STRING()
+      let __signatures = constants.EMPTY_STRING_STEALTH()
       states.forEach(async (_recordType) => {
         let _signature: any
         if (newValues[_recordType]) {
           _signature = await _signMessage({
-            message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
+            message: statementRecords(constants.filesStealth[constants.typesStealth.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
           }) // Sign with K0
         }
         if (_signature) __signatures[_recordType] = _signature
@@ -1475,12 +1481,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (
       write &&
       keypairIPNS &&
-      keypairRSA &&
       count === states.length &&
       count > 0 &&
       sigApproved
     ) {
-      let _encodedValues = constants.EMPTY_STRING()
+      let _encodedValues = constants.EMPTY_STRING_STEALTH()
       for (const key in newValues) {
         if (newValues.hasOwnProperty(key) && newValues[key] !== '') {
           _encodedValues[key] = encodeValue(key, newValues[key])
@@ -1568,7 +1573,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       }
                       setTimestamp(data.response.timestamp)
                       // Write revision to database
-                      await writeRevision(_revision, gas, data.response.timestamp)
+                      await writeRevision(_revision, gas, data.response.timestamp, data.response.ipfs.split('ipfs://')[1])
                       // Publish IPNS
                       await Name.publish(_revision, w3name.key)
                       // Wrap up
@@ -1599,8 +1604,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         }
                       })
                       setPreCache(_updatedList)
-                      setNewValues(constants.EMPTY_STRING())
-                      setSignatures(constants.EMPTY_STRING())
+                      setNewValues(constants.EMPTY_STRING_STEALTH())
+                      setSignatures(constants.EMPTY_STRING_STEALTH())
                       setUpdateRecords(false) // Reset
                       setSigCount(0)
                       setSaltModalState({
@@ -1648,7 +1653,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         doCrash()
         setWrite(false)
         setUpdateRecords(false) // Reset
-        setNewValues(constants.EMPTY_STRING())
+        setNewValues(constants.EMPTY_STRING_STEALTH())
         let _updatedList = list.map((item) => {
           if (item.type !== 'storage') {
             return item
@@ -1970,10 +1975,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </div>
                                 </button>
                               )}
-
                             { // Refresh buttons
                               ['stealth', 'rsa'].includes(item.type) && !constants.blocked.includes(item.type)
-                              && resolver === ccip2Contract && _Wallet_ && item.value &&
+                              && resolver === ccip2Contract && _Wallet_ &&
                               (recordhash || ownerhash) && history.ownerstamp.length > 0 && (
                                 <button
                                   className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
@@ -2051,7 +2055,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                           }
                           style={{
-                            background: constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                            background: !RSA || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
                             fontFamily: 'SF Mono',
                             fontWeight: '400',
                             fontSize: '14px',
@@ -2343,7 +2347,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     disabled={
                       !_Wallet_ ||
                       !managers.includes(String(_Wallet_)) ||
-                      (newValues === constants.EMPTY_STRING())
+                      (newValues === constants.EMPTY_STRING_STEALTH())
                     }
                     style={{
                       alignSelf: 'flex-end',

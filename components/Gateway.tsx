@@ -13,7 +13,7 @@ interface ModalProps {
 }
 
 const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState("")
+  const [inputValue, setInputValue] = React.useState('https://ccip.namesys.xyz/5/')
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
@@ -29,9 +29,10 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
     onClose()
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: { preventDefault: () => void; }) => {
     handleModalData(inputValue)
     handleTrigger(true)
+    e.preventDefault()
     onClose()
   }
 
@@ -60,18 +61,26 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
             </div>
             <div
               style={{
-                marginTop: '5px'
+                marginTop: '5px',
+                marginBottom: '10px',
+                fontSize: '18px'
               }}
             >
-              enter the HTTP gateway URL
+              <span 
+                style={{
+                  fontWeight: '700'
+                }}
+              >
+                Enter HTTP Gateway URL
+              </span>
               <button 
                 className="button-tiny"
                 style={{
-                  marginTop: '-7.5px'
+                  marginBottom: '-7.5px'
                 }}
                 onClick={() => { 
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">HTTP Gateway</span> should be a <span style="color: orange">HTTPS://</span> URL</span>')
+                  setHelp('<span><span style="color: cyan">HTTP Gateway</span> should be a <span style="color: orange">HTTPS<span style="font-family: \'SF Mono\'">:</span>//</span> URL</span>')
                 }}
                 data-tooltip={ 'Enlighten Me' }
               >
@@ -91,7 +100,7 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
           <input 
             id='keyid'
             key='0'
-            placeholder='https://'
+            placeholder={inputValue}
             type='text'
             value={inputValue}
             onChange={(e) => {
@@ -117,28 +126,29 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
           <button 
             className="button"
             style={{
-              height: '28px',
+              height: '30px',
               width: '120px',
-              marginTop: '15px',
-              fontSize: '14px'
+              marginTop: '17px',
+              fontSize: '15px'
             }}
             onClick={ handleSubmit }
-            data-tooltip='Click to crash your proverbial car'
+            data-tooltip='Confirm'
           >
             <div 
               className="flex-row"
               style={{
-                fontSize: '13px'
+                fontSize: '15px',
+                fontWeight: '700'
               }}
             >
-              { 'proceed' }&nbsp;<span className="material-icons smoller">car_crash</span>
+              { 'Confirm' }&nbsp;<span className="material-icons smoller">local_laundry_service</span>
             </div>
           </button>
         </StyledModalBody>
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'lightblue' }
+          color={ 'cyan' }
           icon={ 'info' }
           onClose={() => setHelpModal(false)}
           show={helpModal}

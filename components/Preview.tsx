@@ -98,16 +98,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING()); // Contains new values for the active records in {a:b} format
+  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
   const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [infoModal, setInfoModal] = React.useState(false); // Info modal
-  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING()); // Contains S2(K0) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains S2(K0) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
-  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL()); // Whether record edit is legitimate
+  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL_RECORDS()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
@@ -134,7 +134,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     modalData: undefined,
     trigger: false
   }); // Confirm modal state
-  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY); // Record history from last update
+  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_RECORDS); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
   const [sigSigner, setSigSigner] = React.useState(''); // Signature S4(K1) for Signer
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
@@ -217,7 +217,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Sets new ENS Resolver
   const {
-    data: response1of2,
+    data: response1of3,
     write: migrate,
     isLoading: isMigrateLoading,
     isSuccess: isMigrateSuccess,
@@ -231,7 +231,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Sets Short Recordhash in CCIP2 Resolver
   const {
-    data: response2of2,
+    data: response2of3,
     write: initRecordhash,
     isLoading: isSetRecordhashLoading,
     isSuccess: isSetRecordhashSuccess,
@@ -244,17 +244,40 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ethers.utils.namehash(ENS),
       ethers.utils.defaultAbiCoder.encode(
         ['bytes32'],
-        [CID ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+      )
+    ]
+  })
+
+  // Sets Gateway as Recordhash in CCIP2 Resolver
+  const {
+    data: response3of3,
+    write: initGateway,
+    isLoading: isSetGatewayLoading,
+    isSuccess: isSetGatewaySuccess,
+    isError: isSetGatewayError
+  } = useContractWrite({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: 'setRecordhash',
+    args: [
+      ethers.utils.namehash(ENS),
+      ethers.utils.defaultAbiCoder.encode(
+        ['bytes'],
+        [CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : constants.zeroBytes]
       )
     ]
   })
 
   // Wagmi hook for awaiting transaction processing
-  const { isSuccess: txSuccess1of2, isError: txError1of2, isLoading: txLoading1of2 } = useWaitForTransaction({
-    hash: response1of2?.hash,
+  const { isSuccess: txSuccess1of3, isError: txError1of3, isLoading: txLoading1of3 } = useWaitForTransaction({
+    hash: response1of3?.hash,
   })
-  const { isSuccess: txSuccess2of2, isError: txError2of2, isLoading: txLoading2of2 } = useWaitForTransaction({
-    hash: response2of2?.hash,
+  const { isSuccess: txSuccess2of3, isError: txError2of3, isLoading: txLoading2of3 } = useWaitForTransaction({
+    hash: response2of3?.hash,
+  })
+  const { isSuccess: txSuccess3of3, isError: txError3of3, isLoading: txLoading3of3 } = useWaitForTransaction({
+    hash: response3of3?.hash,
   })
 
   // Handle Options modal data return
@@ -337,7 +360,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     setSigApproved('') // Purge Manager Signature S2 from local storage 
-    setSignatures(constants.EMPTY_STRING()) // Purge Record Signatures from local storage 
+    setSignatures(constants.EMPTY_STRING_RECORDS()) // Purge Record Signatures from local storage 
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setSigSigner('')
@@ -550,7 +573,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function doEnjoy() {
     setIcon('gpp_good')
     setColor('lime')
-    setLegit(constants.EMPTY_BOOL())
+    setLegit(constants.EMPTY_BOOL_RECORDS())
     setSalt(false)
     setLoading(false)
     setQueue(1)
@@ -565,6 +588,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       trigger: false
     })
     setOptionsModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setGatewayModalState({
       modalData: undefined,
       trigger: false
     })
@@ -590,7 +617,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S3 with K1
   async function __signMessage() {
     setSigCount(3) // Trigger S3(K1)
-    setProcessCount(3)
     setMessage(['Waiting For Signature', '3'])
     if (keypairSigner) {
       const SignS3 = async () => {
@@ -607,23 +633,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Signature S4 with K1
   async function ___signMessage(_value: string) {
-    setProcessCount(3)
-    if (keypairIPNS) {
-      const SignS4 = async () => {
-        signMessage({
-          message: statementSignerKey(
-            ethers.utils.keccak256(ethers.utils.solidityPack(
-              ['bytes32', 'address'],
-              [
-                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_value])),
-                _Wallet_
-              ]
-            ))
-          )
-        })
-      }
-      SignS4()
+    const SignS4 = async () => {
+      signMessage({
+        message: statementSignerKey(
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'],
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_value])),
+              _Wallet_
+            ]
+          ))
+        )
+      })
     }
+    SignS4()
   }
 
   // Get gas cost estimate for hypothetical on-chain record update
@@ -724,7 +747,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setResolveCall(_response)
         if (_response.address === ccip2Contract) {
           let _Storage = await verifier.quickRecordhash(_ENS, ccip2Config, getManager())
-          console.log(ensContent.decodeContenthash(_Storage[0]).decoded)
           let _IPFS: any
           if (_history.ownerstamp.length > 1) {
             for (var i = 0; i < 2; i++) {
@@ -733,7 +755,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           } else if (_history.ownerstamp.length === 1) {
             _IPFS = {
               '_value': '//',
-              '_sequence': '0'
+              '_sequence': '-1'
             }
           } else {
             _IPFS = {
@@ -743,7 +765,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
           setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
-            if (Number(_IPFS._sequence) === Number(_history.timestamp.version) - 1 && _Storage[1]) {
+            if (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
               if (_history.revision.contenthash) {
                 setContenthash(_history.contenthash)
               } else {
@@ -850,7 +872,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
-  async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string) {
+  async function writeRevision(revision: Name.Revision | undefined, gas: {}, timestamp: string, _ipfs: string) {
     const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
       return typeof value === 'bigint' ? value.toString() : value
     }))
@@ -861,8 +883,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       controller: _Wallet_,
       manager: keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress,
       managerSignature: sigApproved,
-      revision: Revision.encode(revision),
+      revision: revision ? Revision.encode(revision) : {},
       chain: chain,
+      ipns: CID,
+      ipfs: _ipfs,
       gas: JSON.stringify(gas),
       version: __revision,
       timestamp: timestamp,
@@ -975,6 +999,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
+          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -983,8 +1008,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           }
           if (_storage && _Ownerstamps.length > 0 && _type === 'ownerhash') {
             setQueue(Math.round(Date.now() / 1000) - Math.max(..._Ownerstamps) - constants.waitingPeriod)
-          } else {
+          } else if (_storage && _Ownerstamps.length > 0 && _type === 'recordhash') {
             setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
+          } else {
+            setQueue(1)
           }
         })
     } catch (error) {
@@ -1041,13 +1068,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (_Ownerhash_.toString().startsWith(constants.prefix)) {
           _String = `ipns://${ensContent.decodeContenthash(_Ownerhash_!.toString()).decoded}`
         } else {
-          _String = ethers.utils.toUtf8String(_Ownerhash_.toString())
+          _String = ethers.utils.toUtf8String('0x' + _Ownerhash_.toString().substring(130))
         }
         if (_String.startsWith('https://')) {
           setOwnerhash(`${_String}`)
         } else {
           setOwnerhash(`${_String}`)
         }
+        setMessage(['This May Take a While', ''])
+        setMessage([_ENS_.endsWith('-') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
       } else {
         setOwnerhash(undefined)
       }
@@ -1055,19 +1084,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Ownerhash_])
 
+   // Capture Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_) {
+      console.log(_Recordhash_)
       if (_Recordhash_.toString().length > 2 && (_Recordhash_ !== _Ownerhash_)) {
         let _String: string = ''
         if (_Recordhash_.toString().startsWith(constants.prefix)) {
           _String = `ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`
         } else {
-          _String = ethers.utils.toUtf8String(_Recordhash_.toString())
+          _String = ethers.utils.toUtf8String('0x' + _Recordhash_.toString().substring(130))
         }
         if (_String.startsWith('https://')) {
           setRecordhash(`${_String}`)
         } else {
-          console.log(`${_String}`)
           setRecordhash(`${_String}`)
         }
         setMessage(['This May Take a While', ''])
@@ -1082,14 +1112,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Sets Success modal refresh
   React.useEffect(() => {
     if (successModalState.trigger && successModalState.modalData) {
-      if (txSuccess1of2) {
+      if (txSuccess1of3) {
         handleSuccess(`${ENS}#`)
-      } else if (txSuccess2of2) {
+      } else if (txSuccess2of3 || txSuccess3of3) {
         handleSuccess(`${ENS}-`)
-      }
+      } 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [successModalState, txSuccess1of2, txSuccess2of2])
+  }, [successModalState, txSuccess1of3, txSuccess2of3, txSuccess3of3])
 
   // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
@@ -1097,6 +1127,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setConfirm(false)
       if (confirmModalState.modalData === '0') {
         setSalt(true)
+        setProcessCount(1)
       } else {
         setGateway(true)
       }
@@ -1116,11 +1147,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (trigger && !write) {
         if (trigger === 'storage') {
           setConfirm(true)
-          setHashType('recordhash')
+          setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
         } else {
           if (optionsModalState.trigger) {
             setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
-            setProcessCount(optionsModalState.modalData === '1' ? 1 : 1)
+            setProcessCount(1)
             migrate()
           }
         }
@@ -1220,24 +1251,35 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatar])
 
+  // Triggers Gateway routine
+  React.useEffect(() => {
+    if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && write) {
+      console.log(gatewayModalState)
+      setLoading(true)
+      setMessage(['Waiting For Signature', hashType !== 'gateway' ? '1' : '2'])
+      const _sigSigner = async () => {
+        setSigCount(2) // Trigger S4(K1)
+        setProcessCount(2)
+        ___signMessage(constants.randomString(10))
+      }
+      _sigSigner()
+    } else if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && !write) {
+      setCID(gatewayModalState.modalData)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gatewayModalState, hashType, write])
+
   // Triggers S1(K1) after password is set
   React.useEffect(() => {
-    let _modalData: string = ''
-    if (saltModalState.trigger && saltModalState.modalData !== undefined) {
-      _modalData = saltModalState.modalData
-    } else if (gatewayModalState.trigger && gatewayModalState.modalData) {
-      _modalData = gatewayModalState.modalData
-    }
-    if ((saltModalState.trigger || gatewayModalState.trigger) && !keypairIPNS && trigger && safeTrigger) {
+    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairIPNS && trigger && safeTrigger) {
       setSigCount(1)
       setMessage(['Waiting For Signature', '1'])
-      setProcessCount(!write && states.includes('resolver') ? 1 : 1)
       signMessage({
         message: statementIPNSKey(
           ethers.utils.keccak256(ethers.utils.solidityPack(
             ['bytes32', 'address'],
             [
-              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_modalData])),
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])),
               _Wallet_
             ]
           )),
@@ -1247,9 +1289,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setKeygen(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, gatewayModalState, recordhash, trigger, safeTrigger, hashType, write, states, keypairIPNS])
+  }, [saltModalState, recordhash, trigger, safeTrigger, hashType, write, states, keypairIPNS])
 
-  // Triggers S1(K1) after password is set
+  // Triggers IPNS Keygen after password is set
   React.useEffect(() => {
     if (sigIPNS && !keypairIPNS) {
       setLoading(true)
@@ -1272,6 +1314,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const _sigSigner = async () => {
         if (saltModalState.modalData !== undefined) {
           setSigCount(2) // Trigger S4(K1)
+          setProcessCount(3)
           ___signMessage(saltModalState.modalData)
         }
       }
@@ -1312,40 +1355,36 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers IPNS CID derivation with new S1(K1)
   React.useEffect(() => {
     if (keypairIPNS && sigIPNS) {
-      if (hashType !== 'gateway') {
-        const CIDGen = async () => {
-          let key = constants.formatkey(keypairIPNS)
-          const w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
-          const CID_IPNS = w3name.toString()
-          let _Recordhash = recordhash ? recordhash.split('ipns://')[1] : ''
-          let _Ownerhash = ownerhash ? ownerhash.split('ipns://')[1] : ''
-          if (write) {
-            if (CID_IPNS && (CID_IPNS === _Recordhash || CID_IPNS === _Ownerhash)) {
-              setGoodSalt(true)
-              setCID(CID_IPNS)
-            } else if (CID_IPNS && (CID_IPNS !== _Recordhash && CID_IPNS !== _Ownerhash)) {
-              setSaltModalState({
-                modalData: undefined,
-                trigger: false
-              })
-              setMessage(['Seems Like Bad Password', ''])
-              doCrash()
-              setColor('orangered')
-              setSigCount(0)
-              setProcessCount(0)
-            }
-          } else {
+      const CIDGen = async () => {
+        let key = constants.formatkey(keypairIPNS)
+        const w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
+        const CID_IPNS = w3name.toString()
+        let _Recordhash = recordhash ? recordhash.split('ipns://')[1] : ''
+        let _Ownerhash = ownerhash ? ownerhash.split('ipns://')[1] : ''
+        if (write) {
+          if (CID_IPNS && (CID_IPNS === _Recordhash || CID_IPNS === _Ownerhash)) {
             setGoodSalt(true)
             setCID(CID_IPNS)
+          } else if (CID_IPNS && (CID_IPNS !== _Recordhash && CID_IPNS !== _Ownerhash)) {
+            setSaltModalState({
+              modalData: undefined,
+              trigger: false
+            })
+            setMessage(['Seems Like Bad Password', ''])
+            doCrash()
+            setColor('orangered')
+            setSigCount(0)
+            setProcessCount(0)
           }
+        } else {
+          setGoodSalt(true)
+          setCID(CID_IPNS)
         }
-        CIDGen()
-      } else if (hashType === 'gateway') {
-        setCID(gatewayModalState.modalData || '')
       }
+      CIDGen()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, sigIPNS, hashType, gatewayModalState, recordhash, ownerhash, write])
+  }, [keypairIPNS, sigIPNS, recordhash, ownerhash, write])
 
   // Sets signature from Wagmi signMessage() as S1(K1)
   React.useEffect(() => {
@@ -1361,17 +1400,24 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Triggers Resolver migration after IPNS CID is generated and validated 
   React.useEffect(() => {
-    if (CID && keypairIPNS && !write) {
+    if (CID && !write) {
+      console.log(CID)
+      setProcessCount(1)
       if (CID.startsWith('k5')) {
         initRecordhash()
       } else if (CID.startsWith('https://')) {
-        initRecordhash()
+        console.log(ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)))
+        initGateway()
       }
     } else if (write) {
-      setProcessCount(3)
+      if (CID.startsWith('k5')) {
+        setProcessCount(3)
+      } else if (CID.startsWith('https://')) {
+        setProcessCount(2)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [CID, keypairIPNS, write])
+  }, [CID, write])
 
   // Handles single vs. mulitple record updates
   React.useEffect(() => {
@@ -1416,9 +1462,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (conclude) {
       getUpdate(
-        recordhash || ownerhash,
-        recordhash ? 'recordhash' : 'ownerhash',
-        recordhash ? 'recordhash' : 'ownerhash'
+        recordhash || ownerhash || 'gateway',
+        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway'),
+        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway')
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1539,12 +1585,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     // Handle Signature S2(K0) to add as extradata
     if (write && (keypairSigner && keypairSigner[0]) && newValues && !constants.isEmpty(newValues) && states.length > 0) {
-      let __signatures = constants.EMPTY_STRING()
+      let __signatures = constants.EMPTY_STRING_RECORDS()
       states.forEach(async (_recordType) => {
         let _signature: any
         if (newValues[_recordType]) {
           _signature = await _signMessage({
-            message: statementRecords(constants.files[constants.types.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
+            message: statementRecords(constants.filesStealth[constants.typesStealth.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
           }) // Sign with K0
         }
         if (_signature) __signatures[_recordType] = _signature
@@ -1554,17 +1600,24 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [write, keypairSigner, newValues, states])
 
-  // Handles generating signatures for off-chain manager
+  /* HANDLE SIGNER APPROVAL SIGNATURE */
+  // Triggers signing Off-Chain Signer's approval by Controller
   React.useEffect(() => {
     // Handle Signature S3(K1)
     if (write && !onChainManager && !sigApproved && !constants.isEmpty(signatures)) {
+      if (hashType !== 'gateway') {
+        setProcessCount(2)
+      } else {
+        setProcessCount(3)
+      }
       __signMessage() // Sign with K1
     } else if (write && onChainManager && !constants.isEmpty(signatures)) {
       setSigApproved('0x')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChainManager, signatures])
+  }, [onChainManager, signatures, hashType])
 
+  /* HANDLE WRITING RECORDS */
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
     let count = 0
@@ -1575,12 +1628,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     if (
       write &&
-      keypairIPNS &&
+      CID &&
       count === states.length &&
       count > 0 &&
       sigApproved
     ) {
-      let _encodedValues = constants.EMPTY_STRING()
+      let _encodedValues = constants.EMPTY_STRING_RECORDS()
       for (const key in newValues) {
         if (newValues.hasOwnProperty(key) && newValues[key] !== '') {
           _encodedValues[key] = encodeValue(key, newValues[key])
@@ -1615,7 +1668,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
             .then(response => response.json())
             .then(async data => {
-              setMessage(['Publishing to IPNS', ''])
+              setMessage([hashType !== 'gateway' ? 'Publishing to IPNS' : 'Publishing to Gateway', ''])
               if (keypairSigner && data.response) {
                 // Get gas consumption estimate
                 let gas = {}
@@ -1650,33 +1703,86 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   }
                   checkGas()
                 })
-                // Handle W3Name publish 
-                let key = constants.formatkey(keypairIPNS)
-                let w3name: Name.WritableName
-                const keygen = async () => {
-                  w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
-                  const pin = async () => {
-                    if (data.response.ipfs && w3name && gas) {
-                      setHashIPFS(data.response.ipfs.split('ipfs://')[1])
-                      const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
-                      // @W3Name broadcast
-                      let _revision: Name.Revision
-                      if (!history.revision) {
-                        _revision = await Name.v0(w3name, toPublish)
-                      } else {
-                        let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
-                        _revision = await Name.increment(_revision_, toPublish)
+                if (hashType !== 'gateway' && keypairIPNS) {
+                  // Handle W3Name publish 
+                  let key = constants.formatkey(keypairIPNS)
+                  let w3name: Name.WritableName
+                  const keygen = async () => {
+                    w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
+                    const pin = async () => {
+                      if (data.response.ipfs && w3name && gas) {
+                        setHashIPFS(data.response.ipfs.split('ipfs://')[1])
+                        const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
+                        // @W3Name broadcast
+                        let _revision: Name.Revision
+                        if (!history.revision) {
+                          _revision = await Name.v0(w3name, toPublish)
+                        } else {
+                          let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
+                          _revision = await Name.increment(_revision_, toPublish)
+                        }
+                        setTimestamp(data.response.timestamp)
+                        // Write revision to database & user directory
+                        await writeRevision(_revision, gas, data.response.timestamp, data.response.ipfs.split('ipfs://')[1])
+                        // Publish IPNS
+                        await Name.publish(_revision, w3name.key)
+                        // Wrap up
+                        setGas(gas)
+                        setGasModal(true)
+                        setStates([])
+                        setLegit(constants.EMPTY_BOOL_RECORDS())
+                        setLoading(false)
+                        // Update values in the modal to new ones
+                        let _updatedList = list.map((item) => {
+                          if (!['resolver', 'storage'].includes(item.type)) {
+                            let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
+                            setQueue(_queue)
+                            if (data.response.meta[item.type]) {
+                              return {
+                                ...item,
+                                value: data.response[item.type],
+                                state: true,
+                                label: 'edit',
+                                active: _queue > 0,
+                                editable: _queue > 0
+                              }
+                            } else {
+                              return {
+                                ...item,
+                                active: _queue > 0,
+                                editable: _queue > 0
+                              }
+                            }
+                          } else {
+                            return item
+                          }
+                        })
+                        setPreCache(_updatedList)
+                        setNewValues(constants.EMPTY_STRING_RECORDS())
+                        setSignatures(constants.EMPTY_STRING_RECORDS())
+                        setUpdateRecords(false) // Reset
+                        setSigCount(0)
+                        setSaltModalState({
+                          modalData: undefined,
+                          trigger: false
+                        })
                       }
+                    }
+                    if (Object.keys(gas).length > 0) {
+                      pin()
+                    }
+                  }
+                  keygen()
+                } else {
+                  const gateway = async () => {
+                    if (gas) {
                       setTimestamp(data.response.timestamp)
                       // Write revision to database
-                      await writeRevision(_revision, gas, data.response.timestamp)
-                      // Publish IPNS
-                      await Name.publish(_revision, w3name.key)
-                      // Wrap up
+                      await writeRevision(undefined, gas, data.response.timestamp, '')
                       setGas(gas)
                       setGasModal(true)
                       setStates([])
-                      setLegit(constants.EMPTY_BOOL())
+                      setLegit(constants.EMPTY_BOOL_RECORDS())
                       setLoading(false)
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
@@ -1704,8 +1810,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         }
                       })
                       setPreCache(_updatedList)
-                      setNewValues(constants.EMPTY_STRING())
-                      setSignatures(constants.EMPTY_STRING())
+                      setNewValues(constants.EMPTY_STRING_RECORDS())
+                      setSignatures(constants.EMPTY_STRING_RECORDS())
                       setUpdateRecords(false) // Reset
                       setSigCount(0)
                       setSaltModalState({
@@ -1718,11 +1824,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       })
                     }
                   }
-                  if (Object.keys(gas).length > 0) {
-                    pin()
-                  }
+                  gateway()
                 }
-                keygen()
               }
             })
         } catch (error) {
@@ -1743,11 +1846,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sigApproved])
 
+  /* HANDLE TRANSACTION 1 SUCCESS */
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1of2 && migrated && !write && !crash) {
-      if (states.includes('resolver') && optionsModalState.modalData === '1') {
-        setSuccess('<span><span style="color: lightgreen">Resolver Migrated</span>! You may now set <span style="color: cyan">IPNS Storage</span> next</span>')
+    if (isMigrateSuccess && txSuccess1of3 && migrated && !write && !crash) {
+      if (states.includes('resolver')) {
+        setSuccess(optionsModalState.modalData === '1' ? '<span><span style="color: lightgreen">Resolver Migrated</span>! You may now set <span style="color: cyan">IPNS Storage</span> next</span>' : '<span><span style="color: lightgreen">Resolver Migrated</span>! You may now set <span style="color: cyan">HTTP Storage</span> next</span>')
         setSuccessModal(true)
         doEnjoy()
       } else {
@@ -1757,30 +1861,45 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of2, migrated, states, resolver, write])
+  }, [isMigrateSuccess, txSuccess1of3, migrated, states, resolver, write])
 
-  // Handles setting Recordhash after transaction 2 
+  /* SET RECORDHASH AFTER TRANSACTION 2 */
+  // Handles setting IPNS as Recordhash after Transaction 2 
   React.useEffect(() => {
-    if (isSetRecordhashSuccess && txSuccess2of2 && CID) {
+    if (isSetRecordhashSuccess && txSuccess2of3 && CID) {
       setRecordhash(`ipns://${CID}`)
       setMessage(['Transaction Confirmed', '1'])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetRecordhashSuccess, txSuccess2of2, CID])
-
-  // Handles finishing migration of Resolver to CCIP2
+  }, [isSetRecordhashSuccess, txSuccess2of3, CID])
+  // Handles setting Gateway as Recordhash after Transaction 2 
   React.useEffect(() => {
-    if (recordhash && txSuccess2of2 && !write && !crash) {
+    if (isSetGatewaySuccess && txSuccess3of3 && CID) {
+      setRecordhash(`${CID}`)
+      setMessage(['Transaction Confirmed', '1'])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSetGatewaySuccess, txSuccess3of3, CID])
+
+  /* HANDLE TRANSACTION 2 SUCCESS */
+  // Handles setting Recordhash
+  React.useEffect(() => {
+    if (recordhash && txSuccess2of3 && !write && !crash) {
       setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>')
+      setSuccessModal(true)
+      doEnjoy()
+    } else if (recordhash && txSuccess3of3 && !write && !crash) {
+      setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">HTTP Gateway</span>. Enjoy!</span>')
       setSuccessModal(true)
       doEnjoy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordhash, txSuccess2of2, write])
+  }, [recordhash, txSuccess2of3, txSuccess3of3, write])
 
-  // Sets migration state to true upon successful transaction 1 receipt
+  /* TRANSACTION 1 HANDLE */
+  // Sets migration state to true upon successful Transaction 1 receipt (for Ownerhash)
   React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1of2) {
+    if (isMigrateSuccess && txSuccess1of3) {
       const pin = async () => {
         setMessage(['Transaction Confirmed', '1'])
         setTimeout(() => {
@@ -1791,9 +1910,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       pin()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of2])
-
-  // Handles first transaction wait
+  }, [isMigrateSuccess, txSuccess1of3])
+  // Handles Transaction 1 wait for Resolver
   React.useEffect(() => {
     if (isMigrateLoading && !isMigrateError) {
       setLoading(true)
@@ -1817,8 +1935,33 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMigrateLoading, isMigrateError])
+  // Handles Transaction 1 loading and error for Resolver
+  React.useEffect(() => {
+    if (txLoading1of3 && !txError1of3) {
+      setLoading(true)
+      setMessage(['Waiting for Confirmation', '1'])
+      if (recentCrash) setRecentCrash(false)
+    } else if (!txLoading1of3 && txError1of3) {
+      if (!recentCrash) {
+        setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
+        doCrash()
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setGatewayModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading1of3, txError1of3])
 
-  // Handles second transaction wait
+  /* TRANSACTION 2/3 SUBMIT HANDLING */
+  // Handles Transaction 2 wait for Recordhash
   React.useEffect(() => {
     if (!isSetRecordhashError && isSetRecordhashLoading) {
       setLoading(true)
@@ -1839,19 +1982,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         modalData: undefined,
         trigger: false
       })
+      setGatewayModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetRecordhashLoading, isSetRecordhashError])
-
-  // Handles first transaction loading and error
+  // Handles Transaction 3 wait for Gateway
   React.useEffect(() => {
-    if (txLoading1of2 && !txError1of2) {
+    if (!isSetGatewayError && isSetGatewayLoading) {
       setLoading(true)
-      setMessage(['Waiting for Confirmation', '1'])
+      setMessage(['Waiting for Transaction', '1'])
       if (recentCrash) setRecentCrash(false)
-    } else if (!txLoading1of2 && txError1of2) {
+    } else if (isSetGatewayError && !isSetGatewayLoading) {
       if (!recentCrash) {
-        setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
+        setMessage(['Transaction Declined by User', ''])
         doCrash()
       } else {
         if (recentCrash) setRecentCrash(false)
@@ -1860,17 +2006,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         modalData: undefined,
         trigger: false
       })
+      setConfirmModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setGatewayModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading1of2, txError1of2])
+  }, [isSetGatewayLoading, isSetGatewayError])
 
-  // Handles second transaction loading and error
+  /* TRANSACTION 2/3 WAIT HANDLING */
+  // Handles Transaction 2 loading and error for Recordhash
   React.useEffect(() => {
-    if (txLoading2of2 && !txError2of2) {
+    if (txLoading2of3 && !txError2of3) {
       setLoading(true)
       setMessage(['Waiting for Confirmation', states.includes('storage') ? '1' : '2'])
       if (recentCrash) setRecentCrash(false)
-    } else if (!txLoading2of2 && txError2of2) {
+    } else if (!txLoading2of3 && txError2of3) {
       if (!recentCrash) {
         setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
         doCrash()
@@ -1881,10 +2036,39 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         modalData: undefined,
         trigger: false
       })
+      setGatewayModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading2of2, txError2of2])
+  }, [txLoading2of3, txError2of3])
+  // Handles Transaction 3 loading and error for Gateway
+  React.useEffect(() => {
+    if (txLoading3of3 && !txError3of3) {
+      setLoading(true)
+      setMessage(['Waiting for Confirmation', states.includes('storage') ? '1' : '2'])
+      if (recentCrash) setRecentCrash(false)
+    } else if (!txLoading3of3 && txError3of3) {
+      if (!recentCrash) {
+        setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
+        doCrash()
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+      setGatewayModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading3of3, txError3of3])
 
+  /* SIGNATURE ERROR HANDLING */
   // Handles signature loading and error
   React.useEffect(() => {
     if (signLoading && !signError && trigger) {
@@ -1896,8 +2080,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         doCrash()
         setWrite(false)
         setUpdateRecords(false) // Reset
-        setLegit(constants.EMPTY_BOOL())
-        setNewValues(constants.EMPTY_STRING())
+        setLegit(constants.EMPTY_BOOL_RECORDS())
+        setNewValues(constants.EMPTY_STRING_RECORDS())
         let _updatedList = list.map((item) => {
           if (item.type !== 'storage') {
             return item
@@ -1919,10 +2103,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         modalData: undefined,
         trigger: false
       })
+      setGatewayModalState({
+        modalData: undefined,
+        trigger: false
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError, trigger, sigCount, states])
 
+  /* MODAL */
   /// Modal Content
   const modalContent = show ? (
     <StyledModalOverlay
@@ -2348,7 +2537,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
                             { // Refresh buttons
                               !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
-                              && resolver === ccip2Contract && _Wallet_ && item.value &&
+                              && resolver === ccip2Contract && _Wallet_ &&
                               (recordhash || ownerhash) && history.ownerstamp.length > 0 && (
                                 <button
                                   className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
@@ -2395,7 +2584,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               item.state ||
                               !_Wallet_ ||
                               !managers.includes(String(_Wallet_)) ||
-                              (!['resolver', 'storage'].includes(item.type) && newValues === constants.EMPTY_STRING())
+                              (!['resolver', 'storage'].includes(item.type) && newValues === constants.EMPTY_STRING_RECORDS())
                             }
                             style={{
                               alignSelf: 'flex-end',
@@ -2422,7 +2611,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           </button>
                         </div>
                         <input
-                         className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra')}
+                          className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra')}
                           id={item.key}
                           key={item.key}
                           placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
@@ -2468,7 +2657,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     disabled={
                       !_Wallet_ ||
                       !managers.includes(String(_Wallet_)) ||
-                      (newValues === constants.EMPTY_STRING())
+                      (newValues === constants.EMPTY_STRING_RECORDS())
                     }
                     style={{
                       alignSelf: 'flex-end',
@@ -2552,7 +2741,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             handleTrigger={handleGatewayTrigger}
             handleModalData={handleGatewayModalData}
             onClose={() => {
-              setSalt(false)
+              setGateway(false)
             }}
             show={gateway}
           >

@@ -186,7 +186,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               }}
               onClick={ handleGatewaySubmit }
               data-tooltip='Sets New On-chain Gateway'
-              disabled
+              disabled={!children}
             >
               <div 
                 className="flex-row"
@@ -198,7 +198,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               className="button-tiny"
               onClick={() => { 
                 setHelpModal(true),
-                setHelp('<span><span style="color: orange">COMING SOON<span style="font-family: \'SF Mono\'; font-size: 16px">!</span></span> <span style="color: cyan">HTTP Gateway</span> could point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
+                setHelp('<span><span style="color: cyan">HTTP Gateway</span> can point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
               }}
               data-tooltip={ 'Satanic and Evil Middleware' }
             >
