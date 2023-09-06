@@ -1,15 +1,15 @@
 import * as constants from '../utils/constants'
 import { ethers } from 'ethers'
 
-export async function verifyRecordhash(input: string, ccip2Config: any, address: string): Promise<boolean> {
+export async function verifyRecordhash(input: string, ccip2Config: any, address: string): Promise<string> {
   // Read Recordhash from CCIP2 Resolver
   const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
   const _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(input))
   const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase())
-  return new Promise<boolean>((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     if (_Recordhash_) {
-      resolve(_Recordhash_.toString() === '0x' ? false : (
-        _Recordhash_.toString() === _Ownerhash_.toString() ? false : true
+      resolve(String(_Recordhash_) === '0x' ? '0' : (
+        String(_Recordhash_) === String(_Ownerhash_) ? '0' : (String(_Recordhash_).startsWith('0x6874') ? '2' : '1')
       ))
     } else {
       reject(new Error('Failed to fetch Recordhash'))
@@ -24,8 +24,8 @@ export async function quickRecordhash(input: string, ccip2Config: any, address: 
   const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase())
   return new Promise<[string, boolean]>((resolve, reject) => {
     if (_Recordhash_) {
-      resolve(_Recordhash_.toString() === '0x' ? ['0x', false] : (
-        String(_Recordhash_) === String(_Ownerhash_) ? [_Ownerhash_.toString(), false] : [_Recordhash_.toString(), true]
+      resolve(String(_Recordhash_) === '0x' ? ['0x', false] : (
+        String(_Recordhash_) === String(_Ownerhash_) ? [String(_Ownerhash_), false] : [String(_Recordhash_), true]
       ))
     } else {
       reject(new Error('Failed to fetch Recordhash'))
@@ -33,13 +33,13 @@ export async function quickRecordhash(input: string, ccip2Config: any, address: 
   })
 }
 
-export async function verifyOwnerhash(ccip2Config: any, address: string): Promise<boolean> {
+export async function verifyOwnerhash(ccip2Config: any, address: string): Promise<string> {
   // Read Ownerhash from CCIP2 Resolver
   const contract = new ethers.Contract(ccip2Config.addressOrName, ccip2Config.contractInterface, constants.provider)
   const _Ownerhash_ = await contract.getRecordhash(ethers.utils.hexZeroPad(address, 32).toLowerCase())
-  return new Promise<boolean>((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     if (_Ownerhash_) {
-      resolve(_Ownerhash_.toString() !== '0x' ? true : false)
+      resolve(String(_Ownerhash_) !== '0x' ? (String(_Ownerhash_).startsWith('0x6874') ? '2' : '1') : '0')
     } else {
       reject(new Error('Failed to fetch Ownerhash'))
     }

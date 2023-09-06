@@ -110,7 +110,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                         setColor('lime'),
                         setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
                     }}
-                    data-tooltip={'Ready For Dedicated Off-chain Use'}
+                    data-tooltip={'Ready With IPNS Recordhash'}
                   >
                     <div
                       className="material-icons smol"
@@ -131,7 +131,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                         setColor('cyan'),
                         setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
                     }}
-                    data-tooltip={'Ready For Off-chain Use With Ownerhash'}
+                    data-tooltip={'Ready With IPNS Ownerhash'}
                   >
                     <div
                       className="material-icons smol"
@@ -149,15 +149,15 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     onClick={() => {
                       setHelpModal(true),
                         setIcon('gpp_good'),
-                        setColor('cyan'),
-                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">HTTP Gateway</span> is Set</span>')
+                        setColor('yellow'),
+                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. <span style="color: cyan">HTTP Gateway</span> is Set</span>')
                     }}
-                    data-tooltip={'Ready For Off-chain Use With HTTP Gateway'}
+                    data-tooltip={'Ready With HTTP Gateway'}
                   >
                     <div
                       className="material-icons smol"
                       style={{
-                        color: 'cyan'
+                        color: 'yellow'
                       }}
                     >
                       gpp_good
@@ -173,7 +173,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                         setColor('orange'),
                         setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
                     }}
-                    data-tooltip={'Default Gateway In Use'}
+                    data-tooltip={'Using Default Gateway'}
                   >
                     <div
                       className="material-icons smol"

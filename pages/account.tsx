@@ -5,7 +5,6 @@ import Head from 'next/head'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
 import {
-  useConnect,
   useAccount,
   useContractRead,
   useNetwork,
@@ -209,7 +208,7 @@ const Account: NextPage = () => {
       let _LIST = _flash
       for (var i = 0; i < _flash.length; i++) {
         if (_flash[i].migrated === '1/2') {
-          _LIST[i].migrated = '3/4'
+          _LIST[i].migrated = _CID.startsWith('https://') ? '4/5' : '3/4'
         }
       }
       setMeta(_LIST)
@@ -318,10 +317,7 @@ const Account: NextPage = () => {
     abi: ccip2Config.contractInterface,
     functionName: 'setOwnerhash',
     args: [
-      ethers.utils.defaultAbiCoder.encode(
-        ['bytes'],
-        [CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : constants.zeroBytes]
-      )
+      CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : constants.zeroBytes
     ]
   })
 
@@ -370,8 +366,8 @@ const Account: NextPage = () => {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData.slice(0, -1)) // Get updated Resolver
           const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.slice(0, -1), ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Ownerhash
-          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
-            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash !== '0' ? (__Recordhash === '1' ? '1' : '4/5') : (
+            _Resolver?.address === ccip2Contract && __Ownerhash !== '0' ? (__Ownerhash === '1' ? '3/4' : '4/5') : (
               _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
           )
         }
@@ -636,8 +632,8 @@ const Account: NextPage = () => {
                 } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
                   __Recordhash = true
                 }
-                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? '1' : (
-                  __Ownerhash && items[count - 1].migrated === '1/2' ? '3/4' : (
+                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? (_Recordhash_.startsWith('0x6874') ? '4/5' : '1') : (
+                  __Ownerhash && items[count - 1].migrated === '1/2' ? (_Ownerhash_.startsWith('0x6874') ? '4/5' : '3/4') : (
                     items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
                   )
                 )
@@ -823,10 +819,10 @@ const Account: NextPage = () => {
       if (String(_Recordhash_).startsWith(constants.prefix)) {
         _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
       } else {
-        _String = ethers.utils.toUtf8String('0x' + String(_Recordhash_).substring(130))
+        _String = ethers.utils.toUtf8String(String(_Recordhash_))
       }
       if (_String.startsWith('https://')) {
-        setRecordhash(`${_String.replace(/\0/g, '')}`)
+        setRecordhash(`${_String}`)
       } else {
         setRecordhash(`${_String}`)
       }
@@ -840,10 +836,10 @@ const Account: NextPage = () => {
       if (String(_Ownerhash_).startsWith(constants.prefix)) {
         _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
       } else {
-        _String = ethers.utils.toUtf8String('0x' + String(_Ownerhash_).substring(130))
+        _String = ethers.utils.toUtf8String(String(_Ownerhash_))
       }
       if (_String.startsWith('https://')) {
-        setOwnerhash(`${_String.replace(/\0/g, '')}`)
+        setOwnerhash(`${_String}`)
       } else {
         setOwnerhash(`${_String}`)
       }

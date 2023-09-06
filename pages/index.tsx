@@ -129,7 +129,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_recordhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(_recordhash.toString()).decoded}`
+    return `ipns://${ensContent.decodeContenthash(String(_recordhash)).decoded}`
   }
 
   // Get Ownerhash with ethers.js
@@ -142,7 +142,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_ownerhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(_ownerhash.toString()).decoded}`
+    return `ipns://${ensContent.decodeContenthash(String(_ownerhash)).decoded}`
   }
 
   // Get historical gas savings
@@ -193,8 +193,8 @@ const Home: NextPage = () => {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData.slice(0, -1)) // Get updated Resolver
           const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.slice(0, -1), ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Ownerhash
-          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
-            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash !== '0' ? (__Recordhash === '1' ? '1' : '4/5') : (
+            _Resolver?.address === ccip2Contract && __Ownerhash !== '0' ? (__Ownerhash === '1' ? '3/4' : '4/5') : (
               _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
           )
         }
@@ -318,16 +318,16 @@ const Home: NextPage = () => {
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
     if (_OwnerLegacy_ && _ManagerLegacy_
-      && _OwnerLegacy_?.toString() !== constants.zeroAddress
-      && _ManagerLegacy_?.toString() !== constants.zeroAddress) {
-      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
-        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) {
-          setManager(_OwnerWrapped_.toString())
-          setOwner(_OwnerWrapped_.toString())
+      && String(_OwnerLegacy_) !== constants.zeroAddress
+      && String(_ManagerLegacy_) !== constants.zeroAddress) {
+      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
+          setManager(String(_OwnerWrapped_))
+          setOwner(String(_OwnerWrapped_))
         }
       } else {
-        setManager(_ManagerLegacy_.toString())
-        setOwner(_ManagerLegacy_.toString())
+        setManager(String(_ManagerLegacy_))
+        setOwner(String(_ManagerLegacy_))
       }
     } else {
       setOwner('0x')
@@ -383,10 +383,10 @@ const Home: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0) {
-              if (recordhash && recordhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
-                items[0].migrated = '1'
-              } else if (ownerhash && ownerhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
-                items[0].migrated = '3/4'
+              if (recordhash && String(recordhash) !== 'ipns://' && items[0].migrated === '1/2') {
+                items[0].migrated = String(recordhash).startsWith('https://') ? '4/5' : '1'
+              } else if (ownerhash && String(ownerhash) !== 'ipns://' && items[0].migrated === '1/2') {
+                items[0].migrated = String(ownerhash).startsWith('https://') ? '4/5' : '3/4'
               }
               setMeta(items)
               setSuccess(true)
@@ -402,7 +402,11 @@ const Home: NextPage = () => {
   // Captures Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && _Wallet_) {
-      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
+      if (String(_Recordhash_).startsWith('0x6874')) {
+        setRecordhash(ethers.utils.toUtf8String(String(_Recordhash_)))
+      } else {
+        setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`)
+      }
     } else {
       setRecordhash('')
     }
@@ -411,7 +415,11 @@ const Home: NextPage = () => {
   // Captures Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_ && _Wallet_) {
-      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
+      if (String(_Ownerhash_).startsWith('0x6874')) {
+        setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash_)))
+      } else {
+        setOwnerhash(`ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`)
+      }
     } else {
       setOwnerhash('')
     }
@@ -468,10 +476,10 @@ const Home: NextPage = () => {
       try {
         let __namehash = ethers.utils.namehash(query)
         let __token = ethers.BigNumber.from(__namehash)
-        setTokenIDWrapper(__token.toString())
+        setTokenIDWrapper(String(__token))
         let __labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
         setNamehashLegacy(__namehash)
-        setTokenIDLegacy(ethers.BigNumber.from(__labelhash).toString())
+        setTokenIDLegacy(String(ethers.BigNumber.from(__labelhash)))
       } catch (error) {
       }
     }

@@ -46,7 +46,7 @@ export const ccip2 = [
   '0x4697b8672ceAe60E130BD39435cAb9eD7C630c81', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
-export const defaultGateway = 'https://ccip.namesys.xyz/'
+export const defaultGateway = network === 'goerli' ? 'https://ccip.namesys.xyz/5' : 'https://ccip.namesys.xyz'
 export const waitingPeriod = 1 * (network === 'goerli' ? 1 : 60) * 60 // 60 mins
 export const ensContracts = [
   "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e", // Legacy Registry (Goerli & Mainnet)
@@ -340,6 +340,34 @@ export async function getIPFSHashFromIPNS(ipnsKey: string, cacheBuster: Number) 
   try {
     const _response = await fetch(
       `https://${ipnsKey}.ipfs2.eth.limo/revision.json?t=${String(cacheBuster)}`
+    )
+    if (!_response.ok) {
+      console.error('Error:', 'Fetch Gone Wrong')
+      return {
+        '_value': '//',
+        '_sequence': ''
+      }
+    }
+    const _data = await _response.json()
+    return {
+      '_value': _data.ipfs ? `/ipfs/${_data.ipfs}` : '//',
+      '_sequence': _data.sequence || ''
+    }
+  } catch (error) {
+    console.error('Error:', error)
+    return {
+      '_value': '//',
+      '_sequence': ''
+    }
+  }
+}
+
+// Check record existence on server
+export async function getServerMeta(_ENS: string) {
+  let _PATH = _ENS
+  try {
+    const _response = await fetch(
+      `https://${defaultGateway}/.well-known/eth/${_PATH}/revision.json`
     )
     if (!_response.ok) {
       console.error('Error:', 'Fetch Gone Wrong')

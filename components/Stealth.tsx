@@ -90,9 +90,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
-  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K2 keys
+  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K_IPNS keys
   const [keypairRSA, setKeypairRSA] = React.useState<[string, string]>(); // Sets generated K3 keys
-  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K2 and K0 keys
+  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K_IPNS and K_SIGNER keys
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
@@ -101,10 +101,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
   const [payToModal, setPayToModal] = React.useState(false); // PayTo modal
-  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains S2(K0) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
-  const [hashType, setHashType] = React.useState(''); // Recordhash or Ownerhash storage
+  const [hashType, setHashType] = React.useState('gateway'); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [goodSalt, setGoodSalt] = React.useState(false) // If generated CID matches the available storage
@@ -121,10 +121,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     trigger: false
   }); // Confirm modal state
   const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_STEALTH); // Record history from last update
-  const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S1(K1) for IPNS keygen
-  const [sigRSA, setSigRSA] = React.useState(''); // Signature S5(K1) for RSA keygen
-  const [sigSigner, setSigSigner] = React.useState(''); // Signature S4(K1) for Signer
-  const [sigApproved, setSigApproved] = React.useState(''); // Signature S3(K1) for Records Manager
+  const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S_IPNS(K_WALLET) for IPNS keygen
+  const [sigRSA, setSigRSA] = React.useState(''); // Signature S5(K_WALLET) for RSA keygen
+  const [sigSigner, setSigSigner] = React.useState(''); // Signature S_SIGNER(K_WALLET) for Signer
+  const [sigApproved, setSigApproved] = React.useState(''); // Signature S_APPROVE(K_WALLET) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature Count
   const [processCount, setProcessCount] = React.useState(0); // Process Count
   const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
@@ -295,7 +295,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    setSigApproved('') // Purge Manager Signature S2 from local storage 
+    setSigApproved('') // Purge Manager Signature S_RECORDS from local storage 
     setSignatures(constants.EMPTY_STRING_STEALTH()) // Purge Record Signatures from local storage 
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
@@ -348,45 +348,45 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   /// Keys & Signature Definitions
-  /* K0 = Generated secp256k1 Keypair 
-   * K1 = Wallet secp256k1 Keypair 
-   * K2 = Generated ed25519 Keypair
+  /* K_SIGNER = Generated secp256k1 Keypair 
+   * K_WALLET = Wallet secp256k1 Keypair 
+   * K_IPNS = Generated ed25519 Keypair
    * K3 = Generate RSA Keypair
-   * S1 = Signature for K2 Generation (Signed by K1)
-   * S2 = Signature for Records (Signed by K0)
-   * S3 = Signature for Manager Approval (Signed by K1)
-   * S4 = Signature for K0 Generation (Signed by K1)
-   * S5 = Signature for K3 Generation (Signed by K1)
+   * S_IPNS = Signature for K_IPNS Generation (Signed by K_WALLET)
+   * S_RECORDS = Signature for Records (Signed by K_SIGNER)
+   * S_APPROVE = Signature for Manager Approval (Signed by K_WALLET)
+   * S_SIGNER = Signature for K_SIGNER Generation (Signed by K_WALLET)
+   * S5 = Signature for K3 Generation (Signed by K_WALLET)
    */
-  // Signature S1 statement; S1(K1) [IPNS Keygen]
-  // S1 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
+  // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
     let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
-  // Signature S2 statement; S2(K0) [Record Signature]
-  // S2 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
+  // Signature S_RECORDS statement; S_RECORDS(K_SIGNER) [Record Signature]
+  // S_RECORDS is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementRecords(recordType: string, extradata: string, signer: string) {
     let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`)
     let _toSign = `Requesting Signature To Update ENS Record\n\nOrigin: ${ENS}\nRecord Type: ${recordType}\nExtradata: ${extradata}\nSigned By: ${_signer}`
     return _toSign
   }
-  // Signature S3 statement; S3(K1) [Approved Signature]
-  // S3 is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
+  // Signature S_APPROVE statement; S_APPROVE(K_WALLET) [Approved Signature]
+  // S_APPROVE is recovered on-chain; requires buffer prepend, hashing of message and arrayifying it
   function statementManager(signer: string) {
     let _signer = 'eip155:' + chain + ':' + ethers.utils.computeAddress(`0x${signer}`) // Convert secp256k1 pubkey to ETH address
     let _toSign = `Requesting Signature To Approve ENS Records Signer\n\nOrigin: ${ENS}\nApproved Signer: ${_signer}\nApproved By: ${caip10}`
     return _toSign
   }
-  // Signature S4 statement; S4(K1) [Signer Keygen]
-  // S4 is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
+  // Signature S_SIGNER statement; S_SIGNER(K_WALLET) [Signer Keygen]
+  // S_SIGNER is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementSignerKey(extradata: string) {
     let _toSign = `Requesting Signature To Generate ENS Records Signer\n\nOrigin: ${ENS}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
-  // Signature S5 statement; S5(K1) [Signer Keygen]
+  // Signature S5 statement; S5(K_WALLET) [Signer Keygen]
   // S5 generates AES-encrypted text
   function statementEncryptionKey(extradata: string) {
     let _toSign = `Requesting Signature To Generate Encryption Key\n\nOrigin: ${ENS}\nKey Type: RSA-1048\nExtradata: ${extradata}\nSigned By: ${caip10}`
@@ -420,7 +420,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return encoded
   }
 
-  // Generate extradata for S2(K0)
+  // Generate extradata for S_RECORDS(K_SIGNER)
   function genExtradata(key: string, _recordValue: string) {
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     let type: string = ''
@@ -502,27 +502,27 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setLoading(false)
   }
 
-  // Signature S2 with K0 
-  // K0 = keypairSigner; secp256k1
-  // K2 = keypairIPNS; ed25519
-  async function _signMessage(input: any) {
+  // Signature S_RECORDS with K_SIGNER 
+  // K_SIGNER = keypairSigner; secp256k1
+  // K_IPNS = keypairIPNS; ed25519
+  async function signRecords(input: any) {
     if (keypairSigner) {
-      const SignS2 = async () => {
+      const SIGN_RECORDS = async () => {
         const _signer = new ethers.Wallet('0x' + keypairSigner[0], provider)
         const __signature = await _signer.signMessage(input.message)
         if (__signature) return __signature
       }
-      const _signature = SignS2()
+      const _signature = SIGN_RECORDS()
       return _signature
     }
   }
 
-  // Signature S3 with K1
-  async function __signMessage() {
-    setSigCount(4) // Trigger S3(K1)
+  // Signature S_APPROVE with K_WALLET
+  async function signManager() {
+    setSigCount(4) // Trigger S_APPROVE(K_WALLET)
     setMessage(['Waiting For Signature', trigger === 'rsa' ? '4' : '3'])
     if (keypairSigner) {
-      const SignS3 = async () => {
+      const SIGN_APPROVE = async () => {
         signMessage({
           message:
             statementManager(
@@ -530,30 +530,27 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             )
         })
       }
-      SignS3()
+      SIGN_APPROVE()
     }
   }
 
-  // Signature S4 with K1
-  async function ___signMessage(_value: string) {
+  // Signature S_SIGNER with K_WALLET
+  async function signSigner(_value: string) {
     setSigCount(2)
-    setMessage(['Waiting For Signature', '2'])
-    if (keypairIPNS) {
-      const SignS4 = async () => {
-        signMessage({
-          message: statementSignerKey(
-            ethers.utils.keccak256(ethers.utils.solidityPack(
-              ['bytes32', 'address'],
-              [
-                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_value])),
-                _Wallet_
-              ]
-            ))
-          )
-        })
-      }
-      SignS4()
+    const SIGN_SIGNER = async () => {
+      signMessage({
+        message: statementSignerKey(
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'],
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_value])),
+              _Wallet_
+            ]
+          ))
+        )
+      })
     }
+    SIGN_SIGNER()
   }
 
   // Get gas cost estimate for hypothetical on-chain record update
@@ -649,9 +646,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               getStealth(_response)
             }
           } else {
+            getStealth(_response)
+            /* @TODO
             setStealth('')
             setRSA('')
             setSync(true)
+            */
           }
         } else {
           const _stealth = await refreshRecord(['text', 'stealth'], _response, _ENS, false)
@@ -701,18 +701,23 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
-  async function writeRevision(revision: Name.Revision, gas: {}, timestamp: string, _ipfs: string) {
-    const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
-      return typeof value === 'bigint' ? value.toString() : value
-    }))
-    _revision._name._privKey._key = {}
-    const __revision = JSON.stringify(_revision)
+  async function writeRevision(revision: Name.Revision | undefined, gas: {}, timestamp: string, _ipfs: string) {
+    let __revision: any = {}
+    if (revision) {
+      const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
+        return typeof value === 'bigint' ? String(value) : value
+      }))
+      _revision._name._privKey._key = {}
+      __revision = JSON.stringify(_revision)
+    } else {
+      __revision = JSON.stringify(__revision)
+    }
     const request = {
       ens: ENS,
       controller: _Wallet_,
       manager: keypairSigner ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`) : constants.zeroAddress,
       managerSignature: sigApproved,
-      revision: Revision.encode(revision),
+      revision: revision ? Revision.encode(revision) : {},
       chain: chain,
       ipns: CID,
       ipfs: _ipfs,
@@ -794,7 +799,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
-          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -913,29 +917,29 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     handleParentTrigger(true)
   }
 
-  // Sets option between Ownerhash and Recordhash
-  React.useEffect(() => {
-    if (safeTrigger === '1') {
-      if (trigger && write) {
-        if (recordhash) {
-          if (recordhash.startsWith('https://')) {
-            setHashType('gateway')
-          } else {
-            setHashType('recordhash')
-          }
+// Sets option between Ownerhash and Recordhash
+React.useEffect(() => {
+  if (safeTrigger === '1') {
+    if (trigger && write) {
+      if (recordhash) {
+        if (recordhash.startsWith('https://')) {
+          setHashType('gateway')
+        } else {
+          setHashType('recordhash')
         }
-        if (ownerhash && !recordhash) {
-          if (ownerhash.startsWith('https://')) {
-            setHashType('gateway')
-          } else {
-            setHashType('ownerhash')
-          }
-        }
-        setUpdateRecords(true)
       }
+      if (ownerhash && !recordhash) {
+        if (ownerhash.startsWith('https://')) {
+          setHashType('gateway')
+        } else {
+          setHashType('ownerhash')
+        }
+      }
+      setUpdateRecords(true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, write, safeTrigger])
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [trigger, write, safeTrigger])
 
   // Sets in-app ENS domain manager
   React.useEffect(() => {
@@ -966,7 +970,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }, [_OwnerLegacy_])
 
 
-  // Triggers S1(K1) after Payee is set
+  // Triggers S_IPNS(K_WALLET) after Payee is set
   React.useEffect(() => {
     let _modalData: string = ''
     if (payToModalState.trigger && payToModalState.modalData !== undefined) {
@@ -978,7 +982,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         _modalData = saltModalState.modalData
       }
     }
-    if (trigger === 'rsa') {
+    console.log(hashType, trigger)
+    if (trigger === 'rsa' && hashType !== 'gateway') {
       if (saltModalState.trigger && !keypairIPNS && safeTrigger) {
         setSigCount(1)
         setMessage(['Waiting For Signature', '1'])
@@ -994,8 +999,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             hashType
           )
         })
+        setKeygen(true)
       }
-    } else if (trigger === 'stealth') {
+    } else if (trigger === 'stealth' && hashType !== 'gateway') {
       if (payToModalState.trigger && !keypairIPNS && safeTrigger && !constants.isEmpty(newValues)) {
         setSigCount(1)
         setMessage(['Waiting For Signature', '1'])
@@ -1011,9 +1017,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             hashType
           )
         })
+        setKeygen(true)
       }
+    } else if (trigger && hashType === 'gateway') {
+      setSigIPNS('0')
     }
-    setKeygen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, payToModalState, recordhash, trigger, safeTrigger, hashType, write, states, keypairIPNS])
 
@@ -1094,18 +1102,24 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairRSA, isPayment, payment])
 
-  // Triggers S1(K1) after password is set
+  // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
     if (sigIPNS && !keypairIPNS && !isSigner && !isPayment) {
-      setLoading(true)
-      setMessage(['Generating IPNS Key', ''])
-      const keygen = async () => {
-        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
-        const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
-        setKeypairIPNS(__keypair[0])
-        setMessage(['IPNS Keypair Generated', ''])
+      if (sigIPNS !== '0') {
+        setLoading(true)
+        setMessage(['Generating IPNS Key', ''])
+        const keygen = async () => {
+          const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+          const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
+          setKeypairIPNS(__keypair[0])
+          setMessage(['IPNS Keypair Generated', ''])
+        }
+        keygen()
+      } else {
+        setKeypairIPNS(['0x', '0x'])
+        setSigIPNS('')
+        setGoodSalt(true)
       }
-      keygen()
     } else if (sigRSA && !keypairRSA && isSigner) {
       setLoading(true)
       setMessage(['Generating Encryption Key', ''])
@@ -1120,22 +1134,23 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, keypairIPNS, goodSalt, write, sigIPNS, isSigner, sigRSA, keypairRSA, isPayment])
 
-  // Triggers S4(K1) after password is set
+  // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
     if (write && saltModalState.trigger && goodSalt) {
       setMessage(['Waiting For Signature', '2'])
       const _sigSigner = async () => {
         if (saltModalState.modalData !== undefined) {
-          setSigCount(2) // Trigger S4(K1)
-          ___signMessage(saltModalState.modalData)
+          setSigCount(2) // Trigger S_SIGNER(K_WALLET)
+          setProcessCount(trigger === 'rsa' ? 4 : 3)
+          signSigner(saltModalState.modalData)
         }
       }
       _sigSigner()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, goodSalt, write])
+  }, [saltModalState, goodSalt, write, newValues])
 
-  // Triggers S1(K1) after password is set
+  // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
     if (write) {
       if (goodSalt) {
@@ -1164,7 +1179,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sigSigner, goodSalt, write, isSigner])
 
-  // Triggers S5(K1) after Signer is set
+  // Triggers S5(K_WALLET) after Signer is set
   React.useEffect(() => {
     let _modalData: string = ''
     if (saltModalState.trigger && saltModalState.modalData !== undefined) {
@@ -1191,7 +1206,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSigner, saltModalState, trigger])
 
-  // Triggers S4(K1) after password is set
+  // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
     if (trigger === 'stealth') {
       setProcessCount(3)
@@ -1201,7 +1216,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger])
 
-  // Triggers IPNS CID derivation with new S1(K1)
+  // Triggers IPNS CID derivation with new S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (keypairIPNS && sigIPNS) {
       if (hashType !== 'gateway') {
@@ -1233,11 +1248,16 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         CIDGen()
       }
+    } else {
+      if (write) {
+        setGoodSalt(true)
+        setCID(hashType === 'recordhash' ? recordhash : (hashType === 'ownerhash' ? ownerhash : constants.defaultGateway))
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairIPNS, sigIPNS, hashType, recordhash, ownerhash, write])
 
-  // Sets signature from Wagmi signMessage() as S1(K1)
+  // Sets signature from Wagmi signMessage() as S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (signature && sigCount === 1) {
       setSigIPNS(signature)
@@ -1334,9 +1354,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (conclude) {
       getUpdate(
-        recordhash || ownerhash || 'gateway',
-        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway'),
-        recordhash ? 'recordhash' : (ownerhash ? 'ownerhash' : 'gateway')
+        recordhash || ownerhash,
+        recordhash && recordhash.startsWith('ipns://') ? 'recordhash' : (ownerhash && ownerhash.startsWith('ipns://') ? 'ownerhash' : 'gateway'),
+        recordhash && recordhash.startsWith('ipns://') ? 'recordhash' : (ownerhash && ownerhash.startsWith('ipns://') ? 'ownerhash' : 'gateway')
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1354,16 +1374,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (history && queue && !sync) {
       if (recordhash) {
-        if (_Recordhash_ && _Ownerhash_ === '0x' && getManager() === constants.zeroAddress) {
-          setHashType('storage')
-          setRecordhash('')
-          setOwnerhash('')
+        if (recordhash.startsWith('https://')) {
+          setHashType('gateway')
         } else {
-          if (recordhash.startsWith('https://')) {
-            setHashType('gateway')
-          } else {
-            setHashType('recordhash')
-          }
+          setHashType('recordhash')
         }
       } else if (ownerhash) {
         if (ownerhash.startsWith('https://')) {
@@ -1376,7 +1390,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history, queue, resolver, recordhash, ownerhash, sync, _Recordhash_, _Ownerhash_])
+  }, [history, queue, resolver, recordhash, ownerhash, sync])
 
   // Internal state handling of editable/active records during updates by user
   React.useEffect(() => {
@@ -1396,12 +1410,15 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger, resolver, states])
 
-  // Handles password prompt for S1(K1)
+  // Handles password prompt for S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (updateRecords && write) { // Check for false → true
       if (!keypairIPNS || (!keypairSigner || !keypairSigner[0]) || !CID) {
-        setSaltModal(true) // Start over
-        setUpdateRecords(false) // Reset
+        if (hashType !== 'gateway') {
+          setSaltModal(true) // Salt for IPNS Keygen
+        } else {
+          setSaltModal(true) // Start for Manager Keygen
+        } 
       } else {
         if (states.length > 0) {
           setLoading(true)
@@ -1410,7 +1427,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateRecords, keypairSigner, CID, write])
+  }, [updateRecords, keypairSigner, CID, write, hashType])
 
   // Handles record refresh
   React.useEffect(() => {
@@ -1442,15 +1459,15 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Handles generating signatures for all records to be updated
   React.useEffect(() => {
-    // Handle Signature S2(K0) to add as extradata
+    // Handle Signature S_RECORDS(K_SIGNER) to add as extradata
     if (write && (keypairSigner && keypairSigner[0]) && newValues && !constants.isEmpty(newValues) && states.length > 0) {
       let __signatures = constants.EMPTY_STRING_STEALTH()
       states.forEach(async (_recordType) => {
         let _signature: any
         if (newValues[_recordType]) {
-          _signature = await _signMessage({
+          _signature = await signRecords({
             message: statementRecords(constants.filesStealth[constants.typesStealth.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
-          }) // Sign with K0
+          }) // Sign with K_SIGNER
         }
         if (_signature) __signatures[_recordType] = _signature
       })
@@ -1459,16 +1476,21 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [write, keypairSigner, newValues, states])
 
-  // Handles generating signatures for off-chain manager
+  // Triggers signing Off-Chain Signer's approval by Controller
   React.useEffect(() => {
-    // Handle Signature S3(K1)
+    // Handle Signature S_APPROVE(K_WALLET)
     if (write && !onChainManager && !sigApproved && !constants.isEmpty(signatures)) {
-      __signMessage() // Sign with K1
+      if (hashType !== 'gateway') {
+        setProcessCount(trigger === 'rsa' ? 4 : 3)
+      } else {
+        setProcessCount(trigger === 'rsa' ? 4 : 3)
+      }
+      signManager() // Sign with K_WALLET
     } else if (write && onChainManager && !constants.isEmpty(signatures)) {
       setSigApproved('0x')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onChainManager, signatures])
+  }, [onChainManager, signatures, hashType])
 
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
@@ -1480,7 +1502,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
     if (
       write &&
-      keypairIPNS &&
+      CID &&
       count === states.length &&
       count > 0 &&
       sigApproved
@@ -1520,7 +1542,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
             .then(response => response.json())
             .then(async data => {
-              setMessage(['Publishing to IPNS', ''])
+              setMessage([hashType !== 'gateway' ? 'Publishing to IPNS' : 'Publishing to Gateway', ''])
               if (keypairSigner && data.response) {
                 // Get gas consumption estimate
                 let gas = {}
@@ -1554,34 +1576,87 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   }
                   checkGas()
                 })
+                if (hashType !== 'gateway' && keypairIPNS) {
                 // Handle W3Name publish 
-                let key = constants.formatkey(keypairIPNS)
-                let w3name: Name.WritableName
-                const keygen = async () => {
-                  w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
-                  const pin = async () => {
-                    if (data.response.ipfs && w3name && gas) {
-                      setHashIPFS(data.response.ipfs.split('ipfs://')[1])
-                      const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
-                      // @W3Name broadcast
-                      let _revision: Name.Revision
-                      if (!history.revision) {
-                        _revision = await Name.v0(w3name, toPublish)
-                      } else {
-                        let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
-                        _revision = await Name.increment(_revision_, toPublish)
+                  let key = constants.formatkey(keypairIPNS)
+                  let w3name: Name.WritableName
+                  const keygen = async () => {
+                    w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
+                    const pin = async () => {
+                      if (data.response.ipfs && w3name && gas) {
+                        setHashIPFS(data.response.ipfs.split('ipfs://')[1])
+                        const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
+                        // @W3Name broadcast
+                        let _revision: Name.Revision
+                        if (!history.revision) {
+                          _revision = await Name.v0(w3name, toPublish)
+                        } else {
+                          let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
+                          _revision = await Name.increment(_revision_, toPublish)
+                        }
+                        setTimestamp(data.response.timestamp)
+                        // Write revision to database
+                        await writeRevision(_revision, gas, data.response.timestamp, data.response.ipfs.split('ipfs://')[1])
+                        // Publish IPNS
+                        await Name.publish(_revision, w3name.key)
+                        // Wrap up
+                        setGas(gas)
+                        setStates([])
+                        // Update values in the modal to new ones
+                        let _updatedList = list.map((item) => {
+                          if (['stealth', 'rsa'].includes(item.type)) {
+                            let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
+                            setQueue(_queue)
+                            if (data.response.meta[item.type]) {
+                              return {
+                                ...item,
+                                value: data.response[item.type],
+                                state: true,
+                                active: _queue > 0,
+                                editable: _queue > 0
+                              }
+                            } else {
+                              return {
+                                ...item,
+                                active: _queue > 0,
+                                editable: _queue > 0
+                              }
+                            }
+                          } else {
+                            return item
+                          }
+                        })
+                        setPreCache(_updatedList)
+                        setNewValues(constants.EMPTY_STRING_STEALTH())
+                        setSignatures(constants.EMPTY_STRING_STEALTH())
+                        setUpdateRecords(false) // Reset
+                        setSigCount(0)
+                        setSaltModalState({
+                          modalData: undefined,
+                          trigger: false
+                        })
+                        setSuccess(trigger === 'stealth' ? '<span><span style="color: lightgreen">Stealth Record Set</span>! You may now <span style="color: cyan">Receive</span> Private Payments</span>' : '<span><span style="color: lightgreen">Encryption Key Set</span>! You may now <span style="color: cyan">Send</span> Private Payments</span>')
+                        setSuccessModal(true)
+                        doEnjoy()
                       }
+                    }
+                    if (Object.keys(gas).length > 0) {
+                      pin()
+                    }
+                  }
+                  keygen()
+                } else {
+                  const gateway = async () => {
+                    if (gas) {
                       setTimestamp(data.response.timestamp)
                       // Write revision to database
-                      await writeRevision(_revision, gas, data.response.timestamp, data.response.ipfs.split('ipfs://')[1])
-                      // Publish IPNS
-                      await Name.publish(_revision, w3name.key)
-                      // Wrap up
+                      await writeRevision(undefined, gas, data.response.timestamp, '')
                       setGas(gas)
-                      setStates([])
+                      setStates([])        
+                      setLoading(false)
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
-                        if (['stealth', 'rsa'].includes(item.type)) {
+                        if (!['resolver', 'storage'].includes(item.type)) {
                           let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
                           setQueue(_queue)
                           if (data.response.meta[item.type]) {
@@ -1589,6 +1664,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               ...item,
                               value: data.response[item.type],
                               state: true,
+                              label: 'edit',
                               active: _queue > 0,
                               editable: _queue > 0
                             }
@@ -1604,24 +1680,18 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         }
                       })
                       setPreCache(_updatedList)
-                      setNewValues(constants.EMPTY_STRING_STEALTH())
-                      setSignatures(constants.EMPTY_STRING_STEALTH())
+                      setNewValues(constants.EMPTY_STRING_RECORDS())
+                      setSignatures(constants.EMPTY_STRING_RECORDS())
                       setUpdateRecords(false) // Reset
                       setSigCount(0)
                       setSaltModalState({
                         modalData: undefined,
                         trigger: false
                       })
-                      setSuccess(trigger === 'stealth' ? '<span><span style="color: lightgreen">Stealth Record Set</span>! You may now <span style="color: cyan">Receive</span> Private Payments</span>' : '<span><span style="color: lightgreen">Encryption Key Set</span>! You may now <span style="color: cyan">Send</span> Private Payments</span>')
-                      setSuccessModal(true)
-                      doEnjoy()
                     }
                   }
-                  if (Object.keys(gas).length > 0) {
-                    pin()
-                  }
+                  gateway()
                 }
-                keygen()
               }
             })
         } catch (error) {
@@ -1745,11 +1815,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       fontWeight: '700'
                     }}
                   >
-                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{message[1]}</span>
+                    <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}>{hashType !== 'gateway' ? message[1] : (!write ? message[1] : String(Number(message[1]) - 1))}</span>
                     <span>{' Of '}</span>
                     <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}
                     >
-                      {processCount}
+                      {hashType !== 'gateway' ? processCount : (!write ? processCount : processCount - 1)}
                     </span>
                   </span>
                 </div>
@@ -1985,7 +2055,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true),
                                       setRefreshedItem(item.type)
                                   }}
-                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'Record in Sync with IPNS' : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
+                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
                                 >
                                   <div
                                     className="material-icons smol"
@@ -2029,9 +2099,9 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               marginBottom: '6px',
                             }}
                             onClick={() => {
-                              setTrigger(item.type),
-                                setSafeTrigger('1'),
-                                setWrite(true)
+                              setTrigger(item.type)
+                              setSafeTrigger('1')
+                              setWrite(true)
                             }}
                             data-tooltip={item.tooltip}
                           >
