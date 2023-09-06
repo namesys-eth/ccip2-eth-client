@@ -454,7 +454,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
   // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'gateway'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -1175,8 +1175,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (safeTrigger === '1') {
       if (trigger && !write) {
         if (trigger === 'storage') {
-          setConfirm(true)
-          setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
+          if (!confirmModalState.trigger) setConfirm(true)
+          setHashType(confirmModalState.modalData === '0' ? 'recordhash' : 'gateway')
         } else {
           if (optionsModalState.trigger) {
             setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
@@ -1203,7 +1203,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, optionsModalState, write, safeTrigger])
+  }, [trigger, optionsModalState, write, safeTrigger, confirmModalState])
 
   // Sets in-app ENS domain manager
   React.useEffect(() => {
@@ -1301,6 +1301,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairIPNS && trigger && safeTrigger) {
       setSigCount(1)
+      setProcessCount(write ? 3 : 1)
       setMessage(['Waiting For Signature', '1'])
       signMessage({
         message: statementIPNSKey(
@@ -1311,7 +1312,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               _Wallet_
             ]
           )),
-          hashType === 'recordhash' ? hashType : (optionsModalState.trigger ? (optionsModalState.modalData === '0' ? hashType : 'recordhash') : hashType)
+          hashType
         )
       })
       setKeygen(true)
@@ -1325,7 +1326,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       setLoading(true)
       setMessage(['Generating IPNS Key', ''])
       const keygen = async () => {
-        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+        const _origin = hashType === 'ownerhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
         const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
         setKeypairIPNS(__keypair[0])
         setMessage(['IPNS Keypair Generated', ''])
@@ -1349,7 +1350,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       _sigSigner()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, goodSalt, write])
+  }, [saltModalState, goodSalt, write, trigger])
 
   // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
@@ -1383,41 +1384,43 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Triggers IPNS CID derivation with new S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (keypairIPNS && sigIPNS) {
-      const CIDGen = async () => {
-        let key = constants.formatkey(keypairIPNS)
-        const w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
-        const CID_IPNS = String(w3name)
-        let _Recordhash = recordhash ? recordhash.split('ipns://')[1] : ''
-        let _Ownerhash = ownerhash ? ownerhash.split('ipns://')[1] : ''
-        if (write) {
-          if (CID_IPNS && (CID_IPNS === _Recordhash || CID_IPNS === _Ownerhash)) {
+      if (hashType !== 'gateway') {
+        const CIDGen = async () => {
+          let key = constants.formatkey(keypairIPNS)
+          const w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
+          const CID_IPNS = String(w3name)
+          let _Recordhash = recordhash ? recordhash.split('ipns://')[1] : ''
+          let _Ownerhash = ownerhash ? ownerhash.split('ipns://')[1] : ''
+          if (write) {
+            if (CID_IPNS && (CID_IPNS === _Recordhash || CID_IPNS === _Ownerhash)) {
+              setGoodSalt(true)
+              setCID(CID_IPNS)
+            } else if (CID_IPNS && (CID_IPNS !== _Recordhash && CID_IPNS !== _Ownerhash)) {
+              setSaltModalState({
+                modalData: undefined,
+                trigger: false
+              })
+              setMessage(['Seems Like Bad Password', ''])
+              doCrash()
+              setColor('orangered')
+              setSigCount(0)
+              setProcessCount(0)
+            }
+          } else {
             setGoodSalt(true)
             setCID(CID_IPNS)
-          } else if (CID_IPNS && (CID_IPNS !== _Recordhash && CID_IPNS !== _Ownerhash)) {
-            setSaltModalState({
-              modalData: undefined,
-              trigger: false
-            })
-            setMessage(['Seems Like Bad Password', ''])
-            doCrash()
-            setColor('orangered')
-            setSigCount(0)
-            setProcessCount(0)
           }
-        } else {
-          setGoodSalt(true)
-          setCID(CID_IPNS)
         }
+        CIDGen()
       }
-      CIDGen()
     } else {
-      if (write) {
+      if (write && hashType === 'gateway') {
         setGoodSalt(true)
-        setCID(hashType === 'recordhash' ? recordhash : (hashType === 'ownerhash' ? ownerhash : constants.defaultGateway))
+        setCID('gateway')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, sigIPNS, recordhash, ownerhash, write])
+  }, [keypairIPNS, sigIPNS, recordhash, ownerhash, write, hashType])
 
   // Sets signature from Wagmi signMessage() as S_IPNS(K_WALLET)
   React.useEffect(() => {
@@ -1566,9 +1569,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (updateRecords && write) { // Check for false → true
       if (!keypairIPNS || (!keypairSigner || !keypairSigner[0]) || !CID) {
         if (hashType !== 'gateway') {
-          setSaltModal(true) // Salt for IPNS Keygen
+          if (!saltModalState.trigger) setSaltModal(true) // Salt for IPNS Keygen
         } else {
-          setSaltModal(true) // Start for Manager Keygen
+          if (!saltModalState.trigger) setSaltModal(true) // Start for Manager Keygen
           setKeypairIPNS(['0x', '0x'])
         } 
         setUpdateRecords(false) // Reset
@@ -1581,7 +1584,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateRecords, keypairSigner, CID, write, hashType])
+  }, [updateRecords, keypairSigner, CID, write, hashType, saltModalState])
 
   // Handles record refresh
   React.useEffect(() => {
@@ -2376,7 +2379,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </span>
                               )}
                             { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && ownerhash !== constants.defaultGateway && (
+                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && recordhash === ownerhash && ownerhash !== constants.defaultGateway && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {

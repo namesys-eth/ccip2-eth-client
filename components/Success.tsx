@@ -59,7 +59,7 @@ const Success: React.FC<ModalProps> = ({ icon, color, show, onClose, children, h
           <div
             className="flex-row"
             style={{
-              marginLeft: '25px'
+              marginLeft: '0px'
             }}
           >
             <button

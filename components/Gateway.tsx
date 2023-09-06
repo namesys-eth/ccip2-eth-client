@@ -3,6 +3,7 @@ import { isMobile } from 'react-device-detect'
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import Help from '../components/Help'
+import * as constants from '../utils/constants'
 
 interface ModalProps {
   show: boolean
@@ -13,7 +14,7 @@ interface ModalProps {
 }
 
 const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [inputValue, setInputValue] = React.useState('https://ccip.namesys.xyz/5/')
+  const [inputValue, setInputValue] = React.useState(constants.defaultGateway)
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')

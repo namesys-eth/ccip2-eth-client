@@ -25,10 +25,12 @@ import {
   useSignMessage,
   useContractRead,
   usePrepareSendTransaction,
+  useWaitForTransaction,
   useSendTransaction
 } from 'wagmi' // Legacy Wagmi 1.6
-import { Resolver } from "@ethersproject/providers"
+import { Resolver } from '@ethersproject/providers'
 import * as cryptico from 'cryptico-js/dist/cryptico.browser.js'
+import { parseEther } from 'viem'
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -91,7 +93,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
   const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K_IPNS keys
-  const [keypairRSA, setKeypairRSA] = React.useState<[string, string]>(); // Sets generated K3 keys
+  const [keypairRSA, setKeypairRSA] = React.useState<[string, string]>(); // Sets generated K_RSA keys
   const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K_IPNS and K_SIGNER keys
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
@@ -101,6 +103,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
   const [payToModal, setPayToModal] = React.useState(false); // PayTo modal
+  const [processed, setProcessed] = React.useState(false); // Checks if Encryption has occured
   const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
@@ -122,7 +125,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }); // Confirm modal state
   const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_STEALTH); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S_IPNS(K_WALLET) for IPNS keygen
-  const [sigRSA, setSigRSA] = React.useState(''); // Signature S5(K_WALLET) for RSA keygen
+  const [sigRSA, setSigRSA] = React.useState(''); // Signature S_RSA(K_WALLET) for RSA keygen
   const [sigSigner, setSigSigner] = React.useState(''); // Signature S_SIGNER(K_WALLET) for Signer
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S_APPROVE(K_WALLET) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature Count
@@ -159,11 +162,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   })  // Wagmi Signature hook
 
   // Write hooks
-  const { config: sendPayment, error: errorSend } = usePrepareSendTransaction({
+  const { config: sendPayment } = usePrepareSendTransaction({
     to: payeeAddr,
-    value: ethers.utils.parseEther(payeeAmount) as any
+    value: payeeAmount ? parseEther(payeeAmount) : parseEther('0.0001')
   })
-  const { sendTransaction } = useSendTransaction(sendPayment)
+  const { data, sendTransaction, isError: sendError, isLoading: sendLoading, isSuccess: sendSuccess } = useSendTransaction(sendPayment)
 
   /// Preview Domain Metadata
   // Read Legacy ENS Registry for ENS domain Owner
@@ -207,6 +210,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     abi: ccip2Config.contractInterface,
     functionName: 'getRecordhash',
     args: [ethers.utils.namehash(ENS)]
+  })
+
+  // Wagmi hook for awaiting transaction processing
+  const { isSuccess: txSuccess, isError: txError, isLoading: txLoading } = useWaitForTransaction({
+    hash: data?.hash,
   })
 
   // Handle Success modal data return
@@ -303,6 +311,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSigSigner('')
     setSigIPNS('')
     setSigRSA('')
+    setPayment('')
     handleParentModalData(`${ENS}`)
     handleParentTrigger(true)
     e.preventDefault()
@@ -351,12 +360,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   /* K_SIGNER = Generated secp256k1 Keypair 
    * K_WALLET = Wallet secp256k1 Keypair 
    * K_IPNS = Generated ed25519 Keypair
-   * K3 = Generate RSA Keypair
+   * K_RSA = Generate RSA Keypair
    * S_IPNS = Signature for K_IPNS Generation (Signed by K_WALLET)
    * S_RECORDS = Signature for Records (Signed by K_SIGNER)
    * S_APPROVE = Signature for Manager Approval (Signed by K_WALLET)
    * S_SIGNER = Signature for K_SIGNER Generation (Signed by K_WALLET)
-   * S5 = Signature for K3 Generation (Signed by K_WALLET)
+   * S_RSA = Signature for K_RSA Generation (Signed by K_WALLET)
    */
   // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
   // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
@@ -386,8 +395,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _digest = _toSign
     return _digest
   }
-  // Signature S5 statement; S5(K_WALLET) [Signer Keygen]
-  // S5 generates AES-encrypted text
+  // Signature S_RSA statement; S_RSA(K_WALLET) [Signer Keygen]
+  // S_RSA generates AES-encrypted text
   function statementEncryptionKey(extradata: string) {
     let _toSign = `Requesting Signature To Generate Encryption Key\n\nOrigin: ${ENS}\nKey Type: RSA-1048\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
@@ -438,10 +447,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Returns Owner of wrapped/legacy ENS Domain
   function getManager() {
     if (_OwnerLegacy_ && _ManagerLegacy_) {
-      if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
-        return _OwnerWrapped_ ? _OwnerWrapped_.toString() : constants.zeroAddress
+      if (String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3]) {
+        return _OwnerWrapped_ ? String(_OwnerWrapped_) : constants.zeroAddress
       } else {
-        return _ManagerLegacy_.toString()
+        return String(_ManagerLegacy_)
       }
     } else {
       return constants.zeroAddress
@@ -634,7 +643,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
             if (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
-              if (_history.stealth && _history.rsa) {
+              if (_history.stealth || _history.rsa) {
                 setStealth(_history.stealth)
                 setRSA(_history.rsa)
               } else {
@@ -836,8 +845,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       let namehash = ethers.utils.namehash(ENS)
       let labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(ENS.split('.eth')[0]))
       setNamehashLegacy(namehash)
-      setTokenIDLegacy(ethers.BigNumber.from(labelhash).toString())
-      setTokenIDWrapper(ethers.BigNumber.from(namehash).toString())
+      setTokenIDLegacy(String(ethers.BigNumber.from(labelhash)))
+      setTokenIDWrapper(String(ethers.BigNumber.from(namehash)))
       setConclude(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -854,7 +863,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Captures on-chain manager hook
   React.useEffect(() => {
     if (_CCIP2Manager_) {
-      setOnChainManager(_CCIP2Manager_.toString())
+      setOnChainManager(String(_CCIP2Manager_))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_CCIP2Manager_])
@@ -862,12 +871,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Capture Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_) {
-      if (_Ownerhash_.toString().length > 2) {
+      if (String(_Ownerhash_).length > 2) {
         let _String: string = ''
-        if (_Ownerhash_.toString().startsWith(constants.prefix)) {
-          _String = `ipns://${ensContent.decodeContenthash(_Ownerhash_!.toString()).decoded}`
+        if (String(_Ownerhash_).startsWith(constants.prefix)) {
+          _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
         } else {
-          _String = ethers.utils.toUtf8String(_Ownerhash_.toString())
+          _String = ethers.utils.toUtf8String(String(_Ownerhash_))
         }
         if (_String.startsWith('https://')) {
           setOwnerhash(`${_String}`)
@@ -883,12 +892,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   React.useEffect(() => {
     if (_Recordhash_) {
-      if (_Recordhash_.toString().length > 2 && (_Recordhash_ !== _Ownerhash_)) {
+      if (String(_Recordhash_).length > 2 && (_Recordhash_ !== _Ownerhash_)) {
         let _String: string = ''
-        if (_Recordhash_.toString().startsWith(constants.prefix)) {
-          _String = `ipns://${ensContent.decodeContenthash(_Recordhash_!.toString()).decoded}`
+        if (String(_Recordhash_).startsWith(constants.prefix)) {
+          _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
         } else {
-          _String = ethers.utils.toUtf8String(_Recordhash_.toString())
+          _String = ethers.utils.toUtf8String(String(_Recordhash_))
         }
         if (_String.startsWith('https://')) {
           setRecordhash(`${_String}`)
@@ -917,35 +926,35 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     handleParentTrigger(true)
   }
 
-// Sets option between Ownerhash and Recordhash
-React.useEffect(() => {
-  if (safeTrigger === '1') {
-    if (trigger && write) {
-      if (recordhash) {
-        if (recordhash.startsWith('https://')) {
-          setHashType('gateway')
-        } else {
-          setHashType('recordhash')
+  // Sets option between Ownerhash and Recordhash
+  React.useEffect(() => {
+    if (safeTrigger === '1') {
+      if (trigger && write) {
+        if (recordhash) {
+          if (recordhash.startsWith('https://')) {
+            setHashType('gateway')
+          } else {
+            setHashType('recordhash')
+          }
         }
-      }
-      if (ownerhash && !recordhash) {
-        if (ownerhash.startsWith('https://')) {
-          setHashType('gateway')
-        } else {
-          setHashType('ownerhash')
+        if (ownerhash && !recordhash) {
+          if (ownerhash.startsWith('https://')) {
+            setHashType('gateway')
+          } else {
+            setHashType('ownerhash')
+          }
         }
+        setUpdateRecords(true)
       }
-      setUpdateRecords(true)
     }
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [trigger, write, safeTrigger])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger, write, safeTrigger])
 
   // Sets in-app ENS domain manager
   React.useEffect(() => {
     if (_Wallet_) {
       // Set Managers
-      if (onChainManager && onChainManager.toString() === 'true') {
+      if (onChainManager && String(onChainManager) === 'true') {
         // Set connected account as in-app manager if it is authorised
         setManagers([_Wallet_])
       } else {
@@ -960,7 +969,7 @@ React.useEffect(() => {
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
     if (_OwnerLegacy_) {
-      if (_OwnerLegacy_?.toString() === constants.ensContracts[chain === '1' ? 7 : 3]) {
+      if (String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3]) {
         setWrapped(true)
       } else {
         setWrapped(false)
@@ -968,6 +977,63 @@ React.useEffect(() => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_OwnerLegacy_])
+
+  // Error Handling 
+  // Handles Transaction Confirmation
+  React.useEffect(() => {
+    if (sendSuccess && txSuccess) {
+      const pin = async () => {
+        setMessage(['Transaction Confirmed', ''])
+        setTimeout(() => {
+          setSuccess('<span>Payment <span style="color: lightgreen">Sent Successfully</span></span>')
+          setSuccessModal(true)
+          doEnjoy()
+        }, 1000)
+      }
+      pin()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sendSuccess, txSuccess])
+  // Handles Transaction wait
+  React.useEffect(() => {
+    if (sendLoading && !sendError) {
+      setLoading(true)
+      setMessage(['Waiting for Transaction', ''])
+      if (recentCrash) setRecentCrash(false)
+    } else if (sendError && !sendLoading) {
+      if (!recentCrash) {
+        setMessage(['Transaction Declined by User', ''])
+        doCrash()
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sendLoading, sendError])
+  // Handles Transaction 1 loading and error
+  React.useEffect(() => {
+    if (txLoading && !txError) {
+      setLoading(true)
+      setMessage(['Waiting for Confirmation', ''])
+      if (recentCrash) setRecentCrash(false)
+    } else if (!txLoading && txError) {
+      if (!recentCrash) {
+        setMessage(['Transaction Failed', ''])
+        doCrash()
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading, txError])
 
 
   // Triggers S_IPNS(K_WALLET) after Payee is set
@@ -982,7 +1048,6 @@ React.useEffect(() => {
         _modalData = saltModalState.modalData
       }
     }
-    console.log(hashType, trigger)
     if (trigger === 'rsa' && hashType !== 'gateway') {
       if (saltModalState.trigger && !keypairIPNS && safeTrigger) {
         setSigCount(1)
@@ -1053,7 +1118,8 @@ React.useEffect(() => {
     if (isPayment) {
       if (saltModalState.trigger && saltModalState.modalData !== undefined) {
         setSigCount(3)
-        setMessage(['Waiting For Signature', '3'])
+        setProcessCount(hashType === 'gateway' ? 1 : 1)
+        setMessage(['Waiting For Signature', '1'])
         signMessage({
           message: statementEncryptionKey(
             ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -1069,12 +1135,12 @@ React.useEffect(() => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, isPayment])
+  }, [saltModalState, isPayment, hashType])
 
   // Triggers Decryption Keygen
   React.useEffect(() => {
     if (isPayment && keygen) {
-      if (sigRSA && saltModalState.modalData) {
+      if (sigRSA && saltModalState.trigger) {
         setMessage(['Generating Encryption Key', ''])
         const keygen = async () => {
           const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
@@ -1092,12 +1158,33 @@ React.useEffect(() => {
   React.useEffect(() => {
     if (isPayment && keypairRSA !== undefined && payment) {
       const _Payload = cryptico.decrypt(payment, keypairRSA[0])
-      setPayeeAddr(JSON.parse(_Payload)._payee)
-      setPayeeAmount(JSON.parse(_Payload)._amount)
-      setLoading(false)
-      setKeypairRSA(undefined)
-      setSigRSA('')
-      setPayment('')
+      let _Payee = JSON.parse(_Payload.plaintext).payee
+      let _Amount = JSON.parse(_Payload.plaintext).amount
+      const resolve = async () => {
+        if (_Payee.endsWith('.eth')) {
+          await provider.resolveName(_Payee)
+            .then(response => {
+              if (!response) {
+              } else {
+                console.log(response)
+                setPayeeAddr(response)
+              }
+            })
+            .catch(() => {
+              setLoading(false)
+              setMessage(['Bad Payee', ''])
+              doCrash()
+              setColor('orangered')
+              setSigCount(0)
+              setProcessCount(0)
+            })
+        } else {
+          setPayeeAddr(_Payee)
+        }
+        setPayeeAmount(_Amount)
+        setLoading(false)
+      }
+      resolve()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairRSA, isPayment, payment])
@@ -1109,7 +1196,7 @@ React.useEffect(() => {
         setLoading(true)
         setMessage(['Generating IPNS Key', ''])
         const keygen = async () => {
-          const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+          const _origin = hashType === 'ownerhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
           const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
           setKeypairIPNS(__keypair[0])
           setMessage(['IPNS Keypair Generated', ''])
@@ -1117,7 +1204,6 @@ React.useEffect(() => {
         keygen()
       } else {
         setKeypairIPNS(['0x', '0x'])
-        setSigIPNS('')
         setGoodSalt(true)
       }
     } else if (sigRSA && !keypairRSA && isSigner) {
@@ -1136,7 +1222,7 @@ React.useEffect(() => {
 
   // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
-    if (write && saltModalState.trigger && goodSalt) {
+    if (write && saltModalState.trigger && goodSalt && (processed || trigger === 'rsa')) {
       setMessage(['Waiting For Signature', '2'])
       const _sigSigner = async () => {
         if (saltModalState.modalData !== undefined) {
@@ -1148,7 +1234,7 @@ React.useEffect(() => {
       _sigSigner()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, goodSalt, write, newValues])
+  }, [saltModalState, goodSalt, write, processed, trigger])
 
   // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
@@ -1179,7 +1265,7 @@ React.useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sigSigner, goodSalt, write, isSigner])
 
-  // Triggers S5(K_WALLET) after Signer is set
+  // Triggers S_RSA(K_WALLET) after Signer is set
   React.useEffect(() => {
     let _modalData: string = ''
     if (saltModalState.trigger && saltModalState.modalData !== undefined) {
@@ -1223,7 +1309,7 @@ React.useEffect(() => {
         const CIDGen = async () => {
           let key = constants.formatkey(keypairIPNS)
           const w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
-          const CID_IPNS = w3name.toString()
+          const CID_IPNS = String(w3name)
           let _Recordhash = recordhash ? recordhash.split('ipns://')[1] : ''
           let _Ownerhash = ownerhash ? ownerhash.split('ipns://')[1] : ''
           if (write) {
@@ -1241,17 +1327,14 @@ React.useEffect(() => {
               setSigCount(0)
               setProcessCount(0)
             }
-          } else {
-            setGoodSalt(true)
-            setCID(CID_IPNS)
           }
         }
         CIDGen()
       }
     } else {
-      if (write) {
+      if (write && hashType === 'gateway') {
         setGoodSalt(true)
-        setCID(hashType === 'recordhash' ? recordhash : (hashType === 'ownerhash' ? ownerhash : constants.defaultGateway))
+        setCID('gateway')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1296,10 +1379,16 @@ React.useEffect(() => {
               } else {
                 setMessage(['Waiting For Signature', '2'])
                 _RSA = response
-                const _encryptionResult = cryptico.encrypt(`{payer:${_Payer},payee:${_Payee},amount:${_Amount}}`, _RSA)
+                let _encryptionResult: any = {}
+                if (keypairRSA) {
+                  _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA, keypairRSA[0])
+                } else {
+                  _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA)
+                }
                 const _THIS = newValues
                 _THIS['stealth'] = _encryptionResult.cipher
                 setNewValues(_THIS)
+                setProcessed(true)
                 const priorState = states
                 if (!priorState.includes('stealth') && newValues['stealth']) {
                   setStates(prevState => [...prevState, 'stealth'])
@@ -1415,19 +1504,19 @@ React.useEffect(() => {
     if (updateRecords && write) { // Check for false → true
       if (!keypairIPNS || (!keypairSigner || !keypairSigner[0]) || !CID) {
         if (hashType !== 'gateway') {
-          setSaltModal(true) // Salt for IPNS Keygen
+          if (!saltModalState.trigger) setSaltModal(true) // Salt for IPNS Keygen
         } else {
-          setSaltModal(true) // Start for Manager Keygen
-        } 
+          if (!saltModalState.trigger) setSaltModal(true) // Start for Manager Keygen
+        }
       } else {
         if (states.length > 0) {
           setLoading(true)
-          setMessage(['Setting Records', states.length.toString()])
+          setMessage(['Setting Records', String(states.length)])
         }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateRecords, keypairSigner, CID, write, hashType])
+  }, [updateRecords, keypairSigner, CID, write, hashType, saltModalState])
 
   // Handles record refresh
   React.useEffect(() => {
@@ -1577,7 +1666,7 @@ React.useEffect(() => {
                   checkGas()
                 })
                 if (hashType !== 'gateway' && keypairIPNS) {
-                // Handle W3Name publish 
+                  // Handle W3Name publish 
                   let key = constants.formatkey(keypairIPNS)
                   let w3name: Name.WritableName
                   const keygen = async () => {
@@ -1637,6 +1726,7 @@ React.useEffect(() => {
                         })
                         setSuccess(trigger === 'stealth' ? '<span><span style="color: lightgreen">Stealth Record Set</span>! You may now <span style="color: cyan">Receive</span> Private Payments</span>' : '<span><span style="color: lightgreen">Encryption Key Set</span>! You may now <span style="color: cyan">Send</span> Private Payments</span>')
                         setSuccessModal(true)
+                        setPayeeAddr('')
                         doEnjoy()
                       }
                     }
@@ -1652,7 +1742,7 @@ React.useEffect(() => {
                       // Write revision to database
                       await writeRevision(undefined, gas, data.response.timestamp, '')
                       setGas(gas)
-                      setStates([])        
+                      setStates([])
                       setLoading(false)
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
@@ -1719,7 +1809,7 @@ React.useEffect(() => {
       if (recentCrash) setRecentCrash(false)
     } else if (signError && !signLoading && trigger) {
       if (!recentCrash) {
-        setMessage(['Signature Failed', sigCount.toString()])
+        setMessage(['Signature Failed', String(sigCount)])
         doCrash()
         setWrite(false)
         setUpdateRecords(false) // Reset
@@ -1819,7 +1909,7 @@ React.useEffect(() => {
                     <span>{' Of '}</span>
                     <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}
                     >
-                      {hashType !== 'gateway' ? processCount : (!write ? processCount : processCount - 1)}
+                      {hashType !== 'gateway' ? processCount : (!write && isPayment ? processCount : processCount - 1)}
                     </span>
                   </span>
                 </div>
@@ -2292,57 +2382,61 @@ React.useEffect(() => {
                         >
                           <div
                             className='flex-column'
-                            style={{
-                              width: '450px',
-                              marginLeft: '3px'
-                            }}
                           >
-                            <input
-                              id={'pay'}
-                              key={'pay'}
-                              type='text'
-                              value={payeeAddr}
+                            <div
+                              className='flex-row'
                               style={{
-                                background: payeeAddr === constants.zeroAddress ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
-                                outline: 'none',
-                                padding: '7px',
-                                borderRadius: '3px',
-                                fontFamily: 'SF Mono',
-                                letterSpacing: '-0.5px',
-                                fontWeight: '400',
-                                fontSize: '15px',
-                                width: '90%',
-                                paddingRight: '32px',
-                                wordWrap: 'break-word',
-                                textAlign: 'left',
-                                color: payeeAddr === constants.zeroAddress ? 'grey' : 'lime',
-                                cursor: 'copy'
-                              }}
-                            />
-                            <hr style={{ marginTop: '5px', marginLeft: '0', width: '90%' }}></hr>
-                          </div>
-                          <button
-                            className="button-empty"
-                            onClick={() => {
-                              constants.copyToClipboard('pay')
-                            }}
-                            hidden={payeeAddr === constants.zeroAddress}
-                            data-tooltip='Copy Address'
-                            style={{
-                              marginLeft: '-25px',
-                              color: 'lime'
-                            }}
-                          >
-                            <span
-                              className="material-icons"
-                              style={{
-                                fontSize: '22px',
-                                fontWeight: '700'
+                                width: '450px',
+                                marginLeft: '3px'
                               }}
                             >
-                              content_copy
-                            </span>
-                          </button>
+                              <input
+                                id={'pay'}
+                                key={'pay'}
+                                type='text'
+                                value={payeeAddr}
+                                style={{
+                                  background: payeeAddr === constants.zeroAddress ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                                  outline: 'none',
+                                  padding: '7px',
+                                  borderRadius: '3px',
+                                  fontFamily: 'SF Mono',
+                                  letterSpacing: '-0.5px',
+                                  fontWeight: '400',
+                                  fontSize: '15px',
+                                  width: '90%',
+                                  paddingRight: '32px',
+                                  wordWrap: 'break-word',
+                                  textAlign: 'left',
+                                  color: payeeAddr === constants.zeroAddress ? 'grey' : 'lime',
+                                  cursor: 'copy'
+                                }}
+                              />
+                              <button
+                                className="button-empty"
+                                onClick={() => {
+                                  constants.copyToClipboard('pay')
+                                }}
+                                hidden={payeeAddr === constants.zeroAddress}
+                                data-tooltip='Copy Address'
+                                style={{
+                                  marginLeft: '-25px',
+                                  color: 'lime'
+                                }}
+                              >
+                                <span
+                                  className="material-icons"
+                                  style={{
+                                    fontSize: '22px',
+                                    fontWeight: '700'
+                                  }}
+                                >
+                                  content_copy
+                                </span>
+                              </button>
+                            </div>
+                            <hr style={{ marginTop: '5px', marginLeft: '0', width: '90%' }}></hr>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -2361,7 +2455,7 @@ React.useEffect(() => {
                         onClick={() => payeeAddr && payeeAddr !== constants.zeroAddress ? sendTransaction?.() : decrypt()}
                         disabled={!payee || payeeAddr === constants.zeroAddress}
                         hidden={!RSA}
-                        data-tooltip='Fetch and Decrypt'
+                        data-tooltip={payeeAddr && payeeAddr !== constants.zeroAddress ? 'Send Transaction' : 'Fetch and Decrypt'}
                       >
                         <div
                           className="flex-row"
@@ -2387,7 +2481,7 @@ React.useEffect(() => {
                         onClick={() => setPayeeAddr('')}
                         disabled={!payee}
                         hidden={payeeAddr ? false : true}
-                        data-tooltip='Cancel'
+                        data-tooltip='Cancel Transaction'
                       >
                         <div
                           className="flex-row"

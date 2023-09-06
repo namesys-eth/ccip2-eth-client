@@ -259,7 +259,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   width: '40px'
                 }}
                 onClick={() => onItemClickStealth(item.name + '.eth')}
-                disabled={['0', '1/2'].includes(item.migrated) }
+                disabled={ ['0'].includes(item.migrated) }
                 data-tooltip={`Stealth Payments`}
               >
                 <div
