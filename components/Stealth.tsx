@@ -1166,7 +1166,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             .then(response => {
               if (!response) {
               } else {
-                console.log(response)
                 setPayeeAddr(response)
               }
             })

@@ -70,7 +70,7 @@ const Account: NextPage = () => {
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [isSearch, setIsSearch] = React.useState(false) // Store if search is in progress
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
-  const [process, setProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
+  const [inProcess, setInProcess] = React.useState(ethers.utils.namehash('0.eth')) // Stores name under process
   const [progress, setProgress] = React.useState(0) // Stores progress
   const [cache, setCache] = React.useState<any[]>([]) // Preserves cache of metadata across tabs
   const [flash, setFlash] = React.useState<any[]>([]) // Saves metadata in temporary flash memory
@@ -115,6 +115,11 @@ const Account: NextPage = () => {
     trigger: false
   }) // Gateway modal state
   const recoveredAddress = React.useRef<string>()
+  const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
+  const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
+  const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
+  const PORT = process.env.NEXT_PUBLIC_PORT
+  const SERVER = process.env.NEXT_PUBLIC_SERVER
 
   // Handle Salt modal data return
   const handleSaltModalData = (data: string | undefined) => {
@@ -170,10 +175,6 @@ const Account: NextPage = () => {
     setGatewayModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
 
-  const _Chain_ = activeChain && (activeChain.name.toLowerCase() === 'mainnet' || activeChain.name.toLowerCase() === 'ethereum') ? '1' : '5'
-  const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
-  const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
-
   // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
   // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(source: string, caip10: string, extradata: string) {
@@ -187,6 +188,49 @@ const Account: NextPage = () => {
     let _toSign = `Requesting Signature To Generate ENS Records Signer\n\nOrigin: ${source}\nKey Type: secp256k1\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
+  }
+
+  // Function for writing IPNS Revision metadata to NameSys backend; needed for updates
+  async function writeRevision(revision: Name.Revision | undefined, gas: {}, timestamp: string, _ipfs: string) {
+    const request = {
+      ens: '',
+      controller: _Wallet_,
+      manager: '',
+      managerSignature: '',
+      revision: JSON.stringify({}),
+      chain: _Chain_,
+      ipns: CID,
+      ipfs: _ipfs,
+      gas: JSON.stringify(gas),
+      version: JSON.stringify({}),
+      timestamp: timestamp,
+      hashType: 'ownerhash'
+    }
+    try {
+      await fetch(
+        `${SERVER}:${PORT}/revision`,
+        {
+          method: "post",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status) {
+            return data.status === 'true'
+          } else {
+            return false
+          }
+        })
+    } catch (error) {
+      console.error('ERROR:', 'Failed to write Revision to CCIP2 backend')
+      setMessage('Storage Purge Failed')
+      setCrash(true)
+      setLoading(false)
+      setColor('orangered')
+    }
   }
 
   // Crash Handler
@@ -473,12 +517,12 @@ const Account: NextPage = () => {
       keygen()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, sigIPNS, keypairIPNS])
+  }, [keygen, sigIPNS, keypairIPNS, saltModalState])
 
   // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer') && exportModalState.modalData) {
-      if (['export_IPNS', 'export_HTTP'].includes(choice)) {
+    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairSigner[0] && !keypairSigner[1] && keypairIPNS[0] && keypairIPNS[1] && !choice.endsWith('_Signer')) {
+      if (['export_IPNS', 'export_HTTP'].includes(choice) && exportModalState.modalData) {
         setChoice('export_Signer')
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
@@ -512,11 +556,12 @@ const Account: NextPage = () => {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
+        
         if (choice === 'export_Signer') {
           // Sign S2 if export is requested
           const __keypair = await KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
           setKeypairSigner(__keypair[1])
-        } else if (choice === 'ownerhash_Signer') {
+        } else if (choice.startsWith('ownerhash')) {
           // Don't sign S2
           setKeypairSigner(['0x', '0x'])
         }
@@ -573,9 +618,9 @@ const Account: NextPage = () => {
 
   // Handle wallet change by the user
   React.useEffect(() => {
-    if (!finish && !success && process && activeTab === 'OWNER') { // Prohibit wallet change when names are loading
+    if (!finish && !success && inProcess && activeTab === 'OWNER') { // Prohibit wallet change when names are loading
       setMessage('Loading Names')
-    } else if (!finish && !success && !process) { // Print message on load
+    } else if (!finish && !success && !inProcess) { // Print message on load
       setMessage('Failed to Fetch')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -622,7 +667,7 @@ const Account: NextPage = () => {
                   'name': allTokens[i].title.split('.eth')[0],
                   'migrated': _Resolver?.address === ccip2Contract ? '1/2' : '0'
                 })
-                setProcess(allTokens[i].title)
+                setInProcess(allTokens[i].title)
                 _Recordhash_ = await contract.getRecordhash(ethers.utils.namehash(allTokens[i].title))
                 if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ === _Ownerhash_)) {
                   __Recordhash = false
@@ -863,7 +908,7 @@ const Account: NextPage = () => {
     setMeta([])
     setLoading(true)
     setIsSearch(true)
-    setProcess(query)
+    setInProcess(query)
     setQuery(query)
     setEmpty(false)
   }
@@ -878,6 +923,12 @@ const Account: NextPage = () => {
 
   // Handles setting Ownerhash after Transaction
   React.useEffect(() => {
+    if (txSuccess1of2 && isSetOwnerhashSuccess) {
+      const purge = async () => {
+        await writeRevision(undefined, {}, '', '')
+      }
+      purge()
+    }
     handleMeta(txSuccess1of2, isSetOwnerhashSuccess, flash, CID)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSuccess1of2, isSetOwnerhashSuccess, flash, CID])

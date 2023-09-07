@@ -442,6 +442,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
+  // Functions for <Elements>
+  function multiEdit(_item: any) {
+    return !['resolver', 'storage'].includes(_item.type) && states.length > 1 && !states.includes('resolver') && !states.includes('storage')
+  }
+  function isDisabled(_item: any) {
+    return constants.blocked.includes(_item.type) ||
+    !list[_item.key].active ||
+    !legit[_item.type] ||
+    _item.state ||
+    !_Wallet_ ||
+    !managers.includes(String(_Wallet_)) ||
+    (!['resolver', 'storage'].includes(_item.type) && newValues === constants.EMPTY_STRING_RECORDS())
+  }
+
   /// Keys & Signature Definitions
   /* K_SIGNER = Generated secp256k1 Keypair 
    * K_WALLET = Wallet secp256k1 Keypair 
@@ -692,6 +706,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setContenthash(response)
         }
+        
         getAvatar(resolver)
       })
       .catch(() => {
@@ -777,8 +792,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           }
           setHashIPFS(_IPFS._value.split('/')[2])
+          console.log(_IPFS, _history)
           if (_history.ownerstamp.length >= 1) {
-            if (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
+            if (_IPFS._sequence && _history.timestamp.revision && Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
               if (_history.revision.contenthash) {
                 setContenthash(_history.contenthash)
               } else {
@@ -1416,7 +1432,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     } else {
       if (write && hashType === 'gateway') {
         setGoodSalt(true)
-        setCID('gateway')
+        setCID(recordhash || ownerhash)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1639,7 +1655,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // Handle Signature S_APPROVE(K_WALLET)
     if (write && !onChainManager && !sigApproved && !constants.isEmpty(signatures)) {
       if (hashType !== 'gateway') {
-        setProcessCount(2)
+        setProcessCount(3)
       } else {
         setProcessCount(3)
       }
@@ -1900,8 +1916,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Handles setting IPNS as Recordhash after Transaction 2 
   React.useEffect(() => {
     if (isSetRecordhashSuccess && txSuccess2of3 && CID) {
-      setRecordhash(`ipns://${CID}`)
-      setMessage(['Transaction Confirmed', '1'])
+      const purge = async () => {
+        await writeRevision(undefined, {}, '', '')
+        setRecordhash(`ipns://${CID}`)
+        setMessage(['Transaction Confirmed', '1'])
+      }
+      purge()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSetRecordhashSuccess, txSuccess2of3, CID])
@@ -2379,43 +2399,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </span>
                               )}
                             { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && recordhash === ownerhash && ownerhash !== constants.defaultGateway && (
+                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon('gpp_good'),
                                       setColor(item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Gateway' : 'Custom Gateway') : 'IPNS'}</span> is set as <span style="color: cyan">Ownerhash</span></span>`)
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as <span style="color: cyan">Ownerhash</span></span>`)
                                   }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Gateway Is Ownerhash' : 'Custom Gateway Is Ownerhash') : 'IPNS Ownerhash Is Set'}`}
+                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage Is Ownerhash' : 'Custom Gateway Is Ownerhash') : 'IPNS Ownerhash Is Set'}`}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan')
-                                    }}
-                                  >
-                                    gpp_good
-                                  </div>
-                                </button>
-                              )}
-                            { // Set Badge if Resolver is migrated and Ownerhash = Recordhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && ownerhash === constants.defaultGateway && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : 'yellow'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span><span style="color: cyan">Default Gateway</span> is set as Storage</span>`)
-                                  }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : 'Default Gateway Is Set'}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'lime' : 'yellow'
+                                      color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'lime'))
                                     }}
                                   >
                                     gpp_good
@@ -2423,21 +2421,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </button>
                               )}
                             { // Set Badge if Resolver is migrated and Recordhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (recordhash && recordhash !== constants.defaultGateway) && (
+                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && recordhash && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : 'lime'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Custom Gateway' : 'IPNS'}</span> is set as Recordhash<span>`)
+                                      setColor(item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime')),
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span><span style="color: cyan">${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as Recordhash<span>`)
                                   }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : 'Recordhash Is Set'}
+                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : (`${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'Recordhash'} Is Set`)}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: item.type === 'resolver' ? 'lime' : 'lime',
+                                      color: item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime'),
                                       marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                     }}
                                   >
@@ -2445,40 +2443,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </div>
                                 </button>
                               )}
-                            { // Set Badge if Resolver is migrated and no custom Recordhash or Ownerhash or Gateway is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && (recordhash && recordhash === constants.defaultGateway) && !ownerhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon(item.type === 'resolver' ? 'gpp_good' : 'gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'green' : 'yellow'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span style="color: cyan">Default Storage</span> <span style="color: orange">is in use</span>`)
-                                  }}
-                                  data-tooltip={item.type === 'storage' ? ' Default Storage In Use' : 'Resolver Is Migrated'}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'lime' : 'yellow',
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    {item.type === 'resolver' ? 'gpp_good' : 'gpp_good'}
-                                  </div>
-                                </button>
-                              )}
                             { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (!recordhash || recordhash === constants.defaultGateway) && !ownerhash && (
+                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
                                       setColor('orangered'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span><span style="color: cyan">Storage</span> <span style="color: orange">not Set</span></span>')
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span>Resolver is <span style="color: orange">not Migrated</span><span>')
                                   }}
-                                  data-tooltip={item.type === 'storage' ? 'Storage Not Set' : 'Resolver Not Migrated'}
+                                  data-tooltip={item.type === 'storage' ? 'Resolver Not Migrated' : 'Resolver Not Migrated'}
                                 >
                                   <div
                                     className="material-icons smol"
@@ -2492,21 +2467,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 </button>
                               )}
                             { // Resolver is not migrated but Recordhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && ((recordhash && recordhash !== constants.defaultGateway) || ownerhash) && (
+                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                                      setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : (ownerhash && managers.includes(_Wallet_ || '0') ? 'cyan' : 'cyan'))),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set</span></span>`))
+                                      setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue')),
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set as Recordhash</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set as Ownerhash</span></span>`))
                                   }}
-                                  data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists`}
+                                  data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists as Recordhash` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists as Ownerhash`}
                                 >
                                   <div
                                     className="material-icons smol"
                                     style={{
-                                      color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'cyan'),
+                                      color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue'),
                                       marginLeft: item.type === 'resolver' ? '5px' : '5px'
                                     }}
                                   >
@@ -2630,22 +2605,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           <button
                             className="button"
                             hidden={
-                              !['resolver', 'storage'].includes(item.type) && states.length > 1 && !states.includes('resolver') && !states.includes('storage')
+                              item.type === 'resolver' && isDisabled(item)
                             }
                             disabled={
-                              constants.blocked.includes(item.type) ||
-                              !list[item.key].active ||
-                              !legit[item.type] ||
-                              item.state ||
-                              !_Wallet_ ||
-                              !managers.includes(String(_Wallet_)) ||
-                              (!['resolver', 'storage'].includes(item.type) && newValues === constants.EMPTY_STRING_RECORDS())
+                              isDisabled(item)
                             }
                             style={{
                               alignSelf: 'flex-end',
                               height: '25px',
                               width: 'auto',
                               marginBottom: '6px',
+                              background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
                             }}
                             onClick={() => {
                               setTrigger(item.type),
@@ -2658,10 +2628,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             <div
                               className="flex-sans-direction"
                               style={{
-                                fontSize: '13px'
+                                fontSize: '13px',
+                                color: ['resolver', 'storage'].includes(item.type)  ? 'white' : (!legit[item.type] ? 'grey' : (states.length > 1 ? 'lime' : 'white'))
                               }}
                             >
-                              {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
+                              {multiEdit(item) ? '' : item.label}&nbsp;
+                              <span 
+                                className="material-icons smoller"
+                              >
+                                {multiEdit(item) ? (legit[item.type] ? 'task_alt' : 'cancel') : 'manage_history'}
+                              </span>
                             </div>
                           </button>
                         </div>
@@ -2716,7 +2692,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     }
                     style={{
                       alignSelf: 'flex-end',
-                      height: '25px',
+                      height: '30px',
                       width: 'auto',
                       marginTop: '-3px',
                     }}
