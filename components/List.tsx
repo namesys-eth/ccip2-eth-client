@@ -105,10 +105,10 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('gpp_good'),
-                        setColor('lime'),
-                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
+                      setHelpModal(true)
+                      setIcon('gpp_good')
+                      setColor('lime')
+                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Domain-specific <span style="color: cyan">Recordhash</span> is Set</span>')
                     }}
                     data-tooltip={'Ready With IPNS Recordhash'}
                   >
@@ -126,10 +126,10 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('gpp_good'),
-                        setColor('cyan'),
-                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
+                      setHelpModal(true)
+                      setIcon('gpp_good')
+                      setColor('cyan')
+                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. Global <span style="color: cyan">Ownerhash</span> is Set</span>')
                     }}
                     data-tooltip={'Ready With IPNS Ownerhash'}
                   >
@@ -147,10 +147,10 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('gpp_good'),
-                        setColor('yellow'),
-                        setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. <span style="color: cyan">HTTP Gateway</span> is Set</span>')
+                      setHelpModal(true)
+                      setIcon('gpp_good')
+                      setColor('yellow')
+                      setHelp('<span><span style="color: lime">Ready</span> For Off-chain Use. <span style="color: cyan">HTTP Gateway</span> is Set</span>')
                     }}
                     data-tooltip={'Ready With HTTP Gateway'}
                   >
@@ -168,10 +168,10 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('gpp_good'),
-                        setColor('orange'),
-                        setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
+                      setHelpModal(true)
+                      setIcon('gpp_good')
+                      setColor('orange')
+                      setHelp('<span>Resolver is <span style="color: lime">migrated</span> but <span style="color: cyan">Storage</span> is <span style="color: orange">not Set</span></span>')
                     }}
                     data-tooltip={'Using Default Gateway'}
                   >
@@ -189,10 +189,10 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('gpp_maybe'),
-                        setColor('orangered'),
-                        setHelp('<span>Resolver is <span style="color: orange">not migrated</span>. Please <span style="color: cyan">MIGRATE</span> to enable off-chain Records</span>')
+                      setHelpModal(true)
+                      setIcon('gpp_maybe')
+                      setColor('orangered')
+                      setHelp('<span>Resolver is <span style="color: orange">not migrated</span>. Please <span style="color: cyan">MIGRATE</span> to enable off-chain Records</span>')
                     }}
                     data-tooltip={'Resolver Not Migrated'}
                   >
@@ -259,7 +259,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                   width: '40px'
                 }}
                 onClick={() => onItemClickStealth(item.name + '.eth')}
-                disabled={ ['0'].includes(item.migrated) }
+                disabled={['0'].includes(item.migrated) || label === "view"}
                 data-tooltip={`Stealth Payments`}
               >
                 <div
@@ -273,7 +273,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                       fontWeight: '700'
                     }}
                   >
-                    {label === "view" ? 'visibility' : 'account_balance_wallet'}
+                    {label === "view" ? 'account_balance_wallet' : 'account_balance_wallet'}
                   </span>
                 </div>
               </button>
@@ -299,7 +299,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                       fontWeight: '700'
                     }}
                   >
-                    {label === "view" ? 'visibility' : 'edit'}
+                    {label === "view" ? 'policy' : 'edit'}
                   </span>
                 </div>
               </button>

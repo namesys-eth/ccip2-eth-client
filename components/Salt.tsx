@@ -19,7 +19,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
 
-  React.useEffect(() => {
+  React.useEffect(() => {  
     setBrowser(true)
   }, [])
 
@@ -76,7 +76,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                   marginTop: '-7.5px'
                 }}
                 onClick={() => {
-                  setHelpModal(true),
+                  setHelpModal(true)
                     setHelp('<span><span style="color: cyan">Secret identifier</span> is required to generate a secure IPNS key. <span style="color: orange">You will need it to make record updates in the future</span>. <span style="color: orangered">Please remember your choice</span></span>')
                 }}
                 data-tooltip={'Enlighten Me'}
@@ -142,7 +142,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 }}
                 disabled
                 onClick={() => {
-                  setHelpModal(true),
+                  setHelpModal(true)
                     setHelp('<span><span style="color: cyan">Username</span></span>')
                 }}
                 data-tooltip={'Username'}
@@ -197,7 +197,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 }}
                 disabled
                 onClick={() => {
-                  setHelpModal(true),
+                  setHelpModal(true)
                     setHelp('<span><span style="color: cyan">Secret IPNS identifier</span></span>')
                 }}
                 data-tooltip={'Password'}

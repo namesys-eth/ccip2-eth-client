@@ -83,7 +83,7 @@ const Account: NextPage = () => {
   const [keypairIPNS, setKeypairIPNS] = React.useState<string[]>(['', '']) // Exported IPNS keypairs [ed25519-priv,ed25519-pub]
   const [keypairSigner, setKeypairSigner] = React.useState<string[]>(['', '']) // Exported Signer keypairs [secp256k1-priv, secp256k1-pub]
   const [keyIPNS, setKeyIPNS] = React.useState('') // IPNS Encoded Key: '08011240' + privKey + pubKey
-  const [salt, setSalt] = React.useState(false) // Trigger signature for key export
+  const [saltModal, setSaltModal] = React.useState(false) // Trigger signature for key export
   const [exportKey, setExportKey] = React.useState(false) // Trigger export procedure
   const [username, setUsername] = React.useState('') // Username for salt modal
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
@@ -242,7 +242,7 @@ const Account: NextPage = () => {
     setKeypairIPNS([])
     setKeypairSigner([])
     setKeyIPNS('')
-    setSalt(false)
+    setSaltModal(false)
     setCID('')
     setLoading(false)
   }
@@ -547,7 +547,7 @@ const Account: NextPage = () => {
       } else if (!keypairSigner[0] && !keypairSigner[1] && choice === 'ownerhash_IPNS') {
         setChoice('ownerhash_Signer')
         setKeypairSigner(['0x', '0x'])
-      } 
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, keypairSigner, keypairIPNS, choice, exportModalState])
@@ -556,7 +556,7 @@ const Account: NextPage = () => {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-        
+
         if (choice === 'export_Signer') {
           // Sign S2 if export is requested
           const __keypair = await KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
@@ -587,7 +587,7 @@ const Account: NextPage = () => {
         setSigCount(0)
         setSigIPNS('')
         setSigSigner('')
-        setSalt(false)
+        setSaltModal(false)
       } else if (choice.startsWith('ownerhash')) {
         // Triggers setting Ownerhash
         setSigCount(0)
@@ -821,7 +821,7 @@ const Account: NextPage = () => {
       setConfirm(false)
       if (confirmModalState.modalData === '0') {
         setUsername(`eth:${_Wallet_}`)
-        setSalt(true)
+        setSaltModal(true)
       } else if (confirmModalState.modalData === '1') {
         setGateway(true)
       }
@@ -846,10 +846,10 @@ const Account: NextPage = () => {
       setExportKey(false)
       if (exportModalState.modalData === '0') {
         setUsername(`eth:${_Wallet_}`)
-        setSalt(true)
+        setSaltModal(true)
       } else if (['1', '2'].includes(exportModalState.modalData)) {
         setUsername('')
-        setSalt(true)
+        setSaltModal(true)
       } else {
         setUsername('0')
       }
@@ -1389,20 +1389,20 @@ const Account: NextPage = () => {
             >
               <button
                 onClick={() => {
-                  setActiveTab('OWNER'),
-                    cache.length > 0 ? setMeta(cache) : console.error('BUG'),
-                    setTokenIDLegacy(''),
-                    setTokenIDWrapper(''),
-                    setQuery(''),
-                    setSuccess(false),
-                    setManager(''),
-                    cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
-                    setErrorModal(false),
-                    setKeypairSigner([]),
-                    setKeypairIPNS([]),
-                    setKeyIPNS(''),
-                    setSigCount(0),
-                    !cache ? '' : setSuccess(true)
+                  setActiveTab('OWNER')
+                  cache.length > 0 ? setMeta(cache) : console.error('BUG')
+                  setTokenIDLegacy('')
+                  setTokenIDWrapper('')
+                  setQuery('')
+                  setSuccess(false)
+                  setManager('')
+                  cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true))
+                  setErrorModal(false)
+                  setKeypairSigner([])
+                  setKeypairIPNS([])
+                  setKeyIPNS('')
+                  setSigCount(0)
+                  !cache ? '' : setSuccess(true)
                 }}
                 className='button-header'
                 disabled={activeTab === 'OWNER' || loading}
@@ -1417,19 +1417,19 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  activeTab === 'SEARCH' ? '' : setCache(flash),
-                    setMeta([]),
-                    setActiveTab('UTILS'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setQuery(''),
-                    setErrorModal(false),
-                    setKeypairSigner([]),
-                    setKeypairIPNS([]),
-                    setKeyIPNS(''),
-                    setMessage('Please Wait'),
-                    setSigCount(0)
+                  activeTab === 'SEARCH' ? '' : setCache(flash)
+                  setMeta([])
+                  setActiveTab('UTILS')
+                  setSuccess(false)
+                  setManager('')
+                  setLoading(true)
+                  setQuery('')
+                  setErrorModal(false)
+                  setKeypairSigner([])
+                  setKeypairIPNS([])
+                  setKeyIPNS('')
+                  setMessage('Please Wait')
+                  setSigCount(0)
                 }}
                 className='button-header'
                 disabled={activeTab === 'UTILS' || loading}
@@ -1444,19 +1444,19 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  activeTab === 'UTILS' ? '' : setCache(flash),
-                    setMeta([]),
-                    setActiveTab('SEARCH'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setQuery(''),
-                    setKeypairIPNS([]),
-                    setKeypairSigner([]),
-                    setKeyIPNS(''),
-                    setErrorModal(false),
-                    setMessage('Please Wait'),
-                    setSigCount(0)
+                  activeTab === 'UTILS' ? '' : setCache(flash)
+                  setMeta([])
+                  setActiveTab('SEARCH')
+                  setSuccess(false)
+                  setManager('')
+                  setLoading(true)
+                  setQuery('')
+                  setKeypairIPNS([])
+                  setKeypairSigner([])
+                  setKeyIPNS('')
+                  setErrorModal(false)
+                  setMessage('Please Wait')
+                  setSigCount(0)
                 }}
                 className='button-header'
                 disabled={activeTab === 'SEARCH' || loading}
@@ -1599,10 +1599,10 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('info'),
-                        setColor('cyan'),
-                        setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
+                      setHelpModal(true)
+                      setIcon('info')
+                      setColor('cyan')
+                      setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
                     }}
                     data-tooltip='Enlighten me'
                   >
@@ -1686,10 +1686,10 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setHelpModal(true),
-                      setIcon('info'),
-                      setColor('cyan'),
-                      setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
+                    setHelpModal(true)
+                    setIcon('info')
+                    setColor('cyan')
+                    setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
                   }}
                   data-tooltip='Enlighten me'
                 >
@@ -1730,10 +1730,10 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('info'),
-                        setColor('cyan'),
-                        setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
+                      setHelpModal(true)
+                      setIcon('info')
+                      setColor('cyan')
+                      setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
                     }}
                     data-tooltip='Set New Ownerhash'
                   >
@@ -1772,15 +1772,15 @@ const Account: NextPage = () => {
                     type="submit"
                     data-tooltip='Set New Ownerhash'
                     onClick={() => {
-                      setConfirm(true),
-                        setChoice('ownerhash'),
-                        setKeypairIPNS([]),
-                        setKeypairSigner([]),
-                        setKeyIPNS(''),
-                        setSigIPNS(''),
-                        setSigSigner(''),
-                        setSuccess(false),
-                        setMessage('')
+                      setConfirm(true)
+                      setChoice('ownerhash')
+                      setKeypairIPNS([])
+                      setKeypairSigner([])
+                      setKeyIPNS('')
+                      setSigIPNS('')
+                      setSigSigner('')
+                      setSuccess(false)
+                      setMessage('')
                     }}
                   >
                     <div
@@ -1854,10 +1854,10 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('info'),
-                        setColor('cyan'),
-                        setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
+                      setHelpModal(true)
+                      setIcon('info')
+                      setColor('cyan')
+                      setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
                     }}
                     data-tooltip='Export Keys'
                   >
@@ -1910,9 +1910,9 @@ const Account: NextPage = () => {
                     <button
                       className="button-empty"
                       onClick={() => {
-                        constants.copyToClipboard('export-ipns'),
-                          setColor('lime'),
-                          setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
+                        constants.copyToClipboard('export-ipns')
+                        setColor('lime')
+                        setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
                       }}
                       data-tooltip='Copy IPNS Key'
                       style={{
@@ -1973,9 +1973,9 @@ const Account: NextPage = () => {
                     <button
                       className="button-empty"
                       onClick={() => {
-                        constants.copyToClipboard('export-ccip'),
-                          setColor('lime'),
-                          setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
+                        constants.copyToClipboard('export-ccip')
+                        setColor('lime')
+                        setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
                       }}
                       data-tooltip='Copy Manager Key'
                       style={{
@@ -2036,9 +2036,9 @@ const Account: NextPage = () => {
                     <button
                       className="button-empty"
                       onClick={() => {
-                        constants.copyToClipboard('export-encoded'),
-                          setColor('lime'),
-                          setKeyIPNS('IPNS ENCODED KEY COPIED!')
+                        constants.copyToClipboard('export-encoded')
+                        setColor('lime')
+                        setKeyIPNS('IPNS ENCODED KEY COPIED!')
                       }}
                       data-tooltip='Copy Manager Key'
                       style={{
@@ -2073,14 +2073,14 @@ const Account: NextPage = () => {
                     type="submit"
                     data-tooltip='Export Keys'
                     onClick={() => {
-                      setExportKey(true),
-                        setChoice('export'),
-                        setKeypairIPNS([]),
-                        setKeypairSigner([]),
-                        setKeyIPNS(''),
-                        setSigIPNS(''),
-                        setSigSigner(''),
-                        setMessage('')
+                      setExportKey(true)
+                      setChoice('export')
+                      setKeypairIPNS([])
+                      setKeypairSigner([])
+                      setKeyIPNS('')
+                      setSigIPNS('')
+                      setSigSigner('')
+                      setMessage('')
                     }}
                   >
                     <div
@@ -2135,10 +2135,10 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setHelpModal(true),
-                      setIcon('info'),
-                      setColor('cyan'),
-                      setHelp('<span>Search for a <span style="color: cyan">Subdomain</span> or a <span style="color: cyan">Wrapped Domain</span> or a <span style="color: cyan">Legacy name that you Manage but do not Own</span></span>')
+                    setHelpModal(true)
+                    setIcon('info')
+                    setColor('cyan')
+                    setHelp('<span>Search for a <span style="color: cyan">Subdomain</span> or a <span style="color: cyan">Wrapped Domain</span> or a <span style="color: cyan">Legacy name that you Manage but do not Own</span></span>')
                   }}
                   data-tooltip='Enlighten me'
                 >
@@ -2295,8 +2295,8 @@ const Account: NextPage = () => {
             />
             <Error
               onClose={() => {
-                setCrash(false),
-                  setRecentCrash(true)
+                setCrash(false)
+                setRecentCrash(true)
               }}
               color={'red'}
               show={crash && !loading}
@@ -2306,11 +2306,11 @@ const Account: NextPage = () => {
             </Error>
             <Error
               onClose={() => {
-                setErrorModal(false),
-                  setTokenIDLegacy(''),
-                  setTokenIDWrapper(''),
-                  setQuery(''),
-                  setManager('')
+                setErrorModal(false)
+                setTokenIDLegacy('')
+                setTokenIDWrapper('')
+                setQuery('')
+                setManager('')
               }}
               color={'red'}
               show={errorModal && !isSearch && !loading}
@@ -2320,11 +2320,11 @@ const Account: NextPage = () => {
             </Error>
             <Error
               onClose={() => {
-                setErrorModal(false),
-                  setTokenIDLegacy(''),
-                  setTokenIDWrapper(''),
-                  setQuery(''),
-                  setManager('')
+                setErrorModal(false)
+                setTokenIDLegacy('')
+                setTokenIDWrapper('')
+                setQuery('')
+                setManager('')
               }}
               color={'red'}
               show={errorModal && isSearch && !loading}
@@ -2345,9 +2345,9 @@ const Account: NextPage = () => {
               handleTrigger={handleSaltTrigger}
               handleModalData={handleSaltModalData}
               onClose={() => {
-                setSalt(false)
+                setSaltModal(false)
               }}
-              show={salt}
+              show={saltModal}
             >
               {username}
             </Salt>
@@ -2357,7 +2357,7 @@ const Account: NextPage = () => {
               onClose={() => {
                 setConfirm(false)
               }}
-              show={confirm && !salt}
+              show={confirm && !saltModal}
             >
               {'0'}
             </Confirm>

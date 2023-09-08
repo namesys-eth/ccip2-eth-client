@@ -32,6 +32,7 @@ import {
   useContractRead
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
+import { func } from "prop-types"
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -71,7 +72,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [sync, setSync] = React.useState(false); // Records sync flag
   const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
   const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
+  const [email, setEmail] = React.useState(''); // Email record for ENS Domain
+  const [pubkey, setPubkey] = React.useState(''); // Pubkey record for ENS Domain
+  const [github, setGithub] = React.useState(''); // Github record for ENS Domain
+  const [url, setUrl] = React.useState(''); // URL record for ENS Domain
+  const [twitter, setTwitter] = React.useState(''); // Twitter record for ENS Domain
+  const [discord, setDiscord] = React.useState(''); // Discord record for ENS Domain
+  const [farcaster, setFarcaster] = React.useState(''); // Farcaster record for ENS Domain
+  const [nostr, setNostr] = React.useState(''); // Nostr record for ENS Domain
+  const [BTC, setBTC] = React.useState(''); // BTC address record for ENS Domain
+  const [LTC, setLTC] = React.useState(''); // LTC address record for ENS Domain
+  const [DOGE, setDOGE] = React.useState(''); // DOGE address record for ENS Domain
+  const [SOL, setSOL] = React.useState(''); // SOL address record for ENS Domain
+  const [ATOM, setATOM] = React.useState(''); // ATOM address record for ENS Domain
+  const [zonehash, setZonehash] = React.useState(''); // DNS Zonehash record for ENS Domain
+  const [thumbnail, setThumbnail] = React.useState(''); // Thumbnail from avatar
   const [recordhash, setRecordhash] = React.useState<string>(''); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<string>(''); // Ownerhash for CCIP2 Resolver
   const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
@@ -369,7 +384,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Initialises internal LIST[] object
-  function setMetadata(_recordhash: string, _addr: string, _contenthash: string, _avatar: string) {
+  function setMetadata(
+    _recordhash: string, _addr: string, _contenthash: string, _avatar: string, _pubkey: string, _email: string,
+    _github: string, _url: string, _twitter: string, _discord: string, _farcaster: string, _nostr: string,
+    _btc: string, _ltc: string, _doge: string, _sol: string, _atom: string,
+  ) {
     let _LIST = [
       {
         key: 0,
@@ -430,6 +449,162 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         label: 'Edit',
         help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
         tooltip: 'Set Contenthash'
+      },
+      {
+        key: 5,
+        header: 'Public Key',
+        type: 'pubkey',
+        value: _pubkey,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isPubkey(_pubkey) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Public Key</span></span>',
+        tooltip: 'Set Public Key'
+      },
+      {
+        key: 6,
+        header: 'Email',
+        type: 'email',
+        value: _email,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isEmail(_email) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Email</span></span>',
+        tooltip: 'Set Email Record'
+      },
+      {
+        key: 7,
+        header: 'Github',
+        type: 'github',
+        value: _github,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isGithub(_github) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Github username</span></span>',
+        tooltip: 'Set Github Record'
+      },
+      {
+        key: 8,
+        header: 'Url',
+        type: 'url',
+        value: _url,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isUrl(_url) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">URL</span></span>',
+        tooltip: 'Set URL Record'
+      },
+      {
+        key: 9,
+        header: 'Twitter',
+        type: 'twitter',
+        value: _twitter,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isTwitter(_twitter) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Twitter username</span></span>',
+        tooltip: 'Set Twitter Record'
+      },
+      {
+        key: 10,
+        header: 'Discord',
+        type: 'discord',
+        value: _discord,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isDiscord(_discord) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Discord username</span></span>',
+        tooltip: 'Set Discord Record'
+      },
+      {
+        key: 11,
+        header: 'Farcaster',
+        type: 'farcaster',
+        value: _farcaster,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isFarcaster(_farcaster) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Farcaster username</span></span>',
+        tooltip: 'Set Farcaster Record'
+      },
+      {
+        key: 12,
+        header: 'Nostr',
+        type: 'nostr',
+        value: _nostr,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isNostr(_nostr) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">Nostr username</span></span>',
+        tooltip: 'Set Discord Record'
+      },
+      {
+        key: 13,
+        header: 'Bitcoin',
+        type: 'btc',
+        value: _btc,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isBTC(_btc) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">BTC Address</span></span>',
+        tooltip: 'Set BTC Address'
+      },
+      {
+        key: 14,
+        header: 'Litecoin',
+        type: 'ltc',
+        value: _ltc,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isLTC(_ltc) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">LTC Address</span></span>',
+        tooltip: 'Set LTC Address'
+      },
+      {
+        key: 15,
+        header: 'Dogecoin',
+        type: 'doge',
+        value: _doge,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isDOGE(_doge) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">DOGE Address</span></span>',
+        tooltip: 'Set DOGE Address'
+      },
+      {
+        key: 16,
+        header: 'Solana',
+        type: 'sol',
+        value: _sol,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isSOL(_sol) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">SOL Address</span></span>',
+        tooltip: 'Set SOL Address'
+      },
+      {
+        key: 17,
+        header: 'Cosmos',
+        type: 'atom',
+        value: _atom,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: constants.isATOM(_atom) && queue > 0,
+        state: false,
+        label: 'Edit',
+        help: '<span>Set your <span style="color: cyan">ATOM Address</span></span>',
+        tooltip: 'Set ATOM Address'
       }
     ]
     concludeGet(_LIST) // Assign to LIST[]
@@ -448,12 +623,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
   function isDisabled(_item: any) {
     return constants.blocked.includes(_item.type) ||
-    !list[_item.key].active ||
-    !legit[_item.type] ||
-    _item.state ||
-    !_Wallet_ ||
-    !managers.includes(String(_Wallet_)) ||
-    (!['resolver', 'storage'].includes(_item.type) && newValues === constants.EMPTY_STRING_RECORDS())
+      !list[_item.key].active ||
+      !legit[_item.type] ||
+      _item.state ||
+      !_Wallet_ ||
+      !managers.includes(String(_Wallet_)) ||
+      (!['resolver', 'storage'].includes(_item.type) && newValues === constants.EMPTY_STRING_RECORDS())
   }
 
   /// Keys & Signature Definitions
@@ -500,7 +675,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let encoded: string
     let _value: string = ''
     let type: string = ''
-    if (key === 'avatar') {
+    if (['avatar', 'email', 'pubkey',
+      'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+      'btc', 'ltc', 'doge', 'sol', 'atom',
+      'zonehash'
+    ].includes(key)) {
       type = 'string'
       _value = value
     }
@@ -533,7 +712,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     let type: string = ''
     let _value: string = ''
-    if (key === 'avatar') {
+    if (['avatar', 'email', 'pubkey',
+      'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+      'btc', 'ltc', 'doge', 'sol', 'atom',
+      'zonehash'
+    ].includes(key)) {
       type = 'string'
       _value = _recordValue
     }
@@ -561,6 +744,61 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     } else {
       return constants.zeroAddress
+    }
+  }
+
+  // Function to set additional records
+  function setExtraRecords(key: string, value: string) {
+    if (key === 'avatar') setAvatar(value)
+    if (key === 'email') setEmail(value)
+    if (key === 'pubkey') setPubkey(value)
+    if (key === 'github') setGithub(value)
+    if (key === 'url') setUrl(value)
+    if (key === 'twitter') setTwitter(value)
+    if (key === 'discord') setDiscord(value)
+    if (key === 'farcaster') setFarcaster(value)
+    if (key === 'nostr') setNostr(value)
+    if (key === 'btc') setBTC(value)
+    if (key === 'ltc') setLTC(value)
+    if (key === 'doge') setDOGE(value)
+    if (key === 'sol') setSOL(value)
+    if (key === 'atom') setATOM(value)
+    if (key === 'zonehash') {
+      setZonehash(value)
+      setSync(true)
+    }
+  }
+
+  // Function to get additional records
+  function getExtraRecords(resolver: ethers.providers.Resolver) {
+    ['avatar', 'email', 'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr'].forEach(async (_record) => {
+      getText(resolver, _record)
+    }),
+      ['btc', 'ltc', 'doge', 'sol', 'atom'].forEach(async (_record) => {
+        getAddress(resolver, _record)
+      })
+    // Missing getPubkey() and getDns(type)
+  }
+
+  // Function to set empty records
+  function setEmptyRecords(key: string) {
+    if (key === 'avatar') setAvatar('')
+    if (key === 'email') setEmail('')
+    if (key === 'pubkey') setPubkey('')
+    if (key === 'github') setGithub('')
+    if (key === 'url') setUrl('')
+    if (key === 'twitter') setTwitter('')
+    if (key === 'discord') setDiscord('')
+    if (key === 'farcaster') setFarcaster('')
+    if (key === 'nostr') setNostr('')
+    if (key === 'btc') setBTC('')
+    if (key === 'ltc') setLTC('')
+    if (key === 'doge') setDOGE('')
+    if (key === 'sol') setSOL('')
+    if (key === 'atom') setATOM('')
+    if (key === 'zonehash') {
+      setZonehash('')
+      setSync(true)
     }
   }
 
@@ -686,7 +924,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       let gasAmount: any
       if (key === 'contenthash') {
         gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
-      } else if (key === 'avatar') {
+      } else if (['avatar', 'email', 'pubkey',
+        'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+        'btc', 'ltc', 'doge', 'sol', 'atom',
+        'zonehash'
+      ].includes(key)) {
         gasAmount = await contract.methods.setText(ethers.utils.namehash(ENS), key, value).estimateGas({ from: _Wallet_ })
       } else if (key === 'addr') {
         gasAmount = await contract.methods.setAddr(ethers.utils.namehash(ENS), value).estimateGas({ from: _Wallet_ })
@@ -697,7 +939,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return gas
   }
 
-  // Get Contenthash for ENS domain first
+  // Get Contenthash for ENS domain
   async function getContenthash(resolver: ethers.providers.Resolver) {
     await resolver.getContentHash()
       .then((response) => {
@@ -706,16 +948,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setContenthash(response)
         }
-        
-        getAvatar(resolver)
+        getAddr(resolver)
       })
       .catch(() => {
         setContenthash('')
-        getAvatar(resolver)
+        getAddr(resolver)
       })
   }
 
-  // Get Avatar for ENS domain second
+  // Get Avatar for ENS domain
   async function getAvatar(resolver: ethers.providers.Resolver) {
     await provider.getAvatar(ENS)
       .then(response => {
@@ -724,45 +965,61 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setAvatar(response)
         }
-        getAddr()
+        getAddr(resolver)
       })
       .catch(() => {
         getText(resolver, 'avatar')
       })
   }
 
-  // Get Avatar for ENS domain second
+  // Get Text records for ENS domain
   async function getText(resolver: ethers.providers.Resolver, key: string) {
     await resolver.getText(key)
       .then((response) => {
         if (!response) {
-          setAvatar('')
+          setEmptyRecords(key)
         } else {
-          setAvatar(response)
+          setExtraRecords(key, response)
         }
-        getAddr()
+        setSync(true) // Show preview prematurely
       })
       .catch(() => {
-        setAvatar('')
-        getAddr()
+        setEmptyRecords(key)
       })
   }
 
-  // Get Addr for ENS domain at last
-  async function getAddr() {
+  // Get non-ETH addresses for ENS domain
+  async function getAddress(resolver: ethers.providers.Resolver, key: string) {
+    let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
+    await resolver.getAddress(_type)
+      .then((response) => {
+        if (!response) {
+          setEmptyRecords(key)
+        } else {
+          setExtraRecords(key, response)
+        }
+        setSync(true) // Show preview prematurely
+      })
+      .catch(() => {
+        setEmptyRecords(key)
+      })
+  }
+
+  // Get Addr60 for ENS domain
+  async function getAddr(resolver: ethers.providers.Resolver) {
     await provider.resolveName(ENS)
       .then(response => {
         if (!response) {
           setAddr('')
-          setSync(true)
+          getExtraRecords(resolver)
         } else {
           setAddr(response)
-          setSync(true)
+          getExtraRecords(resolver)
         }
       })
       .catch(() => {
         setAddr('')
-        setSync(true)
+        getExtraRecords(resolver)
       })
   }
 
@@ -792,24 +1049,23 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           }
           setHashIPFS(_IPFS._value.split('/')[2])
-          console.log(_IPFS, _history)
           if (_history.ownerstamp.length >= 1) {
-            if (_IPFS._sequence && _history.timestamp.revision && Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
-              if (_history.revision.contenthash) {
-                setContenthash(_history.contenthash)
-              } else {
-                setContenthash('')
-              }
-              if (_history.revision.avatar) {
-                setAvatar(_history.avatar)
-              } else {
-                setAvatar('')
-              }
-              if (_history.revision.addr) {
-                setAddr(_history.addr)
-              } else {
-                setAddr('')
-              }
+            if ((_IPFS._sequence && _history.timestamp.revision) && (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1) && _Storage[1]) {
+              _history.revision.addr ? setAddr(_history.addr) : setAddr('')
+              _history.revision.contenthash ? setContenthash(_history.contenthash) : setContenthash('')
+              _history.revision.avatar ? setAvatar(_history.avatar) : setAvatar('')
+              _history.revision.email ? setEmail(_history.email) : setEmail('')
+              _history.revision.github ? setGithub(_history.github) : setGithub('')
+              _history.revision.url ? setUrl(_history.url) : setUrl('')
+              _history.revision.twitter ? setTwitter(_history.twitter) : setTwitter('')
+              _history.revision.discord ? setTwitter(_history.discord) : setDiscord('')
+              _history.revision.farcaster ? setFarcaster(_history.farcaster) : setFarcaster('')
+              _history.revision.nostr ? setNostr(_history.nostr) : setNostr('')
+              _history.revision.btc ? setBTC(_history.btc) : setBTC('')
+              _history.revision.ltc ? setLTC(_history.ltc) : setLTC('')
+              _history.revision.doge ? setDOGE(_history.doge) : setDOGE('')
+              _history.revision.sol ? setSOL(_history.sol) : setSOL('')
+              _history.revision.atom ? setATOM(_history.atom) : setATOM('')
               setSync(true)
             } else {
               getContenthash(_response)
@@ -824,6 +1080,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             */
           }
         } else {
+          const _addr = await refreshRecord(['addr', ''], _response, _ENS, false)
+          setAddr(_addr || '')
           const _contenthash = await refreshRecord(['contenthash', ''], _response, _ENS, false)
           setContenthash(_contenthash || '')
           let _avatar: string
@@ -832,16 +1090,41 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             _avatar = await refreshRecord(['text', 'avatar'], _response, _ENS, false)
           }
           setAvatar(_avatar || '')
-          const _addr = await refreshRecord(['addr', ''], _response, _ENS, false)
-          setAddr(_addr || '')
+          const _email = await refreshRecord(['text', 'email'], _response, _ENS, false)
+          setEmail(_email || '')
+          setPubkey('')
+          const _github = await refreshRecord(['text', 'github'], _response, _ENS, false)
+          setGithub(_github || '')
+          const _url = await refreshRecord(['text', 'url'], _response, _ENS, false)
+          setUrl(_url || '')
+          const _twitter = await refreshRecord(['text', 'twitter'], _response, _ENS, false)
+          setTwitter(_twitter || '')
+          const _discord = await refreshRecord(['text', 'discord'], _response, _ENS, false)
+          setDiscord(_discord || '')
+          const _farcaster = await refreshRecord(['text', 'farcaster'], _response, _ENS, false)
+          setFarcaster(_farcaster || '')
+          const _nostr = await refreshRecord(['text', 'nostr'], _response, _ENS, false)
+          setNostr(_nostr || '')
+          const _btc = await refreshRecord(['address', 'btc'], _response, _ENS, false)
+          setBTC(_btc || '')
+          const _ltc = await refreshRecord(['address', 'ltc'], _response, _ENS, false)
+          setLTC(_ltc || '')
+          const _doge = await refreshRecord(['address', 'doge'], _response, _ENS, false)
+          setDOGE(_doge || '')
+          const _sol = await refreshRecord(['address', 'sol'], _response, _ENS, false)
+          setSOL(_sol || '')
+          const _atom = await refreshRecord(['address', 'atom'], _response, _ENS, false)
+          setATOM(_atom || '')
           setSync(true)
         }
       } else {
         setResolveCall(_response)
         setResolver('')
-        setContenthash('')
-        setAvatar('')
         setAddr('')
+        setContenthash('')
+        setAvatar(''); setEmail(''); setPubkey('')
+        setGithub(''); setUrl(''); setTwitter(''); setDiscord(''); setFarcaster(''); setNostr('')
+        setBTC(''); setLTC(''); setDOGE(''); setSOL(''); setATOM('')
         setSync(true)
       }
     } catch (error) {
@@ -875,6 +1158,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           return _response
         }
         return ''
+      } else if (_record[0] === 'pubkey') {
+        if (_trigger) {
+          setPubkey('')
+          setRefreshedValue('')
+          setRefresh('1')
+        }
+        return ''
       } else if (_record[0] === 'contenthash') {
         const _response = await _resolver.getContentHash()
         if (_response) {
@@ -890,7 +1180,27 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         const _response = await _resolver.getText(_record[1])
         if (_response) {
           if (_trigger) {
-            setAvatar(_response)
+            if (_record[1] === 'avatar') setAvatar(_response)
+            if (_record[1] === 'email') setEmail(_response)
+            if (_record[1] === 'github') setGithub(_response)
+            if (_record[1] === 'url') setUrl(_response)
+            if (_record[1] === 'twitter') setTwitter(_response)
+            setRefreshedValue(_response)
+            setRefresh('1')
+          }
+          return _response
+        }
+        return ''
+      } else if (_record[0] === 'address') {
+        let _type = _record[1] === 'btc' ? 0 : (_record[1] === 'ltc' ? 2 : (_record[1] === 'doge' ? 3 : (_record[1] === 'sol' ? 501 : 118)))
+        const _response = await _resolver.getAddress(_type)
+        if (_response) {
+          if (_trigger) {
+            if (_record[1] === 'btc') setBTC(_response)
+            if (_record[1] === 'ltc') setLTC(_response)
+            if (_record[1] === 'doge') setDOGE(_response)
+            if (_record[1] === 'sol') setSOL(_response)
+            if (_record[1] === 'atom') setATOM(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
@@ -968,12 +1278,40 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     __THIS['resolver'] = false
     if (key === 'storage') {
       __THIS[key] = true
+    } else if (key === 'contenthash') {
+      __THIS[key] = constants.isContenthash(value)
     } else if (key === 'addr') {
       __THIS[key] = constants.isAddr(value)
     } else if (key === 'avatar') {
       __THIS[key] = constants.isAvatar(value)
-    } else if (key === 'contenthash') {
-      __THIS[key] = constants.isContenthash(value)
+    } else if (key === 'email') {
+      __THIS[key] = constants.isEmail(value)
+    } else if (key === 'pubkey') {
+      __THIS[key] = constants.isPubkey(value)
+    } else if (key === 'github') {
+      __THIS[key] = constants.isGithub(value)
+    } else if (key === 'url') {
+      __THIS[key] = constants.isUrl(value)
+    } else if (key === 'twitter') {
+      __THIS[key] = constants.isTwitter(value)
+    } else if (key === 'discord') {
+      __THIS[key] = constants.isDiscord(value)
+    } else if (key === 'farcaster') {
+      __THIS[key] = constants.isFarcaster(value)
+    } else if (key === 'nostr') {
+      __THIS[key] = constants.isEmail(value) || constants.isBTC(value)
+    } else if (key === 'btc') {
+      __THIS[key] = constants.isBTC(value)
+    } else if (key === 'ltc') {
+      __THIS[key] = constants.isLTC(value)
+    } else if (key === 'doge') {
+      __THIS[key] = constants.isDOGE(value)
+    } else if (key === 'sol') {
+      __THIS[key] = constants.isSOL(value)
+    } else if (key === 'atom') {
+      __THIS[key] = constants.isATOM(value)
+    } else if (key === 'zonehash') {
+      __THIS[key] = constants.isZonehash(value)
     } else {
       setStates(prevState => [...prevState, key])
       console.error('Error:', 'Illegal State Checkpoint')
@@ -1030,9 +1368,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         .then(data => {
           let _HISTORY = {
             type: data.response.type,
-            addr: data.response.addr,
-            avatar: data.response.avatar,
             contenthash: data.response.contenthash,
+            addr: data.response.addr,
+            email: data.response.email,
+            pubkey: data.response.pubkey,
+            avatar: data.response.avatar,
+            github: data.response.github,
+            url: data.response.url,
+            twitter: data.response.twitter,
+            discord: data.response.discord,
+            farcaster: data.response.farcaster,
+            nostr: data.response.nostr,
+            btc: data.response.btc,
+            ltc: data.response.ltc,
+            doge: data.response.doge,
+            sol: data.response.sol,
+            atom: data.response.atom,
             version: data.response.version,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
@@ -1050,6 +1401,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             setQueue(Math.round(Date.now() / 1000) - Math.max(..._Ownerstamps) - constants.waitingPeriod)
           } else if (_storage && _Ownerstamps.length > 0 && _type === 'recordhash') {
             setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
+          } else if (_type === 'gateway') {
+            setQueue(-1)
           } else {
             setQueue(1)
           }
@@ -1191,7 +1544,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (safeTrigger === '1') {
       if (trigger && !write) {
         if (trigger === 'storage') {
-          if (!confirmModalState.trigger) setConfirm(true)
           setHashType(confirmModalState.modalData === '0' ? 'recordhash' : 'gateway')
         } else {
           if (optionsModalState.trigger) {
@@ -1497,16 +1849,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (sync) {
       if (recordhash) {
-        setMetadata(recordhash, addr, contenthash, avatar)
+        setMetadata(recordhash, addr, contenthash, avatar, pubkey, email, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
       } else if (ownerhash) {
-        setMetadata(ownerhash, addr, contenthash, avatar)
+        setMetadata(ownerhash, addr, contenthash, avatar, pubkey, email, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
       } else {
-        setMetadata(recordhash, addr, contenthash, avatar)
+        setMetadata(recordhash, addr, contenthash, avatar, pubkey, email, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
       }
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sync, recordhash, ownerhash, resolver, addr, contenthash, avatar, hashType])
+  }, [sync, recordhash, ownerhash, resolver, addr, contenthash, avatar, email, pubkey, hashType,
+    github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM]) //R1
 
   // Triggers fetching history from NameSys backend
   React.useEffect(() => {
@@ -1589,7 +1942,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           if (!saltModalState.trigger) setSaltModal(true) // Start for Manager Keygen
           setKeypairIPNS(['0x', '0x'])
-        } 
+        }
         setUpdateRecords(false) // Reset
       } else {
         if (states.length > 0) {
@@ -1736,8 +2089,50 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     if (item.type === 'avatar') {
                       setAvatar(data.response.avatar)
                     }
-                    if (item.type === 'addr') {
-                      setAddr(data.response.addr)
+                    if (item.type === 'email') {
+                      setEmail(data.response.email)
+                    }
+                    if (item.type === 'pubkey') {
+                      setPubkey(data.response.pubkey)
+                    }
+                    if (item.type === 'github') {
+                      setGithub(data.response.github)
+                    }
+                    if (item.type === 'url') {
+                      setUrl(data.response.url)
+                    }
+                    if (item.type === 'twitter') {
+                      setTwitter(data.response.twitter)
+                    }
+                    if (item.type === 'discord') {
+                      setDiscord(data.response.discord)
+                    }
+                    if (item.type === 'farcaster') {
+                      setFarcaster(data.response.farcaster)
+                    }
+                    if (item.type === 'nostr') {
+                      setNostr(data.response.nostr)
+                    }
+                    if (item.type === 'btc') {
+                      setBTC(data.response.btc)
+                    }
+                    if (item.type === 'ltc') {
+                      setLTC(data.response.ltc)
+                    }
+                    if (item.type === 'doge') {
+                      setDOGE(data.response.doge)
+                    }
+                    if (item.type === 'sol') {
+                      setSOL(data.response.sol)
+                    }
+                    if (item.type === 'atom') {
+                      setATOM(data.response.atom)
+                    }
+                    if (item.type === 'zonehash') {
+                      setZonehash(data.response.zonehash)
+                    }
+                    if (item.type === 'contenthash') {
+                      setContenthash(data.response.contenthash)
                     }
                   }
                 })
@@ -2174,7 +2569,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+          background: loading ? 'none' : '#1a1110'
         }}
       >
         <StyledModalHeader>
@@ -2337,342 +2732,426 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   ETH
                 </span>
               </div>
-              <ul
+              <div
+                className="scrollable-div"
                 style={{
-                  listStyle: 'none',
-                  color: 'white',
-                  marginLeft: !isMobile ? '-5%' : '0'
+                  maxHeight: '500px',
+                  overflowY: 'scroll'
                 }}
               >
-                <div
-                  className='flex-column'
+                <ul
                   style={{
-                    paddingBottom: !isMobile ? '15px' : '5px',
+                    listStyle: 'none',
+                    color: 'white',
+                    marginLeft: !isMobile ? '-5%' : '0'
                   }}
                 >
-                  {list.map((item) => (
-                    <li
-                      key={item.key}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        width: !isMobile ? '500px' : '480px',
-                        maxWidth: !isMobile ? '95%' : '85%',
-                        paddingLeft: '5px',
-                        paddingRight: '5px'
-                      }}
-                    >
-                      <div
+                  <div
+                    className='flex-column'
+                    style={{
+                      paddingBottom: !isMobile ? '15px' : '5px',
+                      paddingTop: '10px'
+                    }}
+                  >
+                    {list.map((item) => (
+                      <li
+                        key={item.key}
                         style={{
                           display: 'flex',
-                          alignItems: 'flex-start',
-                          flexDirection: 'column'
+                          flexDirection: 'column',
+                          width: !isMobile ? '530px' : '480px',
+                          maxWidth: !isMobile ? '95%' : '85%',
+                          paddingLeft: '15px',
+                          paddingRight: '15px'
                         }}
                       >
                         <div
                           style={{
-                            marginBottom: '10px',
                             display: 'flex',
-                            justifyContent: 'space-between',
-                            width: !isMobile ? '100%' : '90%'
+                            alignItems: 'flex-start',
+                            flexDirection: 'column'
                           }}
                         >
-                          <span
+                          <div
                             style={{
-                              fontFamily: 'Spotnik',
-                              fontWeight: '700',
-                              fontSize: '15px',
-                              color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
-                              marginRight: '15px'
+                              marginBottom: '10px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              width: !isMobile ? '100%' : '90%'
                             }}
                           >
-                            { // Label Storage
-                              item.type === 'storage' && (
-                                <span>
-                                  {hashType}
-                                </span>
-                              )}
-                            { // Label+
-                              item.type !== 'storage' && (
-                                <span>
-                                  {item.header}
-                                </span>
-                              )}
-                            { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as <span style="color: cyan">Ownerhash</span></span>`)
-                                  }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage Is Ownerhash' : 'Custom Gateway Is Ownerhash') : 'IPNS Ownerhash Is Set'}`}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'lime'))
-                                    }}
-                                  >
-                                    gpp_good
-                                  </div>
-                                </button>
-                              )}
-                            { // Set Badge if Resolver is migrated and Recordhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && recordhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span><span style="color: cyan">${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as Recordhash<span>`)
-                                  }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : (`${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'Recordhash'} Is Set`)}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime'),
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    gpp_good
-                                  </div>
-                                </button>
-                              )}
-                            { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
-                                      setColor('orangered'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span>Resolver is <span style="color: orange">not Migrated</span><span>')
-                                  }}
-                                  data-tooltip={item.type === 'storage' ? 'Resolver Not Migrated' : 'Resolver Not Migrated'}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: 'orangered',
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    {item.type === 'resolver' ? 'gpp_bad' : 'cancel'}
-                                  </div>
-                                </button>
-                              )}
-                            { // Resolver is not migrated but Recordhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                                      setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set as Recordhash</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set as Ownerhash</span></span>`))
-                                  }}
-                                  data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists as Recordhash` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists as Ownerhash`}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue'),
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    {item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'}
-                                  </div>
-                                </button>
-                              )}
-
-                            { // Info Storage
-                              item.type === 'storage' && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setInfoModal(true)
-                                  }}
-                                  data-tooltip={`Click For IPFS Hash`}
-                                  disabled={!hashIPFS}
-                                >
-                                  <div
-                                    className="material-icons smoller"
-                                    style={{
-                                      color: !hashIPFS ? 'orange' : (recordhash && recordhash !== constants.defaultGateway ? 'lime' : 'cyan'),
-                                      fontSize: '15px',
-                                      marginLeft: '-5.5px'
-                                    }}
-                                  >
-                                    hub
-                                  </div>
-                                </button>
-                              )}
-
-                            { // Help icons
-                              item.type !== 'resolver' && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('info'),
-                                      setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
-                                      setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
-                                  }}
-                                  data-tooltip={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me'}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
-                                      marginLeft: item.type === 'storage' ? '-5px' : '5px'
-                                    }}
-                                  >
-                                    info_outline
-                                  </div>
-                                </button>
-                              )}
-
-                            { // Countdown
-                              !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
-                              && resolver === ccip2Contract &&
-                              (recordhash || ownerhash) && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('timer'),
-                                      setColor(queue < 0 ? 'orange' : 'lime'),
-                                      setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
-                                  }}
-                                  data-tooltip={
-                                    queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
-                                  }
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: queue < 0 ? 'orange' : 'lime',
-                                      marginLeft: '-5px'
-                                    }}
-                                  >
-                                    timer
-                                  </div>
-                                </button>
-                              )}
-
-                            { // Refresh buttons
-                              !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
-                              && resolver === ccip2Contract && _Wallet_ &&
-                              (recordhash || ownerhash) && (history.ownerstamp.length > 0) && (
-                                <button
-                                  className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
-                                  onClick={() => {
-                                    refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true),
-                                      setRefreshedItem(item.type)
-                                  }}
-                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
-                                      marginLeft: '-5px'
-                                    }}
-                                  >
-                                    sync
-                                  </div>
-                                </button>
-                              )}
-
-                            { // Updated State marker
-                              item.state && (
-                                <div
-                                  className="material-icons smol"
-                                  style={{
-                                    color: crash && sustain ? 'orangered' : 'lime',
-                                    marginLeft: '-5px'
-                                  }}
-                                >
-                                  {crash && sustain ? 'cancel' : 'task_alt'}
-                                </div>
-                              )}
-                          </span>
-                          <button
-                            className="button"
-                            hidden={
-                              item.type === 'resolver' && isDisabled(item)
-                            }
-                            disabled={
-                              isDisabled(item)
-                            }
-                            style={{
-                              alignSelf: 'flex-end',
-                              height: '25px',
-                              width: 'auto',
-                              marginBottom: '6px',
-                              background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
-                            }}
-                            onClick={() => {
-                              setTrigger(item.type),
-                                setSafeTrigger('1'),
-                                ['resolver', 'storage'].includes(item.type) ? (setOptions(true), setWrite(false)) : setWrite(true), // Trigger write for Records
-                                ['resolver', 'storage'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update edited keys
-                            }}
-                            data-tooltip={item.tooltip}
-                          >
-                            <div
-                              className="flex-sans-direction"
+                            <span
                               style={{
-                                fontSize: '13px',
-                                color: ['resolver', 'storage'].includes(item.type)  ? 'white' : (!legit[item.type] ? 'grey' : (states.length > 1 ? 'lime' : 'white'))
+                                fontFamily: 'Spotnik',
+                                fontWeight: '700',
+                                fontSize: '15px',
+                                color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
+                                marginRight: '15px'
                               }}
                             >
-                              {multiEdit(item) ? '' : item.label}&nbsp;
-                              <span 
-                                className="material-icons smoller"
+                              { // Label Storage
+                                item.type === 'storage' && (
+                                  <span>
+                                    <span
+                                      className="material-icons smol"
+                                      style={{
+                                        fontSize: '20px',
+                                        display: 'inline-block',
+                                        color: 'white'
+                                      }}
+                                    >
+                                      {'cloud_circle'}
+                                    </span>
+                                    &nbsp;
+                                    <span
+                                      style={{
+                                        position: 'relative',
+                                        top: '-2px',
+                                        left: '1px'
+                                      }}
+                                    >
+                                      {hashType}
+                                    </span>
+                                  </span>
+                                )}
+                              { // Label+
+                                item.type !== 'storage' && (
+                                  <span>
+                                    <span
+                                      className="material-icons-round smol"
+                                      style={{
+                                        fontSize: '20px',
+                                        display: 'inline-block',
+                                        color: 'white'
+                                      }}
+                                    >
+                                      {
+                                        item.type === 'storage' ? 'cloud_circle' : (
+                                          item.type === 'resolver' ? 'gavel' : (
+                                            item.type === 'avatar' ? 'portrait' : (
+                                              item.type === 'addr' ? 'account_balance_wallet' : (
+                                                item.type === 'contenthash' ? 'public' : (
+                                                  item.type === 'github' ? 'code' : (
+                                                    item.type === 'url' ? 'share' : (
+                                                      item.type === 'email' ? 'email' : (
+                                                        item.type === 'pubkey' ? 'key' : (
+                                                          item.type === 'discord' ? 'public' : (
+                                                            item.type === 'farcaster' ? 'public' : (
+                                                              item.type === 'nostr' ? 'public' : (
+                                                                item.type === 'btc' ? 'currency_bitcoin' : (
+                                                                  item.type === 'ltc' ? 'account_balance' : (
+                                                                    item.type === 'doge' ? 'account_balance' : (
+                                                                      item.type === 'sol' ? 'account_balance' : (
+                                                                        item.type === 'atom' ? 'account_balance' : (
+                                                                          item.type === 'zonehash' ? 'tag' :
+                                                                            'close'
+                                                                        )
+                                                                      )
+                                                                    )
+                                                                  )
+                                                                )
+                                                              )
+                                                            )
+                                                          )
+                                                        )
+                                                      )
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                      }
+                                    </span>
+                                    &nbsp;
+                                    <span
+                                      style={{
+                                        position: 'relative',
+                                        top: '-2px',
+                                        left: '1px'
+                                      }}
+                                    >
+                                      {item.header}
+                                    </span>
+                                  </span>
+                                )}
+                              { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
+                                ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setHelpModal(true)
+                                      setIcon('gpp_good')
+                                      setColor(item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan'))
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as <span style="color: cyan">Ownerhash</span></span>`)
+                                    }}
+                                    data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage Is Ownerhash' : 'Custom Gateway Is Ownerhash') : 'IPNS Ownerhash Is Set'}`}
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'lime'))
+                                      }}
+                                    >
+                                      gpp_good
+                                    </div>
+                                  </button>
+                                )}
+                              { // Set Badge if Resolver is migrated and Recordhash is set
+                                ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && recordhash && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setHelpModal(true)
+                                      setIcon('gpp_good')
+                                      setColor(item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime'))
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span><span style="color: cyan">${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as Recordhash<span>`)
+                                    }}
+                                    data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : (`${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'Recordhash'} Is Set`)}
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime'),
+                                        marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                      }}
+                                    >
+                                      gpp_good
+                                    </div>
+                                  </button>
+                                )}
+                              { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
+                                ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setHelpModal(true)
+                                      setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel')
+                                      setColor('orangered')
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span>Resolver is <span style="color: orange">not Migrated</span><span>')
+                                    }}
+                                    data-tooltip={item.type === 'storage' ? 'Resolver Not Migrated' : 'Resolver Not Migrated'}
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: 'orangered',
+                                        marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                      }}
+                                    >
+                                      {item.type === 'resolver' ? 'gpp_bad' : 'cancel'}
+                                    </div>
+                                  </button>
+                                )}
+                              { // Resolver is not migrated but Recordhash has been set in the past
+                                ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setHelpModal(true)
+                                      setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe')
+                                      setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue'))
+                                      setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set as Recordhash</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set as Ownerhash</span></span>`))
+                                    }}
+                                    data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists as Recordhash` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists as Ownerhash`}
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue'),
+                                        marginLeft: item.type === 'resolver' ? '5px' : '5px'
+                                      }}
+                                    >
+                                      {item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'}
+                                    </div>
+                                  </button>
+                                )}
+
+                              { // Info Storage
+                                item.type === 'storage' && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setInfoModal(true)
+                                    }}
+                                    data-tooltip={`Click For IPFS Hash`}
+                                    disabled={!hashIPFS}
+                                  >
+                                    <div
+                                      className="material-icons-round smoller"
+                                      style={{
+                                        color: !hashIPFS ? 'orange' : (recordhash && recordhash !== constants.defaultGateway ? 'lime' : 'cyan'),
+                                        fontSize: '17px',
+                                        marginLeft: '-5.5px'
+                                      }}
+                                    >
+                                      rss_feed
+                                    </div>
+                                  </button>
+                                )}
+
+                              { // Help icons
+                                item.type !== 'resolver' && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setHelpModal(true)
+                                      setIcon('info')
+                                      setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan')
+                                      setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
+                                    }}
+                                    data-tooltip={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me'}
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
+                                        marginLeft: item.type === 'storage' ? '-5px' : '5px'
+                                      }}
+                                    >
+                                      info_outline
+                                    </div>
+                                  </button>
+                                )}
+
+                              { // Countdown
+                                !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
+                                && resolver === ccip2Contract &&
+                                (recordhash || ownerhash) && (
+                                  <button
+                                    className="button-tiny"
+                                    onClick={() => {
+                                      setHelpModal(true)
+                                      setIcon('timer')
+                                      setColor(queue < 0 ? 'orange' : 'lime')
+                                      setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
+                                    }}
+                                    data-tooltip={
+                                      queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
+                                    }
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: queue < 0 ? 'orange' : 'lime',
+                                        marginLeft: '-5px'
+                                      }}
+                                    >
+                                      timer
+                                    </div>
+                                  </button>
+                                )}
+
+                              { // Refresh buttons
+                                !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
+                                && resolver === ccip2Contract && _Wallet_ &&
+                                (recordhash || ownerhash) && (history.ownerstamp.length > 0) && (
+                                  <button
+                                    className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
+                                    onClick={() => {
+                                      refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true)
+                                      setRefreshedItem(item.type)
+                                    }}
+                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
+                                  >
+                                    <div
+                                      className="material-icons smol"
+                                      style={{
+                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
+                                        marginLeft: '-5px'
+                                      }}
+                                    >
+                                      sync
+                                    </div>
+                                  </button>
+                                )}
+
+                              { // Updated State marker
+                                item.state && (
+                                  <div
+                                    className="material-icons smol"
+                                    style={{
+                                      color: crash && sustain ? 'orangered' : 'lime',
+                                      marginLeft: '-5px'
+                                    }}
+                                  >
+                                    {crash && sustain ? 'cancel' : 'task_alt'}
+                                  </div>
+                                )}
+                            </span>
+                            <button
+                              className="button"
+                              hidden={
+                                item.type === 'resolver' && isDisabled(item)
+                              }
+                              disabled={
+                                isDisabled(item)
+                              }
+                              style={{
+                                alignSelf: 'flex-end',
+                                height: '25px',
+                                width: 'auto',
+                                marginBottom: '6px',
+                                background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
+                              }}
+                              onClick={() => {
+                                setTrigger(item.type)
+                                setSafeTrigger('1')
+                                item.type === 'resolver' ? setOptions(true) : (item.type === 'storage' ? setConfirm(true) : (setWrite(true))),
+                                  ['resolver', 'storage'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
+                              }}
+                              data-tooltip={item.tooltip}
+                            >
+                              <div
+                                className="flex-sans-direction"
+                                style={{
+                                  fontSize: '13px',
+                                  color: ['resolver', 'storage'].includes(item.type) ? 'white' : (!legit[item.type] ? 'grey' : (states.length > 1 ? 'lime' : 'white'))
+                                }}
                               >
-                                {multiEdit(item) ? (legit[item.type] ? 'task_alt' : 'cancel') : 'manage_history'}
-                              </span>
-                            </div>
-                          </button>
+                                {multiEdit(item) ? '' : item.label}&nbsp;
+                                <span
+                                  className="material-icons smoller"
+                                >
+                                  {multiEdit(item) ? (legit[item.type] ? 'task_alt' : 'cancel') : 'manage_history'}
+                                </span>
+                              </div>
+                            </button>
+                          </div>
+                          <input
+                            className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
+                            id={item.key}
+                            key={item.key}
+                            placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
+                            type='text'
+                            disabled={
+                              !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
+                            }
+                            style={{
+                              background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
+                              fontFamily: 'SF Mono',
+                              fontWeight: '400',
+                              fontSize: '14px',
+                              width: '100%',
+                              wordWrap: 'break-word',
+                              textAlign: 'left',
+                              marginTop: '-10px',
+                              marginBottom: '-5px',
+                              color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
+                              cursor: 'copy'
+                            }}
+                            onChange={(e) => {
+                              setValues(item.type, e.target.value)
+                            }}
+                          />
                         </div>
-                        <input
-                          className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
-                          id={item.key}
-                          key={item.key}
-                          placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
-                          type='text'
-                          disabled={
-                            !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
-                          }
-                          style={{
-                            background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
-                            fontFamily: 'SF Mono',
-                            fontWeight: '400',
-                            fontSize: '14px',
-                            width: '100%',
-                            wordWrap: 'break-word',
-                            textAlign: 'left',
-                            marginTop: '-10px',
-                            marginBottom: '-5px',
-                            color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
-                            cursor: 'copy'
-                          }}
-                          onChange={(e) => {
-                            setValues(item.type, e.target.value)
-                          }}
-                        />
-                      </div>
-                      <hr style={{ marginTop: '5px' }}></hr>
-                    </li>
-                  ))}
-                </div>
-              </ul>
+                        <hr style={{ marginTop: '5px' }}></hr>
+                      </li>
+                    ))}
+                  </div>
+                </ul>
+              </div>
               {states.length > 1 && !states.includes('resolver') && !states.includes('storage') && (
                 <div
                   style={{
@@ -2698,9 +3177,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     }}
                     onClick={() => {
                       setWrite(true)
-                      setTrigger('records'),
-                        setSafeTrigger('1'),
-                        setWrite(true)
+                      setTrigger('records')
+                      setSafeTrigger('1')
+                      setWrite(true)
                     }}
                     data-tooltip={'Set Multiple Records in One Click'}
                   >
@@ -2741,8 +3220,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             color={'lime'}
             icon={'free_breakfast'}
             onClose={() => {
-              setGasModal(false),
-                setLoading(false)
+              setGasModal(false)
+              setLoading(false)
             }}
             show={gasModal}
           >

@@ -891,10 +891,10 @@ const Home: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
-                      setIcon('info'),
-                      setColor('cyan'),
-                      setHelp('search results for your query')
+                    setModal(true)
+                    setIcon('info')
+                    setColor('cyan')
+                    setHelp('search results for your query')
                   }}
                 >
                   <div
@@ -1012,11 +1012,11 @@ const Home: NextPage = () => {
             />
             <Error
               onClose={() => {
-                setErrorModal(false),
-                  setTokenIDLegacy(''),
-                  setTokenIDWrapper(''),
-                  setQuery(''),
-                  setManager('')
+                setErrorModal(false)
+                setTokenIDLegacy('')
+                setTokenIDWrapper('')
+                setQuery('')
+                setManager('')
               }}
               color={'red'}
               show={errorModal && searchType === 'search' && !loading}

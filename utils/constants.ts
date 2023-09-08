@@ -12,6 +12,87 @@ import iCCIP2Goerli from '../ABI/CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
 
+// Uneditable records in Preview modal
+export const forbidden = [
+  'resolver',
+]
+// Blocked records in Preview modal
+export const blocked = [
+  //'avatar',
+  //'contenthash'
+  'none'
+]
+// Record types in Preview modal
+export const typesRecords = [
+  'storage', // On-Chain Record
+  'resolver', // Exception: Not a Record type
+  // General
+  'addr',
+  'contenthash',
+  'avatar',
+  'email',
+  'pubkey',
+  // Socials
+  'github',
+  'url',
+  'twitter',
+  'discord',
+  'farcaster',
+  'nostr',
+  // Multi-addr
+  'btc',
+	'ltc',
+	'doge',
+	'sol',
+	'atom', 
+  // DNS
+  //'zonehash',
+  // Extradata
+  'revision' // Extra local history; Not a Record type
+]
+// Record types in Stealth modal
+export const typesStealth = [
+  // Stealth
+  'rsa',
+  'stealth',
+  'revision' // Extra local history; Not a Record type
+]
+// Record filenames corresponding to record types
+export const filesRecords = [
+  '', // No associated record file; Not a Record
+  '', // No associated record file; Not a Record
+  // General
+  'address/60',
+  'contenthash',
+  'text/avatar',
+  'text/email',
+  'pubkey',
+  // Socials
+  'text/github',
+  'text/url',
+  'text/twitter',
+  'text/discord',
+  'text/farcaster',
+  'text/nostr',
+  // Multi-addr
+  'address/0',
+	'address/2',
+	'address/3',
+	'address/501',
+	'address/118',
+  // DNS
+  //'dns/zonehash',
+  // Extradata
+  'revision' // No associated record file; Not a Record
+]
+// Record filenames corresponding to record types
+export const filesStealth = [
+  // Stealth
+  'text/rsa',
+  'text/stealth',
+  'revision' // No associated record file; Not a Record
+]
+
 export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
 export const signedRedirect = 'function signedRedirect(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
 export const zeroAddress = '0x' + '0'.repeat(40)
@@ -25,6 +106,17 @@ const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{55}$/
 const onionRegex = /^[a-z2-7]{16,56}$/
 const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
 const hexRegex = /^[0-9a-fA-F]+$/
+const githubRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/
+const twitterRegex = /^[A-Za-z][A-Za-z0-9_]{0,14}$/
+const zonehashRegex = /^0x[a-fA-F0-9]+$/
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+const discordRegex = /^.{3,32}#[0-9]{4}$/
+const farcasterRegex = /^[a-z0-9][a-z0-9-]{0,15}$/
+const btcRegex = /^[a-z0-9][a-z0-9-]{0,15}$/
+const ltcRegex = /^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/
+const dogeRegex = /^D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{24,33}$/
+const solRegex = /^[1-9A-HJ-NP-Za-km-z]{44}$/
+const atomRegex = /^cosmos1[a-km-zA-HJ-NP-Z1-9]{39}$/
 
 export interface MainBodyState {
   modalData: string | undefined
@@ -125,48 +217,7 @@ export const ccip2Config = [
   }
 
 ]
-// Uneditable records in Preview modal
-export const forbidden = [
-  'resolver',
-]
-// Blocked records in Preview modal
-export const blocked = [
-  //'avatar',
-  //'contenthash'
-  'none'
-]
-// Record types in Preview modal
-export const typesRecords = [
-  'storage', // On-Chain Record
-  'resolver', // Exception: Not a Record type
-  'addr',
-  'contenthash',
-  'avatar',
-  'zonehash',
-  'revision' // Extra local history; Not a Record type
-]
-// Record types in Stealth modal
-export const typesStealth = [
-  'rsa',
-  'stealth',
-  'revision' // Extra local history; Not a Record type
-]
-// Record filenames corresponding to record types
-export const filesRecords = [
-  '', // No associated record file; Not a Record
-  '', // No associated record file; Not a Record
-  'address/60',
-  'contenthash',
-  'text/avatar',
-  'dns/zonehash',
-  'revision' // No associated record file; Not a Record
-]
-// Record filenames corresponding to record types
-export const filesStealth = [
-  'text/rsa',
-  'text/stealth',
-  'revision' // No associated record file; Not a Record
-]
+
 // Overlay 
 export function showOverlay(durationInSeconds: number) {
   const overlay = document.getElementById('overlay')
@@ -248,6 +299,62 @@ export function isAddr(value: string) {
 // Check if value is a valid Avatar URL
 export function isAvatar(value: string) {
   return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
+}
+// Check if value is a valid Pubkey
+export function isPubkey(value: string) {
+  return value.length > 0
+}
+// Check if value is a valid URL
+export function isEmail(value: string) {
+  return emailRegex.test(value)
+}
+// Check if value is a valid Github username
+export function isGithub(value: string) {
+  return githubRegex.test(value)
+}
+// Check if value is a valid URL
+export function isUrl(value: string) {
+  return urlRegex.test(value)
+}
+// Check if value is a valid Twitter username
+export function isTwitter(value: string) {
+  return twitterRegex.test(value)
+}
+// Check if value is a valid Discord username
+export function isDiscord(value: string) {
+  return discordRegex.test(value)
+}
+// Check if value is a valid Farcaster username
+export function isFarcaster(value: string) {
+  return farcasterRegex.test(value)
+}
+// Check if value is a valid Nostr username
+export function isNostr(value: string) {
+  return btcRegex.test(value) || emailRegex.test(value)
+}
+// Check if value is a valid BTC address
+export function isBTC(value: string) {
+  return btcRegex.test(value)
+}
+// Check if value is a valid LTC address
+export function isLTC(value: string) {
+  return ltcRegex.test(value)
+}
+// Check if value is a valid DOGE address
+export function isDOGE(value: string) {
+  return dogeRegex.test(value)
+}
+// Check if value is a valid SOL address
+export function isSOL(value: string) {
+  return solRegex.test(value)
+}
+// Check if value is a valid ATOM address
+export function isATOM(value: string) {
+  return atomRegex.test(value)
+}
+// Check if value is a valid ATOM address
+export function isZonehash(value: string) {
+  return zonehashRegex.test(value)
 }
 // Check if value is a valid Contenthash
 export function isContenthash(value: string) {

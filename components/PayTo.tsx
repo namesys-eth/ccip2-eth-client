@@ -108,8 +108,8 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 marginLeft: '5px'
               }}
               onClick={() => {
-                setHelpModal(true),
-                  setHelp('<span>Please Specify the Requested Details To Receive Private Payment</span>')
+                setHelpModal(true)
+                setHelp('<span>Please Specify the Requested Details To Receive Private Payment</span>')
               }}
               data-tooltip={'Enlighten Me'}
             >
@@ -164,8 +164,8 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 marginTop: '0px'
               }}
               onClick={() => {
-                setHelpModal(true),
-                  setHelp('<span>ENS Of <span style="color: cyan">Sender</span></span>')
+                setHelpModal(true)
+                setHelp('<span>ENS Of <span style="color: cyan">Sender</span></span>')
               }}
               data-tooltip={'Sender'}
             >
@@ -218,8 +218,8 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 marginTop: '0px'
               }}
               onClick={() => {
-                setHelpModal(true),
-                  setHelp('<span>Private Address Of <span style="color: cyan">Receiver</span></span>')
+                setHelpModal(true)
+                setHelp('<span>Private Address Of <span style="color: cyan">Receiver</span></span>')
               }}
               data-tooltip={'Receiver'}
             >
@@ -272,8 +272,8 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
                 marginTop: '0px'
               }}
               onClick={() => {
-                setHelpModal(true),
-                  setHelp('<span>Amount To <span style="color: cyan">Receiver</span></span>')
+                setHelpModal(true)
+                setHelp('<span>Amount To <span style="color: cyan">Receiver</span></span>')
               }}
               data-tooltip={'Ether'}
             >

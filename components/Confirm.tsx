@@ -15,7 +15,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
-  
+
   React.useEffect(() => {
     setBrowser(true)
   }, [])
@@ -38,16 +38,16 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
             >
               close
             </span>
           </a>
         </StyledModalHeader>
-        {show && 
+        {show &&
           <StyledModalTitle>
-            <div 
+            <div
               className="material-icons"
               style={{
                 marginTop: '4px',
@@ -118,7 +118,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 marginLeft: '25px'
               }}
             >
-              <button 
+              <button
                 className="button-option"
                 style={{
                   height: '35px',
@@ -127,34 +127,34 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                   fontSize: '15px',
                   fontWeight: '700'
                 }}
-                onClick={() => { 
-                  handleConfirmSubmit('0') 
+                onClick={() => {
+                  handleConfirmSubmit('0')
                 }}
-                data-tooltip={ children === '0' ? 'Continue With Ownerhash' : 'Continue With Recordhash' }
+                data-tooltip={children === '0' ? 'Continue With Ownerhash' : 'Continue With Recordhash'}
               >
-                <div 
+                <div
                   className="flex-row"
                 >
-                  { children === '0' ? 'Ownerhash' : 'Recordhash' }&nbsp;<span className="material-icons chonk">hub</span>
+                  {children === '0' ? 'Ownerhash' : 'Recordhash'}&nbsp;<span className="material-icons chonk">hub</span>
                 </div>
               </button>
-              <button 
+              <button
                 className="button-tiny"
-                onClick={() => { 
-                  setHelpModal(true),
+                onClick={() => {
+                  setHelpModal(true)
                   setHelp(`<span><span style="color: cyan">${children === '0' ? 'Ownerhash' : 'Recordhash'}</span> is specific to one ${children === '0' ? 'wallet' : 'name'} and it is the <span style="color: lime">permissionless</span> and <span style="color: lime">decentralised</span> option</span>`)
                 }}
-                data-tooltip={ 'Enlighten Me' }
+                data-tooltip={'Enlighten Me'}
               >
-                <div 
+                <div
                   className="material-icons smol"
-                  style={{ 
+                  style={{
                     color: 'cyan',
                     marginLeft: '5px',
                     marginTop: '16px'
                   }}
                 >
-                  info_outline 
+                  info_outline
                 </div>
               </button>
             </div>
@@ -164,7 +164,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 marginLeft: '25px'
               }}
             >
-              <button 
+              <button
                 className="button-option"
                 style={{
                   height: '35px',
@@ -173,35 +173,35 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                   fontSize: '15px',
                   fontWeight: '700'
                 }}
-                onClick={ () => { 
+                onClick={() => {
                   handleConfirmSubmit('1')
                 }}
-                data-tooltip={ 'Continue With HTTP Gateway' }
+                data-tooltip={'Continue With HTTP Gateway'}
                 disabled={!children}
               >
-                <div 
+                <div
                   className="flex-row"
                 >
-                  { 'HTTP Gateway' }&nbsp;<span className="material-icons chonk">dns</span>
+                  {'HTTP Gateway'}&nbsp;<span className="material-icons chonk">dns</span>
                 </div>
               </button>
-              <button 
+              <button
                 className="button-tiny"
-                onClick={() => { 
-                  setHelpModal(true),
+                onClick={() => {
+                  setHelpModal(true)
                   setHelp('<span><span style="color: cyan">HTTP Gateway</span> could point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
                 }}
-                data-tooltip={ 'Continue With Gateway' }
+                data-tooltip={'Continue With Gateway'}
               >
-                <div 
+                <div
                   className="material-icons smol"
-                  style={{ 
+                  style={{
                     color: 'cyan',
                     marginLeft: '5px',
                     marginTop: '16px'
                   }}
                 >
-                  info_outline 
+                  info_outline
                 </div>
               </button>
             </div>
@@ -210,12 +210,12 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'cyan' }
-          icon={ 'info' }
+          color={'cyan'}
+          icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >
-          { help }
+          {help}
         </Help>
       </div>
     </StyledModalOverlay>

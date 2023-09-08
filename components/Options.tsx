@@ -15,7 +15,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
-  
+
   React.useEffect(() => {
     setBrowser(true)
   }, [])
@@ -50,16 +50,16 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
             >
               close
             </span>
           </a>
         </StyledModalHeader>
-        {show && 
+        {show &&
           <StyledModalTitle>
-            <div 
+            <div
               className="material-icons"
               style={{
                 marginTop: '4px',
@@ -84,7 +84,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               marginLeft: '25px'
             }}
           >
-            <button 
+            <button
               className="button-option"
               style={{
                 height: '35px',
@@ -93,33 +93,33 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontSize: '15px',
                 fontWeight: '700'
               }}
-              onClick={ handleOwnerhashSubmit }
-              data-tooltip={ children ? 'Uses Preset Global Ownerhash' : 'No Global Ownerhash Found' }
-              disabled={ !children }
+              onClick={handleOwnerhashSubmit}
+              data-tooltip={children ? 'Uses Preset Global Ownerhash' : 'No Global Ownerhash Found'}
+              disabled={!children}
             >
-              <div 
+              <div
                 className="flex-row"
               >
-                { 'Ownerhash' }&nbsp;<span className="material-icons chonk">recycling</span>
+                {'Ownerhash'}&nbsp;<span className="material-icons chonk">recycling</span>
               </div>
             </button>
-            <button 
+            <button
               className="button-tiny"
-              onClick={() => { 
-                setHelpModal(true),
+              onClick={() => {
+                setHelpModal(true)
                 setHelp('<span><span style="color: cyan">Ownerhash</span> works for all your names in a wallet and must be set in <span style="color: orange">UTILS</span>. This is a slower but cheaper option. If you prefer this option, please go to <span style="color: orange">UTILS</span> tab first and set the <span style="color: cyan">Ownerhash</span></span>')
               }}
-              data-tooltip={ 'Cheaper but Slower IPNS' }
+              data-tooltip={'Cheaper but Slower IPNS'}
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
+                style={{
                   color: 'yellow',
                   marginLeft: '5px',
                   marginTop: '21px'
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -130,7 +130,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               marginLeft: '25px'
             }}
           >
-            <button 
+            <button
               className="button-option"
               style={{
                 height: '35px',
@@ -139,32 +139,32 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontSize: '15px',
                 fontWeight: '700'
               }}
-              onClick={ handleRecordhashSubmit }
+              onClick={handleRecordhashSubmit}
               data-tooltip='Sets New On-chain Recordhash'
             >
-              <div 
+              <div
                 className="flex-row"
               >
-                { 'Recordhash' }&nbsp;<span className="material-icons chonk">create</span>
+                {'Recordhash'}&nbsp;<span className="material-icons chonk">create</span>
               </div>
             </button>
-            <button 
+            <button
               className="button-tiny"
-              onClick={() => { 
-                setHelpModal(true),
+              onClick={() => {
+                setHelpModal(true)
                 setHelp('<span><span style="color: cyan">Recordhash</span> is specific to each name and it is a faster but expensive option</span>')
               }}
-              data-tooltip={ 'Faster but Expensive IPNS' }
+              data-tooltip={'Faster but Expensive IPNS'}
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
+                style={{
                   color: 'cyan',
                   marginLeft: '5px',
                   marginTop: '16px'
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -175,7 +175,7 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               marginLeft: '25px'
             }}
           >
-            <button 
+            <button
               className="button-option"
               style={{
                 height: '35px',
@@ -184,32 +184,32 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontSize: '15px',
                 fontWeight: '700'
               }}
-              onClick={ handleGatewaySubmit }
+              onClick={handleGatewaySubmit}
               data-tooltip='Sets New On-chain Gateway'
             >
-              <div 
+              <div
                 className="flex-row"
               >
-                { 'HTTP Gateway' }&nbsp;<span className="material-icons chonk">dns</span>
+                {'HTTP Gateway'}&nbsp;<span className="material-icons chonk">dns</span>
               </div>
             </button>
-            <button 
+            <button
               className="button-tiny"
-              onClick={() => { 
-                setHelpModal(true),
+              onClick={() => {
+                setHelpModal(true)
                 setHelp('<span><span style="color: cyan">HTTP Gateway</span> can point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>')
               }}
-              data-tooltip={ 'Rapid But Centralised' }
+              data-tooltip={'Rapid But Centralised'}
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
+                style={{
                   color: 'cyan',
                   marginLeft: '5px',
                   marginTop: '16px'
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -217,12 +217,12 @@ const Options: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'cyan' }
-          icon={ 'info' }
+          color={'cyan'}
+          icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
         >
-          { help }
+          {help}
         </Help>
       </div>
     </StyledModalOverlay>

@@ -1432,6 +1432,25 @@ button:not(:disabled),
   border: var(--cui-border-width) var(--cui-border-style) var(--cui-border-color) !important;
 }
 
-/* rtl:begin:remove */
+/* For Webkit browsers like Chrome and Safari */
+.scrollable-div::-webkit-scrollbar {
+  width: 12px;  /* Width of the scrollbar */
+}
 
-/* rtl:end:remove */
+.scrollable-div::-webkit-scrollbar-track {
+  background: #f1f1f163;  /* Color of the track */
+}
+
+.scrollable-div::-webkit-scrollbar-thumb {
+  background: #ff8c56;  /* Color of the thumb */
+}
+
+.scrollable-div::-webkit-scrollbar-thumb:hover {
+  background: #ff8c56;  /* Color of the thumb on hover */
+}
+
+/* For Firefox */
+.scrollable-div {
+  scrollbar-width: thin;  /* "auto" or "thin"  */
+  scrollbar-color: #ff5100 #f1f1f150;  /* thumb and track color */
+}
