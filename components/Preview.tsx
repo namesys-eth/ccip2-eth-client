@@ -751,7 +751,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function setExtraRecords(key: string, value: string) {
     if (key === 'avatar') setAvatar(value)
     if (key === 'email') setEmail(value)
-    if (key === 'pubkey') setPubkey(value)
+    if (key === 'pubkey') {
+      setPubkey(value)
+      setSync(true)
+    }
     if (key === 'github') setGithub(value)
     if (key === 'url') setUrl(value)
     if (key === 'twitter') setTwitter(value)
@@ -763,28 +766,39 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'doge') setDOGE(value)
     if (key === 'sol') setSOL(value)
     if (key === 'atom') setATOM(value)
-    if (key === 'zonehash') {
-      setZonehash(value)
-      setSync(true)
-    }
+    if (key === 'zonehash') setZonehash(value)
   }
 
   // Function to get additional records
   function getExtraRecords(resolver: ethers.providers.Resolver) {
-    ['avatar', 'email', 'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr'].forEach(async (_record) => {
+    ['avatar'].forEach(async (_record) => {
       getText(resolver, _record)
-    }),
-      ['btc', 'ltc', 'doge', 'sol', 'atom'].forEach(async (_record) => {
-        getAddress(resolver, _record)
-      })
-    // Missing getPubkey() and getDns(type)
+    })
+    setSync(true) // Preview records prematurely after getting avatar
+    getText(resolver, 'email')
+    getText(resolver, 'pubkey')
+    getText(resolver, 'github')
+    getText(resolver, 'url')
+    getText(resolver, 'twitter')
+    getText(resolver, 'discord')
+    getText(resolver, 'farcaster')
+    getText(resolver, 'nostr')
+    getAddress(resolver, 'btc')
+    getAddress(resolver, 'ltc')
+    getAddress(resolver, 'doge')
+    getAddress(resolver, 'sol')
+    getAddress(resolver, 'atom')
+    // getDns(type)
   }
 
   // Function to set empty records
   function setEmptyRecords(key: string) {
     if (key === 'avatar') setAvatar('')
     if (key === 'email') setEmail('')
-    if (key === 'pubkey') setPubkey('')
+    if (key === 'pubkey') {
+      setPubkey('')
+      setSync(true)
+    }
     if (key === 'github') setGithub('')
     if (key === 'url') setUrl('')
     if (key === 'twitter') setTwitter('')
@@ -796,10 +810,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'doge') setDOGE('')
     if (key === 'sol') setSOL('')
     if (key === 'atom') setATOM('')
-    if (key === 'zonehash') {
-      setZonehash('')
-      setSync(true)
-    }
+    if (key === 'zonehash') setZonehash('')
   }
 
   /// Trigger Collapse
@@ -981,7 +992,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setExtraRecords(key, response)
         }
-        setSync(true) // Show preview prematurely
       })
       .catch(() => {
         setEmptyRecords(key)
@@ -998,7 +1008,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setExtraRecords(key, response)
         }
-        setSync(true) // Show preview prematurely
       })
       .catch(() => {
         setEmptyRecords(key)
@@ -1090,6 +1099,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             _avatar = await refreshRecord(['text', 'avatar'], _response, _ENS, false)
           }
           setAvatar(_avatar || '')
+          setSync(true)
           const _email = await refreshRecord(['text', 'email'], _response, _ENS, false)
           setEmail(_email || '')
           setPubkey('')
@@ -1115,7 +1125,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setSOL(_sol || '')
           const _atom = await refreshRecord(['address', 'atom'], _response, _ENS, false)
           setATOM(_atom || '')
-          setSync(true)
         }
       } else {
         setResolveCall(_response)
@@ -1849,17 +1858,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (sync) {
       if (recordhash) {
-        setMetadata(recordhash, addr, contenthash, avatar, pubkey, email, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
+        setMetadata(recordhash, addr, contenthash, avatar, pubkey, email,
+          github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
       } else if (ownerhash) {
-        setMetadata(ownerhash, addr, contenthash, avatar, pubkey, email, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
+        setMetadata(ownerhash, addr, contenthash, avatar, pubkey, email,
+          github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
       } else {
-        setMetadata(recordhash, addr, contenthash, avatar, pubkey, email, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
+        setMetadata(recordhash, addr, contenthash, avatar, pubkey, email,
+          github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
       }
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sync, recordhash, ownerhash, resolver, addr, contenthash, avatar, email, pubkey, hashType,
-    github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM]) //R1
+  }, [sync, hashType, recordhash, ownerhash, resolver, addr, contenthash, avatar, email,
+    pubkey, github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM])
 
   // Triggers fetching history from NameSys backend
   React.useEffect(() => {
@@ -2835,16 +2847,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                                     item.type === 'url' ? 'share' : (
                                                       item.type === 'email' ? 'email' : (
                                                         item.type === 'pubkey' ? 'key' : (
-                                                          item.type === 'discord' ? 'public' : (
-                                                            item.type === 'farcaster' ? 'public' : (
-                                                              item.type === 'nostr' ? 'public' : (
+                                                          item.type === 'discord' ? 'group_add' : (
+                                                            item.type === 'farcaster' ? 'people_alt' : (
+                                                              item.type === 'nostr' ? 'groups' : (
                                                                 item.type === 'btc' ? 'currency_bitcoin' : (
-                                                                  item.type === 'ltc' ? 'account_balance' : (
-                                                                    item.type === 'doge' ? 'account_balance' : (
-                                                                      item.type === 'sol' ? 'account_balance' : (
-                                                                        item.type === 'atom' ? 'account_balance' : (
+                                                                  item.type === 'ltc' ? 'currency_lira' : (
+                                                                    item.type === 'doge' ? 'pets' : (
+                                                                      item.type === 'sol' ? 'flash_on' : (
+                                                                        item.type === 'atom' ? 'font_download' : (
                                                                           item.type === 'zonehash' ? 'tag' :
-                                                                            'close'
+                                                                            'circle_notifications'
                                                                         )
                                                                       )
                                                                     )
@@ -3120,7 +3132,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </button>
                           </div>
                           <input
-                            className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
+                            className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'pubkey' ? 'inputextra___' : 'inputextra')) : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
                             id={item.key}
                             key={item.key}
                             placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}

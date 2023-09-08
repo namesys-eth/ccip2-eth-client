@@ -20,7 +20,7 @@ export const forbidden = [
 export const blocked = [
   //'avatar',
   //'contenthash'
-  'none'
+  'pubkey'
 ]
 // Record types in Preview modal
 export const typesRecords = [
@@ -112,11 +112,11 @@ const zonehashRegex = /^0x[a-fA-F0-9]+$/
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 const discordRegex = /^.{3,32}#[0-9]{4}$/
 const farcasterRegex = /^[a-z0-9][a-z0-9-]{0,15}$/
-const btcRegex = /^[a-z0-9][a-z0-9-]{0,15}$/
+const btcRegex = /^(1[a-km-zA-HJ-NP-Z1-9]{25,34})|(3[a-km-zA-HJ-NP-Z1-9]{25,34})|(bc1[a-zA-HJ-NP-Z0-9]{6,87})$/
 const ltcRegex = /^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/
 const dogeRegex = /^D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{24,33}$/
-const solRegex = /^[1-9A-HJ-NP-Za-km-z]{44}$/
-const atomRegex = /^cosmos1[a-km-zA-HJ-NP-Z1-9]{39}$/
+const solRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+const atomRegex = /^cosmos1[a-zA-Z0-9]{38}$/
 
 export interface MainBodyState {
   modalData: string | undefined
@@ -352,7 +352,7 @@ export function isSOL(value: string) {
 export function isATOM(value: string) {
   return atomRegex.test(value)
 }
-// Check if value is a valid ATOM address
+// Check if value is a valid Zonehash
 export function isZonehash(value: string) {
   return zonehashRegex.test(value)
 }

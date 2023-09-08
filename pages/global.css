@@ -198,6 +198,10 @@ input:disabled {
   color: rgba(255, 251, 0, 0.7);
 }
 
+.inputextra___::placeholder {
+  color: rgba(255, 111, 67, 0.5);
+}
+
 .icon-ens {
   align-items: center;
   justify-content: center;
