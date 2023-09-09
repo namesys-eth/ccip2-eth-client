@@ -113,7 +113,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     data-tooltip={'Ready With IPNS Recordhash'}
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'lime'
                       }}
@@ -134,7 +134,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     data-tooltip={'Ready With IPNS Ownerhash'}
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'cyan'
                       }}
@@ -155,7 +155,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     data-tooltip={'Ready With HTTP Gateway'}
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'yellow'
                       }}
@@ -176,7 +176,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     data-tooltip={'Using Default Gateway'}
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'orange'
                       }}
@@ -197,7 +197,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                     data-tooltip={'Resolver Not Migrated'}
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'orangered'
                       }}
@@ -267,7 +267,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                 >
                   { }
                   <span
-                    className="material-icons smoller"
+                    className="material-icons-round smoller"
                     style={{
                       fontSize: '25px',
                       fontWeight: '700'
@@ -293,7 +293,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                 >
                   { }
                   <span
-                    className="material-icons smoller"
+                    className="material-icons-round smoller"
                     style={{
                       fontSize: '25px',
                       fontWeight: '700'

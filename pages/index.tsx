@@ -507,8 +507,7 @@ const Home: NextPage = () => {
     <div
       className="page flex-column-sans-align"
       style={{
-        maxWidth: '100vw',
-        top: '20px'
+        maxWidth: '100vw'
       }}
     >
       {/* Avatar */}

@@ -22,6 +22,7 @@ import * as Name from 'w3name'
 import * as ed25519v2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 import * as verifier from '../utils/verifier'
+import { Utils } from "alchemy-sdk"
 import { isMobile } from 'react-device-detect'
 import {
   useAccount,
@@ -33,6 +34,7 @@ import {
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
 import { formatsByName } from '@ensdomains/address-encoder'
+import { namehash } from "viem"
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -1032,16 +1034,29 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         _ABI as AbiItem[],
         resolver.address
       )
-      await contract.methods.addr(ethers.utils.namehash(ENS), String(_type)).call()
+      let functionSignature = "addr(bytes32,uint256)"; // Multi-addr function
+      let _calldata = ethers.utils.solidityPack(
+        ["bytes4", "bytes32", "uint256"],
+        [ethers.utils.id(functionSignature).substring(0, 10), namehashLegacy, '0']
+      )
+      // @TODO
+      console.log('Calldata: ', _calldata)
+      console.log('dnsEncode():', Utils.dnsEncode(ENS))
+      await contract.methods.resolve(Utils.dnsEncode(ENS), _calldata).call()
         .then((response: any) => {
           if (!response) {
             setEmptyRecords(key)
           } else {
-            let _decoded = `0x${formatsByName[key.toUpperCase()].encoder(response.toString('hex'))}`
+            console.log(response)
+            let _response = ethers.utils.defaultAbiCoder.decode(["string"], response).toString()
+            console.log(_response)
+            let _decoded = `0x${formatsByName[key.toUpperCase()].encoder(response.toString())}`
+            console.log(_decoded)
             setExtraRecords(key, _decoded)
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.log('CCIP-Read Error:', error)
           setEmptyRecords(key)
         })
     }
@@ -2635,13 +2650,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : '#242424'
+          background: loading ? 'none' : '#121212'
         }}
       >
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
             <span
-              className="material-icons"
+              className="material-icons-round"
               style={{
                 marginTop: '7px'
               }}
@@ -2653,7 +2668,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         {ENS && loading &&
           <StyledModalTitle>
             <span
-              className="material-icons miui-small"
+              className="material-icons-round miui-small"
               style={{
                 marginTop: '4px'
               }}
@@ -2674,7 +2689,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
             <span
-              className="material-icons miui"
+              className="material-icons-round miui"
               style={{
                 marginTop: '4px'
               }}
@@ -2859,7 +2874,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 item.type === 'storage' && (
                                   <span>
                                     <span
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         fontSize: '20px',
                                         display: 'inline-block',
@@ -2955,7 +2970,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage Is Ownerhash' : 'Custom Gateway Is Ownerhash') : 'IPNS Ownerhash Is Set'}`}
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'lime'))
                                       }}
@@ -2977,7 +2992,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : (`${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'Recordhash'} Is Set`)}
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime'),
                                         marginLeft: item.type === 'resolver' ? '5px' : '5px'
@@ -3000,7 +3015,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     data-tooltip={item.type === 'storage' ? 'Resolver Not Migrated' : 'Resolver Not Migrated'}
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: 'orangered',
                                         marginLeft: item.type === 'resolver' ? '5px' : '5px'
@@ -3023,7 +3038,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists as Recordhash` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists as Ownerhash`}
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue'),
                                         marginLeft: item.type === 'resolver' ? '5px' : '5px'
@@ -3070,7 +3085,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     data-tooltip={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me'}
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
                                         marginLeft: item.type === 'storage' ? '-5px' : '5px'
@@ -3098,7 +3113,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     }
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: queue < 0 ? 'orange' : 'lime',
                                         marginLeft: '-5px'
@@ -3122,7 +3137,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
                                   >
                                     <div
-                                      className="material-icons smol"
+                                      className="material-icons-round smol"
                                       style={{
                                         color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
                                         marginLeft: '-5px'
@@ -3136,7 +3151,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               { // Updated State marker
                                 item.state && (
                                   <div
-                                    className="material-icons smol"
+                                    className="material-icons-round smol"
                                     style={{
                                       color: crash && sustain ? 'orangered' : 'lime',
                                       marginLeft: '-5px'
@@ -3147,7 +3162,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 )}
                             </span>
                             <button
-                              className="button"
+                              className={item.type === 'resolver' && resolver !== ccip2Contract && managers.includes(String(_Wallet_)) ? "button emphasis" :"button"}
                               hidden={
                                 item.type === 'resolver' && isDisabled(item)
                               }
@@ -3178,7 +3193,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               >
                                 {multiEdit(item) ? '' : item.label}&nbsp;
                                 <span
-                                  className="material-icons smoller"
+                                  className="material-icons-round smoller"
                                 >
                                   {multiEdit(item) ? (legit[item.type] ? 'task_alt' : 'cancel') : 'manage_history'}
                                 </span>
@@ -3255,7 +3270,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         fontSize: '15px'
                       }}
                     >
-                      {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                      {'Edit All'}&nbsp;<span className="material-icons-round smoller">manage_history</span>
                     </div>
                   </button>
                 </div>
@@ -3412,7 +3427,7 @@ const StyledModal = styled.div`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
-  top: 0;
+  top: -60px;
   left: 0;
   width: 100%;
   height: 100%;

@@ -389,7 +389,7 @@ const StyledModal = styled.div`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
-  top: 0;
+  top: -60px;
   left: 0;
   width: 100%;
   height: 100%;

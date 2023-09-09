@@ -77,7 +77,7 @@ export async function RSAGEN(
       signature.toLowerCase().startsWith('0x') ? signature.slice(2) : signature
     )
   )
-  let BITS = 1048
+  let BITS = 2048
   let info = `${caip10}:${username}`
   let salt = sha256(`${info}:${password ? password : ''}:${signature.slice(-64)}`)
   let hashKey = hkdf(sha256, inputKey, salt, info, 42)

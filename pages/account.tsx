@@ -1053,8 +1053,7 @@ const Account: NextPage = () => {
     <div
       className="page flex-column-sans-align"
       style={{
-        maxWidth: '100%',
-        top: '20px'
+        maxWidth: '100%'
       }}
     >
       {/* Avatar */}
@@ -1087,7 +1086,9 @@ const Account: NextPage = () => {
       <div style={{ fontFamily: 'Spotnik' }}></div>
       {/* Overlay */}
       <div id="overlay" className="overlay">
-        <div className="overlay-content overlay-content-alt">
+        <div 
+          className="overlay-content overlay-content-alt"
+        >
           <Loading
             height={75}
             width={75}
@@ -1136,7 +1137,7 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {!isMobile ? 'Home' : 'Home'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>home</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>home</span>
                 </div>
               </button>
             </div>
@@ -1167,7 +1168,7 @@ const Account: NextPage = () => {
                 className="flex-row"
               >
                 {'about'}
-                <span className="material-icons" style={{ marginLeft: '3px' }}>info</span>
+                <span className="material-icons-round" style={{ marginLeft: '3px' }}>info</span>
               </div>
             </button>
             <button
@@ -1179,7 +1180,7 @@ const Account: NextPage = () => {
               <div
                 className="flex-row"
               >
-                {'terms'}<span>&nbsp;</span><span className="material-icons">gavel</span>
+                {'terms'}<span>&nbsp;</span><span className="material-icons-round">gavel</span>
               </div>
             </button>
             {!isMobile && (
@@ -1411,7 +1412,7 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {'NAMES'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>manage_accounts</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>manage_accounts</span>
                 </div>
               </button>
               <button
@@ -1438,7 +1439,7 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {'UTILS'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
                 </div>
               </button>
               <button
@@ -1465,7 +1466,7 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {'SEARCH'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>search</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>search</span>
                 </div>
               </button>
             </div>
@@ -1596,7 +1597,7 @@ const Account: NextPage = () => {
                     Names You Manage
                   </span>
                   <button
-                    className="button-tiny"
+                    className="button-tiny emphasis-smol"
                     onClick={() => {
                       setHelpModal(true)
                       setIcon('info')
@@ -1606,9 +1607,9 @@ const Account: NextPage = () => {
                     data-tooltip='Enlighten me'
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
-                        color: 'cyan'
+                        color: 'orange'
                       }}
                     >
                       info_outline
@@ -1693,7 +1694,7 @@ const Account: NextPage = () => {
                   data-tooltip='Enlighten me'
                 >
                   <div
-                    className="material-icons smol"
+                    className="material-icons-round smol"
                     style={{
                       color: 'cyan'
                     }}
@@ -1737,7 +1738,7 @@ const Account: NextPage = () => {
                     data-tooltip='Set New Ownerhash'
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'cyan'
                       }}
@@ -1787,7 +1788,7 @@ const Account: NextPage = () => {
                     >
                       <span>{'SET'}</span>
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700',
@@ -1800,7 +1801,7 @@ const Account: NextPage = () => {
                   </button>
                   {(txSuccess1of2 || txError1of2) && !txLoading1of2 && (
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: txSuccess1of2 ? 'lime' : 'orangered',
                         marginLeft: '10px',
@@ -1813,7 +1814,7 @@ const Account: NextPage = () => {
                   )}
                   {(txSuccess2of2 || txError2of2) && !txLoading2of2 && (
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: txSuccess2of2 ? 'lime' : 'orangered',
                         marginLeft: '10px',
@@ -1861,7 +1862,7 @@ const Account: NextPage = () => {
                     data-tooltip='Export Keys'
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'cyan'
                       }}
@@ -1921,7 +1922,7 @@ const Account: NextPage = () => {
                       hidden={!keypairIPNS[0] || keypairIPNS[0] === '0x'}
                     >
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700'
@@ -1984,7 +1985,7 @@ const Account: NextPage = () => {
                       hidden={!keypairSigner[0]}
                     >
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700'
@@ -2047,7 +2048,7 @@ const Account: NextPage = () => {
                       hidden={!keyIPNS}
                     >
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700'
@@ -2087,7 +2088,7 @@ const Account: NextPage = () => {
                     >
                       <span>{'EXPORT'}</span>
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700',
@@ -2099,7 +2100,7 @@ const Account: NextPage = () => {
                     </div>
                   </button>
                   <div
-                    className="material-icons smol"
+                    className="material-icons-round smol"
                     style={{
                       color: keyIPNS || keypairIPNS[0] || keypairSigner[0] ? 'lime' : (signError ? 'orangered' : ''),
                       marginLeft: '10px',
@@ -2142,7 +2143,7 @@ const Account: NextPage = () => {
                   data-tooltip='Enlighten me'
                 >
                   <div
-                    className="material-icons smol"
+                    className="material-icons-round smol"
                     style={{
                       color: 'cyan'
                     }}
@@ -2177,7 +2178,7 @@ const Account: NextPage = () => {
                 }}
               >
                 <span
-                  className="material-icons miui-smaller"
+                  className="material-icons-round miui-smaller"
                 >
                   warning
                 </span>
@@ -2198,7 +2199,7 @@ const Account: NextPage = () => {
                 }}
               >
                 <span
-                  className="material-icons miui-smaller"
+                  className="material-icons-round miui-smaller"
                 >
                   warning
                 </span>
@@ -2225,7 +2226,7 @@ const Account: NextPage = () => {
               }}
             >
               <span
-                className="material-icons"
+                className="material-icons-round"
                 style={{
                   marginRight: '3px'
                 }}
@@ -2245,7 +2246,7 @@ const Account: NextPage = () => {
               className='flex-row'
             >
               <span
-                className="material-icons"
+                className="material-icons-round"
                 style={{
                   marginRight: '3px'
                 }}
@@ -2265,29 +2266,26 @@ const Account: NextPage = () => {
           {/* Modals */}
           <div 
             id="modal"
-            style={{
-              marginTop: '150px'
-            }}
           >
             {previewModal && (
               <Preview
-                onClose={() => setPreviewModal(false)}
-                show={previewModal}
-                _ENS_={nameToPreview}
-                chain={_Chain_}
-                handleParentTrigger={handlePreviewTrigger}
-                handleParentModalData={handlePreviewModalData}
-              />
+              onClose={() => setPreviewModal(false)}
+              show={previewModal}
+              _ENS_={nameToPreview}
+              chain={_Chain_}
+              handleParentTrigger={handlePreviewTrigger}
+              handleParentModalData={handlePreviewModalData}
+            />
             )}
             {stealthModal && (
               <Stealth
-                onClose={() => setStealthModal(false)}
-                show={stealthModal}
-                _ENS_={nameToStealth}
-                chain={_Chain_}
-                handleParentTrigger={handleStealthTrigger}
-                handleParentModalData={handleStealthModalData}
-              />
+              onClose={() => setStealthModal(false)}
+              show={stealthModal}
+              _ENS_={nameToStealth}
+              chain={_Chain_}
+              handleParentTrigger={handleStealthTrigger}
+              handleParentModalData={handleStealthModalData}
+            />
             )}
             <Faq
               onClose={() => setFaqModal(false)}

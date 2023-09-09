@@ -1848,13 +1848,13 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : '#242424'
+          background: loading ? 'none' : '#121212'
         }}
       >
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
             <span
-              className="material-icons"
+              className="material-icons-round"
               style={{
                 marginTop: '7px'
               }}
@@ -1943,7 +1943,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 marginTop: '-15px',
                 color: RSA ? 'lightgreen' : 'orange',
                 fontSize: '86px',
-                marginLeft: '2%'
+                marginLeft: '3%'
               }}
             >
               account_balance
@@ -2064,7 +2064,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               ['stealth', 'rsa'].includes(item.type) && (
                                 <span>
                                   <span
-                                    className="material-icons smol"
+                                    className="material-icons-round smol"
                                     style={{
                                       fontSize: '20px',
                                       display: 'inline-block',
@@ -2100,7 +2100,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   data-tooltip={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me'}
                                 >
                                   <div
-                                    className="material-icons smol"
+                                    className="material-icons-round smol"
                                     style={{
                                       color: constants.blocked.includes(item.type) ? 'orange' : 'cyan',
                                       marginLeft: item.type === 'storage' ? '-5px' : '5px'
@@ -2123,7 +2123,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   data-tooltip={RSA ? 'Encryption Key Set' : 'Encryption Key Missing'}
                                 >
                                   <div
-                                    className="material-icons smol"
+                                    className="material-icons-round smol"
                                     style={{
                                       color: RSA ? 'lime' : 'orangered',
                                       marginLeft: '-5px'
@@ -2150,7 +2150,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   }
                                 >
                                   <div
-                                    className="material-icons smol"
+                                    className="material-icons-round smol"
                                     style={{
                                       color: queue < 0 ? 'orange' : 'lime',
                                       marginLeft: '-5px'
@@ -2173,7 +2173,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
                                 >
                                   <div
-                                    className="material-icons smol"
+                                    className="material-icons-round smol"
                                     style={{
                                       color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
                                       marginLeft: '-5px'
@@ -2187,7 +2187,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             { // Updated State marker
                               item.state && (
                                 <div
-                                  className="material-icons smol"
+                                  className="material-icons-round smol"
                                   style={{
                                     color: crash && sustain ? 'orangered' : 'lime',
                                     marginLeft: '-5px'
@@ -2226,7 +2226,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 fontSize: '13px'
                               }}
                             >
-                              {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
+                              {item.label}&nbsp;<span className="material-icons-round smoller">manage_history</span>
                             </div>
                           </button>
                         </div>
@@ -2450,7 +2450,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 }}
                               >
                                 <span
-                                  className="material-icons"
+                                  className="material-icons-round"
                                   style={{
                                     fontSize: '22px',
                                     fontWeight: '700'
@@ -2488,7 +2488,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             fontSize: '14px'
                           }}
                         >
-                          {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons smoller">lock_open</span>
+                          {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons-round smoller">lock_open</span>
                         </div>
                       </button>
                       <button
@@ -2514,7 +2514,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             fontSize: '14px'
                           }}
                         >
-                          {'Cancel'}&nbsp;<span className="material-icons smoller">cancel</span>
+                          {'Cancel'}&nbsp;<span className="material-icons-round smoller">cancel</span>
                         </div>
                       </button>
                     </div>
@@ -2558,7 +2558,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         fontSize: '15px'
                       }}
                     >
-                      {'Edit All'}&nbsp;<span className="material-icons smoller">manage_history</span>
+                      {'Edit All'}&nbsp;<span className="material-icons-round smoller">manage_history</span>
                     </div>
                   </button>
                 </div>
@@ -2675,7 +2675,7 @@ const StyledModal = styled.div`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
-  top: 0;
+  top: -60px;
   left: 0;
   width: 100%;
   height: 100%;

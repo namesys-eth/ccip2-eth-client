@@ -1410,10 +1410,52 @@ button:not(:disabled),
   }
 }
 
+.emphasis-smol {
+  animation: blink-smol 3s linear infinite;
+}
+.emphasis-smol:hover {
+  animation: none;
+  transform: scale(1.5);
+}
+@keyframes blink-smol {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  25%, 75% {
+    opacity: 0.75;
+    transform: scale(1.25);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.emphasis {
+  animation: blink-guide 3s linear infinite;
+}
+.emphasis:hover {
+  animation: none;
+}
+@keyframes blink-guide {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  25%, 75% {
+    opacity: 0.75;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
 .blink {
   animation: blinker 1s linear infinite;
 }
-
 @keyframes blinker {
   50% {
     opacity: 0;
