@@ -317,10 +317,9 @@ const Home: NextPage = () => {
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (_OwnerLegacy_ && _ManagerLegacy_
-      && String(_OwnerLegacy_) !== constants.zeroAddress
+    if ((_OwnerWrapped_ && _ManagerLegacy_)
       && String(_ManagerLegacy_) !== constants.zeroAddress) {
-      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+      if (String(_ManagerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
           setManager(String(_OwnerWrapped_))
           setOwner(String(_OwnerWrapped_))

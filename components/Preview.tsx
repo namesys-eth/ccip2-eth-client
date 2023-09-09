@@ -32,7 +32,7 @@ import {
   useContractRead
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
-import { func } from "prop-types"
+import { formatsByName, formatsByCoinType } from '@ensdomains/address-encoder'
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -619,7 +619,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Functions for <Elements>
   function multiEdit(_item: any) {
-    return !['resolver', 'storage'].includes(_item.type) && states.length > 1 && !states.includes('resolver') && !states.includes('storage')
+    return !constants.config.includes(_item.type) && states.length > 1 && !states.includes('resolver') && !states.includes('storage')
   }
   function isDisabled(_item: any) {
     return constants.blocked.includes(_item.type) ||
@@ -628,7 +628,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       _item.state ||
       !_Wallet_ ||
       !managers.includes(String(_Wallet_)) ||
-      (!['resolver', 'storage'].includes(_item.type) && newValues === constants.EMPTY_STRING_RECORDS())
+      (!constants.config.includes(_item.type) && newValues === constants.EMPTY_STRING_RECORDS())
   }
 
   /// Keys & Signature Definitions
@@ -677,11 +677,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let type: string = ''
     if (['avatar', 'email', 'pubkey',
       'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
-      'btc', 'ltc', 'doge', 'sol', 'atom',
       'zonehash'
     ].includes(key)) {
       type = 'string'
       _value = value
+    }
+    if ([
+      'btc', 'ltc', 'doge', 'sol', 'atom'
+    ].includes(key)) {
+      type = 'bytes'
+      _value = `0x${formatsByName[key.toUpperCase()].decoder(value).toString('hex')}`
     }
     if (key === 'contenthash') {
       type = 'bytes'
@@ -714,11 +719,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _value: string = ''
     if (['avatar', 'email', 'pubkey',
       'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
-      'btc', 'ltc', 'doge', 'sol', 'atom',
       'zonehash'
     ].includes(key)) {
       type = 'string'
       _value = _recordValue
+    }
+    if ([
+      'btc', 'ltc', 'doge', 'sol', 'atom'
+    ].includes(key)) {
+      type = 'bytes'
+      _value = `0x${formatsByName[key.toUpperCase()].decoder(_recordValue).toString('hex')}`
     }
     if (key === 'contenthash') {
       type = 'bytes'
@@ -771,11 +781,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Function to get additional records
   function getExtraRecords(resolver: ethers.providers.Resolver) {
-    ['avatar'].forEach(async (_record) => {
-      getText(resolver, _record)
-    })
-    setSync(true) // Preview records prematurely after getting avatar
+    getText(resolver, 'avatar')
     getText(resolver, 'email')
+    setSync(true)
     getText(resolver, 'pubkey')
     getText(resolver, 'github')
     getText(resolver, 'url')
@@ -848,7 +856,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setLegit(constants.EMPTY_BOOL_RECORDS())
     setSaltModal(false)
     setLoading(false)
-    setQueue(1)
+    setQueue(hashType === 'gateway' ? -1 : 1)
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setSigSigner('')
@@ -937,10 +945,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
       } else if (['avatar', 'email', 'pubkey',
         'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
-        'btc', 'ltc', 'doge', 'sol', 'atom',
         'zonehash'
       ].includes(key)) {
         gasAmount = await contract.methods.setText(ethers.utils.namehash(ENS), key, value).estimateGas({ from: _Wallet_ })
+      } else if ([
+        'btc', 'ltc', 'doge', 'sol', 'atom'
+      ].includes(key)) {
+        let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
+        gasAmount = await contract.methods.setAddr(ethers.utils.namehash(ENS), _type, `0x${formatsByName[key.toUpperCase()].decoder(value).toString('hex')}`).estimateGas({ from: _Wallet_ })
       } else if (key === 'addr') {
         gasAmount = await contract.methods.setAddr(ethers.utils.namehash(ENS), value).estimateGas({ from: _Wallet_ })
       }
@@ -1834,7 +1846,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (states.length > 1) {
       let _updatedList = list.map((item) => {
-        if (!['resolver', 'storage'].includes(item.type) &&
+        if (!constants.config.includes(item.type) &&
           states.includes(item.type)
         ) {
           return {
@@ -2190,7 +2202,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         setLoading(false)
                         // Update values in the modal to new ones
                         let _updatedList = list.map((item) => {
-                          if (!['resolver', 'storage'].includes(item.type)) {
+                          if (!constants.config.includes(item.type)) {
                             let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
                             setQueue(_queue)
                             if (data.response.meta[item.type]) {
@@ -2242,8 +2254,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       setLoading(false)
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
-                        if (!['resolver', 'storage'].includes(item.type)) {
-                          let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
+                        if (!constants.config.includes(item.type)) {
+                          let _queue = 1
                           setQueue(_queue)
                           if (data.response.meta[item.type]) {
                             return {
@@ -2581,7 +2593,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : '#1a1110'
+          background: loading ? 'none' : '#242424'
         }}
       >
         <StyledModalHeader>
@@ -2889,7 +2901,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </span>
                                 )}
                               { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                                ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
+                                constants.config.includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
                                   <button
                                     className="button-tiny"
                                     onClick={() => {
@@ -2911,7 +2923,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </button>
                                 )}
                               { // Set Badge if Resolver is migrated and Recordhash is set
-                                ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && recordhash && (
+                                constants.config.includes(item.type) && resolver === ccip2Contract && recordhash && (
                                   <button
                                     className="button-tiny"
                                     onClick={() => {
@@ -2934,7 +2946,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </button>
                                 )}
                               { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                                ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
+                                constants.config.includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
                                   <button
                                     className="button-tiny"
                                     onClick={() => {
@@ -2957,7 +2969,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </button>
                                 )}
                               { // Resolver is not migrated but Recordhash has been set in the past
-                                ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
+                                constants.config.includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
                                   <button
                                     className="button-tiny"
                                     onClick={() => {
@@ -3028,7 +3040,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 )}
 
                               { // Countdown
-                                !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
+                                !constants.config.includes(item.type) && !constants.blocked.includes(item.type)
                                 && resolver === ccip2Contract &&
                                 (recordhash || ownerhash) && (
                                   <button
@@ -3056,7 +3068,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 )}
 
                               { // Refresh buttons
-                                !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
+                                !constants.config.includes(item.type) && !constants.blocked.includes(item.type)
                                 && resolver === ccip2Contract && _Wallet_ &&
                                 (recordhash || ownerhash) && (history.ownerstamp.length > 0) && (
                                   <button
@@ -3111,7 +3123,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 setTrigger(item.type)
                                 setSafeTrigger('1')
                                 item.type === 'resolver' ? setOptions(true) : (item.type === 'storage' ? setConfirm(true) : (setWrite(true))),
-                                  ['resolver', 'storage'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
+                                  constants.config.includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
                               }}
                               data-tooltip={item.tooltip}
                             >
@@ -3119,7 +3131,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 className="flex-sans-direction"
                                 style={{
                                   fontSize: '13px',
-                                  color: ['resolver', 'storage'].includes(item.type) ? 'white' : (!legit[item.type] ? 'grey' : (states.length > 1 ? 'lime' : 'white'))
+                                  color: constants.config.includes(item.type) ? 'white' : (!legit[item.type] ? 'grey' : (states.length > 1 ? 'lime' : 'white'))
                                 }}
                               >
                                 {multiEdit(item) ? '' : item.label}&nbsp;
@@ -3132,7 +3144,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             </button>
                           </div>
                           <input
-                            className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'pubkey' ? 'inputextra___' : 'inputextra')) : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
+                            className={!constants.config.includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : (constants.blocked.includes(item.type) ? 'inputextra___' : 'inputextra')) : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
                             id={item.key}
                             key={item.key}
                             placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
@@ -3141,7 +3153,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                             }
                             style={{
-                              background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
+                              background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!constants.config.includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
                               fontFamily: 'SF Mono',
                               fontWeight: '400',
                               fontSize: '14px',

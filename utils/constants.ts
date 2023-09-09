@@ -12,15 +12,22 @@ import iCCIP2Goerli from '../ABI/CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
 
+// Config records
+export const config = [
+  'resolver',
+  'storage'
+]
 // Uneditable records in Preview modal
 export const forbidden = [
   'resolver',
 ]
 // Blocked records in Preview modal
 export const blocked = [
-  //'avatar',
-  //'contenthash'
-  'pubkey'
+  'pubkey',
+  'ltc',
+  'doge',
+  'sol',
+  'atom'
 ]
 // Record types in Preview modal
 export const typesRecords = [

@@ -734,10 +734,9 @@ const Account: NextPage = () => {
   }, [getting])
 
   React.useEffect(() => {
-    if (_OwnerLegacy_ && _ManagerLegacy_
-      && String(_OwnerLegacy_) !== constants.zeroAddress
+    if ((_OwnerWrapped_ && _ManagerLegacy_)
       && String(_ManagerLegacy_) !== constants.zeroAddress) {
-      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+      if (String(_ManagerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
           setManager(String(_OwnerWrapped_))
         }
@@ -805,7 +804,7 @@ const Account: NextPage = () => {
       setEmpty(true)
       setErrorMessage('You do not have Manager permission')
       setErrorModal(true)
-    } else if (!manager && query.length > 0) {
+    } else if (manager && manager === constants.zeroAddress && query.length > 0 && !legacyManagerLoading) {
       setLoading(false)
       setSuccess(false)
       setEmpty(true)
@@ -813,7 +812,7 @@ const Account: NextPage = () => {
       setErrorModal(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
+  }, [manager, _Wallet_, query, recordhash, ownerhash, flash, legacyManagerLoading, legacyManagerError])
 
   // Sets Option between IPNS Ownerhash and HTTP Gateway
   React.useEffect(() => {
@@ -2264,7 +2263,12 @@ const Account: NextPage = () => {
             </div>
           </div>
           {/* Modals */}
-          <div id="modal">
+          <div 
+            id="modal"
+            style={{
+              marginTop: '150px'
+            }}
+          >
             {previewModal && (
               <Preview
                 onClose={() => setPreviewModal(false)}

@@ -489,7 +489,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setIcon('gpp_good')
     setColor('lime')
     setSaltModal(false)
-    setQueue(1)
+    setQueue(hashType === 'gateway' ? -1 : 1)
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setKeypairRSA(undefined)
@@ -818,6 +818,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             setQueue(Math.round(Date.now() / 1000) - Math.max(..._Ownerstamps) - constants.waitingPeriod)
           } else if (_storage && _Ownerstamps.length > 0 && _type === 'recordhash') {
             setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
+          } else if (_type === 'gateway') {
+            setQueue(-1)
           } else {
             setQueue(1)
           }
@@ -1846,7 +1848,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : 'linear-gradient(180deg, rgba(66,46,40,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,1) 100%)'
+          background: loading ? 'none' : '#242424'
         }}
       >
         <StyledModalHeader>
@@ -1940,7 +1942,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               style={{
                 marginTop: '-15px',
                 color: RSA ? 'lightgreen' : 'orange',
-                fontSize: '86px'
+                fontSize: '86px',
+                marginLeft: '2%'
               }}
             >
               account_balance
@@ -1954,7 +1957,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             >
               <div
                 style={{
-                  marginTop: '-25px'
+                  marginTop: '-25px',
+                  marginLeft: '2%'
                 }}
               >
                 <span
@@ -1970,7 +1974,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               <div
                 style={{
                   marginBottom: '15px',
-                  marginTop: '5px'
+                  marginTop: '5px',
+                  marginLeft: '2%'
                 }}
               >
                 <span
@@ -2058,7 +2063,28 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             { // Label+
                               ['stealth', 'rsa'].includes(item.type) && (
                                 <span>
-                                  {item.header}
+                                  <span
+                                    className="material-icons smol"
+                                    style={{
+                                      fontSize: '20px',
+                                      display: 'inline-block',
+                                      color: 'white'
+                                    }}
+                                  >
+                                    {
+                                      item.type === 'stealth' ? 'lock' : 'vpn_key'
+                                    }
+                                  </span>
+                                  &nbsp;
+                                  <span
+                                    style={{
+                                      position: 'relative',
+                                      top: '-2px',
+                                      left: '1px'
+                                    }}
+                                  >
+                                    {item.type}
+                                  </span>
                                 </span>
                               )}
                             { // Help icons
