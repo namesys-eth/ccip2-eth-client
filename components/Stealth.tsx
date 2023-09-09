@@ -2663,6 +2663,8 @@ const StyledModalHeader = styled.div`
 `
 
 const StyledModal = styled.div`
+  position: fixed;
+  top: 60px; 
   width: auto;
   min-width: 400px;
   border-radius: 6px;

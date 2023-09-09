@@ -24,7 +24,11 @@ export const forbidden = [
 ]
 // Blocked records in Preview modal
 export const blocked = [
-  'pubkey'
+  'pubkey',
+  'ltc',
+  'doge',
+  'sol',
+  'atom'
 ]
 // Record types in Preview modal
 export const typesRecords = [

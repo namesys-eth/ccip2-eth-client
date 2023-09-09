@@ -1040,8 +1040,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         [ethers.utils.id(functionSignature).substring(0, 10), namehashLegacy, '0']
       )
       // @TODO
-      console.log('Calldata: ', _calldata)
-      console.log('dnsEncode():', Utils.dnsEncode(ENS))
+      //console.log('Calldata: ', _calldata)
+      //console.log('dnsEncode():', Utils.dnsEncode(ENS))
       await contract.methods.resolve(Utils.dnsEncode(ENS), _calldata).call()
         .then((response: any) => {
           if (!response) {
@@ -1055,7 +1055,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             setExtraRecords(key, _decoded)
           }
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.log('CCIP-Read Error:', error)
           setEmptyRecords(key)
         })
@@ -3082,7 +3082,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan')
                                       setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
                                     }}
-                                    data-tooltip={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me'}
+                                    data-tooltip={constants.blocked.includes(item.type) ? 'Coming Soon' : 'Enlighten Me'}
                                   >
                                     <div
                                       className="material-icons-round smol"
@@ -3204,7 +3204,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             className={!constants.config.includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : (constants.blocked.includes(item.type) ? 'inputextra___' : 'inputextra')) : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
                             id={item.key}
                             key={item.key}
-                            placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
+                            placeholder={constants.blocked.includes(item.type) ? 'Coming Soon' : item.value}
                             type='text'
                             disabled={
                               !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
