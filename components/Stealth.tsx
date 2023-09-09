@@ -2603,7 +2603,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }}
             show={saltModal}
           >
-            {ENS}
+            {[ENS, hashType]}
           </Salt>
           <Error
             onClose={() => {

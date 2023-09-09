@@ -11,6 +11,7 @@ import iEnsWrapperMainnet from '../ABI/ENSWrapperMainnet.json'
 import iCCIP2Goerli from '../ABI/CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
+import axios from 'axios'
 
 // Config records
 export const config = [
@@ -23,11 +24,7 @@ export const forbidden = [
 ]
 // Blocked records in Preview modal
 export const blocked = [
-  'pubkey',
-  'ltc',
-  'doge',
-  'sol',
-  'atom'
+  'pubkey'
 ]
 // Record types in Preview modal
 export const typesRecords = [
@@ -516,3 +513,23 @@ export function randomString(length: number) {
   }
   return result;
 }
+
+// Get ABI
+export async function getABI(contractAddress: string): Promise<any | null> {
+  try {
+    const url = `https://api${network === 'goerli' ? '-goerli' : ''}.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${process.env.NEXT_PUBLIC_ETHERSCAN_KEY}`
+    const response = await axios.get(url)
+    const data = response.data
+
+    if (data.status === '1' && data.result) {
+      return JSON.parse(data.result)
+    } else {
+      console.error('Failed to get ABI:', data.message)
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching ABI:', error)
+    return null;
+  }
+}
+

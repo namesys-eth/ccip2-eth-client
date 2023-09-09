@@ -3,11 +3,12 @@ import { isMobile } from 'react-device-detect'
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import Help from '../components/Help'
+import { hashTypedData } from 'viem'
 
 interface ModalProps {
   show: boolean
   onClose: any
-  children: any
+  children: string[]
   handleModalData: (data: string | undefined) => void
   handleTrigger: (data: boolean) => void
 }
@@ -33,7 +34,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   }
 
   const handleSubmit = () => {
-    handleModalData(children ? password : `${username}:${password}`)
+    handleModalData((children && children.length > 0) ? password : `${username}:${password}`)
     handleTrigger(true)
     setPassword('')
     setUsername('')
@@ -69,7 +70,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 marginTop: '5px'
               }}
             >
-              <span style={{ fontSize: '16px', fontWeight: '700' }}>enter secret IPNS key identifier</span>
+              <span style={{ fontSize: '16px', fontWeight: '700' }}>{`Enter Secret Key Identifier`}</span>
               <button
                 className="button-tiny"
                 style={{
@@ -77,7 +78,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 }}
                 onClick={() => {
                   setHelpModal(true)
-                    setHelp('<span><span style="color: cyan">Secret identifier</span> is required to generate a secure IPNS key. <span style="color: orange">You will need it to make record updates in the future</span>. <span style="color: orangered">Please remember your choice</span></span>')
+                    setHelp('<span><span style="color: cyan">Secret identifier</span> or <span style="color: cyan">Password</span> is an <span style="color: orange">Optional Value</span> required to generate a secure <span style="color: cyan">IPNS key</span> or the <span style="color: cyan">Record Signer key</span> or <span style="color: cyan">RSA Encryption key</span>.<br></br><span style="color: orange">You will need it to update your records in the future</span>. <span style="color: orangered">Please remember your choice</span>.<br></br>Your provided password will apply to <span style="color: orange">all three Key types</span>.</span>')
                 }}
                 data-tooltip={'Enlighten Me'}
               >
@@ -110,10 +111,10 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               <input
                 id='username'
                 key='0'
-                placeholder='username (ENS Domain)'
+                placeholder='username (.eth domain)'
                 type='text'
-                value={username || children}
-                readOnly={children ? true : false}
+                value={username || (children && children.length > 0 ? children[0] : '')}
+                readOnly={(children && children.length > 0) ? true : false}
                 onChange={(e) => {
                   setUsername(e.target.value)
                 }}
@@ -130,7 +131,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                   width: '150%',
                   wordWrap: 'break-word',
                   textAlign: 'left',
-                  color: username ? (username.endsWith('.eth') ? 'lime' : 'white') : (children ? 'cyan' : 'rgb(255, 255, 255, 0.6)'),
+                  color: username ? (username.endsWith('.eth') ? 'lime' : 'white') : ((children && children.length > 0) ? 'cyan' : 'rgb(255, 255, 255, 0.6)'),
                   cursor: 'copy',
                   marginBottom: '10px'
                 }}
@@ -167,7 +168,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
               <input
                 id='password'
                 key='1'
-                placeholder='password (IPNS Key Identifier)'
+                placeholder='password (optional)'
                 type='password'
                 value={password}
                 onChange={(e) => {

@@ -2353,7 +2353,7 @@ const Account: NextPage = () => {
               }}
               show={saltModal}
             >
-              {username}
+              {[username, 'ownerhash']}
             </Salt>
             <Confirm
               handleTrigger={handleConfirmTrigger}

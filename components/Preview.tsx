@@ -32,7 +32,7 @@ import {
   useContractRead
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
-import { formatsByName, formatsByCoinType } from '@ensdomains/address-encoder'
+import { formatsByName } from '@ensdomains/address-encoder'
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -1013,7 +1013,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Get non-ETH addresses for ENS domain
   async function getAddress(resolver: ethers.providers.Resolver, key: string) {
     let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
-    await resolver.getAddress(_type)
+    if (key === 'btc') { // Use Ethers.JS for BTC
+      await resolver.getAddress(_type)
       .then((response) => {
         if (!response) {
           setEmptyRecords(key)
@@ -1024,6 +1025,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       .catch(() => {
         setEmptyRecords(key)
       })
+    } else { // Manual access for other coins
+      let _ABI = await constants.getABI(resolver.address)
+      /// @TODO
+      const contract = new web3.eth.Contract(
+        _ABI as AbiItem[],
+        resolver.address
+      )
+      await contract.methods.addr(ethers.utils.namehash(ENS), String(_type)).call()
+        .then((response: any) => {
+          if (!response) {
+            setEmptyRecords(key)
+          } else {
+            let _decoded = `0x${formatsByName[key.toUpperCase()].encoder(response.toString('hex'))}`
+            setExtraRecords(key, _decoded)
+          }
+        })
+        .catch(() => {
+          setEmptyRecords(key)
+        })
+    }
   }
 
   // Get Addr60 for ENS domain
@@ -1214,7 +1235,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         return ''
       } else if (_record[0] === 'address') {
         let _type = _record[1] === 'btc' ? 0 : (_record[1] === 'ltc' ? 2 : (_record[1] === 'doge' ? 3 : (_record[1] === 'sol' ? 501 : 118)))
-        const _response = await _resolver.getAddress(_type)
+        let _response: any = ''
+        if (_record[1] === 'btc') { // Use Ethers.JS for BTC
+          _response = await _resolver.getAddress(_type)
+        } else {
+          let _ABI = await constants.getABI(_resolver.address)
+          /// @TODO
+          const contract = new web3.eth.Contract(
+            _ABI as AbiItem[],
+            resolver.address
+          )
+          await contract.methods.addr(ethers.utils.namehash(ENS), String(_type)).call()
+            .then((response: any) => {
+              if (!response) {
+                setEmptyRecords(_record[1])
+              } else {
+                let _decoded = `0x${formatsByName[_record[1].toUpperCase()].encoder(response.toString('hex'))}`
+                setExtraRecords(_record[1], _decoded)
+              }
+            })
+            .catch(() => {
+            })
+        }
         if (_response) {
           if (_trigger) {
             if (_record[1] === 'btc') setBTC(_response)
@@ -3269,7 +3311,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }}
             show={saltModal}
           >
-            {ENS}
+            {[ENS, hashType]}
           </Salt>
           <Gateway
             handleTrigger={handleGatewayTrigger}
