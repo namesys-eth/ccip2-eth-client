@@ -24,7 +24,15 @@ export const forbidden = [
 ]
 // Blocked records in Preview modal
 export const blocked = [
+  'email',
   'pubkey',
+  'github',
+  'url',
+  'twitter',
+  'discord',
+  'farcaster',
+  'nostr',
+  'btc',
   'ltc',
   'doge',
   'sol',

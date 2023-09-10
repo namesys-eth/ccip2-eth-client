@@ -34,7 +34,6 @@ import {
 } from 'wagmi' // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers"
 import { formatsByName } from '@ensdomains/address-encoder'
-import { namehash } from "viem"
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -858,7 +857,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setLegit(constants.EMPTY_BOOL_RECORDS())
     setSaltModal(false)
     setLoading(false)
-    setQueue(hashType === 'gateway' ? -1 : 1)
+    setQueue(hashType === 'gateway' ? 1 : 1)
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setSigSigner('')
@@ -1028,6 +1027,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setEmptyRecords(key)
       })
     } else { // Manual access for other coins
+      /*
       let _ABI = await constants.getABI(resolver.address)
       /// @TODO
       const contract = new web3.eth.Contract(
@@ -1047,18 +1047,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           if (!response) {
             setEmptyRecords(key)
           } else {
-            console.log(response)
-            let _response = ethers.utils.defaultAbiCoder.decode(["string"], response).toString()
-            console.log(_response)
-            let _decoded = `0x${formatsByName[key.toUpperCase()].encoder(response.toString())}`
-            console.log(_decoded)
+            let _decoded = `0x${formatsByName[key.toUpperCase()].encoder(response.toString('hex'))}`
             setExtraRecords(key, _decoded)
           }
         })
         .catch((error: any) => {
-          console.log('CCIP-Read Error:', error)
+          //console.log('CCIP-Read Error:', error)
           setEmptyRecords(key)
         })
+      */
     }
   }
 
@@ -1191,7 +1188,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Re-try empty records
   async function refreshRecord(_record: string[], _resolver: Resolver, _ENS: string, _trigger: boolean) {
-    if (_trigger) setRefresh(_record[0])
+    if (_trigger) {
+      if (_record[1]) {
+        setRefresh(_record[1])
+      } else {
+        setRefresh(_record[0])
+      }
+    }
     try {
       if (_record[0] === 'addr') {
         const _response = await provider.resolveName(_ENS)
@@ -1254,6 +1257,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (_record[1] === 'btc') { // Use Ethers.JS for BTC
           _response = await _resolver.getAddress(_type)
         } else {
+          /*
           let _ABI = await constants.getABI(_resolver.address)
           /// @TODO
           const contract = new web3.eth.Contract(
@@ -1271,6 +1275,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             })
             .catch(() => {
             })
+          */
         }
         if (_response) {
           if (_trigger) {
@@ -1480,7 +1485,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           } else if (_storage && _Ownerstamps.length > 0 && _type === 'recordhash') {
             setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
           } else if (_type === 'gateway') {
-            setQueue(-1)
+            setQueue(1)
           } else {
             setQueue(1)
           }
@@ -2261,7 +2266,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         let _updatedList = list.map((item) => {
                           if (!constants.config.includes(item.type)) {
                             let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
-                            setQueue(_queue)
+                            setQueue(hashType === 'gateway' ? 1 : _queue)
                             if (data.response.meta[item.type]) {
                               return {
                                 ...item,
@@ -2658,7 +2663,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <span
               className="material-icons-round"
               style={{
-                marginTop: '7px'
+                marginTop: !loading ? '7px' : '120px'
               }}
             >
               close
@@ -2707,7 +2712,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 marginBottom: '80px'
               }}
             >
-              <div>
+              <div
+                style={{
+                  marginTop: '20px'
+                }}
+              >
                 <Loading
                   height={50}
                   width={50}
@@ -2972,7 +2981,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     <div
                                       className="material-icons-round smol"
                                       style={{
-                                        color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'lime'))
+                                        color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'cyan'))
                                       }}
                                     >
                                       gpp_good
@@ -3415,6 +3424,8 @@ const StyledModalHeader = styled.div`
 `
 
 const StyledModal = styled.div`
+  position: fixed;
+  top: 60px;  
   width: auto;
   min-width: 400px;
   border-radius: 6px;

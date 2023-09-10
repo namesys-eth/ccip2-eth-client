@@ -280,8 +280,8 @@ const StyledModal = styled.div`
 `
 
 const StyledModalOverlay = styled.div`
-  position: absolute;
-  top: -60px;
+  position: fixed;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100vh;

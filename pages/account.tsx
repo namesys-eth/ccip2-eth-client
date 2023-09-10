@@ -1,6 +1,5 @@
 /// My Names page 
 import React from 'react'
-import { useCallback } from 'react'
 import Head from 'next/head'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'

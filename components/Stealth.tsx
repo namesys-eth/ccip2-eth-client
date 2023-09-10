@@ -327,7 +327,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         type: 'rsa',
         value: _pubkey,
         editable: false,
-        active: resolver === ccip2Contract,
+        active: resolver === ccip2Contract && queue > 0,
         state: false,
         label: 'Set',
         help: '<span>Set <span style="color: cyan">Encryption</span> Public Key To <span style="color: orange">Send</span> Money</span>',
@@ -339,7 +339,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         type: 'stealth',
         value: _encrypted,
         editable: false,
-        active: resolver === ccip2Contract,
+        active: resolver === ccip2Contract && queue > 0,
         state: false,
         label: 'Set',
         help: '<span><span style="color: cyan">Encrypted</span> Payment Address To <span style="color: lime">Receive</span> Money</span>',
@@ -489,7 +489,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setIcon('gpp_good')
     setColor('lime')
     setSaltModal(false)
-    setQueue(hashType === 'gateway' ? -1 : 1)
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
     setKeypairRSA(undefined)
@@ -656,7 +655,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           } else {
             getStealth(_response)
-            /* @TODO
+            /* @`TODO`
             setStealth('')
             setRSA('')
             setSync(true)
@@ -683,7 +682,13 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Re-try empty records
   async function refreshRecord(_record: string[], _resolver: Resolver, _ENS: string, _trigger: boolean) {
-    if (_trigger) setRefresh(_record[0])
+    if (_trigger) {
+      if (_record[1]) {
+        setRefresh(_record[1])
+      } else {
+        setRefresh(_record[0])
+      }
+    }
     try {
       if (_record[0] === 'text') {
         const _response = await _resolver.getText(_record[1])
@@ -808,6 +813,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
+          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -819,7 +825,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           } else if (_storage && _Ownerstamps.length > 0 && _type === 'recordhash') {
             setQueue(Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod)
           } else if (_type === 'gateway') {
-            setQueue(-1)
+            setQueue(1)
           } else {
             setQueue(1)
           }
@@ -1159,33 +1165,43 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Decrypts & Parses payment
   React.useEffect(() => {
     if (isPayment && keypairRSA !== undefined && payment) {
-      const _Payload = cryptico.decrypt(payment, keypairRSA[0])
-      let _Payee = JSON.parse(_Payload.plaintext).payee
-      let _Amount = JSON.parse(_Payload.plaintext).amount
-      const resolve = async () => {
-        if (_Payee.endsWith('.eth')) {
-          await provider.resolveName(_Payee)
-            .then(response => {
-              if (!response) {
-              } else {
-                setPayeeAddr(response)
-              }
-            })
-            .catch(() => {
-              setLoading(false)
-              setMessage(['Bad Payee', ''])
-              doCrash()
-              setColor('orangered')
-              setSigCount(0)
-              setProcessCount(0)
-            })
-        } else {
-          setPayeeAddr(_Payee)
+      setMessage(['Decrypting Invoice', ''])
+      try {
+        const _Payload = cryptico.decrypt(payment, keypairRSA[0])
+        let _Payee = JSON.parse(_Payload.plaintext).payee
+        let _Amount = JSON.parse(_Payload.plaintext).amount
+        const resolve = async () => {
+          if (_Payee.endsWith('.eth')) {
+            await provider.resolveName(_Payee)
+              .then(response => {
+                if (!response) {
+                } else {
+                  setPayeeAddr(response)
+                }
+              })
+              .catch(() => {
+                setLoading(false)
+                setMessage(['Bad Payee', ''])
+                doCrash()
+                setColor('orangered')
+                setSigCount(0)
+                setProcessCount(0)
+              })
+          } else {
+            setPayeeAddr(_Payee)
+          }
+          setPayeeAmount(_Amount)
+          setLoading(false)
         }
-        setPayeeAmount(_Amount)
+        resolve()
+      } catch (error) {
         setLoading(false)
+        setMessage(['Bad Invoice', ''])
+        doCrash()
+        setColor('orangered')
+        setSigCount(0)
+        setProcessCount(0)
       }
-      resolve()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keypairRSA, isPayment, payment])
@@ -1381,6 +1397,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 setMessage(['Waiting For Signature', '2'])
                 _RSA = response
                 let _encryptionResult: any = {}
+                setMessage(['Encrypting Your Invoice', ''])
                 if (keypairRSA) {
                   _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA, keypairRSA[0])
                 } else {
@@ -1504,11 +1521,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (updateRecords && write) { // Check for false → true
       if (!keypairIPNS || (!keypairSigner || !keypairSigner[0]) || !CID) {
-        if (hashType !== 'gateway') {
-          if (!saltModalState.trigger) setSaltModal(true) // Salt for IPNS Keygen
-        } else {
-          if (!saltModalState.trigger) setSaltModal(true) // Start for Manager Keygen
-        }
       } else {
         if (states.length > 0) {
           setLoading(true)
@@ -1517,7 +1529,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateRecords, keypairSigner, CID, write, hashType, saltModalState])
+  }, [updateRecords, keypairSigner, CID, write, hashType])
 
   // Handles record refresh
   React.useEffect(() => {
@@ -1748,7 +1760,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
                         if (!['resolver', 'storage'].includes(item.type)) {
-                          let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
+                          let _queue = 1
                           setQueue(_queue)
                           if (data.response.meta[item.type]) {
                             return {
@@ -1779,6 +1791,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         modalData: undefined,
                         trigger: false
                       })
+                      setSuccess(trigger === 'stealth' ? '<span><span style="color: lightgreen">Stealth Record Set</span>! You may now <span style="color: cyan">Receive</span> Private Payments</span>' : '<span><span style="color: lightgreen">Encryption Key Set</span>! You may now <span style="color: cyan">Send</span> Private Payments</span>')
+                      setSuccessModal(true)
+                      setPayeeAddr('')
+                      doEnjoy()
                     }
                   }
                   gateway()
@@ -1856,7 +1872,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <span
               className="material-icons-round"
               style={{
-                marginTop: '7px'
+                marginTop: !loading ? '7px' : '120px'
               }}
             >
               close
@@ -1872,7 +1888,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 marginBottom: '80px'
               }}
             >
-              <div>
+              <div
+                style={{
+                  marginTop: '20px'
+                }}
+              >
                 <Loading
                   height={50}
                   width={50}
@@ -2092,10 +2112,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('info'),
-                                      setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan'),
-                                      setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
+                                    setHelpModal(true)
+                                    setIcon('info')
+                                    setColor(constants.blocked.includes(item.type) ? 'orange' : 'cyan')
+                                    setHelp(constants.blocked.includes(item.type) ? '<span style="color: orangered">In Process of Bug Fixing</span>' : `<span>${item.help}</span>`)
                                   }}
                                   data-tooltip={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : 'Enlighten Me'}
                                 >
@@ -2117,8 +2137,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   onClick={() => {
                                     setHelpModal(true),
                                       setIcon(RSA ? 'gpp_good' : 'gpp_bad'),
-                                      setColor(RSA ? 'lime' : 'orangered'),
-                                      setHelp(RSA ? '<span>Encryption Key <span style="color: lime">Set</span><span>' : `<span>Please <span style="color: orange">Set Encryption Key</span> To Enable Private Payments<span>`)
+                                      setColor(RSA ? 'lime' : 'orangered')
+                                    setHelp(RSA ? '<span>Encryption Key <span style="color: lime">Set</span><span>' : `<span>Please <span style="color: orange">Set Encryption Key</span> To Enable Private Payments<span>`)
                                   }}
                                   data-tooltip={RSA ? 'Encryption Key Set' : 'Encryption Key Missing'}
                                 >
@@ -2140,10 +2160,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('timer'),
-                                      setColor(queue < 0 ? 'orange' : 'lime'),
-                                      setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
+                                    setHelpModal(true)
+                                    setIcon('timer')
+                                    setColor(queue < 0 ? 'orange' : 'lime')
+                                    setHelp(queue < 0 ? '<span><span style="color: orange">Too Soon To Update</span>. Please wait at least <span style="color: cyan">one hour</span> between updates</span>' : '<span><span style="color: lime">Ready</span> For Next Record Update</span>')
                                   }}
                                   data-tooltip={
                                     queue < 0 ? 'Too Soon To Update' : 'Ready For Next Update'
@@ -2165,10 +2185,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               && resolver === ccip2Contract && _Wallet_ &&
                               (recordhash || ownerhash) && history.ownerstamp.length > 0 && (
                                 <button
-                                  className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
+                                  className={!['', '.', '0', '1'].includes(refresh) && [item.type].includes(refresh) ? "button-tiny blink" : "button-tiny"}
                                   onClick={() => {
-                                    refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true),
-                                      setRefreshedItem(item.type)
+                                    refresh !== '' ? '' : refreshRecord(['text', item.type], resolveCall, ENS, true)
+                                    setRefreshedItem(item.type)
                                   }}
                                   data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
                                 >
@@ -2187,7 +2207,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             { // Updated State marker
                               item.state && (
                                 <div
-                                  className="material-icons-round smol"
+                                  className="material-icons-round smol emphasis"
                                   style={{
                                     color: crash && sustain ? 'orangered' : 'lime',
                                     marginLeft: '-5px'
@@ -2214,6 +2234,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               marginBottom: '6px',
                             }}
                             onClick={() => {
+                              setSaltModal(true)
                               setTrigger(item.type)
                               setSafeTrigger('1')
                               setWrite(true)
@@ -2329,7 +2350,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         className='flex-column'
                         style={{
                           width: '100%',
-                          marginLeft: '3px'
+                          marginLeft: '32px'
                         }}
                       >
                         <input
@@ -2545,10 +2566,11 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       marginTop: '-3px',
                     }}
                     onClick={() => {
+                      setSaltModal(true)
                       setWrite(true)
-                      setTrigger('records'),
-                        setSafeTrigger('1'),
-                        setWrite(true)
+                      setTrigger('records')
+                      setSafeTrigger('1')
+                      setWrite(true)
                     }}
                     data-tooltip={'Set Multiple Records in One Click'}
                   >
