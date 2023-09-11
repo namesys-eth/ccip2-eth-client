@@ -343,7 +343,7 @@ const Account: NextPage = () => {
     args: [
       ethers.utils.defaultAbiCoder.encode(
         ['bytes32'],
-        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.ipnsPrefix)[1]}` : constants.zeroBytes]
       )
     ]
   })
@@ -676,8 +676,8 @@ const Account: NextPage = () => {
                 } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
                   __Recordhash = true
                 }
-                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? (_Recordhash_.startsWith('0x6874') ? '4/5' : '1') : (
-                  __Ownerhash && items[count - 1].migrated === '1/2' ? (_Ownerhash_.startsWith('0x6874') ? '4/5' : '3/4') : (
+                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? (_Recordhash_.startsWith(constants.httpPrefix) ? '4/5' : '1') : (
+                  __Ownerhash && items[count - 1].migrated === '1/2' ? (_Ownerhash_.startsWith(constants.httpPrefix) ? '4/5' : '3/4') : (
                     items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
                   )
                 )
@@ -859,7 +859,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (_Recordhash_ && String(_Recordhash_) !== '0x') {
       let _String: string = ''
-      if (String(_Recordhash_).startsWith(constants.prefix)) {
+      if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
         _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
       } else {
         _String = ethers.utils.toUtf8String(String(_Recordhash_))
@@ -876,7 +876,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (_Ownerhash_ && String(_Ownerhash_) !== '0x') {
       let _String: string = ''
-      if (String(_Ownerhash_).startsWith(constants.prefix)) {
+      if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
         _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
       } else {
         _String = ethers.utils.toUtf8String(String(_Ownerhash_))

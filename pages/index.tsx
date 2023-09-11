@@ -129,7 +129,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_recordhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(String(_recordhash)).decoded}`
+    return _recordhash
   }
 
   // Get Ownerhash with ethers.js
@@ -142,7 +142,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_ownerhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(String(_ownerhash)).decoded}`
+    return _ownerhash
   }
 
   // Get historical gas savings
@@ -345,13 +345,25 @@ const Home: NextPage = () => {
         if (_Owner) {
           setOwner(_Owner)
           if (_Recordhash && _Ownerhash && (_Recordhash !== _Ownerhash)) {
-            setRecordhash(_Recordhash)
+            if (String(_Recordhash).startsWith(constants.httpPrefix)) {
+              setRecordhash(ethers.utils.toUtf8String(String(_Recordhash)))
+            } else {
+              setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash)).decoded}`)
+            }
             setOwnerhash(_Ownerhash)
           } else if (_Recordhash && _Ownerhash && (_Recordhash === _Ownerhash)) {
             setRecordhash('')
-            setOwnerhash(_Ownerhash)
+            if (String(_Ownerhash).startsWith(constants.httpPrefix)) {
+              setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash)))
+            } else {
+              setOwnerhash(`ipns://${ensContent.decodeContenthash(String(_Ownerhash)).decoded}`)
+            }
           } else if (_Recordhash && !_Ownerhash) {
-            setRecordhash(_Recordhash)
+            if (String(_Recordhash).startsWith(constants.httpPrefix)) {
+              setRecordhash(ethers.utils.toUtf8String(String(_Recordhash)))
+            } else {
+              setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash)).decoded}`)
+            }
             setOwnerhash('')
           } else {
             setRecordhash('')
@@ -401,7 +413,7 @@ const Home: NextPage = () => {
   // Captures Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && _Wallet_) {
-      if (String(_Recordhash_).startsWith('0x6874')) {
+      if (String(_Recordhash_).startsWith(constants.httpPrefix)) {
         setRecordhash(ethers.utils.toUtf8String(String(_Recordhash_)))
       } else {
         setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`)
@@ -414,7 +426,7 @@ const Home: NextPage = () => {
   // Captures Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_ && _Wallet_) {
-      if (String(_Ownerhash_).startsWith('0x6874')) {
+      if (String(_Ownerhash_).startsWith(constants.httpPrefix)) {
         setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash_)))
       } else {
         setOwnerhash(`ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`)
@@ -635,7 +647,7 @@ const Home: NextPage = () => {
               >
                 {'v'}
               </span>
-              {'1.0.2'}
+              {'1.1'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -644,7 +656,7 @@ const Home: NextPage = () => {
                   marginLeft: '2px'
                 }}
               >
-                { }
+                {'-beta'}
               </span>
             </div>
             <button

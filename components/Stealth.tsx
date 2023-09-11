@@ -841,7 +841,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (_ENS_.endsWith('.eth')) {
       setBrowser(true)
       setENS(_ENS_)
-      setMessage(['Loading', '-'])
+      setMessage(['Loading Stealth Records', '-'])
     } else {
       setBrowser(false)
     }
@@ -882,7 +882,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (_Ownerhash_) {
       if (String(_Ownerhash_).length > 2) {
         let _String: string = ''
-        if (String(_Ownerhash_).startsWith(constants.prefix)) {
+        if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
           _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
         } else {
           _String = ethers.utils.toUtf8String(String(_Ownerhash_))
@@ -903,7 +903,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (_Recordhash_) {
       if (String(_Recordhash_).length > 2 && (_Recordhash_ !== _Ownerhash_)) {
         let _String: string = ''
-        if (String(_Recordhash_).startsWith(constants.prefix)) {
+        if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
           _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
         } else {
           _String = ethers.utils.toUtf8String(String(_Recordhash_))
@@ -913,8 +913,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setRecordhash(`${_String}`)
         }
-        setMessage(['This May Take a Short While', ''])
-        setMessage(['Loading', '-'])
+        setMessage(['Loading Stealth Records', '-'])
       } else {
         setRecordhash(undefined)
       }
@@ -2186,12 +2185,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                     refresh !== '' ? '' : refreshRecord(['text', item.type], resolveCall, ENS, true)
                                     setRefreshedItem(item.type)
                                   }}
-                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
+                                  data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : (refresh === '-' ? 'No New Update' : 'Click to Refresh')))))}
                                 >
                                   <div
                                     className="material-icons-round smol"
                                     style={{
-                                      color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
+                                      color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'white' : (refresh === '-' ? 'yellow' : 'cyan'))))),
                                       marginLeft: '-5px'
                                     }}
                                   >
@@ -2628,8 +2627,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           </Salt>
           <Error
             onClose={() => {
-              setCrash(false),
-                setRecentCrash(true)
+              setCrash(false)
+              setRecentCrash(true)
             }}
             color={color}
             show={crash && !loading}

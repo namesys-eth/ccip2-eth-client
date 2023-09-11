@@ -107,7 +107,8 @@ export const zeroAddress = '0x' + '0'.repeat(40)
 export const zeroBytes = '0x' + '0'.repeat(64)
 export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
-export const prefix = '0xe5010172002408011220'
+export const ipnsPrefix = '0xe5010172002408011220'
+export const httpPrefix = '0x6874'
 const ipnsRegex = /^[a-z0-9]{62}$/
 const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
 const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{55}$/
@@ -169,11 +170,11 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: skyblue">Gasless</span> <span style="color: skyblue">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: skyblue">Decentralised</span> Records Storage on <span style="color: skyblue">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: skyblue">Unlimited</span> Record Updates With <span style="color: skyblue">IPNS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Records and More',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: skyblue">Enjoy ENS</span> Hassle Free'
 ]
 
 export const ccip2Interface = [
@@ -391,7 +392,7 @@ export function latestTimestamp(list: string[]) {
 export function EMPTY_STRING_RECORDS() {
   const EMPTY_STRING = {}
   for (const key of typesRecords) {
-    if (!['resolver', 'storage'].includes(key)) {
+    if (!config.includes(key)) {
       EMPTY_STRING[key] = ''
     }
   }
@@ -411,7 +412,7 @@ export function EMPTY_STRING_STEALTH() {
 export function EMPTY_BOOL_RECORDS() {
   const EMPTY_BOOL = {}
   for (const key of typesRecords) {
-    EMPTY_BOOL[key] = ['resolver', 'storage', 'revision'].includes(key) ? true : false
+    EMPTY_BOOL[key] = [...config, 'revision'].includes(key) ? true : false
   }
   return EMPTY_BOOL
 }

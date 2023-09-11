@@ -12,6 +12,7 @@ import Gateway from '../components/Gateway'
 import Options from '../components/Options'
 import Error from '../components/Error'
 import Info from '../components/Info'
+import LoadingIcons from 'react-loading-icons'
 import Gas from '../components/Gas'
 import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
@@ -56,78 +57,79 @@ interface ModalProps {
 **/
 const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
   // React States
-  const [browser, setBrowser] = React.useState(false); // Triggers at modal load
-  const { data: gasData, isError } = useFeeData(); // Current gas prices
-  const [loading, setLoading] = React.useState(true); // Loading process indicator
-  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
-  const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
+  const [browser, setBrowser] = React.useState(false) // Triggers at modal load
+  const { data: gasData, isError } = useFeeData() // Current gas prices
+  const [loading, setLoading] = React.useState(true) // Loading process indicator
+  const [migrated, setMigrated] = React.useState(false) // Setup indicator; Setup = Resolver migration + Recordhash setting
+  const [keygen, setKeygen] = React.useState(false) // IPNS keygen trigger following signature
   const [crash, setCrash] = React.useState(false);  // Signature fail indicator
-  const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
-  const [ENS, setENS] = React.useState(''); // ENS name; used to trigger useContractRead()
-  const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
-  const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
-  const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
-  const [conclude, setConclude] = React.useState(false); // Indicates when all records have finished fetching
-  const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
-  const [resolveCall, setResolveCall] = React.useState<any>(); // Resolver object for querying records
-  const [sync, setSync] = React.useState(false); // Records sync flag
-  const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
-  const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [email, setEmail] = React.useState(''); // Email record for ENS Domain
-  const [pubkey, setPubkey] = React.useState(''); // Pubkey record for ENS Domain
-  const [github, setGithub] = React.useState(''); // Github record for ENS Domain
-  const [url, setUrl] = React.useState(''); // URL record for ENS Domain
-  const [twitter, setTwitter] = React.useState(''); // Twitter record for ENS Domain
-  const [discord, setDiscord] = React.useState(''); // Discord record for ENS Domain
-  const [farcaster, setFarcaster] = React.useState(''); // Farcaster record for ENS Domain
-  const [nostr, setNostr] = React.useState(''); // Nostr record for ENS Domain
-  const [BTC, setBTC] = React.useState(''); // BTC address record for ENS Domain
-  const [LTC, setLTC] = React.useState(''); // LTC address record for ENS Domain
-  const [DOGE, setDOGE] = React.useState(''); // DOGE address record for ENS Domain
-  const [SOL, setSOL] = React.useState(''); // SOL address record for ENS Domain
-  const [ATOM, setATOM] = React.useState(''); // ATOM address record for ENS Domain
-  const [zonehash, setZonehash] = React.useState(''); // DNS Zonehash record for ENS Domain
-  const [thumbnail, setThumbnail] = React.useState(''); // Thumbnail from avatar
-  const [recordhash, setRecordhash] = React.useState<string>(''); // Recordhash for CCIP2 Resolver
-  const [ownerhash, setOwnerhash] = React.useState<string>(''); // Ownerhash for CCIP2 Resolver
-  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
-  const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
-  const [tokenIDWrapper, setTokenIDWrapper] = React.useState(''); // Wrapper Token ID of ENS Domain
-  const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
-  const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
-  const [saltModal, setSaltModal] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
-  const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
-  const [refresh, setRefresh] = React.useState(''); // Refresh record trigger
-  const [refreshedItem, setRefreshedItem] = React.useState(''); // Refresh record item
-  const [refreshedValue, setRefreshedValue] = React.useState(''); // Refresh record value
-  const [list, setList] = React.useState<any[]>([]); // Internal LIST[] object with all record keys and values
-  const [preCache, setPreCache] = React.useState<any[]>([]); // Copy of LIST[] object
-  const [trigger, setTrigger] = React.useState<any>(undefined); // Triggered upon button click adjacent to the record in Preview modal
-  const [safeTrigger, setSafeTrigger] = React.useState<string>(''); // Cache state for trigger
-  const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
-  const [isSigner, setIsSigner] = React.useState(false); // Sets help text for the Help modal
-  const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
-  const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
-  const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
-  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K_IPNS keys
-  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K_IPNS and K_SIGNER keys
-  const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
-  const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
-  const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains new values for the active records in {a:b} format
-  const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
-  const [color, setColor] = React.useState(''); // Sets color for the loading state
-  const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
-  const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
-  const [confirm, setConfirm] = React.useState(false); // Confirmation modal
-  const [infoModal, setInfoModal] = React.useState(false); // Info modal
-  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
-  const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
-  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL_RECORDS()); // Whether record edit is legitimate
-  const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
-  const [hashType, setHashType] = React.useState('gateway'); // Recordhash or Ownerhash storage
-  const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
-  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
+  const [CID, setCID] = React.useState('') // IPNS pubkey/CID value
+  const [ENS, setENS] = React.useState('') // ENS name; used to trigger useContractRead()
+  const [helpModal, setHelpModal] = React.useState(false) // Help modal trigger
+  const [successModal, setSuccessModal] = React.useState(false) // Success modal trigger
+  const [gasModal, setGasModal] = React.useState(false) // Gas savings modal trigger
+  const [conclude, setConclude] = React.useState(false) // Indicates when all records have finished fetching
+  const [resolver, setResolver] = React.useState<any>() // Resolver for ENS Domain
+  const [resolveCall, setResolveCall] = React.useState<any>() // Resolver object for querying records
+  const [sync, setSync] = React.useState(false) // Records sync flag
+  const [addr, setAddr] = React.useState('') // Addr record for ENS Domain
+  const [avatar, setAvatar] = React.useState('') // Avatar record for ENS Domain
+  const [email, setEmail] = React.useState('') // Email record for ENS Domain
+  const [pubkey, setPubkey] = React.useState('') // Pubkey record for ENS Domain
+  const [github, setGithub] = React.useState('') // Github record for ENS Domain
+  const [url, setUrl] = React.useState('') // URL record for ENS Domain
+  const [twitter, setTwitter] = React.useState('') // Twitter record for ENS Domain
+  const [discord, setDiscord] = React.useState('') // Discord record for ENS Domain
+  const [farcaster, setFarcaster] = React.useState('') // Farcaster record for ENS Domain
+  const [nostr, setNostr] = React.useState('') // Nostr record for ENS Domain
+  const [BTC, setBTC] = React.useState('') // BTC address record for ENS Domain
+  const [LTC, setLTC] = React.useState('') // LTC address record for ENS Domain
+  const [DOGE, setDOGE] = React.useState('') // DOGE address record for ENS Domain
+  const [SOL, setSOL] = React.useState('') // SOL address record for ENS Domain
+  const [ATOM, setATOM] = React.useState('') // ATOM address record for ENS Domain
+  const [zonehash, setZonehash] = React.useState('') // DNS Zonehash record for ENS Domain
+  const [thumbnail, setThumbnail] = React.useState('') // Thumbnail from avatar
+  const [recordhash, setRecordhash] = React.useState<string>('') // Recordhash for CCIP2 Resolver
+  const [ownerhash, setOwnerhash] = React.useState<string>('') // Ownerhash for CCIP2 Resolver
+  const [namehashLegacy, setNamehashLegacy] = React.useState('') // Legacy Namehash of ENS Domain
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Legacy Token ID of ENS Domain
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Wrapper Token ID of ENS Domain
+  const [managers, setManagers] = React.useState<string[]>([]) // Manager of ENS Domain
+  const [contenthash, setContenthash] = React.useState('') // Contenthash record for ENS Domain
+  const [saltModal, setSaltModal] = React.useState(false) // Salt (password/key-identifier) for IPNS keygen
+  const [gateway, setGateway] = React.useState(false) // Gateway URL for storage
+  const [refresh, setRefresh] = React.useState('') // Refresh record trigger
+  const [refreshedItem, setRefreshedItem] = React.useState('') // Refresh record item
+  const [refreshedValue, setRefreshedValue] = React.useState('') // Refresh record value
+  const [list, setList] = React.useState<any[]>([]) // Internal LIST[] object with all record keys and values
+  const [preCache, setPreCache] = React.useState<any[]>([]) // Copy of LIST[] object
+  const [trigger, setTrigger] = React.useState<any>(undefined) // Triggered upon button click adjacent to the record in Preview modal
+  const [safeTrigger, setSafeTrigger] = React.useState<string>('') // Cache state for trigger
+  const [help, setHelp] = React.useState('') // Sets help text for the Help modal
+  const [isSigner, setIsSigner] = React.useState(false) // Sets help text for the Help modal
+  const [success, setSuccess] = React.useState('') // Sets success text for the Success modal
+  const [gas, setGas] = React.useState<{}>({}) // Sets historical gas savings
+  const [wrapped, setWrapped] = React.useState(false) // Indicates if the ENS Domain is wrapped
+  const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>() // Sets generated K_IPNS keys
+  const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>() // Sets generated K_IPNS and K_SIGNER keys
+  const [updateRecords, setUpdateRecords] = React.useState(false) // Triggers signature for record update
+  const [write, setWrite] = React.useState(false) // Triggers update of record to the NameSys backend and IPNS
+  const [states, setStates] = React.useState<any[]>([]) // Contains keys of active records (that have been edited in the modal)
+  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING_RECORDS()) // Contains new values for the active records in {a:b} format
+  const [icon, setIcon] = React.useState('') // Sets icon for the loading state
+  const [color, setColor] = React.useState('') // Sets color for the loading state
+  const [message, setMessage] = React.useState(['', '']) // Sets message for the loading state
+  const [options, setOptions] = React.useState(false) // Provides option with Ownerhash and Recordhash during migration
+  const [confirm, setConfirm] = React.useState(false) // Confirmation modal
+  const [infoModal, setInfoModal] = React.useState(false) // Info modal
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_RECORDS()) // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
+  const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']) // CCIP2 Query for on-chain manager
+  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL_RECORDS()) // Whether record edit is legitimate
+  const [timestamp, setTimestamp] = React.useState('') // Stores update timestamp returned by backend
+  const [isLoading, setIsLoading] = React.useState(constants.EMPTY_STRING_RECORDS()) // Loading Records marker
+  const [hashType, setHashType] = React.useState('gateway') // Recordhash or Ownerhash storage
+  const [hashIPFS, setHashIPFS] = React.useState('') // IPFS hash behind IPNS
+  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined) // Whether avatar resolves or not
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [goodSalt, setGoodSalt] = React.useState(false) // If generated CID matches the available storage
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
@@ -149,16 +151,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [successModalState, setSuccessModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }); // Confirm modal state
-  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_RECORDS); // Record history from last update
-  const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S_IPNS(K_WALLET) for IPNS keygen
-  const [sigSigner, setSigSigner] = React.useState(''); // Signature S_SIGNER(K_WALLET) for Signer
-  const [sigApproved, setSigApproved] = React.useState(''); // Signature S_APPROVE(K_WALLET) for Records Manager
-  const [sigCount, setSigCount] = React.useState(0); // Signature Count
-  const [processCount, setProcessCount] = React.useState(0); // Process Count
-  const [queue, setQueue] = React.useState(0); // Sets queue countdown between successive updates
-  const [sustain, setSustain] = React.useState(false); // Sustains status of record update
-  const [onChainManager, setOnChainManager] = React.useState(''); // Sets CCIP2 Manager
+  }) // Confirm modal state
+  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_RECORDS) // Record history from last update
+  const [sigIPNS, setSigIPNS] = React.useState('') // Signature S_IPNS(K_WALLET) for IPNS keygen
+  const [sigSigner, setSigSigner] = React.useState('') // Signature S_SIGNER(K_WALLET) for Signer
+  const [sigApproved, setSigApproved] = React.useState('') // Signature S_APPROVE(K_WALLET) for Records Manager
+  const [sigCount, setSigCount] = React.useState(0) // Signature Count
+  const [processCount, setProcessCount] = React.useState(0) // Process Count
+  const [queue, setQueue] = React.useState(0) // Sets queue countdown between successive updates
+  const [sustain, setSustain] = React.useState(false) // Sustains status of record update
+  const [onChainManager, setOnChainManager] = React.useState('') // Sets CCIP2 Manager
 
   // Variables
   const { address: _Wallet_ } = useAccount()
@@ -260,7 +262,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       ethers.utils.namehash(ENS),
       ethers.utils.defaultAbiCoder.encode(
         ['bytes32'],
-        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.ipnsPrefix)[1]}` : constants.zeroBytes]
       )
     ]
   })
@@ -417,15 +419,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       },
       {
         key: 2,
-        header: 'Avatar',
-        type: 'avatar',
-        value: _avatar,
+        header: 'Contenthash',
+        type: 'contenthash',
+        value: _contenthash,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAvatar(_avatar) && queue > 0,
+        active: constants.isContenthash(_contenthash) && queue > 0,
         state: false,
         label: 'Edit',
-        help: '<span>Set your <span style="color: cyan">avatar</span></span>',
-        tooltip: 'Set Avatar'
+        help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
+        tooltip: 'Set Contenthash'
       },
       {
         key: 3,
@@ -441,15 +443,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       },
       {
         key: 4,
-        header: 'Contenthash',
-        type: 'contenthash',
-        value: _contenthash,
+        header: 'Avatar',
+        type: 'avatar',
+        value: _avatar,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isContenthash(_contenthash) && queue > 0,
+        active: constants.isAvatar(_avatar) && queue > 0,
         state: false,
         label: 'Edit',
-        help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
-        tooltip: 'Set Contenthash'
+        help: '<span>Set your <span style="color: cyan">avatar</span></span>',
+        tooltip: 'Set Avatar'
       },
       {
         key: 5,
@@ -762,10 +764,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function setExtraRecords(key: string, value: string) {
     if (key === 'avatar') setAvatar(value)
     if (key === 'email') setEmail(value)
-    if (key === 'pubkey') {
-      setPubkey(value)
-      setSync(true)
-    }
+    if (key === 'pubkey') setPubkey(value)
     if (key === 'github') setGithub(value)
     if (key === 'url') setUrl(value)
     if (key === 'twitter') setTwitter(value)
@@ -784,7 +783,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function getExtraRecords(resolver: ethers.providers.Resolver) {
     getText(resolver, 'avatar')
     getText(resolver, 'email')
-    setSync(true)
     getText(resolver, 'pubkey')
     getText(resolver, 'github')
     getText(resolver, 'url')
@@ -804,10 +802,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   function setEmptyRecords(key: string) {
     if (key === 'avatar') setAvatar('')
     if (key === 'email') setEmail('')
-    if (key === 'pubkey') {
-      setPubkey('')
-      setSync(true)
-    }
+    if (key === 'pubkey') setPubkey('')
     if (key === 'github') setGithub('')
     if (key === 'url') setUrl('')
     if (key === 'twitter') setTwitter('')
@@ -820,6 +815,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'sol') setSOL('')
     if (key === 'atom') setATOM('')
     if (key === 'zonehash') setZonehash('')
+    setSync(true)
   }
 
   /// Trigger Collapse
@@ -967,114 +963,105 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Contenthash for ENS domain
   async function getContenthash(resolver: ethers.providers.Resolver) {
+    let _Loading = isLoading
+    _Loading['contenthash'] = '-'
+    setIsLoading(_Loading)
+    setSync(true)
     await resolver.getContentHash()
       .then((response) => {
         if (!response) {
+          _Loading['contenthash'] = '0'
           setContenthash('')
+          setIsLoading(_Loading)
         } else {
+          _Loading['contenthash'] = '1'
           setContenthash(response)
+          setIsLoading(_Loading)
         }
         getAddr(resolver)
       })
       .catch(() => {
+        _Loading['contenthash'] = '0'
         setContenthash('')
+        setIsLoading(_Loading)
         getAddr(resolver)
-      })
-  }
-
-  // Get Avatar for ENS domain
-  async function getAvatar(resolver: ethers.providers.Resolver) {
-    await provider.getAvatar(ENS)
-      .then(response => {
-        if (!response) {
-          getText(resolver, 'avatar')
-        } else {
-          setAvatar(response)
-        }
-        getAddr(resolver)
-      })
-      .catch(() => {
-        getText(resolver, 'avatar')
       })
   }
 
   // Get Text records for ENS domain
   async function getText(resolver: ethers.providers.Resolver, key: string) {
+    let _Loading = isLoading
+    _Loading[key] = '-'
+    setIsLoading(_Loading)
     await resolver.getText(key)
       .then((response) => {
         if (!response) {
+          _Loading[key] = '0'
           setEmptyRecords(key)
+          setIsLoading(_Loading)
         } else {
+          _Loading[key] = '1'
           setExtraRecords(key, response)
+          setIsLoading(_Loading)
         }
       })
       .catch(() => {
+        _Loading[key] = '0'
         setEmptyRecords(key)
+        setIsLoading(_Loading)
       })
   }
 
   // Get non-ETH addresses for ENS domain
   async function getAddress(resolver: ethers.providers.Resolver, key: string) {
     let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
+    let _Loading = isLoading
+    _Loading[key] = '-'
+    setIsLoading(_Loading)
     if (key === 'btc') { // Use Ethers.JS for BTC
       await resolver.getAddress(_type)
         .then((response) => {
           if (!response) {
+            _Loading[key] = '0'
             setEmptyRecords(key)
+            setIsLoading(_Loading)
           } else {
+            _Loading[key] = '1'
             setExtraRecords(key, response)
+            setIsLoading(_Loading)
           }
         })
         .catch(() => {
+          _Loading[key] = '0'
           setEmptyRecords(key)
+          setIsLoading(_Loading)
         })
-    } else { // Manual access for other coins
-      /*
-      let _ABI = await constants.getABI(resolver.address)
-      /// @TODO
-      const contract = new web3.eth.Contract(
-        _ABI as AbiItem[],
-        resolver.address
-      )
-      let functionSignature = "addr(bytes32,uint256)"; // Multi-addr function
-      let _calldata = ethers.utils.solidityPack(
-        ["bytes4", "bytes32", "uint256"],
-        [ethers.utils.id(functionSignature).substring(0, 10), namehashLegacy, '0']
-      )
-      // @TODO
-      //console.log('Calldata: ', _calldata)
-      //console.log('dnsEncode():', Utils.dnsEncode(ENS))
-      await contract.methods.resolve(Utils.dnsEncode(ENS), _calldata).call()
-        .then((response: any) => {
-          if (!response) {
-            setEmptyRecords(key)
-          } else {
-            let _decoded = `0x${formatsByName[key.toUpperCase()].encoder(response.toString('hex'))}`
-            setExtraRecords(key, _decoded)
-          }
-        })
-        .catch((error: any) => {
-          //console.log('CCIP-Read Error:', error)
-          setEmptyRecords(key)
-        })
-      */
     }
   }
 
   // Get Addr60 for ENS domain
   async function getAddr(resolver: ethers.providers.Resolver) {
+    let _Loading = isLoading
+    _Loading['addr'] = '-'
+    setIsLoading(_Loading)
     await provider.resolveName(ENS)
       .then(response => {
         if (!response) {
+          _Loading['addr'] = '0'
           setAddr('')
+          setIsLoading(_Loading)
           getExtraRecords(resolver)
         } else {
+          _Loading['addr'] = '1'
           setAddr(response)
+          setIsLoading(_Loading)
           getExtraRecords(resolver)
         }
       })
       .catch(() => {
+        _Loading['addr'] = '0'
         setAddr('')
+        setIsLoading(_Loading)
         getExtraRecords(resolver)
       })
   }
@@ -1136,6 +1123,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             */
           }
         } else {
+          setSync(true)
           const _addr = await refreshRecord(['addr', ''], _response, _ENS, false)
           setAddr(_addr || '')
           const _contenthash = await refreshRecord(['contenthash', ''], _response, _ENS, false)
@@ -1146,7 +1134,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             _avatar = await refreshRecord(['text', 'avatar'], _response, _ENS, false)
           }
           setAvatar(_avatar || '')
-          setSync(true)
           const _email = await refreshRecord(['text', 'email'], _response, _ENS, false)
           setEmail(_email || '')
           setPubkey('')
@@ -1476,7 +1463,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
-          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -1544,7 +1530,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (_Ownerhash_) {
       if (String(_Ownerhash_).length > 2) {
         let _String: string = ''
-        if (String(_Ownerhash_).startsWith(constants.prefix)) {
+        if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
           _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
         } else {
           _String = ethers.utils.toUtf8String(String(_Ownerhash_))
@@ -1566,7 +1552,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (_Recordhash_) {
       if (String(_Recordhash_).length > 2 && _Recordhash_ !== _Ownerhash_) {
         let _String: string = ''
-        if (String(_Recordhash_).startsWith(constants.prefix)) {
+        if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
           _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
         } else {
           _String = ethers.utils.toUtf8String(String(_Recordhash_))
@@ -1943,8 +1929,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else {
         setMetadata(recordhash, addr, contenthash, avatar, pubkey, email,
           github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
-      }
-      setLoading(false)
+      }   
+      setLoading(false)  
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sync, hashType, recordhash, ownerhash, resolver, addr, contenthash, avatar, email,
@@ -2696,14 +2682,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
-            <span
-              className="material-icons-round miui"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-              portrait
-            </span>
+            {!['0', '1'].includes(isLoading['avatar']) && (
+              <div
+                className="flex-column"
+              >
+                <LoadingIcons.Bars 
+                  width={'130px'}
+                  fill={'#fc6603'}
+                />
+              </div>
+            )}
+            {['0', '1'].includes(isLoading['avatar']) && (
+              <span
+                className="material-icons-round miui"
+                style={{
+                  marginTop: '4px'
+                }}
+              >
+                portrait
+              </span>
+            )}
           </StyledModalTitle>
         }
         {ENS && loading &&
@@ -3146,12 +3144,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true)
                                       setRefreshedItem(item.type)
                                     }}
-                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'Error in Update' : (refresh === '.' ? 'Please Wait to Refresh again' : 'Click to Refresh'))))}
+                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : (refresh === '-' ? 'No New Update' : 'Click to Refresh')))))}
                                   >
                                     <div
                                       className="material-icons-round smol"
                                       style={{
-                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'orangered' : 'cyan')))),
+                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'white' : (refresh === '-' ? 'yellow' : 'cyan'))))),
                                         marginLeft: '-5px'
                                       }}
                                     >
@@ -3176,7 +3174,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             <button
                               className={item.type === 'resolver' && resolver !== ccip2Contract && managers.includes(String(_Wallet_)) ? "button emphasis" : "button"}
                               hidden={
-                                item.type === 'resolver' && isDisabled(item)
+                                (item.type === 'resolver' && isDisabled(item)) || !_Wallet_
                               }
                               disabled={
                                 isDisabled(item)
@@ -3212,32 +3210,53 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               </div>
                             </button>
                           </div>
-                          <input
-                            className={!constants.config.includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : (constants.blocked.includes(item.type) ? 'inputextra___' : 'inputextra')) : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
-                            id={item.key}
-                            key={item.key}
-                            placeholder={constants.blocked.includes(item.type) ? 'Coming Soon' : item.value}
-                            type='text'
-                            disabled={
-                              !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
-                            }
+                          <div
+                            className="flex-row"
                             style={{
-                              background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!constants.config.includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
-                              fontFamily: 'SF Mono',
-                              fontWeight: '400',
-                              fontSize: '14px',
-                              width: '100%',
-                              wordWrap: 'break-word',
-                              textAlign: 'left',
-                              marginTop: '-10px',
-                              marginBottom: '-5px',
-                              color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
-                              cursor: 'copy'
+                              width: '100%'
                             }}
-                            onChange={(e) => {
-                              setValues(item.type, e.target.value)
-                            }}
-                          />
+                          >
+                            <input
+                              className={!constants.config.includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : (constants.blocked.includes(item.type) ? 'inputextra___' : 'inputextra')) : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
+                              id={item.key}
+                              key={item.key}
+                              placeholder={constants.blocked.includes(item.type) ? 'Coming Soon' : item.value}
+                              type='text'
+                              disabled={
+                                !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
+                              }
+                              style={{
+                                background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!constants.config.includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
+                                fontFamily: 'SF Mono',
+                                fontWeight: '400',
+                                fontSize: '14px',
+                                width: '100%',
+                                wordWrap: 'break-word',
+                                textAlign: 'left',
+                                marginTop: '-5px',
+                                marginBottom: '-5px',
+                                paddingRight: !constants.config.includes(item.type) ? '10px' : '0',
+                                color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
+                                cursor: 'copy'
+                              }}
+                              onChange={(e) => {
+                                setValues(item.type, e.target.value)
+                              }}
+                            />
+                            {!constants.config.includes(item.type) && !constants.blocked.includes(item.type) && (
+                              <div
+                                className="material-icons-round"
+                                style={{
+                                  fontSize: '22px',
+                                  fontWeight: '700',
+                                  marginLeft: '-25px',
+                                  color: isLoading[item.type] === '1' ? 'lightgreen' : (isLoading[item.type] === '-' ? 'white' : 'grey')
+                                }}
+                              >
+                                {isLoading[item.type] === '1' ? 'hourglass_bottom' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'hourglass_empty')}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <hr style={{ marginTop: '5px' }}></hr>
                       </li>
