@@ -508,6 +508,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setGoodSalt(false)
     setTrigger('')
     setLoading(false)
+    setWrite(false)
+    setUpdateRecords(false)
   }
 
   // Signature S_RECORDS with K_SIGNER 
@@ -813,7 +815,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
-          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -1116,6 +1117,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           modalData: undefined,
           trigger: false
         })
+        setPayToModal(false)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1304,7 +1306,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       })
       setKeygen(true)
     } else if (trigger === 'stealth' && safeTrigger && isSigner && saltModalState.trigger) {
-      setMessage(['Fetching Payer Encryption Key', ''])
+      setMessage(['Waiting For Signature', '2'])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSigner, saltModalState, trigger])
@@ -1397,7 +1399,6 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 setMessage(['Waiting For Signature', '2'])
                 _RSA = response
                 let _encryptionResult: any = {}
-                setMessage(['Encrypting Your Invoice', ''])
                 if (keypairRSA) {
                   _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA, keypairRSA[0])
                 } else {
@@ -1714,14 +1715,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 ...item,
                                 value: data.response[item.type],
                                 state: true,
-                                active: _queue > 0,
-                                editable: _queue > 0
+                                active: _queue > 0
                               }
                             } else {
                               return {
                                 ...item,
-                                active: _queue > 0,
-                                editable: _queue > 0
+                                active: _queue > 0
                               }
                             }
                           } else {
@@ -1767,15 +1766,12 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               ...item,
                               value: data.response[item.type],
                               state: true,
-                              label: 'edit',
-                              active: _queue > 0,
-                              editable: _queue > 0
+                              active: _queue > 0
                             }
                           } else {
                             return {
                               ...item,
-                              active: _queue > 0,
-                              editable: _queue > 0
+                              active: _queue > 0
                             }
                           }
                         } else {
@@ -2135,21 +2131,21 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon(RSA ? 'gpp_good' : 'gpp_bad'),
-                                      setColor(RSA ? 'lime' : 'orangered')
-                                    setHelp(RSA ? '<span>Encryption Key <span style="color: lime">Set</span><span>' : `<span>Please <span style="color: orange">Set Encryption Key</span> To Enable Private Payments<span>`)
+                                    setHelpModal(true)
+                                    setIcon(item.type === 'stealth' ? 'gpp_good' : (RSA ? 'gpp_good' : 'gpp_bad'))
+                                    setColor(item.type === 'stealth' ? 'lime' : (RSA ? 'lime' : 'orangered'))
+                                    setHelp(item.type === 'stealth' ? '<span>Please set the <span style="color: cyan">Stealth Invoice</span> to <span style="color: orange">Receive</span> Private Payment<span>' : (RSA ? '<span>Encryption Key <span style="color: lime">Set</span><span>' : `<span>Please Set <span style="color: cyan">Encryption Key</span> To <span style="color: orange">Send</span> Private Payments<span>`))
                                   }}
-                                  data-tooltip={RSA ? 'Encryption Key Set' : 'Encryption Key Missing'}
+                                  data-tooltip={item.type === 'stealth' ? 'Set Encrypted Invoice' : (RSA ? 'Encryption Key Set' : 'Encryption Key Missing')}
                                 >
                                   <div
                                     className="material-icons-round smol"
                                     style={{
-                                      color: RSA ? 'lime' : 'orangered',
+                                      color: item.type === 'stealth' ? 'lime' : (RSA ? 'lime' : 'orangered'),
                                       marginLeft: '-5px'
                                     }}
                                   >
-                                    {RSA ? 'gpp_good' : 'gpp_bad'}
+                                    {item.type === 'stealth' ? 'gpp_good': (RSA ? 'gpp_good' : 'gpp_bad')}
                                   </div>
                                 </button>
                               )}
@@ -2224,8 +2220,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               !list[item.key].active ||
                               item.state ||
                               !_Wallet_ ||
-                              !managers.includes(String(_Wallet_)) ||
-                              (item.type === 'stealth' && !RSA)
+                              !managers.includes(String(_Wallet_))
                             }
                             style={{
                               alignSelf: 'flex-end',
@@ -2235,6 +2230,10 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             }}
                             onClick={() => {
                               setSaltModal(true)
+                              item.type === 'stealth' ? setPayToModalState({
+                                modalData: undefined,
+                                trigger: false
+                              }) : ''
                               setTrigger(item.type)
                               setSafeTrigger('1')
                               setWrite(true)

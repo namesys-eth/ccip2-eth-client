@@ -882,6 +882,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     })
     setGoodSalt(false)
     setTrigger('')
+    setWrite(false)
+    setUpdateRecords(false)
   }
 
   // Signature S_RECORDS with K_SIGNER 
@@ -1016,16 +1018,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
     if (key === 'btc') { // Use Ethers.JS for BTC
       await resolver.getAddress(_type)
-      .then((response) => {
-        if (!response) {
+        .then((response) => {
+          if (!response) {
+            setEmptyRecords(key)
+          } else {
+            setExtraRecords(key, response)
+          }
+        })
+        .catch(() => {
           setEmptyRecords(key)
-        } else {
-          setExtraRecords(key, response)
-        }
-      })
-      .catch(() => {
-        setEmptyRecords(key)
-      })
+        })
     } else { // Manual access for other coins
       /*
       let _ABI = await constants.getABI(resolver.address)
@@ -1474,6 +1476,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             ownerstamp: data.response.ownerstamp
           }
           setHistory(_HISTORY)
+          console.log(_HISTORY)
           var _Ownerstamps: number[] = []
           if (_HISTORY.ownerstamp.length > 0) {
             for (const key in _HISTORY.ownerstamp) {
@@ -3171,7 +3174,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 )}
                             </span>
                             <button
-                              className={item.type === 'resolver' && resolver !== ccip2Contract && managers.includes(String(_Wallet_)) ? "button emphasis" :"button"}
+                              className={item.type === 'resolver' && resolver !== ccip2Contract && managers.includes(String(_Wallet_)) ? "button emphasis" : "button"}
                               hidden={
                                 item.type === 'resolver' && isDisabled(item)
                               }
@@ -3188,8 +3191,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               onClick={() => {
                                 setTrigger(item.type)
                                 setSafeTrigger('1')
-                                item.type === 'resolver' ? setOptions(true) : (item.type === 'storage' ? setConfirm(true) : (setWrite(true))),
-                                  constants.config.includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
+                                item.type === 'resolver' ? setOptions(true) : (item.type === 'storage' ? setConfirm(true) : (setWrite(true)))
+                                constants.config.includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
                               }}
                               data-tooltip={item.tooltip}
                             >
@@ -3266,7 +3269,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       marginTop: '-3px',
                     }}
                     onClick={() => {
-                      setWrite(true)
                       setTrigger('records')
                       setSafeTrigger('1')
                       setWrite(true)
