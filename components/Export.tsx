@@ -40,7 +40,7 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
   }
 
   const handleGatewaySubmit = () => {
-    handleModalData('1')
+    handleModalData('2')
     handleTrigger(true)
     onClose()
   }
@@ -113,7 +113,7 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
               <div 
                 className="material-icons smol"
                 style={{ 
-                  color: 'yellow',
+                  color: 'cyan',
                   marginLeft: '5px',
                   marginTop: '21px'
                 }}
@@ -185,7 +185,6 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
               }}
               onClick={ handleGatewaySubmit }
               data-tooltip='Export Gateway Key'
-              disabled
             >
               <div 
                 className="flex-row"
@@ -204,7 +203,7 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
               <div 
                 className="material-icons smol"
                 style={{ 
-                  color: 'orange',
+                  color: 'cyan',
                   marginLeft: '5px',
                   marginTop: '16px'
                 }}

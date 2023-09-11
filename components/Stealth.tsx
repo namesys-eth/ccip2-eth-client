@@ -8,16 +8,12 @@ import { AbiItem } from 'web3-utils'
 import { verifyMessage } from 'ethers/lib/utils'
 import Help from '../components/Help'
 import Salt from '../components/Salt'
-import Gateway from '../components/Gateway'
-import Options from '../components/Options'
+import PayTo from '../components/PayTo'
 import Error from '../components/Error'
-import Info from '../components/Info'
-import Gas from '../components/Gas'
 import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
-import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
-import { KEYGEN } from '../utils/keygen'
+import { KEYGEN, RSAGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as ed25519v2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
@@ -26,12 +22,15 @@ import { isMobile } from 'react-device-detect'
 import {
   useAccount,
   useFeeData,
-  useContractWrite,
   useSignMessage,
+  useContractRead,
+  usePrepareSendTransaction,
   useWaitForTransaction,
-  useContractRead
+  useSendTransaction
 } from 'wagmi' // Legacy Wagmi 1.6
-import { Resolver } from "@ethersproject/providers"
+import { Resolver } from '@ethersproject/providers'
+import * as cryptico from 'cryptico-js/dist/cryptico.browser.js'
+import { parseEther } from 'viem'
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -52,35 +51,34 @@ interface ModalProps {
 * @interface handleParentModalData : Send modal data to Home/Account page
 * @interface handleParentTrigger : Send modal state to Home/Account page
 **/
-const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
+const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handleParentModalData, handleParentTrigger }) => {
   // React States
   const [browser, setBrowser] = React.useState(false); // Triggers at modal load
   const { data: gasData, isError } = useFeeData(); // Current gas prices
   const [loading, setLoading] = React.useState(true); // Loading process indicator
-  const [migrated, setMigrated] = React.useState(false); // Setup indicator; Setup = Resolver migration + Recordhash setting
   const [keygen, setKeygen] = React.useState(false); // IPNS keygen trigger following signature
   const [crash, setCrash] = React.useState(false);  // Signature fail indicator
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
   const [ENS, setENS] = React.useState(''); // ENS name; used to trigger useContractRead()
+  const [payee, setPayee] = React.useState('') // Payee ENS
+  const [payment, setPayment] = React.useState('') // Encrypted Payment
+  const [payeeAddr, setPayeeAddr] = React.useState('') // Decrypted Payee Address
+  const [payeeAmount, setPayeeAmount] = React.useState('0') // Decrypted Payee Amount
   const [helpModal, setHelpModal] = React.useState(false); // Help modal trigger
   const [successModal, setSuccessModal] = React.useState(false); // Success modal trigger
-  const [gasModal, setGasModal] = React.useState(false); // Gas savings modal trigger
   const [conclude, setConclude] = React.useState(false); // Indicates when all records have finished fetching
   const [resolver, setResolver] = React.useState<any>(); // Resolver for ENS Domain
   const [resolveCall, setResolveCall] = React.useState<any>(); // Resolver object for querying records
   const [sync, setSync] = React.useState(false); // Records sync flag
-  const [addr, setAddr] = React.useState(''); // Addr record for ENS Domain
-  const [avatar, setAvatar] = React.useState(''); // Avatar record for ENS Domain
-  const [thumbnail, setThumbnail] = React.useState(''); // Avatar record for ENS Domain
-  const [recordhash, setRecordhash] = React.useState<string>(''); // Recordhash for CCIP2 Resolver
-  const [ownerhash, setOwnerhash] = React.useState<string>(''); // Ownerhash for CCIP2 Resolver
+  const [recordhash, setRecordhash] = React.useState<any>(undefined); // Recordhash for CCIP2 Resolver
+  const [ownerhash, setOwnerhash] = React.useState<any>(undefined); // Ownerhash for CCIP2 Resolver
   const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState(''); // Legacy Token ID of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState(''); // Wrapper Token ID of ENS Domain
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
-  const [contenthash, setContenthash] = React.useState(''); // Contenthash record for ENS Domain
+  const [stealth, setStealth] = React.useState(''); // Stealth record for ENS Domain
+  const [RSA, setRSA] = React.useState(''); // RSA record for ENS Domain
   const [saltModal, setSaltModal] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
-  const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
   const [refresh, setRefresh] = React.useState(''); // Refresh record trigger
   const [refreshedItem, setRefreshedItem] = React.useState(''); // Refresh record item
   const [refreshedValue, setRefreshedValue] = React.useState(''); // Refresh record value
@@ -90,52 +88,44 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [safeTrigger, setSafeTrigger] = React.useState<string>(''); // Cache state for trigger
   const [help, setHelp] = React.useState(''); // Sets help text for the Help modal
   const [isSigner, setIsSigner] = React.useState(false); // Sets help text for the Help modal
+  const [isPayment, setIsPayment] = React.useState(false); // Logs progress of payment
   const [success, setSuccess] = React.useState(''); // Sets success text for the Success modal
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
   const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K_IPNS keys
+  const [keypairRSA, setKeypairRSA] = React.useState<[string, string]>(); // Sets generated K_RSA keys
   const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K_IPNS and K_SIGNER keys
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains new values for the active records in {a:b} format
+  const [newValues, setNewValues] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(''); // Sets icon for the loading state
   const [color, setColor] = React.useState(''); // Sets color for the loading state
   const [message, setMessage] = React.useState(['', '']); // Sets message for the loading state
-  const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
-  const [confirm, setConfirm] = React.useState(false); // Confirmation modal
-  const [infoModal, setInfoModal] = React.useState(false); // Info modal
-  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_RECORDS()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
+  const [payToModal, setPayToModal] = React.useState(false); // PayTo modal
+  const [processed, setProcessed] = React.useState(false); // Checks if Encryption has occured
+  const [signatures, setSignatures] = React.useState(constants.EMPTY_STRING_STEALTH()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<string[]>(['', '', '']); // CCIP2 Query for on-chain manager
-  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL_RECORDS()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(''); // Stores update timestamp returned by backend
   const [hashType, setHashType] = React.useState('gateway'); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(''); // IPFS hash behind IPNS
-  const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(undefined); // Whether avatar resolves or not
   const [recentCrash, setRecentCrash] = React.useState(false) // Crash state
   const [goodSalt, setGoodSalt] = React.useState(false) // If generated CID matches the available storage
   const [saltModalState, setSaltModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }) // Salt modal state
-  const [optionsModalState, setOptionsModalState] = React.useState<constants.MainBodyState>({
+  }); // Salt modal state
+  const [payToModalState, setPayToModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
-  }) // Options modal state
-  const [confirmModalState, setConfirmModalState] = React.useState<constants.MainBodyState>({
-    modalData: undefined,
-    trigger: false
-  }) // Confirm modal state
-  const [gatewayModalState, setGatewayModalState] = React.useState<constants.MainBodyState>({
-    modalData: undefined,
-    trigger: false
-  }) // Gateway modal state
+  }); // Salt modal state
   const [successModalState, setSuccessModalState] = React.useState<constants.MainBodyState>({
     modalData: undefined,
     trigger: false
   }); // Confirm modal state
-  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_RECORDS); // Record history from last update
+  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_STEALTH); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(''); // Signature S_IPNS(K_WALLET) for IPNS keygen
+  const [sigRSA, setSigRSA] = React.useState(''); // Signature S_RSA(K_WALLET) for RSA keygen
   const [sigSigner, setSigSigner] = React.useState(''); // Signature S_SIGNER(K_WALLET) for Signer
   const [sigApproved, setSigApproved] = React.useState(''); // Signature S_APPROVE(K_WALLET) for Records Manager
   const [sigCount, setSigCount] = React.useState(0); // Signature Count
@@ -170,6 +160,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       recoveredAddress.current = address
     },
   })  // Wagmi Signature hook
+
+  // Write hooks
+  const { config: sendPayment } = usePrepareSendTransaction({
+    to: payeeAddr,
+    value: payeeAmount ? parseEther(payeeAmount) : parseEther('0.0001')
+  })
+  const { data, sendTransaction, isError: sendError, isLoading: sendLoading, isSuccess: sendSuccess } = useSendTransaction(sendPayment)
 
   /// Preview Domain Metadata
   // Read Legacy ENS Registry for ENS domain Owner
@@ -215,97 +212,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     args: [ethers.utils.namehash(ENS)]
   })
 
-  // Sets new ENS Resolver
-  const {
-    data: response1of3,
-    write: migrate,
-    isLoading: isMigrateLoading,
-    isSuccess: isMigrateSuccess,
-    isError: isMigrateError
-  } = useContractWrite({
-    address: `0x${!wrapped ? constants.ensConfig[0].addressOrName.slice(2) : constants.ensConfig[chain === '1' ? 7 : 3].addressOrName.slice(2)}`,
-    abi: !wrapped ? constants.ensConfig[0].contractInterface : constants.ensConfig[chain === '1' ? 7 : 3].contractInterface,
-    functionName: 'setResolver',
-    args: [ethers.utils.namehash(ENS), ccip2Contract]
-  })
-
-  // Sets IPNS Short Recordhash in CCIP2 Resolver
-  const {
-    data: response2of3,
-    write: initRecordhash,
-    isLoading: isSetRecordhashLoading,
-    isSuccess: isSetRecordhashSuccess,
-    isError: isSetRecordhashError
-  } = useContractWrite({
-    address: `0x${ccip2Config.addressOrName.slice(2)}`,
-    abi: ccip2Config.contractInterface,
-    functionName: 'setShortRecordhash',
-    args: [
-      ethers.utils.namehash(ENS),
-      ethers.utils.defaultAbiCoder.encode(
-        ['bytes32'],
-        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
-      )
-    ]
-  })
-
-  // Sets Gateway as Recordhash in CCIP2 Resolver
-  const {
-    data: response3of3,
-    write: initGateway,
-    isLoading: isSetGatewayLoading,
-    isSuccess: isSetGatewaySuccess,
-    isError: isSetGatewayError
-  } = useContractWrite({
-    address: `0x${ccip2Config.addressOrName.slice(2)}`,
-    abi: ccip2Config.contractInterface,
-    functionName: 'setRecordhash',
-    args: [
-      ethers.utils.namehash(ENS),
-      CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : constants.zeroBytes
-    ]
-  })
-
   // Wagmi hook for awaiting transaction processing
-  const { isSuccess: txSuccess1of3, isError: txError1of3, isLoading: txLoading1of3 } = useWaitForTransaction({
-    hash: response1of3?.hash,
+  const { isSuccess: txSuccess, isError: txError, isLoading: txLoading } = useWaitForTransaction({
+    hash: data?.hash,
   })
-  const { isSuccess: txSuccess2of3, isError: txError2of3, isLoading: txLoading2of3 } = useWaitForTransaction({
-    hash: response2of3?.hash,
-  })
-  const { isSuccess: txSuccess3of3, isError: txError3of3, isLoading: txLoading3of3 } = useWaitForTransaction({
-    hash: response3of3?.hash,
-  })
-
-  // Handle Options modal data return
-  const handleOptionsModalData = (data: string | undefined) => {
-    setOptionsModalState(prevState => ({ ...prevState, modalData: data }))
-  }
-  // Handle Options modal trigger
-  const handleOptionsTrigger = (trigger: boolean) => {
-    setOptionsModalState(prevState => ({ ...prevState, trigger: trigger }))
-    if (trigger) {
-      setSafeTrigger('1')
-    } else {
-      setSafeTrigger('0')
-      setTrigger('')
-    }
-  }
-
-  // Handle Confirm modal data return
-  const handleConfirmModalData = (data: string | undefined) => {
-    setConfirmModalState(prevState => ({ ...prevState, modalData: data }))
-  }
-  // Handle Confirm modal trigger
-  const handleConfirmTrigger = (trigger: boolean) => {
-    setConfirmModalState(prevState => ({ ...prevState, trigger: trigger }))
-    if (trigger) {
-      setSafeTrigger('1')
-    } else {
-      setSafeTrigger('0')
-      setTrigger('')
-    }
-  }
 
   // Handle Success modal data return
   const handleSuccessModalData = (data: string | undefined) => {
@@ -332,107 +242,111 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSaltModal(false)
   }
 
-  // Handle Gateway modal data return
-  const handleGatewayModalData = (data: string | undefined) => {
-    setGatewayModalState(prevState => ({ ...prevState, modalData: data }))
+  // Handle PayTo modal data return
+  const handlePayToModalData = (data: string | undefined) => {
+    setPayToModalState(prevState => ({ ...prevState, modalData: data }))
   }
-  // Handle Gateway modal trigger
-  const handleGatewayTrigger = (trigger: boolean) => {
-    setGatewayModalState(prevState => ({ ...prevState, trigger: trigger }))
+  // Handle PayTo modal trigger
+  const handlePayToTrigger = (trigger: boolean) => {
+    setPayToModalState(prevState => ({ ...prevState, trigger: trigger }))
     if (trigger) {
       setSafeTrigger('1')
     } else {
       setSafeTrigger('0')
       setTrigger('')
     }
+    setPayToModal(false)
   }
 
-  // Handle Info modal data return
-  const handleInfoModalData = (data: string | undefined) => {
-  }
-  // Handle Info modal trigger
-  const handleInfoTrigger = (trigger: boolean) => {
+  // Handle Payment decryption
+  const decrypt = () => {
+    setMessage(['Searching For Payment', ''])
+    setLoading(true)
+    const lookup = async () => {
+      const _resolver = await provider.getResolver(payee)
+      if (_resolver?.address) {
+        await _resolver.getText('stealth')
+          .then(response => {
+            if (!response) {
+              setLoading(false)
+              setPayeeAddr(constants.zeroAddress)
+              setPayeeAmount('0.0')
+              setMessage(['Payer Has No Payment For You', ''])
+              doCrash()
+              setColor('orangered')
+            } else {
+              setMessage(['Decrypting Payment Data', ''])
+              setSaltModal(true)
+              setIsPayment(true)
+              setPayment(response)
+            }
+          })
+          .catch(() => {
+            setLoading(false)
+            setPayeeAddr(constants.zeroAddress)
+            setPayeeAmount('0.0')
+            setMessage(['Error Fetching Payment Data', ''])
+            doCrash()
+            setColor('orangered')
+          })
+      } else {
+        setLoading(false)
+        setPayeeAddr(constants.zeroAddress)
+        setPayeeAmount('0.0')
+        setMessage(['Payer Has No Resolver', ''])
+        doCrash()
+        setColor('orangered')
+      }
+    }
+    lookup()
   }
 
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void; }) => {
     setSigApproved('') // Purge Manager Signature S_RECORDS from local storage 
-    setSignatures(constants.EMPTY_STRING_RECORDS()) // Purge Record Signatures from local storage 
+    setSignatures(constants.EMPTY_STRING_STEALTH()) // Purge Record Signatures from local storage 
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
+    setKeypairRSA(undefined)
     setSigSigner('')
     setSigIPNS('')
-    handleParentModalData(`${ENS}+`)
+    setSigRSA('')
+    setPayment('')
+    handleParentModalData(`${ENS}`)
     handleParentTrigger(true)
     e.preventDefault()
     onClose()
   }
 
   // Initialises internal LIST[] object
-  function setMetadata(_recordhash: string, _addr: string, _contenthash: string, _avatar: string) {
+  function setMetadata(_encrypted: string, _pubkey: string) {
     let _LIST = [
       {
         key: 0,
-        header: hashType === 'recordhash' ? 'Recordhash' : (hashType === 'gateway' ? 'Gateway' : 'Ownerhash'),
-        type: 'storage',
-        value: _recordhash,
+        header: 'Encryption Key',
+        type: 'rsa',
+        value: _pubkey,
         editable: false,
         active: resolver === ccip2Contract,
         state: false,
         label: 'Set',
-        help: '<span>On-chain Record <span style="color: cyan">Storage</span> Pointer</span>',
-        tooltip: 'Set New Storage'
+        help: '<span>Set <span style="color: cyan">Encryption</span> Public Key To <span style="color: orange">Send</span> Money</span>',
+        tooltip: 'Set New RSA PubKey'
       },
       {
         key: 1,
-        header: 'Resolver',
-        type: 'resolver',
-        value: resolver,
+        header: 'Encrypted Payment',
+        type: 'stealth',
+        value: _encrypted,
         editable: false,
-        active: resolver !== ccip2Contract,
+        active: resolver === ccip2Contract,
         state: false,
-        label: 'Migrate',
-        help: '<span>Please <span style="color: cyan">migrate resolver</span> to enjoy off-chain records</span>',
-        tooltip: 'Please Migrate Resolver'
-      },
-      {
-        key: 2,
-        header: 'Avatar',
-        type: 'avatar',
-        value: _avatar,
-        editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAvatar(_avatar) && queue > 0,
-        state: false,
-        label: 'Edit',
-        help: '<span>Set your <span style="color: cyan">avatar</span></span>',
-        tooltip: 'Set Avatar'
-      },
-      {
-        key: 3,
-        header: 'Address',
-        type: 'addr',
-        value: _addr,
-        editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAddr(_addr) && queue > 0,
-        state: false,
-        label: 'Edit',
-        help: '<span>Set your default <span style="color: cyan">address</span></span>',
-        tooltip: 'Set Address'
-      },
-      {
-        key: 4,
-        header: 'Contenthash',
-        type: 'contenthash',
-        value: _contenthash,
-        editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isContenthash(_contenthash) && queue > 0,
-        state: false,
-        label: 'Edit',
-        help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
-        tooltip: 'Set Contenthash'
+        label: 'Set',
+        help: '<span><span style="color: cyan">Encrypted</span> Payment Address To <span style="color: lime">Receive</span> Money</span>',
+        tooltip: 'Set New Stealth Payment'
       }
     ]
-    concludeGet(_LIST) // Assign to LIST[]
+    concludeGet(_LIST) // Assign _LIST
   }
 
   // Set Records to show for ENS domain
@@ -442,33 +356,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     }
   }
 
-  // Functions for <Elements>
-  function multiEdit(_item: any) {
-    return !['resolver', 'storage'].includes(_item.type) && states.length > 1 && !states.includes('resolver') && !states.includes('storage')
-  }
-  function isDisabled(_item: any) {
-    return constants.blocked.includes(_item.type) ||
-    !list[_item.key].active ||
-    !legit[_item.type] ||
-    _item.state ||
-    !_Wallet_ ||
-    !managers.includes(String(_Wallet_)) ||
-    (!['resolver', 'storage'].includes(_item.type) && newValues === constants.EMPTY_STRING_RECORDS())
-  }
-
   /// Keys & Signature Definitions
   /* K_SIGNER = Generated secp256k1 Keypair 
    * K_WALLET = Wallet secp256k1 Keypair 
    * K_IPNS = Generated ed25519 Keypair
+   * K_RSA = Generate RSA Keypair
    * S_IPNS = Signature for K_IPNS Generation (Signed by K_WALLET)
    * S_RECORDS = Signature for Records (Signed by K_SIGNER)
    * S_APPROVE = Signature for Manager Approval (Signed by K_WALLET)
    * S_SIGNER = Signature for K_SIGNER Generation (Signed by K_WALLET)
+   * S_RSA = Signature for K_RSA Generation (Signed by K_WALLET)
    */
   // Signature S_IPNS statement; S_IPNS(K_WALLET) [IPNS Keygen]
   // S_IPNS is not recovered on-chain; no need for buffer prepend and hashing of message required to sign
   function statementIPNSKey(extradata: string, type: string) {
-    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'gateway'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate IPNS Key\n\nOrigin: ${['recordhash', 'storage'].includes(type) ? ENS : origin}\nKey Type: ed25519\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -493,6 +395,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _digest = _toSign
     return _digest
   }
+  // Signature S_RSA statement; S_RSA(K_WALLET) [Signer Keygen]
+  // S_RSA generates AES-encrypted text
+  function statementEncryptionKey(extradata: string) {
+    let _toSign = `Requesting Signature To Generate Encryption Key\n\nOrigin: ${ENS}\nKey Type: RSA-1048\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _digest = _toSign
+    return _digest
+  }
 
   /// Encode string values of records
   // returns abi.encodeWithSelector(iCallbackType.signedRecord.selector, _signer, _recordSignature, _approvedSignature, result)
@@ -500,16 +409,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let encoded: string
     let _value: string = ''
     let type: string = ''
-    if (key === 'avatar') {
+    if (['stealth', 'rsa'].includes(key)) {
       type = 'string'
-      _value = value
-    }
-    if (key === 'contenthash') {
-      type = 'bytes'
-      _value = ensContent.encodeContenthash(value).encoded
-    }
-    if (key === 'addr') {
-      type = 'address'
       _value = value
     }
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value])
@@ -533,16 +434,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // returns bytesToHexString(abi.encodePacked(keccak256(result)))
     let type: string = ''
     let _value: string = ''
-    if (key === 'avatar') {
+    if (['stealth', 'rsa'].includes(key)) {
       type = 'string'
-      _value = _recordValue
-    }
-    if (key === 'contenthash') {
-      type = 'bytes'
-      _value = ensContent.encodeContenthash(_recordValue).encoded
-    }
-    if (key === 'addr') {
-      type = 'address'
       _value = _recordValue
     }
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value])
@@ -551,7 +444,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return _extradata
   }
 
-  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
+  // Returns Owner of wrapped/legacy ENS Domain
   function getManager() {
     if (_OwnerLegacy_ && _ManagerLegacy_) {
       if (String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3]) {
@@ -573,57 +466,49 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setSigSigner('')
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
+    setKeypairRSA(undefined)
     setLoading(false)
     setSigIPNS('')
+    setSigRSA('')
+    setIsSigner(false)
     setSaltModal(false)
+    setSaltModalState({
+      modalData: undefined,
+      trigger: false
+    })
+    setPayToModalState({
+      modalData: undefined,
+      trigger: false
+    })
     setGoodSalt(false)
     if (write) setWrite(false)
-    setConfirmModalState({
-      modalData: undefined,
-      trigger: false
-    })
-    setOptionsModalState({
-      modalData: undefined,
-      trigger: false
-    })
-    setGatewayModalState({
-      modalData: undefined,
-      trigger: false
-    })
   }
 
   /// Trigger Enjoy
   function doEnjoy() {
     setIcon('gpp_good')
     setColor('lime')
-    setLegit(constants.EMPTY_BOOL_RECORDS())
     setSaltModal(false)
-    setLoading(false)
     setQueue(1)
     setKeypairSigner(undefined)
     setKeypairIPNS(undefined)
+    setKeypairRSA(undefined)
     setSigSigner('')
     setSigIPNS('')
+    setSigRSA('')
     setCID('')
     setIsSigner(false)
     setSaltModalState({
       modalData: undefined,
       trigger: false
     })
-    setConfirmModalState({
-      modalData: undefined,
-      trigger: false
-    })
-    setOptionsModalState({
-      modalData: undefined,
-      trigger: false
-    })
-    setGatewayModalState({
+    setPayToModalState({
       modalData: undefined,
       trigger: false
     })
     setGoodSalt(false)
     setTrigger('')
+    setLoading(false)
   }
 
   // Signature S_RECORDS with K_SIGNER 
@@ -643,8 +528,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Signature S_APPROVE with K_WALLET
   async function signManager() {
-    setSigCount(3) // Trigger S_APPROVE(K_WALLET)
-    setMessage(['Waiting For Signature', '3'])
+    setSigCount(4) // Trigger S_APPROVE(K_WALLET)
+    setMessage(['Waiting For Signature', trigger === 'rsa' ? '4' : '3'])
     if (keypairSigner) {
       const SIGN_APPROVE = async () => {
         signMessage({
@@ -660,6 +545,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Signature S_SIGNER with K_WALLET
   async function signSigner(_value: string) {
+    setSigCount(2)
     const SIGN_SIGNER = async () => {
       signMessage({
         message: statementSignerKey(
@@ -684,12 +570,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         constants.ensConfig[chain === '1' ? 6 : 6].addressOrName
       )
       let gasAmount: any
-      if (key === 'contenthash') {
-        gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
-      } else if (key === 'avatar') {
+      if (['stealth', 'rsa'].includes(key)) {
         gasAmount = await contract.methods.setText(ethers.utils.namehash(ENS), key, value).estimateGas({ from: _Wallet_ })
-      } else if (key === 'addr') {
-        gasAmount = await contract.methods.setAddr(ethers.utils.namehash(ENS), value).estimateGas({ from: _Wallet_ })
       }
       return gasAmount
     }
@@ -697,71 +579,38 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     return gas
   }
 
-  // Get Contenthash for ENS domain first
-  async function getContenthash(resolver: ethers.providers.Resolver) {
-    await resolver.getContentHash()
-      .then((response) => {
-        if (!response) {
-          setContenthash('')
-        } else {
-          setContenthash(response)
-        }
-        
-        getAvatar(resolver)
-      })
-      .catch(() => {
-        setContenthash('')
-        getAvatar(resolver)
-      })
-  }
-
-  // Get Avatar for ENS domain second
-  async function getAvatar(resolver: ethers.providers.Resolver) {
-    await provider.getAvatar(ENS)
+  // Get Stealth record for ENS domain
+  async function getStealth(resolver: ethers.providers.Resolver) {
+    await resolver.getText('stealth')
       .then(response => {
         if (!response) {
-          getText(resolver, 'avatar')
+          setStealth('')
+          getRSA(resolver)
         } else {
-          setAvatar(response)
+          setStealth(response)
+          getRSA(resolver)
         }
-        getAddr()
       })
       .catch(() => {
-        getText(resolver, 'avatar')
+        setStealth('')
+        getRSA(resolver)
       })
   }
 
-  // Get Avatar for ENS domain second
-  async function getText(resolver: ethers.providers.Resolver, key: string) {
-    await resolver.getText(key)
-      .then((response) => {
-        if (!response) {
-          setAvatar('')
-        } else {
-          setAvatar(response)
-        }
-        getAddr()
-      })
-      .catch(() => {
-        setAvatar('')
-        getAddr()
-      })
-  }
-
-  // Get Addr for ENS domain at last
-  async function getAddr() {
-    await provider.resolveName(ENS)
+  // Get RSA record for ENS domain
+  async function getRSA(resolver: ethers.providers.Resolver) {
+    await resolver.getText('rsa')
       .then(response => {
         if (!response) {
-          setAddr('')
+          setRSA('')
           setSync(true)
         } else {
-          setAddr(response)
+          setRSA(response)
           setSync(true)
         }
       })
       .catch(() => {
-        setAddr('')
+        setRSA('')
         setSync(true)
       })
   }
@@ -792,56 +641,39 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             }
           }
           setHashIPFS(_IPFS._value.split('/')[2])
-          console.log(_IPFS, _history)
           if (_history.ownerstamp.length >= 1) {
-            if (_IPFS._sequence && _history.timestamp.revision && Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
-              if (_history.revision.contenthash) {
-                setContenthash(_history.contenthash)
+            if (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1 && _Storage[1]) {
+              if (_history.stealth || _history.rsa) {
+                setStealth(_history.stealth)
+                setRSA(_history.rsa)
               } else {
-                setContenthash('')
-              }
-              if (_history.revision.avatar) {
-                setAvatar(_history.avatar)
-              } else {
-                setAvatar('')
-              }
-              if (_history.revision.addr) {
-                setAddr(_history.addr)
-              } else {
-                setAddr('')
+                setStealth('')
+                setRSA('')
               }
               setSync(true)
             } else {
-              getContenthash(_response)
+              getStealth(_response)
             }
           } else {
-            getContenthash(_response)
+            getStealth(_response)
             /* @TODO
-            setContenthash('')
-            setAvatar('')
-            setAddr('')
+            setStealth('')
+            setRSA('')
             setSync(true)
             */
           }
         } else {
-          const _contenthash = await refreshRecord(['contenthash', ''], _response, _ENS, false)
-          setContenthash(_contenthash || '')
-          let _avatar: string
-          _avatar = await refreshRecord(['avatar', ''], _response, _ENS, false)
-          if (!_avatar) {
-            _avatar = await refreshRecord(['text', 'avatar'], _response, _ENS, false)
-          }
-          setAvatar(_avatar || '')
-          const _addr = await refreshRecord(['addr', ''], _response, _ENS, false)
-          setAddr(_addr || '')
+          const _stealth = await refreshRecord(['text', 'stealth'], _response, _ENS, false)
+          setStealth(_stealth || '')
+          const _RSA = await refreshRecord(['text', 'rsa'], _response, _ENS, false)
+          setRSA(_RSA || '')
           setSync(true)
         }
       } else {
         setResolveCall(_response)
         setResolver('')
-        setContenthash('')
-        setAvatar('')
-        setAddr('')
+        setStealth('')
+        setRSA('')
         setSync(true)
       }
     } catch (error) {
@@ -853,50 +685,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   async function refreshRecord(_record: string[], _resolver: Resolver, _ENS: string, _trigger: boolean) {
     if (_trigger) setRefresh(_record[0])
     try {
-      if (_record[0] === 'addr') {
-        const _response = await provider.resolveName(_ENS)
-        if (_response) {
-          if (_trigger) {
-            setAddr(_response)
-            setRefreshedValue(_response)
-            setRefresh('1')
-          }
-          return _response
-        }
-        return ''
-      } else if (_record[0] === 'avatar') {
-        const _response = await provider.getAvatar(_ENS)
-        if (_response) {
-          if (_trigger) {
-            setAvatar(_response)
-            setRefreshedValue(_response)
-            setRefresh('1')
-          }
-          return _response
-        }
-        return ''
-      } else if (_record[0] === 'contenthash') {
-        const _response = await _resolver.getContentHash()
-        if (_response) {
-          if (_trigger) {
-            setContenthash(_response)
-            setRefreshedValue(_response)
-            setRefresh('1')
-          }
-          return _response
-        }
-        return ''
-      } else if (_record[0] === 'text') {
+      if (_record[0] === 'text') {
         const _response = await _resolver.getText(_record[1])
         if (_response) {
+          if (_record[1] === 'stealth') {
+            setStealth(_response)
+          } else if (_record[1] === 'rsa') (
+            setRSA(_response)
+          )
           if (_trigger) {
-            setAvatar(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
           return _response
         }
-        return ''
       }
       if (_trigger) setRefresh('0')
       return ''
@@ -962,45 +764,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Upates new record values in local storage before pushing updates
-  function setValues(key: string, _value: string) {
-    let value = _value.trim()
-    let __THIS = legit
-    __THIS['resolver'] = false
-    if (key === 'storage') {
-      __THIS[key] = true
-    } else if (key === 'addr') {
-      __THIS[key] = constants.isAddr(value)
-    } else if (key === 'avatar') {
-      __THIS[key] = constants.isAvatar(value)
-    } else if (key === 'contenthash') {
-      __THIS[key] = constants.isContenthash(value)
+  function setPayeeValue(_value: string) {
+    if (_value.endsWith('.eth')) {
+      setPayee(_value)
     } else {
-      setStates(prevState => [...prevState, key])
-      console.error('Error:', 'Illegal State Checkpoint')
-      return
+      setPayee('')
     }
-    setLegit(__THIS)
-    const _THIS = newValues
-    _THIS[key] = value
-    setNewValues(_THIS)
-    const priorState = states
-    if (!priorState.includes(key) && newValues[key]) {
-      setStates(prevState => [...prevState, key])
-    } else if (priorState.includes(key) && !newValues[key]) {
-      setStates(prevState => prevState.filter(item => item !== key))
-    }
-    let _updatedList = list.map((item) => {
-      if (states.includes(item.type)) {
-        return {
-          ...item,
-          editable: true,
-          active: true,
-          state: false
-        }
-      }
-      return item
-    })
-    setPreCache(_updatedList)
   }
 
   // Get records from history on NameSys backend
@@ -1010,7 +779,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       type: 'read',
       ens: ENS,
       controller: getManager(),
-      recordsTypes: 'all',
+      recordsTypes: ['stealth', 'rsa', 'revision', 'version'],
       recordsValues: 'all',
       chain: chain,
       storage: _storage,
@@ -1030,9 +799,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         .then(data => {
           let _HISTORY = {
             type: data.response.type,
-            addr: data.response.addr,
-            avatar: data.response.avatar,
-            contenthash: data.response.contenthash,
+            stealth: data.response.stealth,
+            rsa: data.response.rsa,
             version: data.response.version,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
@@ -1061,10 +829,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Modal load
   React.useEffect(() => {
-    if (_ENS_.endsWith('#') || _ENS_.endsWith('-') || _ENS_.endsWith(':') || _ENS_.endsWith('&')) {
+    if (_ENS_.endsWith('.eth')) {
       setBrowser(true)
-      setENS(_ENS_.slice(0, -1))
-      setMessage([_ENS_.endsWith('-') || _ENS_.endsWith('&') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
+      setENS(_ENS_)
+      setMessage(['Loading', '-'])
     } else {
       setBrowser(false)
     }
@@ -1116,16 +884,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setOwnerhash(`${_String}`)
         }
       } else {
-        setOwnerhash('')
+        setOwnerhash(undefined)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Ownerhash_])
 
-  // Capture Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_) {
-      if (String(_Recordhash_).length > 2 && _Recordhash_ !== _Ownerhash_) {
+      if (String(_Recordhash_).length > 2 && (_Recordhash_ !== _Ownerhash_)) {
         let _String: string = ''
         if (String(_Recordhash_).startsWith(constants.prefix)) {
           _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
@@ -1137,48 +904,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         } else {
           setRecordhash(`${_String}`)
         }
-        setMessage(['This May Take a While', ''])
-        setMessage([_ENS_.endsWith('-') || _ENS_.endsWith('&') ? 'Refreshing Records' : (_ENS_.endsWith('#') ? 'Checking History' : 'Loading Records'), '-'])
-      } else if (String(_Recordhash_) === '0x' && _Recordhash_ === _Ownerhash_) {
-        if (resolver === ccip2Contract) {
-          setRecordhash(constants.defaultGateway)
-        } else {
-          setRecordhash('')
-        }
+        setMessage(['This May Take a Short While', ''])
+        setMessage(['Loading', '-'])
       } else {
-        setRecordhash('')
+        setRecordhash(undefined)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Recordhash_, _Ownerhash_, resolver])
+  }, [_Recordhash_, _Ownerhash_])
 
   // Sets Success modal refresh
   React.useEffect(() => {
     if (successModalState.trigger && successModalState.modalData) {
-      if (txSuccess1of3) {
-        handleSuccess(`${ENS}#`)
-      } else if (txSuccess2of3) {
-        handleSuccess(`${ENS}-`)
-      } else if (txSuccess3of3) {
-        handleSuccess(`${ENS}&`)
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [successModalState, txSuccess1of3, txSuccess2of3, txSuccess3of3])
-
-  // Sets option between Ownerhash and Recordhash
-  React.useEffect(() => {
-    if (confirmModalState.trigger && confirmModalState.modalData) {
-      setConfirm(false)
-      if (confirmModalState.modalData === '0') {
-        setSaltModal(true)
-        setProcessCount(1)
-      } else {
-        setGateway(true)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmModalState])
+  }, [successModalState])
 
   // Send data to Home/Account-page and trigger update
   function handleSuccess(_output: string) {
@@ -1189,18 +929,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Sets option between Ownerhash and Recordhash
   React.useEffect(() => {
     if (safeTrigger === '1') {
-      if (trigger && !write) {
-        if (trigger === 'storage') {
-          if (!confirmModalState.trigger) setConfirm(true)
-          setHashType(confirmModalState.modalData === '0' ? 'recordhash' : 'gateway')
-        } else {
-          if (optionsModalState.trigger) {
-            setHashType(optionsModalState.modalData === '1' ? 'recordhash' : (optionsModalState.modalData === '2' ? 'gateway' : 'ownerhash'))
-            setProcessCount(1)
-            migrate()
-          }
-        }
-      } else if (trigger && write) {
+      if (trigger && write) {
         if (recordhash) {
           if (recordhash.startsWith('https://')) {
             setHashType('gateway')
@@ -1219,7 +948,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger, optionsModalState, write, safeTrigger, confirmModalState])
+  }, [trigger, write, safeTrigger])
 
   // Sets in-app ENS domain manager
   React.useEffect(() => {
@@ -1249,124 +978,262 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_OwnerLegacy_])
 
-  // Handles loading of avatar
+  // Error Handling 
+  // Handles Transaction Confirmation
   React.useEffect(() => {
-    let _avatar: string = ''
-    if (avatar.startsWith('ipfs://')) {
-      _avatar = `https://ipfs.io/ipfs/${avatar.split('ipfs://')[1]}`
-      constants.checkImageURL(_avatar)
-        .then(() => {
-          setImageLoaded(true)
-          setThumbnail(_avatar)
-        })
-        .catch(() => {
-          setImageLoaded(false)
-          setThumbnail('')
-        })
-    } else if (avatar.startsWith(`eip155:${chain}`)) {
-      let _contract = avatar.split(':')[2].split('/')[0]
-      let _tokenID = avatar.split(':')[2].split('/')[1]
-      constants.alchemy.nft.getNftMetadata(
-        _contract,
-        _tokenID
-      ).then((_response) => {
-        _avatar = _response.media[0].thumbnail || _response.media[0].gateway
-        constants.checkImageURL(_avatar)
-          .then(() => {
-            setImageLoaded(true)
-            setThumbnail(_avatar)
-          })
-          .catch(() => {
-            setImageLoaded(false)
-            setThumbnail('')
-          })
-      })
-    } else if (avatar.startsWith('https://')) {
-      _avatar = avatar
-      constants.checkImageURL(_avatar)
-        .then(() => {
-          setImageLoaded(true)
-          setThumbnail(_avatar)
-        })
-        .catch(() => {
-          setImageLoaded(false)
-          setThumbnail('')
-        })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [avatar])
-
-  // Triggers Gateway routine
-  React.useEffect(() => {
-    if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && write) {
-      setLoading(true)
-      setMessage(['Waiting For Signature', hashType !== 'gateway' ? '1' : '2'])
-      const _sigSigner = async () => {
-        setSigCount(2) // Trigger S_SIGNER(K_WALLET)
-        setProcessCount(2)
-        signSigner(constants.randomString(10))
+    if (sendSuccess && txSuccess) {
+      const pin = async () => {
+        setMessage(['Transaction Confirmed', ''])
+        setTimeout(() => {
+          setSuccess('<span>Payment <span style="color: lightgreen">Sent Successfully</span></span>')
+          setSuccessModal(true)
+          doEnjoy()
+        }, 1000)
       }
-      _sigSigner()
-    } else if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && !write) {
-      setCID(gatewayModalState.modalData)
+      pin()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gatewayModalState, hashType, write])
+  }, [sendSuccess, txSuccess])
+  // Handles Transaction wait
+  React.useEffect(() => {
+    if (sendLoading && !sendError) {
+      setLoading(true)
+      setMessage(['Waiting for Transaction', ''])
+      if (recentCrash) setRecentCrash(false)
+    } else if (sendError && !sendLoading) {
+      if (!recentCrash) {
+        setMessage(['Transaction Declined by User', ''])
+        doCrash()
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sendLoading, sendError])
+  // Handles Transaction 1 loading and error
+  React.useEffect(() => {
+    if (txLoading && !txError) {
+      setLoading(true)
+      setMessage(['Waiting for Confirmation', ''])
+      if (recentCrash) setRecentCrash(false)
+    } else if (!txLoading && txError) {
+      if (!recentCrash) {
+        setMessage(['Transaction Failed', ''])
+        doCrash()
+      } else {
+        if (recentCrash) setRecentCrash(false)
+      }
+      setSaltModalState({
+        modalData: undefined,
+        trigger: false
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [txLoading, txError])
+
+
+  // Triggers S_IPNS(K_WALLET) after Payee is set
+  React.useEffect(() => {
+    let _modalData: string = ''
+    if (payToModalState.trigger && payToModalState.modalData !== undefined) {
+      if (saltModalState.trigger && saltModalState.modalData !== undefined) {
+        _modalData = saltModalState.modalData
+      }
+    } else {
+      if (saltModalState.trigger && saltModalState.modalData !== undefined) {
+        _modalData = saltModalState.modalData
+      }
+    }
+    if (trigger === 'rsa' && hashType !== 'gateway') {
+      if (saltModalState.trigger && !keypairIPNS && safeTrigger) {
+        setSigCount(1)
+        setMessage(['Waiting For Signature', '1'])
+        signMessage({
+          message: statementIPNSKey(
+            ethers.utils.keccak256(ethers.utils.solidityPack(
+              ['bytes32', 'address'],
+              [
+                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_modalData])),
+                _Wallet_
+              ]
+            )),
+            hashType
+          )
+        })
+        setKeygen(true)
+      }
+    } else if (trigger === 'stealth' && hashType !== 'gateway') {
+      if (payToModalState.trigger && !keypairIPNS && safeTrigger && !constants.isEmpty(newValues)) {
+        setSigCount(1)
+        setMessage(['Waiting For Signature', '1'])
+        signMessage({
+          message: statementIPNSKey(
+            ethers.utils.keccak256(ethers.utils.solidityPack(
+              ['bytes32', 'address'],
+              [
+                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_modalData])),
+                _Wallet_
+              ]
+            )),
+            hashType
+          )
+        })
+        setKeygen(true)
+      }
+    } else if (trigger && hashType === 'gateway') {
+      setSigIPNS('0')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState, payToModalState, recordhash, trigger, safeTrigger, hashType, write, states, keypairIPNS])
+
+  // Triggers PayTo modal
+  React.useEffect(() => {
+    if (trigger === 'stealth') {
+      if (saltModalState.trigger && saltModalState.modalData !== undefined) {
+        setPayToModal(true)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState, trigger])
+
+  // Triggers PayTo modal
+  React.useEffect(() => {
+    if (trigger === 'stealth') {
+      if (!payToModalState.trigger && !payToModalState.modalData) {
+        setSaltModalState({
+          modalData: undefined,
+          trigger: false
+        })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payToModalState, trigger])
+
+  // Triggers Decryption Signature
+  React.useEffect(() => {
+    if (isPayment) {
+      if (saltModalState.trigger && saltModalState.modalData !== undefined) {
+        setSigCount(3)
+        setProcessCount(hashType === 'gateway' ? 1 : 1)
+        setMessage(['Waiting For Signature', '1'])
+        signMessage({
+          message: statementEncryptionKey(
+            ethers.utils.keccak256(ethers.utils.solidityPack(
+              ['bytes32', 'address'],
+              [
+                ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])),
+                _Wallet_
+              ]
+            ))
+          )
+        })
+        setKeygen(true)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saltModalState, isPayment, hashType])
+
+  // Triggers Decryption Keygen
+  React.useEffect(() => {
+    if (isPayment && keygen) {
+      if (sigRSA && saltModalState.trigger) {
+        setMessage(['Generating Encryption Key', ''])
+        const keygen = async () => {
+          const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+          const __keypair = await RSAGEN(_origin, caip10, sigRSA, saltModalState.modalData)
+          setKeypairRSA(__keypair)
+          setMessage(['Encryption Keypair Generated', ''])
+        }
+        keygen()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sigRSA, isPayment, keygen, saltModalState])
+
+  // Decrypts & Parses payment
+  React.useEffect(() => {
+    if (isPayment && keypairRSA !== undefined && payment) {
+      const _Payload = cryptico.decrypt(payment, keypairRSA[0])
+      let _Payee = JSON.parse(_Payload.plaintext).payee
+      let _Amount = JSON.parse(_Payload.plaintext).amount
+      const resolve = async () => {
+        if (_Payee.endsWith('.eth')) {
+          await provider.resolveName(_Payee)
+            .then(response => {
+              if (!response) {
+              } else {
+                setPayeeAddr(response)
+              }
+            })
+            .catch(() => {
+              setLoading(false)
+              setMessage(['Bad Payee', ''])
+              doCrash()
+              setColor('orangered')
+              setSigCount(0)
+              setProcessCount(0)
+            })
+        } else {
+          setPayeeAddr(_Payee)
+        }
+        setPayeeAmount(_Amount)
+        setLoading(false)
+      }
+      resolve()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keypairRSA, isPayment, payment])
 
   // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
-    if (saltModalState.trigger && saltModalState.modalData !== undefined && !keypairIPNS && trigger && safeTrigger) {
-      setSigCount(1)
-      setProcessCount(write ? 3 : 1)
-      setMessage(['Waiting For Signature', '1'])
-      signMessage({
-        message: statementIPNSKey(
-          ethers.utils.keccak256(ethers.utils.solidityPack(
-            ['bytes32', 'address'],
-            [
-              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [saltModalState.modalData])),
-              _Wallet_
-            ]
-          )),
-          hashType
-        )
-      })
-      setKeygen(true)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, recordhash, trigger, safeTrigger, hashType, write, states, keypairIPNS])
-
-  // Triggers IPNS Keygen after password is set
-  React.useEffect(() => {
-    if (sigIPNS && !keypairIPNS) {
+    if (sigIPNS && !keypairIPNS && !isSigner && !isPayment) {
+      if (sigIPNS !== '0') {
+        setLoading(true)
+        setMessage(['Generating IPNS Key', ''])
+        const keygen = async () => {
+          const _origin = hashType === 'ownerhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+          const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
+          setKeypairIPNS(__keypair[0])
+          setMessage(['IPNS Keypair Generated', ''])
+        }
+        keygen()
+      } else {
+        setKeypairIPNS(['0x', '0x'])
+        setGoodSalt(true)
+      }
+    } else if (sigRSA && !keypairRSA && isSigner) {
       setLoading(true)
-      setMessage(['Generating IPNS Key', ''])
+      setMessage(['Generating Encryption Key', ''])
       const keygen = async () => {
-        const _origin = hashType === 'ownerhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
-        const __keypair = await KEYGEN(_origin, caip10, sigIPNS, saltModalState.modalData)
-        setKeypairIPNS(__keypair[0])
-        setMessage(['IPNS Keypair Generated', ''])
+        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+        const __keypair = await RSAGEN(_origin, caip10, sigRSA, saltModalState.modalData)
+        setKeypairRSA(__keypair)
+        setMessage(['Encryption Keypair Generated', ''])
       }
       keygen()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keygen, keypairIPNS, goodSalt, write, sigIPNS])
+  }, [keygen, keypairIPNS, goodSalt, write, sigIPNS, isSigner, sigRSA, keypairRSA, isPayment])
 
   // Triggers S_SIGNER(K_WALLET) after password is set
   React.useEffect(() => {
-    if (write && saltModalState.trigger && goodSalt) {
+    if (write && saltModalState.trigger && goodSalt && (processed || trigger === 'rsa')) {
       setMessage(['Waiting For Signature', '2'])
       const _sigSigner = async () => {
         if (saltModalState.modalData !== undefined) {
           setSigCount(2) // Trigger S_SIGNER(K_WALLET)
-          setProcessCount(3)
+          setProcessCount(trigger === 'rsa' ? 4 : 3)
           signSigner(saltModalState.modalData)
         }
       }
       _sigSigner()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saltModalState, goodSalt, write, trigger])
+  }, [saltModalState, goodSalt, write, processed, trigger])
 
   // Triggers S_IPNS(K_WALLET) after password is set
   React.useEffect(() => {
@@ -1397,6 +1264,43 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sigSigner, goodSalt, write, isSigner])
 
+  // Triggers S_RSA(K_WALLET) after Signer is set
+  React.useEffect(() => {
+    let _modalData: string = ''
+    if (saltModalState.trigger && saltModalState.modalData !== undefined) {
+      _modalData = saltModalState.modalData
+    }
+    if (trigger === 'rsa' && safeTrigger && isSigner && saltModalState.trigger) {
+      setSigCount(3)
+      setMessage(['Waiting For Signature', '3'])
+      signMessage({
+        message: statementEncryptionKey(
+          ethers.utils.keccak256(ethers.utils.solidityPack(
+            ['bytes32', 'address'],
+            [
+              ethers.utils.keccak256(ethers.utils.solidityPack(['string'], [_modalData])),
+              _Wallet_
+            ]
+          ))
+        )
+      })
+      setKeygen(true)
+    } else if (trigger === 'stealth' && safeTrigger && isSigner && saltModalState.trigger) {
+      setMessage(['Fetching Payer Encryption Key', ''])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSigner, saltModalState, trigger])
+
+  // Triggers S_SIGNER(K_WALLET) after password is set
+  React.useEffect(() => {
+    if (trigger === 'stealth') {
+      setProcessCount(3)
+    } else if (trigger === 'rsa') {
+      setProcessCount(4)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger])
+
   // Triggers IPNS CID derivation with new S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (keypairIPNS && sigIPNS) {
@@ -1422,9 +1326,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               setSigCount(0)
               setProcessCount(0)
             }
-          } else {
-            setGoodSalt(true)
-            setCID(CID_IPNS)
           }
         }
         CIDGen()
@@ -1432,81 +1333,110 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     } else {
       if (write && hashType === 'gateway') {
         setGoodSalt(true)
-        setCID(recordhash || ownerhash)
+        setCID('gateway')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keypairIPNS, sigIPNS, recordhash, ownerhash, write, hashType])
+  }, [keypairIPNS, sigIPNS, hashType, recordhash, ownerhash, write])
 
   // Sets signature from Wagmi signMessage() as S_IPNS(K_WALLET)
   React.useEffect(() => {
     if (signature && sigCount === 1) {
       setSigIPNS(signature)
-    } else if (signature && sigCount === 3) {
+    } else if (signature && sigCount === 4) {
       setSigApproved(signature)
     } else if (signature && sigCount === 2) {
       setSigSigner(signature)
+    } else if (signature && sigCount === 3) {
+      setSigRSA(signature)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, sigCount])
 
-  // Triggers Resolver migration after IPNS CID is generated and validated 
+  // RSA keypair is generated
   React.useEffect(() => {
-    if (CID && !write) {
-      setProcessCount(1)
-      if (CID.startsWith('k5')) {
-        initRecordhash()
-      } else if (CID.startsWith('https://')) {
-        initGateway()
-      }
-    } else if (write) {
-      if (CID.startsWith('k5')) {
-        setProcessCount(3)
-      } else if (CID.startsWith('https://')) {
-        setProcessCount(2)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [CID, write])
-
-  // Handles single vs. mulitple record updates
-  React.useEffect(() => {
-    if (states.length > 1) {
-      let _updatedList = list.map((item) => {
-        if (!['resolver', 'storage'].includes(item.type) &&
-          states.includes(item.type)
-        ) {
-          return {
-            ...item,
-            label: 'Edit',
-            help: 'Set Record'
-          }
+    if (payToModalState.trigger && payToModalState.modalData) {
+      setMessage(['Fetching Payer Encryption Key', ''])
+      setLoading(true)
+      let _Payer = payToModalState.modalData.split(':')[0]
+      let _Payee = payToModalState.modalData.split(':')[1]
+      let _Amount = payToModalState.modalData.split(':')[2]
+      const lookup = async () => {
+        const _resolver = await provider.getResolver(_Payer)
+        if (_resolver?.address) {
+          let _RSA: string = ''
+          await _resolver.getText('rsa')
+            .then((response) => {
+              if (!response) {
+                _RSA = ''
+                setLoading(false)
+                setMessage(['Payer Has No Encryption Record', ''])
+                doCrash()
+                setColor('orangered')
+                setSigCount(0)
+                setProcessCount(0)
+              } else {
+                setMessage(['Waiting For Signature', '2'])
+                _RSA = response
+                let _encryptionResult: any = {}
+                if (keypairRSA) {
+                  _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA, keypairRSA[0])
+                } else {
+                  _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA)
+                }
+                const _THIS = newValues
+                _THIS['stealth'] = _encryptionResult.cipher
+                setNewValues(_THIS)
+                setProcessed(true)
+                const priorState = states
+                if (!priorState.includes('stealth') && newValues['stealth']) {
+                  setStates(prevState => [...prevState, 'stealth'])
+                } else if (priorState.includes('stealth') && !newValues['stealth']) {
+                  setStates(prevState => prevState.filter(item => item !== 'stealth'))
+                }
+              }
+            })
+            .catch(() => {
+              _RSA = ''
+              setLoading(false)
+              setMessage(['Failed To Fetch Encryption Record', ''])
+              doCrash()
+              setColor('orangered')
+              setSigCount(0)
+              setProcessCount(0)
+            })
         } else {
-          return {
-            ...item,
-            label: item.type !== 'resolver' ? (item.type !== 'storage' ? 'Edit' : 'Set') : 'Migrate'
-          }
+          setMessage(['Payer Has No Resolver', ''])
+          setLoading(false)
+          doCrash()
+          setColor('orangered')
+          setSigCount(0)
+          setProcessCount(0)
         }
-      })
-      setPreCache(_updatedList)
+      }
+      lookup()
+    } else if (keypairRSA && !payToModalState.trigger) {
+      const _THIS = newValues
+      _THIS['rsa'] = keypairRSA[1]
+      setNewValues(_THIS)
+      const priorState = states
+      if (!priorState.includes('rsa') && newValues['rsa']) {
+        setStates(prevState => [...prevState, 'rsa'])
+      } else if (priorState.includes('rsa') && !newValues['rsa']) {
+        setStates(prevState => prevState.filter(item => item !== 'rsa'))
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [states])
+  }, [CID, keypairRSA, write, payToModalState])
 
   // Concludes fetching records
   React.useEffect(() => {
     if (sync) {
-      if (recordhash) {
-        setMetadata(recordhash, addr, contenthash, avatar)
-      } else if (ownerhash) {
-        setMetadata(ownerhash, addr, contenthash, avatar)
-      } else {
-        setMetadata(recordhash, addr, contenthash, avatar)
-      }
+      setMetadata(stealth, RSA)
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sync, recordhash, ownerhash, resolver, addr, contenthash, avatar, hashType])
+  }, [sync, recordhash, ownerhash, resolver, hashType, stealth, RSA])
 
   // Triggers fetching history from NameSys backend
   React.useEffect(() => {
@@ -1560,18 +1490,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             editable: queue > 0, // allow updates only after the waiting period
             active: queue > 0
           }
-        } else if (!states.includes(item.type) && ['resolver'].includes(item.type)) {
-          return {
-            ...item,
-            editable: false,
-            active: false
-          }
-        } else if (['storage'].includes(item.type)) {
-          return {
-            ...item,
-            editable: false,
-            active: resolver === ccip2Contract
-          }
         }
         return item
       })
@@ -1588,14 +1506,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           if (!saltModalState.trigger) setSaltModal(true) // Salt for IPNS Keygen
         } else {
           if (!saltModalState.trigger) setSaltModal(true) // Start for Manager Keygen
-          setKeypairIPNS(['0x', '0x'])
-        } 
-        setUpdateRecords(false) // Reset
+        }
       } else {
         if (states.length > 0) {
           setLoading(true)
           setMessage(['Setting Records', String(states.length)])
-          setProcessCount(states.length)
         }
       }
     }
@@ -1634,12 +1549,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     // Handle Signature S_RECORDS(K_SIGNER) to add as extradata
     if (write && (keypairSigner && keypairSigner[0]) && newValues && !constants.isEmpty(newValues) && states.length > 0) {
-      let __signatures = constants.EMPTY_STRING_RECORDS()
+      let __signatures = constants.EMPTY_STRING_STEALTH()
       states.forEach(async (_recordType) => {
         let _signature: any
         if (newValues[_recordType]) {
           _signature = await signRecords({
-            message: statementRecords(constants.filesRecords[constants.typesRecords.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
+            message: statementRecords(constants.filesStealth[constants.typesStealth.indexOf(_recordType)], genExtradata(_recordType, newValues[_recordType]), keypairSigner[0])
           }) // Sign with K_SIGNER
         }
         if (_signature) __signatures[_recordType] = _signature
@@ -1649,15 +1564,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [write, keypairSigner, newValues, states])
 
-  /* HANDLE SIGNER APPROVAL SIGNATURE */
   // Triggers signing Off-Chain Signer's approval by Controller
   React.useEffect(() => {
     // Handle Signature S_APPROVE(K_WALLET)
     if (write && !onChainManager && !sigApproved && !constants.isEmpty(signatures)) {
       if (hashType !== 'gateway') {
-        setProcessCount(3)
+        setProcessCount(trigger === 'rsa' ? 4 : 3)
       } else {
-        setProcessCount(3)
+        setProcessCount(trigger === 'rsa' ? 4 : 3)
       }
       signManager() // Sign with K_WALLET
     } else if (write && onChainManager && !constants.isEmpty(signatures)) {
@@ -1666,7 +1580,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onChainManager, signatures, hashType])
 
-  /* HANDLE WRITING RECORDS */
   // Handles writing records to the NameSys backend and pinning to IPNS
   React.useEffect(() => {
     let count = 0
@@ -1682,7 +1595,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       count > 0 &&
       sigApproved
     ) {
-      let _encodedValues = constants.EMPTY_STRING_RECORDS()
+      let _encodedValues = constants.EMPTY_STRING_STEALTH()
       for (const key in newValues) {
         if (newValues.hasOwnProperty(key) && newValues[key] !== '') {
           _encodedValues[key] = encodeValue(key, newValues[key])
@@ -1722,7 +1635,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 // Get gas consumption estimate
                 let gas = {}
                 list.map(async (item) => {
-                  if (item.type !== 'resolver' && data.response.meta[item.type]) {
+                  if (['stealth', 'rsa'].includes(item.type) && data.response.meta[item.type]) {
                     // Get gas for each record separately
                     let _gas = getGas(item.type, data.response[item.type])
                     const _promise = async () => {
@@ -1733,11 +1646,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       let _gasData = gasData && gasData.formatted && gasData.formatted.gasPrice ? Number(gasData.formatted.gasPrice) : 0
                       gas[item.type] = value * _gasData * 0.000000001
                     })
-                    if (item.type === 'avatar') {
-                      setAvatar(data.response.avatar)
-                    }
-                    if (item.type === 'addr') {
-                      setAddr(data.response.addr)
+                    if (item.type === 'stealth') {
+                      setStealth(data.response.stealth)
+                    } else if (item.type === 'rsa') {
+                      setRSA(data.response.rsa)
                     }
                   }
                 })
@@ -1771,19 +1683,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           _revision = await Name.increment(_revision_, toPublish)
                         }
                         setTimestamp(data.response.timestamp)
-                        // Write revision to database & user directory
+                        // Write revision to database
                         await writeRevision(_revision, gas, data.response.timestamp, data.response.ipfs.split('ipfs://')[1])
                         // Publish IPNS
                         await Name.publish(_revision, w3name.key)
                         // Wrap up
                         setGas(gas)
-                        setGasModal(true)
                         setStates([])
-                        setLegit(constants.EMPTY_BOOL_RECORDS())
-                        setLoading(false)
                         // Update values in the modal to new ones
                         let _updatedList = list.map((item) => {
-                          if (!['resolver', 'storage'].includes(item.type)) {
+                          if (['stealth', 'rsa'].includes(item.type)) {
                             let _queue = Math.round(Date.now() / 1000) - constants.latestTimestamp(data.response.timestamp) - constants.waitingPeriod
                             setQueue(_queue)
                             if (data.response.meta[item.type]) {
@@ -1791,7 +1700,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 ...item,
                                 value: data.response[item.type],
                                 state: true,
-                                label: 'edit',
                                 active: _queue > 0,
                                 editable: _queue > 0
                               }
@@ -1807,14 +1715,18 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           }
                         })
                         setPreCache(_updatedList)
-                        setNewValues(constants.EMPTY_STRING_RECORDS())
-                        setSignatures(constants.EMPTY_STRING_RECORDS())
+                        setNewValues(constants.EMPTY_STRING_STEALTH())
+                        setSignatures(constants.EMPTY_STRING_STEALTH())
                         setUpdateRecords(false) // Reset
                         setSigCount(0)
                         setSaltModalState({
                           modalData: undefined,
                           trigger: false
                         })
+                        setSuccess(trigger === 'stealth' ? '<span><span style="color: lightgreen">Stealth Record Set</span>! You may now <span style="color: cyan">Receive</span> Private Payments</span>' : '<span><span style="color: lightgreen">Encryption Key Set</span>! You may now <span style="color: cyan">Send</span> Private Payments</span>')
+                        setSuccessModal(true)
+                        setPayeeAddr('')
+                        doEnjoy()
                       }
                     }
                     if (Object.keys(gas).length > 0) {
@@ -1829,9 +1741,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       // Write revision to database
                       await writeRevision(undefined, gas, data.response.timestamp, '')
                       setGas(gas)
-                      setGasModal(true)
                       setStates([])
-                      setLegit(constants.EMPTY_BOOL_RECORDS())
                       setLoading(false)
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
@@ -1867,10 +1777,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         modalData: undefined,
                         trigger: false
                       })
-                      setGatewayModalState({
-                        modalData: undefined,
-                        trigger: false
-                      })
                     }
                   }
                   gateway()
@@ -1895,233 +1801,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sigApproved])
 
-  /* HANDLE TRANSACTION 1 SUCCESS */
-  // Handles setting setRecordhash on CCIP2 Resolver
-  React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1of3 && migrated && !write && !crash) {
-      if (states.includes('resolver')) {
-        setSuccess(optionsModalState.modalData === '1' ? '<span><span style="color: lightgreen">Resolver Migrated</span>! You may now set <span style="color: cyan">IPNS Storage</span> next</span>' : '<span><span style="color: lightgreen">Resolver Migrated</span>! You may now set <span style="color: cyan">HTTP Storage</span> next</span>')
-        setSuccessModal(true)
-        doEnjoy()
-      } else {
-        setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Ownerhash</span>. Enjoy!</span>')
-        setSuccessModal(true)
-        doEnjoy()
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of3, migrated, states, resolver, write])
-
-  /* SET RECORDHASH AFTER TRANSACTION 2 */
-  // Handles setting IPNS as Recordhash after Transaction 2 
-  React.useEffect(() => {
-    if (isSetRecordhashSuccess && txSuccess2of3 && CID) {
-      const purge = async () => {
-        await writeRevision(undefined, {}, '', '')
-        setRecordhash(`ipns://${CID}`)
-        setMessage(['Transaction Confirmed', '1'])
-      }
-      purge()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetRecordhashSuccess, txSuccess2of3, CID])
-  // Handles setting Gateway as Recordhash after Transaction 2 
-  React.useEffect(() => {
-    if (isSetGatewaySuccess && txSuccess3of3 && CID) {
-      setRecordhash(`${CID}`)
-      setMessage(['Transaction Confirmed', '1'])
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetGatewaySuccess, txSuccess3of3, CID])
-
-  /* HANDLE TRANSACTION 2 SUCCESS */
-  // Handles setting Recordhash
-  React.useEffect(() => {
-    if (recordhash && txSuccess2of3 && !write && !crash) {
-      setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">Recordhash</span>. Enjoy!</span>')
-      setSuccessModal(true)
-      doEnjoy()
-    } else if (recordhash && txSuccess3of3 && !write && !crash) {
-      setSuccess('<span style="color: lightgreen">Off-chain Setup Complete with <span style="color: cyan">HTTP Gateway</span>. Enjoy!</span>')
-      setSuccessModal(true)
-      doEnjoy()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordhash, txSuccess2of3, txSuccess3of3, write])
-
-  /* TRANSACTION 1 HANDLE */
-  // Sets migration state to true upon successful Transaction 1 receipt (for Ownerhash)
-  React.useEffect(() => {
-    if (isMigrateSuccess && txSuccess1of3) {
-      const pin = async () => {
-        setMessage(['Transaction Confirmed', '1'])
-        setTimeout(() => {
-          setResolver(ccip2Contract)
-          setMigrated(true)
-        }, 2000)
-      }
-      pin()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateSuccess, txSuccess1of3])
-  // Handles Transaction 1 wait for Resolver
-  React.useEffect(() => {
-    if (isMigrateLoading && !isMigrateError) {
-      setLoading(true)
-      setMessage(['Waiting for Transaction', '1'])
-      if (recentCrash) setRecentCrash(false)
-    } else if (isMigrateError && !isMigrateLoading) {
-      if (!recentCrash) {
-        setMessage(['Transaction Declined by User', ''])
-        doCrash()
-      } else {
-        if (recentCrash) setRecentCrash(false)
-      }
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setOptionsModalState({
-        modalData: undefined,
-        trigger: false
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMigrateLoading, isMigrateError])
-  // Handles Transaction 1 loading and error for Resolver
-  React.useEffect(() => {
-    if (txLoading1of3 && !txError1of3) {
-      setLoading(true)
-      setMessage(['Waiting for Confirmation', '1'])
-      if (recentCrash) setRecentCrash(false)
-    } else if (!txLoading1of3 && txError1of3) {
-      if (!recentCrash) {
-        setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
-        doCrash()
-      } else {
-        if (recentCrash) setRecentCrash(false)
-      }
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setGatewayModalState({
-        modalData: undefined,
-        trigger: false
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading1of3, txError1of3])
-
-  /* TRANSACTION 2/3 SUBMIT HANDLING */
-  // Handles Transaction 2 wait for Recordhash
-  React.useEffect(() => {
-    if (!isSetRecordhashError && isSetRecordhashLoading) {
-      setLoading(true)
-      setMessage(['Waiting for Transaction', '1'])
-      if (recentCrash) setRecentCrash(false)
-    } else if (isSetRecordhashError && !isSetRecordhashLoading) {
-      if (!recentCrash) {
-        setMessage(['Transaction Declined by User', ''])
-        doCrash()
-      } else {
-        if (recentCrash) setRecentCrash(false)
-      }
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setConfirmModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setGatewayModalState({
-        modalData: undefined,
-        trigger: false
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetRecordhashLoading, isSetRecordhashError])
-  // Handles Transaction 3 wait for Gateway
-  React.useEffect(() => {
-    if (!isSetGatewayError && isSetGatewayLoading) {
-      setLoading(true)
-      setMessage(['Waiting for Transaction', '1'])
-      if (recentCrash) setRecentCrash(false)
-    } else if (isSetGatewayError && !isSetGatewayLoading) {
-      if (!recentCrash) {
-        setMessage(['Transaction Declined by User', ''])
-        doCrash()
-      } else {
-        if (recentCrash) setRecentCrash(false)
-      }
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setConfirmModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setGatewayModalState({
-        modalData: undefined,
-        trigger: false
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSetGatewayLoading, isSetGatewayError])
-
-  /* TRANSACTION 2/3 WAIT HANDLING */
-  // Handles Transaction 2 loading and error for Recordhash
-  React.useEffect(() => {
-    if (txLoading2of3 && !txError2of3) {
-      setLoading(true)
-      setMessage(['Waiting for Confirmation', states.includes('storage') ? '1' : '2'])
-      if (recentCrash) setRecentCrash(false)
-    } else if (!txLoading2of3 && txError2of3) {
-      if (!recentCrash) {
-        setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
-        doCrash()
-      } else {
-        if (recentCrash) setRecentCrash(false)
-      }
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setGatewayModalState({
-        modalData: undefined,
-        trigger: false
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading2of3, txError2of3])
-  // Handles Transaction 3 loading and error for Gateway
-  React.useEffect(() => {
-    if (txLoading3of3 && !txError3of3) {
-      setLoading(true)
-      setMessage(['Waiting for Confirmation', states.includes('storage') ? '1' : '2'])
-      if (recentCrash) setRecentCrash(false)
-    } else if (!txLoading3of3 && txError3of3) {
-      if (!recentCrash) {
-        setMessage(['Transaction Failed', states.includes('storage') ? '1' : '2'])
-        doCrash()
-      } else {
-        if (recentCrash) setRecentCrash(false)
-      }
-      setSaltModalState({
-        modalData: undefined,
-        trigger: false
-      })
-      setGatewayModalState({
-        modalData: undefined,
-        trigger: false
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txLoading3of3, txError3of3])
-
-  /* SIGNATURE ERROR HANDLING */
   // Handles signature loading and error
   React.useEffect(() => {
     if (signLoading && !signError && trigger) {
@@ -2133,8 +1812,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         doCrash()
         setWrite(false)
         setUpdateRecords(false) // Reset
-        setLegit(constants.EMPTY_BOOL_RECORDS())
-        setNewValues(constants.EMPTY_STRING_RECORDS())
+        setNewValues(constants.EMPTY_STRING_STEALTH())
         let _updatedList = list.map((item) => {
           if (item.type !== 'storage') {
             return item
@@ -2147,7 +1825,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
         })
         setPreCache(_updatedList)
-        if (states.includes('resolver')) handleSuccess(`${ENS}#`)
         setSafeTrigger('0')
       } else {
         if (recentCrash) setRecentCrash(false)
@@ -2156,15 +1833,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         modalData: undefined,
         trigger: false
       })
-      setGatewayModalState({
-        modalData: undefined,
-        trigger: false
-      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError, trigger, sigCount, states])
 
-  /* MODAL */
   /// Modal Content
   const modalContent = show ? (
     <StyledModalOverlay
@@ -2189,39 +1861,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             </span>
           </a>
         </StyledModalHeader>
-        {ENS && loading &&
-          <StyledModalTitle>
-            <span
-              className="material-icons miui-small"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-            </span>
-          </StyledModalTitle>
-        }
-        {ENS && avatar && imageLoaded && !loading && list.length > 0 &&
-          <StyledModalTitle>
-            <img
-              src={thumbnail || avatar}
-              width={'100px'}
-              alt={ENS}
-              onError={() => setImageLoaded(false)}
-            />
-          </StyledModalTitle>
-        }
-        {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
-          <StyledModalTitle>
-            <span
-              className="material-icons miui"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-              portrait
-            </span>
-          </StyledModalTitle>
-        }
         {ENS && loading &&
           <StyledModalBody>
             <div
@@ -2269,7 +1908,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     <span>{' Of '}</span>
                     <span style={{ fontFamily: 'SF Mono', fontSize: '22px' }}
                     >
-                      {hashType !== 'gateway' ? processCount : (!write ? processCount : processCount - 1)}
+                      {hashType !== 'gateway' ? processCount : (!write && isPayment ? processCount : processCount - 1)}
                     </span>
                   </span>
                 </div>
@@ -2287,12 +1926,26 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       fontWeight: '700'
                     }}
                   >
-                    <span>{message[0].includes('Refresh') ? 'Please Be Patient' : 'This May Take Some Time'}</span>
+                    <span>{message[0].includes('Refresh') ? 'Please Be Patient' : 'Please Be Patient'}</span>
                   </span>
                 </div>
               )}
             </div>
           </StyledModalBody>
+        }
+        {ENS && !loading &&
+          <StyledModalTitle>
+            <span
+              className="material-icons miui"
+              style={{
+                marginTop: '-15px',
+                color: RSA ? 'lightgreen' : 'orange',
+                fontSize: '86px'
+              }}
+            >
+              account_balance
+            </span>
+          </StyledModalTitle>
         }
         {ENS && list.length > 0 && !loading &&
           <StyledModalBody>
@@ -2301,8 +1954,23 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             >
               <div
                 style={{
+                  marginTop: '-25px'
+                }}
+              >
+                <span
+                  style={{
+                    color: 'cyan',
+                    fontSize: '13px',
+                    fontWeight: '700'
+                  }}
+                >
+                  {'Receive Stealth Payment To'}
+                </span>
+              </div>
+              <div
+                style={{
                   marginBottom: '15px',
-                  marginTop: '-15px'
+                  marginTop: '5px'
                 }}
               >
                 <span
@@ -2341,7 +2009,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 style={{
                   listStyle: 'none',
                   color: 'white',
-                  marginLeft: !isMobile ? '-5%' : '0'
+                  marginLeft: !isMobile ? '-5%' : '0',
+                  marginTop: '20px'
                 }}
               >
                 <div
@@ -2386,135 +2055,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                               marginRight: '15px'
                             }}
                           >
-                            { // Label Storage
-                              item.type === 'storage' && (
-                                <span>
-                                  {hashType}
-                                </span>
-                              )}
                             { // Label+
-                              item.type !== 'storage' && (
+                              ['stealth', 'rsa'].includes(item.type) && (
                                 <span>
                                   {item.header}
                                 </span>
                               )}
-                            { // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && !recordhash && ownerhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : 'cyan')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span></span>' : `<span>Global <span style="color: cyan">${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as <span style="color: cyan">Ownerhash</span></span>`)
-                                  }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : `${ownerhash.startsWith('https://') ? (ownerhash === constants.defaultGateway ? 'Default Storage Is Ownerhash' : 'Custom Gateway Is Ownerhash') : 'IPNS Ownerhash Is Set'}`}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'lime' : (ownerhash === constants.defaultGateway ? 'yellow' : (ownerhash.startsWith('https://') ? 'cyan' : 'lime'))
-                                    }}
-                                  >
-                                    gpp_good
-                                  </div>
-                                </button>
-                              )}
-                            { // Set Badge if Resolver is migrated and Recordhash is set
-                              ['resolver', 'storage'].includes(item.type) && resolver === ccip2Contract && recordhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon('gpp_good'),
-                                      setColor(item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: lime">Migrated</span><span>' : `<span><span style="color: cyan">${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'IPNS'}</span> is set as Recordhash<span>`)
-                                  }}
-                                  data-tooltip={item.type === 'resolver' ? 'Resolver Is Migrated' : (`${recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'Default Storage' : 'Custom Gateway') : 'Recordhash'} Is Set`)}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'lime' : (recordhash.startsWith('https://') ? (recordhash === constants.defaultGateway ? 'yellow' : 'cyan') : 'lime'),
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    gpp_good
-                                  </div>
-                                </button>
-                              )}
-                            { // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && !recordhash && !ownerhash && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon(item.type === 'resolver' ? 'gpp_bad' : 'cancel'),
-                                      setColor('orangered'),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver is <span style="color: orange">not Migrated</span><span>' : '<span>Resolver is <span style="color: orange">not Migrated</span><span>')
-                                  }}
-                                  data-tooltip={item.type === 'storage' ? 'Resolver Not Migrated' : 'Resolver Not Migrated'}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: 'orangered',
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    {item.type === 'resolver' ? 'gpp_bad' : 'cancel'}
-                                  </div>
-                                </button>
-                              )}
-                            { // Resolver is not migrated but Recordhash has been set in the past
-                              ['resolver', 'storage'].includes(item.type) && resolver !== ccip2Contract && (recordhash || ownerhash) && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setHelpModal(true),
-                                      setIcon(item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'),
-                                      setColor(item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue')),
-                                      setHelp(item.type === 'resolver' ? '<span>Resolver <span style="color: orange">not Migrated</span></span>' : (recordhash ? `<span><span style="color: cyan">${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'}</span> <span style="color: lime">is Set as Recordhash</span></span>` : `<span><span style="color: cyan">${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'}</span> <span style="color: lime">is Set as Ownerhash</span></span>`))
-                                  }}
-                                  data-tooltip={recordhash ? `Resolver not Migrated. ${recordhash.startsWith('https://') ? 'Gateway' : 'Recordhash'} Exists as Recordhash` : `Resolver not Migrated. ${ownerhash.startsWith('https://') ? 'Gateway' : 'Ownerhash'} Exists as Ownerhash`}
-                                >
-                                  <div
-                                    className="material-icons smol"
-                                    style={{
-                                      color: item.type === 'resolver' ? 'orangered' : (recordhash ? 'orange' : 'lightblue'),
-                                      marginLeft: item.type === 'resolver' ? '5px' : '5px'
-                                    }}
-                                  >
-                                    {item.type === 'resolver' ? 'gpp_bad' : 'gpp_maybe'}
-                                  </div>
-                                </button>
-                              )}
-
-                            { // Info Storage
-                              item.type === 'storage' && (
-                                <button
-                                  className="button-tiny"
-                                  onClick={() => {
-                                    setInfoModal(true)
-                                  }}
-                                  data-tooltip={`Click For IPFS Hash`}
-                                  disabled={!hashIPFS}
-                                >
-                                  <div
-                                    className="material-icons smoller"
-                                    style={{
-                                      color: !hashIPFS ? 'orange' : (recordhash && recordhash !== constants.defaultGateway ? 'lime' : 'cyan'),
-                                      fontSize: '15px',
-                                      marginLeft: '-5.5px'
-                                    }}
-                                  >
-                                    hub
-                                  </div>
-                                </button>
-                              )}
-
                             { // Help icons
-                              item.type !== 'resolver' && (
+                              ['stealth', 'rsa'].includes(item.type) && (
                                 <button
                                   className="button-tiny"
                                   onClick={() => {
@@ -2536,9 +2084,31 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </div>
                                 </button>
                               )}
-
+                            { // Badges
+                              ['stealth', 'rsa'].includes(item.type) && (
+                                <button
+                                  className="button-tiny"
+                                  onClick={() => {
+                                    setHelpModal(true),
+                                      setIcon(RSA ? 'gpp_good' : 'gpp_bad'),
+                                      setColor(RSA ? 'lime' : 'orangered'),
+                                      setHelp(RSA ? '<span>Encryption Key <span style="color: lime">Set</span><span>' : `<span>Please <span style="color: orange">Set Encryption Key</span> To Enable Private Payments<span>`)
+                                  }}
+                                  data-tooltip={RSA ? 'Encryption Key Set' : 'Encryption Key Missing'}
+                                >
+                                  <div
+                                    className="material-icons smol"
+                                    style={{
+                                      color: RSA ? 'lime' : 'orangered',
+                                      marginLeft: '-5px'
+                                    }}
+                                  >
+                                    {RSA ? 'gpp_good' : 'gpp_bad'}
+                                  </div>
+                                </button>
+                              )}
                             { // Countdown
-                              !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
+                              ['stealth', 'rsa'].includes(item.type) && !constants.blocked.includes(item.type)
                               && resolver === ccip2Contract &&
                               (recordhash || ownerhash) && (
                                 <button
@@ -2564,11 +2134,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   </div>
                                 </button>
                               )}
-
                             { // Refresh buttons
-                              !['resolver', 'storage'].includes(item.type) && !constants.blocked.includes(item.type)
+                              ['stealth', 'rsa'].includes(item.type) && !constants.blocked.includes(item.type)
                               && resolver === ccip2Contract && _Wallet_ &&
-                              (recordhash || ownerhash) && (history.ownerstamp.length > 0) && (
+                              (recordhash || ownerhash) && history.ownerstamp.length > 0 && (
                                 <button
                                   className={!['', '.', '0', '1'].includes(refresh) && refresh === item.type ? "button-tiny blink" : "button-tiny"}
                                   onClick={() => {
@@ -2604,45 +2173,39 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           </span>
                           <button
                             className="button"
-                            hidden={
-                              item.type === 'resolver' && isDisabled(item)
-                            }
                             disabled={
-                              isDisabled(item)
+                              constants.blocked.includes(item.type) ||
+                              !list[item.key].active ||
+                              item.state ||
+                              !_Wallet_ ||
+                              !managers.includes(String(_Wallet_)) ||
+                              (item.type === 'stealth' && !RSA)
                             }
                             style={{
                               alignSelf: 'flex-end',
                               height: '25px',
                               width: 'auto',
                               marginBottom: '6px',
-                              background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
                             }}
                             onClick={() => {
-                              setTrigger(item.type),
-                                setSafeTrigger('1'),
-                                ['resolver', 'storage'].includes(item.type) ? (setOptions(true), setWrite(false)) : setWrite(true), // Trigger write for Records
-                                ['resolver', 'storage'].includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update edited keys
+                              setTrigger(item.type)
+                              setSafeTrigger('1')
+                              setWrite(true)
                             }}
                             data-tooltip={item.tooltip}
                           >
                             <div
                               className="flex-sans-direction"
                               style={{
-                                fontSize: '13px',
-                                color: ['resolver', 'storage'].includes(item.type)  ? 'white' : (!legit[item.type] ? 'grey' : (states.length > 1 ? 'lime' : 'white'))
+                                fontSize: '13px'
                               }}
                             >
-                              {multiEdit(item) ? '' : item.label}&nbsp;
-                              <span 
-                                className="material-icons smoller"
-                              >
-                                {multiEdit(item) ? (legit[item.type] ? 'task_alt' : 'cancel') : 'manage_history'}
-                              </span>
+                              {item.label}&nbsp;<span className="material-icons smoller">manage_history</span>
                             </div>
                           </button>
                         </div>
                         <input
-                          className={!['resolver', 'storage'].includes(item.type) ? (resolver !== ccip2Contract ? 'inputextra_' : 'inputextra') : (resolver !== ccip2Contract ? 'inputextra_' : (item.type === 'storage' && item.value == constants.defaultGateway ? 'inputextra__' : 'inputextra'))}
+                          className={'inputextra'}
                           id={item.key}
                           key={item.key}
                           placeholder={constants.blocked.includes(item.type) ? 'Temporarily Unavailable' : item.value}
@@ -2651,7 +2214,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             !item.editable || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_))
                           }
                           style={{
-                            background: resolver !== ccip2Contract || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? (!['resolver', 'storage'].includes(item.type) ? 'none' : 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)') : (item.type === 'storage' && item.value === constants.defaultGateway ? 'linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)'),
+                            background: !RSA || constants.blocked.includes(item.type) || !managers.includes(String(_Wallet_)) ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
                             fontFamily: 'SF Mono',
                             fontWeight: '400',
                             fontSize: '14px',
@@ -2660,20 +2223,279 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             textAlign: 'left',
                             marginTop: '-10px',
                             marginBottom: '-5px',
-                            color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
+                            color: 'lightgreen',
                             cursor: 'copy'
-                          }}
-                          onChange={(e) => {
-                            setValues(item.type, e.target.value)
                           }}
                         />
                       </div>
                       <hr style={{ marginTop: '5px' }}></hr>
                     </li>
                   ))}
+                  <hr style={{ marginTop: '5px' }}></hr>
+                  <div
+                    className="flex-column"
+                    style={{
+                      marginBottom: '15px',
+                      marginTop: '-15px'
+                    }}
+                  >
+                    <StyledModalTitle>
+                      <span
+                        className="material-icons-round miui"
+                        style={{
+                          color: RSA ? 'lightgreen' : 'orange',
+                          fontSize: '76px'
+                        }}
+                      >
+                        security
+                      </span>
+                    </StyledModalTitle>
+                    <span
+                      style={{
+                        color: 'cyan',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        marginTop: '5px'
+                      }}
+                    >
+                      {'Send Stealth Payment From'}
+                    </span>
+                    <div
+                      style={{
+                        marginBottom: '15px',
+                        marginTop: '5px'
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: 'white',
+                          fontSize: '20px',
+                          fontWeight: '700',
+                          fontFamily: 'SF Mono'
+                        }}
+                      >
+                        {ENS.split('.eth')[0]}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'SF Mono',
+                          fontSize: '15px',
+                          color: 'cyan'
+                        }}
+                      >
+                        .
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'Spotnik',
+                          fontSize: '11px',
+                          color: 'cyan',
+                          fontWeight: '700',
+                          letterSpacing: '0px',
+                          marginTop: '13px'
+                        }}
+                      >
+                        ETH
+                      </span>
+                    </div>
+                    {!payeeAddr && (
+                      <div
+                        className='flex-column'
+                        style={{
+                          width: '100%',
+                          marginLeft: '3px'
+                        }}
+                      >
+                        <input
+                          id={'decrypt'}
+                          key={'decrypt'}
+                          placeholder={'enter payee .eth'}
+                          type='text'
+                          disabled={!RSA}
+                          style={{
+                            background: !RSA ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                            outline: 'none',
+                            border: 'none',
+                            padding: '7px',
+                            borderRadius: '3px',
+                            fontFamily: 'SF Mono',
+                            letterSpacing: '-0.5px',
+                            fontWeight: '400',
+                            fontSize: '15px',
+                            width: '130%',
+                            wordWrap: 'break-word',
+                            textAlign: 'center',
+                            color: payee ? 'lime' : 'white',
+                            cursor: 'copy',
+                            marginLeft: '-15%',
+                            marginTop: '15px'
+                          }}
+                          onChange={(e) => {
+                            setPayeeValue(e.target.value)
+                          }}
+                        />
+                        <hr style={{ marginTop: '0', marginLeft: '-15%', width: '130%' }}></hr>
+                      </div>
+                    )}
+                    {payeeAddr && (
+                      <div
+                        className='flex-column'
+                      >
+                        <div
+                          className='flex-column'
+                          style={{
+                            width: '450px',
+                            marginLeft: '3px'
+                          }}
+                        >
+                          <input
+                            id={'amount'}
+                            key={'amount'}
+                            type='text'
+                            value={payeeAmount}
+                            style={{
+                              background: payeeAmount === '0.0' ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                              marginBottom: '10px',
+                              outline: 'none',
+                              padding: '7px',
+                              borderRadius: '3px',
+                              fontFamily: 'SF Mono',
+                              letterSpacing: '-0.5px',
+                              fontWeight: '400',
+                              fontSize: '15px',
+                              width: '90%',
+                              paddingRight: '32px',
+                              wordWrap: 'break-word',
+                              textAlign: 'left',
+                              color: payeeAmount === '0.0' ? 'grey' : 'lime',
+                              cursor: 'copy'
+                            }}
+                          />
+                          <hr style={{ marginTop: '-5px', marginLeft: '0', width: '90%' }}></hr>
+                        </div>
+                        <div
+                          className='flex-row'
+                          style={{
+                            width: '200%'
+                          }}
+                        >
+                          <div
+                            className='flex-column'
+                          >
+                            <div
+                              className='flex-row'
+                              style={{
+                                width: '450px',
+                                marginLeft: '3px'
+                              }}
+                            >
+                              <input
+                                id={'pay'}
+                                key={'pay'}
+                                type='text'
+                                value={payeeAddr}
+                                style={{
+                                  background: payeeAddr === constants.zeroAddress ? 'linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)' : 'linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)',
+                                  outline: 'none',
+                                  padding: '7px',
+                                  borderRadius: '3px',
+                                  fontFamily: 'SF Mono',
+                                  letterSpacing: '-0.5px',
+                                  fontWeight: '400',
+                                  fontSize: '15px',
+                                  width: '90%',
+                                  paddingRight: '32px',
+                                  wordWrap: 'break-word',
+                                  textAlign: 'left',
+                                  color: payeeAddr === constants.zeroAddress ? 'grey' : 'lime',
+                                  cursor: 'copy'
+                                }}
+                              />
+                              <button
+                                className="button-empty"
+                                onClick={() => {
+                                  constants.copyToClipboard('pay')
+                                }}
+                                hidden={payeeAddr === constants.zeroAddress}
+                                data-tooltip='Copy Address'
+                                style={{
+                                  marginLeft: '-25px',
+                                  color: 'lime'
+                                }}
+                              >
+                                <span
+                                  className="material-icons"
+                                  style={{
+                                    fontSize: '22px',
+                                    fontWeight: '700'
+                                  }}
+                                >
+                                  content_copy
+                                </span>
+                              </button>
+                            </div>
+                            <hr style={{ marginTop: '5px', marginLeft: '0', width: '90%' }}></hr>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <button
+                        className="button"
+                        style={{
+                          height: '33px',
+                          width: payeeAddr ? '80px' : '120px',
+                          padding: '5px',
+                          marginTop: '10px',
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          backgroundImage: payeeAddr && payeeAddr !== constants.zeroAddress ? 'linear-gradient(81deg, rgba(0,154,0,1) 0%, rgba(0,182,24,1) 52%, rgba(0,154,0,1) 100%)' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)'
+                        }}
+                        onClick={() => payeeAddr && payeeAddr !== constants.zeroAddress ? sendTransaction?.() : decrypt()}
+                        disabled={!payee || payeeAddr === constants.zeroAddress}
+                        hidden={!RSA}
+                        data-tooltip={payeeAddr && payeeAddr !== constants.zeroAddress ? 'Send Transaction' : 'Fetch and Decrypt'}
+                      >
+                        <div
+                          className="flex-row"
+                          style={{
+                            fontSize: '14px'
+                          }}
+                        >
+                          {payeeAddr ? 'Pay' : 'Decrypt'}&nbsp;<span className="material-icons smoller">lock_open</span>
+                        </div>
+                      </button>
+                      <button
+                        className="button"
+                        style={{
+                          height: '33px',
+                          width: '110px',
+                          padding: '5px',
+                          marginTop: '20px',
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          marginLeft: '20px',
+                          background: 'red'
+                        }}
+                        onClick={() => setPayeeAddr('')}
+                        disabled={!payee}
+                        hidden={payeeAddr ? false : true}
+                        data-tooltip='Cancel Transaction'
+                      >
+                        <div
+                          className="flex-row"
+                          style={{
+                            fontSize: '14px'
+                          }}
+                        >
+                          {'Cancel'}&nbsp;<span className="material-icons smoller">cancel</span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </ul>
-              {states.length > 1 && !states.includes('resolver') && !states.includes('storage') && (
+              {states.length > 1 && (
                 <div
                   style={{
                     marginTop: '-10px',
@@ -2688,11 +2510,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     disabled={
                       !_Wallet_ ||
                       !managers.includes(String(_Wallet_)) ||
-                      (newValues === constants.EMPTY_STRING_RECORDS())
+                      (newValues === constants.EMPTY_STRING_STEALTH())
                     }
                     style={{
                       alignSelf: 'flex-end',
-                      height: '30px',
+                      height: '25px',
                       width: 'auto',
                       marginTop: '-3px',
                     }}
@@ -2737,27 +2559,16 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           >
             {success}
           </Success>
-          <Gas
-            color={'lime'}
-            icon={'free_breakfast'}
+          <PayTo
+            handleTrigger={handlePayToTrigger}
+            handleModalData={handlePayToModalData}
             onClose={() => {
-              setGasModal(false),
-                setLoading(false)
+              setPayToModal(false)
             }}
-            show={gasModal}
+            show={payToModal}
           >
-            {gas}
-          </Gas>
-          <Info
-            handleTrigger={handleInfoTrigger}
-            handleModalData={handleInfoModalData}
-            onClose={() => {
-              setInfoModal(false)
-            }}
-            show={infoModal}
-          >
-            {hashIPFS}
-          </Info>
+            {''}
+          </PayTo>
           <Salt
             handleTrigger={handleSaltTrigger}
             handleModalData={handleSaltModalData}
@@ -2768,39 +2579,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           >
             {ENS}
           </Salt>
-          <Gateway
-            handleTrigger={handleGatewayTrigger}
-            handleModalData={handleGatewayModalData}
-            onClose={() => {
-              setGateway(false)
-            }}
-            show={gateway}
-          >
-          </Gateway>
-          <Options
-            handleTrigger={handleOptionsTrigger}
-            handleModalData={handleOptionsModalData}
-            onClose={() => {
-              setOptions(false)
-            }}
-            show={options && trigger === 'resolver'}
-          >
-            {ownerhash ? true : (recordhash ? true : false)}
-          </Options>
-          <Confirm
-            handleTrigger={handleConfirmTrigger}
-            handleModalData={handleConfirmModalData}
-            onClose={() => {
-              setConfirm(false)
-            }}
-            show={confirm && !saltModal}
-          >
-            {'1'}
-          </Confirm>
           <Error
             onClose={() => {
-              setCrash(false)
-              setRecentCrash(true)
+              setCrash(false),
+                setRecentCrash(true)
             }}
             color={color}
             show={crash && !loading}
@@ -2877,4 +2659,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 1);
 `
 
-export default Preview
+export default Stealth

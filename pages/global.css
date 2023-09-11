@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
 
 @font-face {
     font-family: 'SF Mono';
@@ -191,6 +192,10 @@ input:disabled {
 
 .inputextra_::placeholder {
   color: rgb(255, 255, 255, 0.70);
+}
+
+.inputextra__::placeholder {
+  color: rgba(255, 251, 0, 0.7);
 }
 
 .icon-ens {

@@ -14,6 +14,7 @@ import { isMobile } from 'react-device-detect'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
 import Preview from '../components/Preview'
+import Stealth from '../components/Stealth'
 import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
@@ -34,8 +35,10 @@ const Home: NextPage = () => {
   const [termsModal, setTermsModal] = React.useState(false)
   const [errorModal, setErrorModal] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState('')
-  const [previewModal, setPreviewModal] = React.useState(false)
-  const [nameToPreview, setNameToPreview] = React.useState('')
+  const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
+  const [stealthModal, setStealthModal] = React.useState(false) // Controls Stealth modal
+  const [nameToPreview, setNameToPreview] = React.useState('') // // Sets name to expand in preview
+  const [nameToStealth, setNameToStealth] = React.useState('') // Sets name to expand in stealth
   const [loading, setLoading] = React.useState(true)
   const [empty, setEmpty] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
@@ -57,15 +60,27 @@ const Home: NextPage = () => {
   const [previewModalState, setPreviewModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
-  })
+  }) // Preview modal state
+  const [stealthModalState, setStealthModalState] = React.useState<constants.CustomBodyState>({
+    modalData: '',
+    trigger: false
+  }) // Stealth modal state
 
   // Handle Preview modal data return
-  const handleParentModalData = (data: string) => {
+  const handlePreviewModalData = (data: string) => {
     setPreviewModalState(prevState => ({ ...prevState, modalData: data }))
   }
   // Handle Preview modal trigger return
-  const handleParentTrigger = (trigger: boolean) => {
+  const handlePreviewTrigger = (trigger: boolean) => {
     setPreviewModalState(prevState => ({ ...prevState, trigger: trigger }))
+  }
+  // Handle Stealth modal data return
+  const handleStealthModalData = (data: string) => {
+    setStealthModalState(prevState => ({ ...prevState, modalData: data }))
+  }
+  // Handle Stealth modal trigger return
+  const handleStealthTrigger = (trigger: boolean) => {
+    setStealthModalState(prevState => ({ ...prevState, trigger: trigger }))
   }
 
   const isProduction = process.env.NEXT_PUBLIC_ENV === 'production'
@@ -81,12 +96,12 @@ const Home: NextPage = () => {
     try {
       _ManagerLegacy = await contractLegacyRegistry.owner(namehashLegacy)
     } catch (error) {
-    } 
+    }
     const contractLegacyRegistrar = new ethers.Contract(constants.ensConfig[1].addressOrName, constants.ensConfig[1].contractInterface, provider)
     try {
       _OwnerLegacy = await contractLegacyRegistrar.ownerOf(tokenIDLegacy)
     } catch (error) {
-    } 
+    }
     const contractWrapper = new ethers.Contract(constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName, constants.ensConfig[_Chain_ === '1' ? 7 : 3].contractInterface, provider)
     let _OwnerWrapped: string = ''
     try {
@@ -114,7 +129,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_recordhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(_recordhash.toString()).decoded}`
+    return `ipns://${ensContent.decodeContenthash(String(_recordhash)).decoded}`
   }
 
   // Get Ownerhash with ethers.js
@@ -127,7 +142,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_ownerhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(_ownerhash.toString()).decoded}`
+    return `ipns://${ensContent.decodeContenthash(String(_ownerhash)).decoded}`
   }
 
   // Get historical gas savings
@@ -165,7 +180,7 @@ const Home: NextPage = () => {
       setSavings(_savings)
     }
     getSaving()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Handle migration from Preview modal
@@ -178,9 +193,9 @@ const Home: NextPage = () => {
           const _Resolver = await constants.provider.getResolver(previewModalState.modalData.slice(0, -1)) // Get updated Resolver
           const __Recordhash = await verifier.verifyRecordhash(previewModalState.modalData.slice(0, -1), ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(ccip2Config, _Wallet_ || constants.zeroAddress) // Get updated Ownerhash
-          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash ? '1' : (
-            _Resolver?.address === ccip2Contract && __Ownerhash ? '3/4' : (
-            _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
+          _LIST[index].migrated = _Resolver?.address === ccip2Contract && __Recordhash !== '0' ? (__Recordhash === '1' ? '1' : '4/5') : (
+            _Resolver?.address === ccip2Contract && __Ownerhash !== '0' ? (__Ownerhash === '1' ? '3/4' : '4/5') : (
+              _Resolver?.address === ccip2Contract ? '1/2' : '0') // Set new flag
           )
         }
       }
@@ -188,7 +203,7 @@ const Home: NextPage = () => {
       setMeta(_LIST)
       setPreviewModal(false)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewModalState])
 
   // Preview modal state
@@ -198,6 +213,8 @@ const Home: NextPage = () => {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}#`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '-') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}-`)
+      } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '&') {
+        setNameToPreview(`${previewModalState.modalData.slice(0, -1)}&`)
       } else if (previewModalState.modalData.charAt(previewModalState.modalData.length - 1) === '+') {
         setNameToPreview(`${previewModalState.modalData.slice(0, -1)}+`)
       }
@@ -208,14 +225,34 @@ const Home: NextPage = () => {
     }
   }, [previewModal, previewModalState])
 
-  // Trigger refresh
+  // Stealth modal state
   React.useEffect(() => {
-    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-')) {
+    if (stealthModalState.trigger && stealthModalState.modalData && !stealthModal) {
+      setNameToStealth('')
+      setStealthModalState({
+        modalData: '',
+        trigger: false
+      })
+    }
+  }, [stealthModal, stealthModalState])
+
+  // Trigger Preview modal
+  React.useEffect(() => {
+    if (nameToPreview.endsWith(':') || nameToPreview.endsWith('#') || nameToPreview.endsWith('-') || nameToPreview.endsWith('&')) {
       setPreviewModal(true)
     } else {
       setPreviewModal(false)
     }
   }, [nameToPreview])
+
+  // Trigger Stealth modal
+  React.useEffect(() => {
+    if (nameToStealth.endsWith('.eth')) {
+      setStealthModal(true)
+    } else {
+      setStealthModal(false)
+    }
+  }, [nameToStealth])
 
   // Preserve metadata across pageloads
   React.useEffect(() => {
@@ -228,8 +265,13 @@ const Home: NextPage = () => {
   }, [meta])
 
   // Open Preview modal for chosen ENS domain
-  const onItemClick = (name: string) => {
-     setNameToPreview(`${name}:`)
+  const onItemClickPreview = (name: string) => {
+    setNameToPreview(`${name}:`)
+  }
+
+  // Open Stealth modal for chosen ENS domain
+  const onItemClickStealth = (name: string) => {
+    setNameToStealth(`${name}`)
   }
 
   /// ENS Domain Search Functionality
@@ -240,7 +282,7 @@ const Home: NextPage = () => {
     functionName: 'ownerOf',
     args: [tokenIDLegacy]
   })
-  
+
   // Read ENS Wrapper for Owner record of ENS domain
   const { data: _OwnerWrapped_, isLoading: wrapperOwnerLoading, isError: wrapperOwnerError } = useContractRead({
     address: `0x${constants.ensConfig[_Chain_ === '1' ? 7 : 3].addressOrName.slice(2)}`,
@@ -276,27 +318,27 @@ const Home: NextPage = () => {
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
     if (_OwnerLegacy_ && _ManagerLegacy_
-      && _OwnerLegacy_?.toString() !== constants.zeroAddress
-      && _ManagerLegacy_?.toString() !== constants.zeroAddress) {
-      if (_OwnerLegacy_.toString() === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
-        if (_OwnerWrapped_ && _OwnerWrapped_?.toString() !== constants.zeroAddress) { 
-          setManager(_OwnerWrapped_.toString())
-          setOwner(_OwnerWrapped_.toString())
+      && String(_OwnerLegacy_) !== constants.zeroAddress
+      && String(_ManagerLegacy_) !== constants.zeroAddress) {
+      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
+          setManager(String(_OwnerWrapped_))
+          setOwner(String(_OwnerWrapped_))
         }
       } else {
-        setManager(_ManagerLegacy_.toString())
-        setOwner(_ManagerLegacy_.toString())
+        setManager(String(_ManagerLegacy_))
+        setOwner(String(_ManagerLegacy_))
       }
     } else {
       setOwner('0x')
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenIDLegacy, _OwnerLegacy_, tokenIDWrapper, _OwnerWrapped_, _ManagerLegacy_])
 
   // Get data from Ethers.JS if wallet is not connected
   React.useEffect(() => {
     if (!_Wallet_ && tokenIDLegacy && tokenIDWrapper && query && query !== ''
-      ) {
+    ) {
       const _setOrigins = async () => {
         let _Owner = await getManager(constants.provider)
         let _Recordhash = await getRecordhash(constants.provider, query)
@@ -323,7 +365,7 @@ const Home: NextPage = () => {
       }
       _setOrigins()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, tokenIDLegacy, tokenIDWrapper])
 
   // Shows search result for ENS domain search
@@ -341,10 +383,10 @@ const Home: NextPage = () => {
               'migrated': _RESPONSE?.address === ccip2Contract ? '1/2' : '0'
             })
             if (items.length > 0) {
-              if (recordhash && recordhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
-                items[0].migrated = '1'
-              } else if (ownerhash && ownerhash.toString() !== 'ipns://' && items[0].migrated === '1/2') {
-                items[0].migrated = '3/4'
+              if (recordhash && String(recordhash) !== 'ipns://' && items[0].migrated === '1/2') {
+                items[0].migrated = String(recordhash).startsWith('https://') ? '4/5' : '1'
+              } else if (ownerhash && String(ownerhash) !== 'ipns://' && items[0].migrated === '1/2') {
+                items[0].migrated = String(ownerhash).startsWith('https://') ? '4/5' : '3/4'
               }
               setMeta(items)
               setSuccess(true)
@@ -354,26 +396,34 @@ const Home: NextPage = () => {
       }
       setMetadata()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, recordhash, ownerhash])
 
   // Captures Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && _Wallet_) {
-      setRecordhash(`ipns://${ensContent.decodeContenthash(_Recordhash_.toString()).decoded}`)
+      if (String(_Recordhash_).startsWith('0x6874')) {
+        setRecordhash(ethers.utils.toUtf8String(String(_Recordhash_)))
+      } else {
+        setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`)
+      }
     } else {
       setRecordhash('')
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Recordhash_, _Ownerhash_])
   // Captures Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_ && _Wallet_) {
-      setOwnerhash(`ipns://${ensContent.decodeContenthash(_Ownerhash_.toString()).decoded}`)
+      if (String(_Ownerhash_).startsWith('0x6874')) {
+        setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash_)))
+      } else {
+        setOwnerhash(`ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`)
+      }
     } else {
       setOwnerhash('')
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Ownerhash_])
 
   // End name query
@@ -404,7 +454,7 @@ const Home: NextPage = () => {
           setEmpty(true)
           setQuery('')
         }
-      }      
+      }
     } else {
       if (finish) {
         setTimeout(() => {
@@ -417,23 +467,23 @@ const Home: NextPage = () => {
         setLoading(true)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [success, owner, finish])
 
   // Sets tokenID for ENS domain search result
-  React.useEffect(() => { 
+  React.useEffect(() => {
     if (query) {
       try {
         let __namehash = ethers.utils.namehash(query)
         let __token = ethers.BigNumber.from(__namehash)
-        setTokenIDWrapper(__token.toString())
+        setTokenIDWrapper(String(__token))
         let __labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
         setNamehashLegacy(__namehash)
-        setTokenIDLegacy(ethers.BigNumber.from(__labelhash).toString())
+        setTokenIDLegacy(String(ethers.BigNumber.from(__labelhash)))
       } catch (error) {
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, owner, manager])
 
   // Triggers search of ENS domain
@@ -451,7 +501,7 @@ const Home: NextPage = () => {
     if (_Wallet_) {
     } else {
       setOwnerhash('')
-    }  
+    }
   }
 
   return (
@@ -485,18 +535,18 @@ const Home: NextPage = () => {
         <link rel="manifest" href="/manifest.json" />
         <link rel="shortcut icon" href="logo.png" />
         <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style" />
-        <link rel="preload" href="SF-Mono.woff2"  as="font" type="font/woff2" crossOrigin="anonymous"  />
-        <link rel="preload" href="Spotnik.woff2"  as="font" type="font/woff2" crossOrigin="anonymous"  />
-        <link rel="preload" href="Rajdhani.woff2" as="font" type="font/woff2" crossOrigin="anonymous"  />
+        <link rel="preload" href="SF-Mono.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="Spotnik.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="Rajdhani.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </Head>
       {/* Preload */}
-      <div style={{ fontFamily: 'Rajdhani' }}></div> 
-      <div style={{ fontFamily:  'SF Mono' }}></div> 
-      <div style={{ fontFamily:  'Spotnik' }}></div> 
+      <div style={{ fontFamily: 'Rajdhani' }}></div>
+      <div style={{ fontFamily: 'SF Mono' }}></div>
+      <div style={{ fontFamily: 'Spotnik' }}></div>
       {/* Overlay */}
       <div id="overlay" className="overlay">
         <div className="overlay-content">
-          <Loading 
+          <Loading
             height={75}
             width={75}
           />
@@ -533,7 +583,7 @@ const Home: NextPage = () => {
           >
             <div
               style={{
-                marginRight: !isMobile ? '40px': '20px',
+                marginRight: !isMobile ? '40px' : '20px',
               }}
             >
               <button
@@ -556,7 +606,7 @@ const Home: NextPage = () => {
                 marginTop: !isMobile ? '0px' : '-15px'
               }}
             >
-              <Ticker variable={ savings }/>
+              <Ticker variable={savings} />
             </div>
           </div>
           <div
@@ -565,7 +615,7 @@ const Home: NextPage = () => {
               marginLeft: 'auto',
               display: 'flex',
               flexDirection: isMobile ? 'column' : 'row',
-              marginTop: !isMobile ? '-7%': '-5px',
+              marginTop: !isMobile ? '-7%' : '-5px',
             }}
           >
             <div
@@ -585,9 +635,9 @@ const Home: NextPage = () => {
                   marginRight: '2px'
                 }}
               >
-                { 'v' } 
+                {'v'}
               </span>
-                { '1.0.2' } 
+              {'1.0.2'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -596,7 +646,7 @@ const Home: NextPage = () => {
                   marginLeft: '2px'
                 }}
               >
-                {} 
+                { }
               </span>
             </div>
             <button
@@ -648,8 +698,8 @@ const Home: NextPage = () => {
           marginTop: onSearch ? '0px' : '40px'
         }}>
         {/* Content */}
-        <div className={ !isMobile && !onSearch ? 'heading' : (!isMobile && onSearch ? 'heading' : 'none') } 
-          style={{ 
+        <div className={!isMobile && !onSearch ? 'heading' : (!isMobile && onSearch ? 'heading' : 'none')}
+          style={{
             flex: '1 1 auto'
           }}
         >
@@ -712,7 +762,7 @@ const Home: NextPage = () => {
                     }}
                   >
                     NameSys
-                  </div> 
+                  </div>
                   <div
                     className="flex-column"
                     style={{
@@ -796,7 +846,7 @@ const Home: NextPage = () => {
                     paddingBottom: '10px'
                   }}
                 >
-                  <Loading 
+                  <Loading
                     height={50}
                     width={50}
                   />
@@ -812,7 +862,7 @@ const Home: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    { 'Please Wait' }
+                    {'Please Wait'}
                   </span>
                 </div>
               </div>
@@ -842,9 +892,9 @@ const Home: NextPage = () => {
                   className="button-tiny"
                   onClick={() => {
                     setModal(true),
-                    setIcon('info'),
-                    setColor('cyan'),
-                    setHelp('search results for your query')
+                      setIcon('info'),
+                      setColor('cyan'),
+                      setHelp('search results for your query')
                   }}
                 >
                   <div
@@ -868,7 +918,8 @@ const Home: NextPage = () => {
                 <List
                   label={(!isDisconnected || isConnected) && manager === _Wallet_ ? 'edit' : 'view'}
                   items={meta}
-                  onItemClick={onItemClick}
+                  onItemClickStealth={onItemClickStealth}
+                  onItemClickPreview={onItemClickPreview}
                 />
               </div>
             </div>
@@ -937,8 +988,18 @@ const Home: NextPage = () => {
                 show={previewModal}
                 _ENS_={nameToPreview}
                 chain={constants.alchemyConfig.chainId}
-                handleParentTrigger={handleParentTrigger}
-                handleParentModalData={handleParentModalData}
+                handleParentTrigger={handlePreviewTrigger}
+                handleParentModalData={handlePreviewModalData}
+              />
+            )}
+            {stealthModal && (
+              <Stealth
+                onClose={() => setStealthModal(false)}
+                show={stealthModal}
+                _ENS_={nameToStealth}
+                chain={constants.alchemyConfig.chainId}
+                handleParentTrigger={handleStealthTrigger}
+                handleParentModalData={handleStealthModalData}
               />
             )}
             <Faq
@@ -961,15 +1022,15 @@ const Home: NextPage = () => {
               show={errorModal && searchType === 'search' && !loading}
               title={'block'}
             >
-              { errorMessage }
+              {errorMessage}
             </Error>
             <Help
-                color={ color }
-                icon={ icon }
-                onClose={() => setModal(false)}
-                show={modal}
-              >
-                { help }
+              color={color}
+              icon={icon}
+              onClose={() => setModal(false)}
+              show={modal}
+            >
+              {help}
             </Help>
           </div>
         </div>

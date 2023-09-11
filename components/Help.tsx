@@ -35,7 +35,7 @@ const Help = ({ icon, color, show, onClose, children }) => {
               className="material-icons"
               style={{
                 marginTop: '4px',
-                fontSize: '26px',
+                fontSize: '36px',
                 color: color
               }}
             >
