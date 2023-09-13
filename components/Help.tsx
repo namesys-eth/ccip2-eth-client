@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import { isMobile } from 'react-device-detect'
 
-const Help = ({ icon, color, show, onClose, children }) => {
+interface StyledModalProps {
+  top: string;
+}
+const Help = ({ icon, color, show, onClose, children, position }) => {
   const [browser, setBrowser] = React.useState(false)
   React.useEffect(() => {
     setBrowser(true)
@@ -16,7 +19,7 @@ const Help = ({ icon, color, show, onClose, children }) => {
 
   const modalContent = show ? (
     <StyledModalOverlay>
-      <StyledModal>
+      <StyledModal top={position}>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
             <span 
@@ -88,7 +91,9 @@ const StyledModalHeader = styled.div`
   justify-content: flex-end;
 `
 
-const StyledModal = styled.div`
+const StyledModal = styled.div<StyledModalProps>`
+  position: fixed;
+  top: ${props => props.top}; 
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
@@ -102,7 +107,7 @@ const StyledModal = styled.div`
 `
 
 const StyledModalOverlay = styled.div`
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;

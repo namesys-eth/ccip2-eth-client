@@ -1,6 +1,5 @@
 /// My Names page 
 import React from 'react'
-import { useCallback } from 'react'
 import Head from 'next/head'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
@@ -54,7 +53,7 @@ const Account: NextPage = () => {
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
   const [activeTab, setActiveTab] = React.useState('OWNER') // Set active tab
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
-  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
+  const [namehashLegacy, setNamehashLegacy] = React.useState('') // Legacy Namehash of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
   const [manager, setManager] = React.useState('') // Set manager of name
   const [query, setQuery] = React.useState('') // Store name in query
@@ -83,7 +82,7 @@ const Account: NextPage = () => {
   const [keypairIPNS, setKeypairIPNS] = React.useState<string[]>(['', '']) // Exported IPNS keypairs [ed25519-priv,ed25519-pub]
   const [keypairSigner, setKeypairSigner] = React.useState<string[]>(['', '']) // Exported Signer keypairs [secp256k1-priv, secp256k1-pub]
   const [keyIPNS, setKeyIPNS] = React.useState('') // IPNS Encoded Key: '08011240' + privKey + pubKey
-  const [salt, setSalt] = React.useState(false) // Trigger signature for key export
+  const [saltModal, setSaltModal] = React.useState(false) // Trigger signature for key export
   const [exportKey, setExportKey] = React.useState(false) // Trigger export procedure
   const [username, setUsername] = React.useState('') // Username for salt modal
   const [CID, setCID] = React.useState(''); // IPNS pubkey/CID value
@@ -242,7 +241,7 @@ const Account: NextPage = () => {
     setKeypairIPNS([])
     setKeypairSigner([])
     setKeyIPNS('')
-    setSalt(false)
+    setSaltModal(false)
     setCID('')
     setLoading(false)
   }
@@ -344,7 +343,7 @@ const Account: NextPage = () => {
     args: [
       ethers.utils.defaultAbiCoder.encode(
         ['bytes32'],
-        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.prefix)[1]}` : constants.zeroBytes]
+        [CID.startsWith('k') ? `0x${constants.encodeContenthash(CID).split(constants.ipnsPrefix)[1]}` : constants.zeroBytes]
       )
     ]
   })
@@ -372,7 +371,7 @@ const Account: NextPage = () => {
     }
     try {
       const _RESPONSE = await fetch(
-        "https://ipfs.namesys.xyz:3003/gas",
+        `${SERVER}:${PORT}/gas`,
         {
           method: "post",
           headers: {
@@ -547,7 +546,7 @@ const Account: NextPage = () => {
       } else if (!keypairSigner[0] && !keypairSigner[1] && choice === 'ownerhash_IPNS') {
         setChoice('ownerhash_Signer')
         setKeypairSigner(['0x', '0x'])
-      } 
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saltModalState, keypairSigner, keypairIPNS, choice, exportModalState])
@@ -556,7 +555,7 @@ const Account: NextPage = () => {
       const keygen = async () => {
         let _origin = 'eth:' + _Wallet_
         let _caip10 = `eip155:${_Chain_}:${_Wallet_}`  // CAIP-10
-        
+
         if (choice === 'export_Signer') {
           // Sign S2 if export is requested
           const __keypair = await KEYGEN(_origin, _caip10, sigSigner, saltModalState.modalData)
@@ -587,7 +586,7 @@ const Account: NextPage = () => {
         setSigCount(0)
         setSigIPNS('')
         setSigSigner('')
-        setSalt(false)
+        setSaltModal(false)
       } else if (choice.startsWith('ownerhash')) {
         // Triggers setting Ownerhash
         setSigCount(0)
@@ -677,8 +676,8 @@ const Account: NextPage = () => {
                 } else if (_Recordhash_ && _Recordhash_ !== '0x' && (_Recordhash_ !== _Ownerhash_)) {
                   __Recordhash = true
                 }
-                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? (_Recordhash_.startsWith('0x6874') ? '4/5' : '1') : (
-                  __Ownerhash && items[count - 1].migrated === '1/2' ? (_Ownerhash_.startsWith('0x6874') ? '4/5' : '3/4') : (
+                items[count - 1].migrated = __Recordhash && items[count - 1].migrated === '1/2' ? (_Recordhash_.startsWith(constants.httpPrefix) ? '4/5' : '1') : (
+                  __Ownerhash && items[count - 1].migrated === '1/2' ? (_Ownerhash_.startsWith(constants.httpPrefix) ? '4/5' : '3/4') : (
                     items[count - 1].migrated === '1/2' ? items[count - 1].migrated : '0'
                   )
                 )
@@ -734,10 +733,9 @@ const Account: NextPage = () => {
   }, [getting])
 
   React.useEffect(() => {
-    if (_OwnerLegacy_ && _ManagerLegacy_
-      && String(_OwnerLegacy_) !== constants.zeroAddress
+    if ((_OwnerWrapped_ && _ManagerLegacy_)
       && String(_ManagerLegacy_) !== constants.zeroAddress) {
-      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+      if (String(_ManagerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
           setManager(String(_OwnerWrapped_))
         }
@@ -805,7 +803,7 @@ const Account: NextPage = () => {
       setEmpty(true)
       setErrorMessage('You do not have Manager permission')
       setErrorModal(true)
-    } else if (!manager && query.length > 0) {
+    } else if (manager && manager === constants.zeroAddress && query.length > 0 && !legacyManagerLoading) {
       setLoading(false)
       setSuccess(false)
       setEmpty(true)
@@ -813,7 +811,7 @@ const Account: NextPage = () => {
       setErrorModal(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manager, _Wallet_, query, recordhash, ownerhash, flash])
+  }, [manager, _Wallet_, query, recordhash, ownerhash, flash, legacyManagerLoading, legacyManagerError])
 
   // Sets Option between IPNS Ownerhash and HTTP Gateway
   React.useEffect(() => {
@@ -821,7 +819,7 @@ const Account: NextPage = () => {
       setConfirm(false)
       if (confirmModalState.modalData === '0') {
         setUsername(`eth:${_Wallet_}`)
-        setSalt(true)
+        setSaltModal(true)
       } else if (confirmModalState.modalData === '1') {
         setGateway(true)
       }
@@ -846,10 +844,10 @@ const Account: NextPage = () => {
       setExportKey(false)
       if (exportModalState.modalData === '0') {
         setUsername(`eth:${_Wallet_}`)
-        setSalt(true)
+        setSaltModal(true)
       } else if (['1', '2'].includes(exportModalState.modalData)) {
         setUsername('')
-        setSalt(true)
+        setSaltModal(true)
       } else {
         setUsername('0')
       }
@@ -861,7 +859,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (_Recordhash_ && String(_Recordhash_) !== '0x') {
       let _String: string = ''
-      if (String(_Recordhash_).startsWith(constants.prefix)) {
+      if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
         _String = `ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`
       } else {
         _String = ethers.utils.toUtf8String(String(_Recordhash_))
@@ -878,7 +876,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (_Ownerhash_ && String(_Ownerhash_) !== '0x') {
       let _String: string = ''
-      if (String(_Ownerhash_).startsWith(constants.prefix)) {
+      if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
         _String = `ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`
       } else {
         _String = ethers.utils.toUtf8String(String(_Ownerhash_))
@@ -1050,12 +1048,12 @@ const Account: NextPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError, activeTab])
 
+  /// account.tsx
   return (
     <div
       className="page flex-column-sans-align"
       style={{
-        maxWidth: '100%',
-        top: '20px'
+        maxWidth: '100%'
       }}
     >
       {/* Avatar */}
@@ -1088,7 +1086,9 @@ const Account: NextPage = () => {
       <div style={{ fontFamily: 'Spotnik' }}></div>
       {/* Overlay */}
       <div id="overlay" className="overlay">
-        <div className="overlay-content overlay-content-alt">
+        <div 
+          className="overlay-content overlay-content-alt"
+        >
           <Loading
             height={75}
             width={75}
@@ -1137,7 +1137,7 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {!isMobile ? 'Home' : 'Home'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>home</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>home</span>
                 </div>
               </button>
             </div>
@@ -1168,7 +1168,7 @@ const Account: NextPage = () => {
                 className="flex-row"
               >
                 {'about'}
-                <span className="material-icons" style={{ marginLeft: '3px' }}>info</span>
+                <span className="material-icons-round" style={{ marginLeft: '3px' }}>info</span>
               </div>
             </button>
             <button
@@ -1180,7 +1180,7 @@ const Account: NextPage = () => {
               <div
                 className="flex-row"
               >
-                {'terms'}<span>&nbsp;</span><span className="material-icons">gavel</span>
+                {'terms'}<span>&nbsp;</span><span className="material-icons-round">gavel</span>
               </div>
             </button>
             {!isMobile && (
@@ -1389,20 +1389,20 @@ const Account: NextPage = () => {
             >
               <button
                 onClick={() => {
-                  setActiveTab('OWNER'),
-                    cache.length > 0 ? setMeta(cache) : console.error('BUG'),
-                    setTokenIDLegacy(''),
-                    setTokenIDWrapper(''),
-                    setQuery(''),
-                    setSuccess(false),
-                    setManager(''),
-                    cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true)),
-                    setErrorModal(false),
-                    setKeypairSigner([]),
-                    setKeypairIPNS([]),
-                    setKeyIPNS(''),
-                    setSigCount(0),
-                    !cache ? '' : setSuccess(true)
+                  setActiveTab('OWNER')
+                  cache.length > 0 ? setMeta(cache) : console.error('BUG')
+                  setTokenIDLegacy('')
+                  setTokenIDWrapper('')
+                  setQuery('')
+                  setSuccess(false)
+                  setManager('')
+                  cache.length > 0 ? setLoading(false) : (empty ? setLoading(false) : setLoading(true))
+                  setErrorModal(false)
+                  setKeypairSigner([])
+                  setKeypairIPNS([])
+                  setKeyIPNS('')
+                  setSigCount(0)
+                  !cache ? '' : setSuccess(true)
                 }}
                 className='button-header'
                 disabled={activeTab === 'OWNER' || loading}
@@ -1412,24 +1412,24 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {'NAMES'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>manage_accounts</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>manage_accounts</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  activeTab === 'SEARCH' ? '' : setCache(flash),
-                    setMeta([]),
-                    setActiveTab('UTILS'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setQuery(''),
-                    setErrorModal(false),
-                    setKeypairSigner([]),
-                    setKeypairIPNS([]),
-                    setKeyIPNS(''),
-                    setMessage('Please Wait'),
-                    setSigCount(0)
+                  activeTab === 'SEARCH' ? '' : setCache(flash)
+                  setMeta([])
+                  setActiveTab('UTILS')
+                  setSuccess(false)
+                  setManager('')
+                  setLoading(true)
+                  setQuery('')
+                  setErrorModal(false)
+                  setKeypairSigner([])
+                  setKeypairIPNS([])
+                  setKeyIPNS('')
+                  setMessage('Please Wait')
+                  setSigCount(0)
                 }}
                 className='button-header'
                 disabled={activeTab === 'UTILS' || loading}
@@ -1439,24 +1439,24 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {'UTILS'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>supervised_user_circle</span>
                 </div>
               </button>
               <button
                 onClick={() => {
-                  activeTab === 'UTILS' ? '' : setCache(flash),
-                    setMeta([]),
-                    setActiveTab('SEARCH'),
-                    setSuccess(false),
-                    setManager(''),
-                    setLoading(true),
-                    setQuery(''),
-                    setKeypairIPNS([]),
-                    setKeypairSigner([]),
-                    setKeyIPNS(''),
-                    setErrorModal(false),
-                    setMessage('Please Wait'),
-                    setSigCount(0)
+                  activeTab === 'UTILS' ? '' : setCache(flash)
+                  setMeta([])
+                  setActiveTab('SEARCH')
+                  setSuccess(false)
+                  setManager('')
+                  setLoading(true)
+                  setQuery('')
+                  setKeypairIPNS([])
+                  setKeypairSigner([])
+                  setKeyIPNS('')
+                  setErrorModal(false)
+                  setMessage('Please Wait')
+                  setSigCount(0)
                 }}
                 className='button-header'
                 disabled={activeTab === 'SEARCH' || loading}
@@ -1466,7 +1466,7 @@ const Account: NextPage = () => {
                   className="flex-sans-direction"
                 >
                   {'SEARCH'}
-                  <span className="material-icons" style={{ marginLeft: '3px' }}>search</span>
+                  <span className="material-icons-round" style={{ marginLeft: '3px' }}>search</span>
                 </div>
               </button>
             </div>
@@ -1597,19 +1597,19 @@ const Account: NextPage = () => {
                     Names You Manage
                   </span>
                   <button
-                    className="button-tiny"
+                    className="button-tiny emphasis-smol"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('info'),
-                        setColor('cyan'),
-                        setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
+                      setHelpModal(true)
+                      setIcon('info')
+                      setColor('cyan')
+                      setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
                     }}
                     data-tooltip='Enlighten me'
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
-                        color: 'cyan'
+                        color: 'orange'
                       }}
                     >
                       info_outline
@@ -1686,15 +1686,15 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setHelpModal(true),
-                      setIcon('info'),
-                      setColor('cyan'),
-                      setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
+                    setHelpModal(true)
+                    setIcon('info')
+                    setColor('cyan')
+                    setHelp('<span>NameSys Utility Functions to set <span style="color: cyan">Ownerhash</span> and <span style="color: cyan">Export Keys</span></span>')
                   }}
                   data-tooltip='Enlighten me'
                 >
                   <div
-                    className="material-icons smol"
+                    className="material-icons-round smol"
                     style={{
                       color: 'cyan'
                     }}
@@ -1730,15 +1730,15 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('info'),
-                        setColor('cyan'),
-                        setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
+                      setHelpModal(true)
+                      setIcon('info')
+                      setColor('cyan')
+                      setHelp('<span>Sets <span style="color: cyan">Ownerhash</span> For All Names in a Wallet</span>')
                     }}
                     data-tooltip='Set New Ownerhash'
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'cyan'
                       }}
@@ -1772,15 +1772,15 @@ const Account: NextPage = () => {
                     type="submit"
                     data-tooltip='Set New Ownerhash'
                     onClick={() => {
-                      setConfirm(true),
-                        setChoice('ownerhash'),
-                        setKeypairIPNS([]),
-                        setKeypairSigner([]),
-                        setKeyIPNS(''),
-                        setSigIPNS(''),
-                        setSigSigner(''),
-                        setSuccess(false),
-                        setMessage('')
+                      setConfirm(true)
+                      setChoice('ownerhash')
+                      setKeypairIPNS([])
+                      setKeypairSigner([])
+                      setKeyIPNS('')
+                      setSigIPNS('')
+                      setSigSigner('')
+                      setSuccess(false)
+                      setMessage('')
                     }}
                   >
                     <div
@@ -1788,7 +1788,7 @@ const Account: NextPage = () => {
                     >
                       <span>{'SET'}</span>
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700',
@@ -1801,7 +1801,7 @@ const Account: NextPage = () => {
                   </button>
                   {(txSuccess1of2 || txError1of2) && !txLoading1of2 && (
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: txSuccess1of2 ? 'lime' : 'orangered',
                         marginLeft: '10px',
@@ -1814,7 +1814,7 @@ const Account: NextPage = () => {
                   )}
                   {(txSuccess2of2 || txError2of2) && !txLoading2of2 && (
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: txSuccess2of2 ? 'lime' : 'orangered',
                         marginLeft: '10px',
@@ -1854,15 +1854,15 @@ const Account: NextPage = () => {
                   <button
                     className="button-tiny"
                     onClick={() => {
-                      setHelpModal(true),
-                        setIcon('info'),
-                        setColor('cyan'),
-                        setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
+                      setHelpModal(true)
+                      setIcon('info')
+                      setColor('cyan')
+                      setHelp('<span>Export your <span style="color: cyan">IPNS</span> and/or Records <span style="color: cyan">Signer</span> Keys</span>')
                     }}
                     data-tooltip='Export Keys'
                   >
                     <div
-                      className="material-icons smol"
+                      className="material-icons-round smol"
                       style={{
                         color: 'cyan'
                       }}
@@ -1910,9 +1910,9 @@ const Account: NextPage = () => {
                     <button
                       className="button-empty"
                       onClick={() => {
-                        constants.copyToClipboard('export-ipns'),
-                          setColor('lime'),
-                          setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
+                        constants.copyToClipboard('export-ipns')
+                        setColor('lime')
+                        setKeypairIPNS(['IPNS PRIVATE KEY COPIED!', 'COPIED!'])
                       }}
                       data-tooltip='Copy IPNS Key'
                       style={{
@@ -1922,7 +1922,7 @@ const Account: NextPage = () => {
                       hidden={!keypairIPNS[0] || keypairIPNS[0] === '0x'}
                     >
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700'
@@ -1973,9 +1973,9 @@ const Account: NextPage = () => {
                     <button
                       className="button-empty"
                       onClick={() => {
-                        constants.copyToClipboard('export-ccip'),
-                          setColor('lime'),
-                          setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
+                        constants.copyToClipboard('export-ccip')
+                        setColor('lime')
+                        setKeypairSigner(['RECORDS SIGNER KEY COPIED!', 'COPIED!'])
                       }}
                       data-tooltip='Copy Manager Key'
                       style={{
@@ -1985,7 +1985,7 @@ const Account: NextPage = () => {
                       hidden={!keypairSigner[0]}
                     >
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700'
@@ -2036,9 +2036,9 @@ const Account: NextPage = () => {
                     <button
                       className="button-empty"
                       onClick={() => {
-                        constants.copyToClipboard('export-encoded'),
-                          setColor('lime'),
-                          setKeyIPNS('IPNS ENCODED KEY COPIED!')
+                        constants.copyToClipboard('export-encoded')
+                        setColor('lime')
+                        setKeyIPNS('IPNS ENCODED KEY COPIED!')
                       }}
                       data-tooltip='Copy Manager Key'
                       style={{
@@ -2048,7 +2048,7 @@ const Account: NextPage = () => {
                       hidden={!keyIPNS}
                     >
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700'
@@ -2073,14 +2073,14 @@ const Account: NextPage = () => {
                     type="submit"
                     data-tooltip='Export Keys'
                     onClick={() => {
-                      setExportKey(true),
-                        setChoice('export'),
-                        setKeypairIPNS([]),
-                        setKeypairSigner([]),
-                        setKeyIPNS(''),
-                        setSigIPNS(''),
-                        setSigSigner(''),
-                        setMessage('')
+                      setExportKey(true)
+                      setChoice('export')
+                      setKeypairIPNS([])
+                      setKeypairSigner([])
+                      setKeyIPNS('')
+                      setSigIPNS('')
+                      setSigSigner('')
+                      setMessage('')
                     }}
                   >
                     <div
@@ -2088,7 +2088,7 @@ const Account: NextPage = () => {
                     >
                       <span>{'EXPORT'}</span>
                       <span
-                        className="material-icons"
+                        className="material-icons-round"
                         style={{
                           fontSize: '22px',
                           fontWeight: '700',
@@ -2100,7 +2100,7 @@ const Account: NextPage = () => {
                     </div>
                   </button>
                   <div
-                    className="material-icons smol"
+                    className="material-icons-round smol"
                     style={{
                       color: keyIPNS || keypairIPNS[0] || keypairSigner[0] ? 'lime' : (signError ? 'orangered' : ''),
                       marginLeft: '10px',
@@ -2135,15 +2135,15 @@ const Account: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setHelpModal(true),
-                      setIcon('info'),
-                      setColor('cyan'),
-                      setHelp('<span>Search for a <span style="color: cyan">Subdomain</span> or a <span style="color: cyan">Wrapped Domain</span> or a <span style="color: cyan">Legacy name that you Manage but do not Own</span></span>')
+                    setHelpModal(true)
+                    setIcon('info')
+                    setColor('cyan')
+                    setHelp('<span>Search for a <span style="color: cyan">Subdomain</span> or a <span style="color: cyan">Wrapped Domain</span> or a <span style="color: cyan">Legacy name that you Manage but do not Own</span></span>')
                   }}
                   data-tooltip='Enlighten me'
                 >
                   <div
-                    className="material-icons smol"
+                    className="material-icons-round smol"
                     style={{
                       color: 'cyan'
                     }}
@@ -2178,7 +2178,7 @@ const Account: NextPage = () => {
                 }}
               >
                 <span
-                  className="material-icons miui-smaller"
+                  className="material-icons-round miui-smaller"
                 >
                   warning
                 </span>
@@ -2199,7 +2199,7 @@ const Account: NextPage = () => {
                 }}
               >
                 <span
-                  className="material-icons miui-smaller"
+                  className="material-icons-round miui-smaller"
                 >
                   warning
                 </span>
@@ -2226,7 +2226,7 @@ const Account: NextPage = () => {
               }}
             >
               <span
-                className="material-icons"
+                className="material-icons-round"
                 style={{
                   marginRight: '3px'
                 }}
@@ -2246,7 +2246,7 @@ const Account: NextPage = () => {
               className='flex-row'
             >
               <span
-                className="material-icons"
+                className="material-icons-round"
                 style={{
                   marginRight: '3px'
                 }}
@@ -2264,26 +2264,28 @@ const Account: NextPage = () => {
             </div>
           </div>
           {/* Modals */}
-          <div id="modal">
+          <div 
+            id="modal"
+          >
             {previewModal && (
               <Preview
-                onClose={() => setPreviewModal(false)}
-                show={previewModal}
-                _ENS_={nameToPreview}
-                chain={_Chain_}
-                handleParentTrigger={handlePreviewTrigger}
-                handleParentModalData={handlePreviewModalData}
-              />
+              onClose={() => setPreviewModal(false)}
+              show={previewModal}
+              _ENS_={nameToPreview}
+              chain={_Chain_}
+              handleParentTrigger={handlePreviewTrigger}
+              handleParentModalData={handlePreviewModalData}
+            />
             )}
             {stealthModal && (
               <Stealth
-                onClose={() => setStealthModal(false)}
-                show={stealthModal}
-                _ENS_={nameToStealth}
-                chain={_Chain_}
-                handleParentTrigger={handleStealthTrigger}
-                handleParentModalData={handleStealthModalData}
-              />
+              onClose={() => setStealthModal(false)}
+              show={stealthModal}
+              _ENS_={nameToStealth}
+              chain={_Chain_}
+              handleParentTrigger={handleStealthTrigger}
+              handleParentModalData={handleStealthModalData}
+            />
             )}
             <Faq
               onClose={() => setFaqModal(false)}
@@ -2295,8 +2297,8 @@ const Account: NextPage = () => {
             />
             <Error
               onClose={() => {
-                setCrash(false),
-                  setRecentCrash(true)
+                setCrash(false)
+                setRecentCrash(true)
               }}
               color={'red'}
               show={crash && !loading}
@@ -2306,11 +2308,11 @@ const Account: NextPage = () => {
             </Error>
             <Error
               onClose={() => {
-                setErrorModal(false),
-                  setTokenIDLegacy(''),
-                  setTokenIDWrapper(''),
-                  setQuery(''),
-                  setManager('')
+                setErrorModal(false)
+                setTokenIDLegacy('')
+                setTokenIDWrapper('')
+                setQuery('')
+                setManager('')
               }}
               color={'red'}
               show={errorModal && !isSearch && !loading}
@@ -2320,11 +2322,11 @@ const Account: NextPage = () => {
             </Error>
             <Error
               onClose={() => {
-                setErrorModal(false),
-                  setTokenIDLegacy(''),
-                  setTokenIDWrapper(''),
-                  setQuery(''),
-                  setManager('')
+                setErrorModal(false)
+                setTokenIDLegacy('')
+                setTokenIDWrapper('')
+                setQuery('')
+                setManager('')
               }}
               color={'red'}
               show={errorModal && isSearch && !loading}
@@ -2345,11 +2347,11 @@ const Account: NextPage = () => {
               handleTrigger={handleSaltTrigger}
               handleModalData={handleSaltModalData}
               onClose={() => {
-                setSalt(false)
+                setSaltModal(false)
               }}
-              show={salt}
+              show={saltModal}
             >
-              {username}
+              {[username, 'ownerhash']}
             </Salt>
             <Confirm
               handleTrigger={handleConfirmTrigger}
@@ -2357,7 +2359,7 @@ const Account: NextPage = () => {
               onClose={() => {
                 setConfirm(false)
               }}
-              show={confirm && !salt}
+              show={confirm && !saltModal}
             >
               {'0'}
             </Confirm>
@@ -2376,6 +2378,7 @@ const Account: NextPage = () => {
               icon={icon}
               onClose={() => setHelpModal(false)}
               show={helpModal}
+              position={''}
             >
               {help}
             </Help>
