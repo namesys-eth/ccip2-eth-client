@@ -878,7 +878,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     })
     setGoodSalt(false)
     setTrigger('')
-    setWrite(false)
+    if (write) setWrite(false)
     setUpdateRecords(false)
   }
 
@@ -1296,7 +1296,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
         return typeof value === 'bigint' ? String(value) : value
       }))
-      _revision._name._privKey._key = {}
+      if (_revision._name._privKey) _revision._name._privKey._key = {}
       __revision = JSON.stringify(_revision)
     } else {
       __revision = JSON.stringify(__revision)
@@ -2237,7 +2237,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         if (!history.revision) {
                           _revision = await Name.v0(w3name, toPublish)
                         } else {
-                          let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
+                          let _revision_ = Revision.decode(new Uint8Array(Object.values(JSON.parse(JSON.stringify(history.revision)))))
                           _revision = await Name.increment(_revision_, toPublish)
                         }
                         setTimestamp(data.response.timestamp)
@@ -2682,17 +2682,17 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
-            {!['0', '1'].includes(isLoading['avatar']) && (
+            {isLoading['avatar'] === '-' && (
               <div
                 className="flex-column"
               >
                 <LoadingIcons.Bars 
-                  width={'130px'}
+                  width={'110px'}
                   fill={'#fc6603'}
                 />
               </div>
             )}
-            {['0', '1'].includes(isLoading['avatar']) && (
+            {['0', '1', ''].includes(isLoading['avatar']) && (
               <span
                 className="material-icons-round miui"
                 style={{
@@ -3314,6 +3314,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             icon={icon}
             onClose={() => setHelpModal(false)}
             show={helpModal}
+            position={''}
           >
             {help}
           </Help>

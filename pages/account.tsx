@@ -53,7 +53,7 @@ const Account: NextPage = () => {
   const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
   const [activeTab, setActiveTab] = React.useState('OWNER') // Set active tab
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
-  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
+  const [namehashLegacy, setNamehashLegacy] = React.useState('') // Legacy Namehash of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
   const [manager, setManager] = React.useState('') // Set manager of name
   const [query, setQuery] = React.useState('') // Store name in query
@@ -371,7 +371,7 @@ const Account: NextPage = () => {
     }
     try {
       const _RESPONSE = await fetch(
-        "https://ipfs.namesys.xyz:3003/gas",
+        `${SERVER}:${PORT}/gas`,
         {
           method: "post",
           headers: {
@@ -1048,6 +1048,7 @@ const Account: NextPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signLoading, signError, activeTab])
 
+  /// account.tsx
   return (
     <div
       className="page flex-column-sans-align"
@@ -2377,6 +2378,7 @@ const Account: NextPage = () => {
               icon={icon}
               onClose={() => setHelpModal(false)}
               show={helpModal}
+              position={''}
             >
               {help}
             </Help>

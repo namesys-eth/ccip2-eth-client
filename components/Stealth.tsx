@@ -508,7 +508,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     setGoodSalt(false)
     setTrigger('')
     setLoading(false)
-    setWrite(false)
+    if (write) setWrite(false)
     setUpdateRecords(false)
   }
 
@@ -723,7 +723,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
         return typeof value === 'bigint' ? String(value) : value
       }))
-      _revision._name._privKey._key = {}
+      if(_revision._name._privKey) _revision._name._privKey._key = {}
       __revision = JSON.stringify(_revision)
     } else {
       __revision = JSON.stringify(__revision)
@@ -1693,7 +1693,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         if (!history.revision) {
                           _revision = await Name.v0(w3name, toPublish)
                         } else {
-                          let _revision_ = Revision.decode(new Uint8Array(Buffer.from(history.revision, "utf-8")))
+                          let _revision_ = Revision.decode(new Uint8Array(Object.values(JSON.parse(JSON.stringify(history.revision)))))
                           _revision = await Name.increment(_revision_, toPublish)
                         }
                         setTimestamp(data.response.timestamp)
@@ -2592,6 +2592,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             icon={icon}
             onClose={() => setHelpModal(false)}
             show={helpModal}
+            position={''}
           >
             {help}
           </Help>

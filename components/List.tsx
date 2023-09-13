@@ -212,6 +212,7 @@ const List: React.FC<ListProps> = ({ label, items, onItemClickStealth, onItemCli
                 icon={icon}
                 onClose={() => setHelpModal(false)}
                 show={helpModal}
+                position={''}
               >
                 {help}
               </Help>

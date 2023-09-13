@@ -4,12 +4,11 @@ import Head from 'next/head'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
 import {
-  useConnect,
   useAccount,
   useContractRead,
   useNetwork
 } from 'wagmi'
-import { ethers, providers } from 'ethers'
+import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
@@ -27,36 +26,36 @@ import * as ensContent from '../utils/contenthash'
 
 /// Homepage
 const Home: NextPage = () => {
-  const { chain: activeChain } = useNetwork()
   const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount()
-  const [meta, setMeta] = React.useState<any[]>([])
-  const [faqModal, setFaqModal] = React.useState(false)
-  const [modal, setModal] = React.useState(false)
-  const [termsModal, setTermsModal] = React.useState(false)
-  const [errorModal, setErrorModal] = React.useState(false)
-  const [errorMessage, setErrorMessage] = React.useState('')
+  const [meta, setMeta] = React.useState<any[]>([])  // Stores all names and their states
+  const [faqModal, setFaqModal] = React.useState(false) // Controls FAQ modal
+  const [helpModal, setHelpModal] = React.useState(false)
+  const [termsModal, setTermsModal] = React.useState(false) // Controls Terms modal
+  const [errorModal, setErrorModal] = React.useState(false) // Controls Error modal
+  const [errorMessage, setErrorMessage] = React.useState('') // Sets Error message
   const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
   const [stealthModal, setStealthModal] = React.useState(false) // Controls Stealth modal
-  const [nameToPreview, setNameToPreview] = React.useState('') // // Sets name to expand in preview
+  const [nameToPreview, setNameToPreview] = React.useState('') // Sets name to expand in preview
   const [nameToStealth, setNameToStealth] = React.useState('') // Sets name to expand in stealth
-  const [loading, setLoading] = React.useState(true)
-  const [empty, setEmpty] = React.useState(false)
-  const [success, setSuccess] = React.useState(false)
-  const [finish, setFinish] = React.useState(false)
-  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
-  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
-  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
-  const [manager, setManager] = React.useState('')
-  const [query, setQuery] = React.useState('')
-  const [savings, setSavings] = React.useState('')
-  const [icon, setIcon] = React.useState('')
-  const [color, setColor] = React.useState('')
-  const [help, setHelp] = React.useState('')
-  const [searchType, setSearchType] = React.useState('')
-  const [recordhash, setRecordhash] = React.useState('')
-  const [ownerhash, setOwnerhash] = React.useState('')
-  const [owner, setOwner] = React.useState('')
-  const [onSearch, setOnSearch] = React.useState(false)
+  const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
+  const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
+  const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
+  const [finish, setFinish] = React.useState(false) // Finish query 
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
+  const [namehashLegacy, setNamehashLegacy] = React.useState('') // Legacy Namehash of ENS Domain
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
+  const [manager, setManager] = React.useState('') // Set manager of name
+  const [query, setQuery] = React.useState('') // Store name in query
+  const [savings, setSavings] = React.useState('') // Save gas savings
+  const [icon, setIcon] = React.useState('') // Set Icon inside help modal
+  const [color, setColor] = React.useState('cyan') // Set Color of help modal
+  const [help, setHelp] = React.useState('') // Set Help modal
+  const [searchType, setSearchType] = React.useState('') // Type of search by query
+  const [recordhash, setRecordhash] = React.useState('') // Recordhash
+  const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
+  const [owner, setOwner] = React.useState('') // Owner of ENS domain
+  const [onSearch, setOnSearch] = React.useState(false) // Stores search trigger
+  const [top, setTop] = React.useState('') // Top margin for Help modal
   const [previewModalState, setPreviewModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
@@ -87,6 +86,8 @@ const Home: NextPage = () => {
   const _Chain_ = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
+  const PORT = process.env.NEXT_PUBLIC_PORT
+  const SERVER = process.env.NEXT_PUBLIC_SERVER
 
   // Get Owner with ethers.js
   async function getManager(provider: any) {
@@ -152,7 +153,7 @@ const Home: NextPage = () => {
     }
     try {
       const _RESPONSE = await fetch(
-        "https://ipfs.namesys.xyz:3003/gas",
+        `${SERVER}:${PORT}/gas`,
         {
           method: "post",
           headers: {
@@ -423,6 +424,7 @@ const Home: NextPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Recordhash_, _Ownerhash_])
+
   // Captures Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_ && _Wallet_) {
@@ -515,6 +517,7 @@ const Home: NextPage = () => {
     }
   }
 
+  /// index.tsx
   return (
     <div
       className="page flex-column-sans-align"
@@ -901,10 +904,11 @@ const Home: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true)
+                    setHelpModal(true)
                     setIcon('info')
                     setColor('cyan')
-                    setHelp('search results for your query')
+                    setTop('')
+                    setHelp('Search results for your query')
                   }}
                 >
                   <div
@@ -1037,8 +1041,9 @@ const Home: NextPage = () => {
             <Help
               color={color}
               icon={icon}
-              onClose={() => setModal(false)}
-              show={modal}
+              onClose={() => setHelpModal(false)}
+              show={helpModal}
+              position={top}
             >
               {help}
             </Help>

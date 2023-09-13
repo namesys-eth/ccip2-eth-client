@@ -144,7 +144,7 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey)
 export const ccip2 = [
-  '0x4697b8672ceAe60E130BD39435cAb9eD7C630c81', // CCIP2 Resolver Goerli
+  '0x19F83D2042962b163ED910eFCA5EDfed765A7e89', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
 export const defaultGateway = network === 'goerli' ? 'https://ccip.namesys.xyz/5' : 'https://ccip.namesys.xyz'

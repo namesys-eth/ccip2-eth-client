@@ -245,6 +245,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
           icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
+          position={''}
         >
           {help}
         </Help>

@@ -214,6 +214,7 @@ const Confirm: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
           icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
+          position={''}
         >
           {help}
         </Help>
