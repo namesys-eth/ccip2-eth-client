@@ -168,6 +168,8 @@ const StyledModalHeader = styled.div`
 `;
 
 const StyledModal = styled.div`
+  position: fixed;
+  top: 250px;  
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
@@ -182,7 +184,7 @@ const StyledModal = styled.div`
 `;
 
 const StyledModalOverlay = styled.div`
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;

@@ -11,6 +11,95 @@ import iEnsWrapperMainnet from '../ABI/ENSWrapperMainnet.json'
 import iCCIP2Goerli from '../ABI/CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
+import axios from 'axios'
+
+// Config records
+export const config = [
+  'resolver',
+  'storage'
+]
+// Uneditable records in Preview modal
+export const forbidden = [
+  'resolver',
+]
+// Blocked records in Preview modal
+export const blocked = [
+  'pubkey',
+  'ltc',
+  'doge',
+  'sol',
+  'atom'
+]
+// Record types in Preview modal
+export const typesRecords = [
+  'storage', // On-Chain Record
+  'resolver', // Exception: Not a Record type
+  // General
+  'addr',
+  'contenthash',
+  'avatar',
+  'email',
+  'pubkey',
+  // Socials
+  'github',
+  'url',
+  'twitter',
+  'discord',
+  'farcaster',
+  'nostr',
+  // Multi-addr
+  'btc',
+	'ltc',
+	'doge',
+	'sol',
+	'atom', 
+  // DNS
+  //'zonehash',
+  // Extradata
+  'revision' // Extra local history; Not a Record type
+]
+// Record types in Stealth modal
+export const typesStealth = [
+  // Stealth
+  'rsa',
+  'stealth',
+  'revision' // Extra local history; Not a Record type
+]
+// Record filenames corresponding to record types
+export const filesRecords = [
+  '', // No associated record file; Not a Record
+  '', // No associated record file; Not a Record
+  // General
+  'address/60',
+  'contenthash',
+  'text/avatar',
+  'text/email',
+  'pubkey',
+  // Socials
+  'text/github',
+  'text/url',
+  'text/twitter',
+  'text/discord',
+  'text/farcaster',
+  'text/nostr',
+  // Multi-addr
+  'address/0',
+	'address/2',
+	'address/3',
+	'address/501',
+	'address/118',
+  // DNS
+  //'dns/zonehash',
+  // Extradata
+  'revision' // No associated record file; Not a Record
+]
+// Record filenames corresponding to record types
+export const filesStealth = [
+  // Stealth
+  'text/rsa',
+  'text/stealth',
+  'revision' // No associated record file; Not a Record
+]
 
 export const signedRecord = 'function signedRecord(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory result)'
 export const signedRedirect = 'function signedRedirect(address recordSigner, bytes memory recordSignature, bytes memory approvedSignature, bytes memory redirect)'
@@ -18,13 +107,25 @@ export const zeroAddress = '0x' + '0'.repeat(40)
 export const zeroBytes = '0x' + '0'.repeat(64)
 export const zeroKey = '0x' + '0'.repeat(64)
 export const buffer = "\x19Ethereum Signed Message:\n"
-export const prefix = '0xe5010172002408011220'
+export const ipnsPrefix = '0xe5010172002408011220'
+export const httpPrefix = '0x6874'
 const ipnsRegex = /^[a-z0-9]{62}$/
 const ipfsRegexCID0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/
 const ipfsRegexCID1 = /^bafy[a-zA-Z0-9]{55}$/
 const onionRegex = /^[a-z2-7]{16,56}$/
 const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
 const hexRegex = /^[0-9a-fA-F]+$/
+const githubRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/
+const twitterRegex = /^[A-Za-z][A-Za-z0-9_]{0,14}$/
+const zonehashRegex = /^0x[a-fA-F0-9]+$/
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+const discordRegex = /^.{3,32}#[0-9]{4}$/
+const farcasterRegex = /^[a-z0-9][a-z0-9-]{0,15}$/
+const btcRegex = /^(1[a-km-zA-HJ-NP-Z1-9]{25,34})|(3[a-km-zA-HJ-NP-Z1-9]{25,34})|(bc1[a-zA-HJ-NP-Z0-9]{6,87})$/
+const ltcRegex = /^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/
+const dogeRegex = /^D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{24,33}$/
+const solRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+const atomRegex = /^cosmos1[a-zA-Z0-9]{38}$/
 
 export interface MainBodyState {
   modalData: string | undefined
@@ -43,7 +144,7 @@ export const alchemyConfig = {
 export const alchemy = new Alchemy(alchemyConfig)
 export const provider = new ethers.providers.AlchemyProvider(network, alchemyConfig.apiKey)
 export const ccip2 = [
-  '0x4697b8672ceAe60E130BD39435cAb9eD7C630c81', // CCIP2 Resolver Goerli
+  '0x19F83D2042962b163ED910eFCA5EDfed765A7e89', // CCIP2 Resolver Goerli
   '0x839B3B540A9572448FD1B2335e0EB09Ac1A02885' // CCIP2 Resolver Mainnet
 ]
 export const defaultGateway = network === 'goerli' ? 'https://ccip.namesys.xyz/5' : 'https://ccip.namesys.xyz'
@@ -69,11 +170,11 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br>Gasless <span style="color: skyblue">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br>Decentralised Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br>Unlimited Free Updates through in-built <span style="color: skyblue">IPNS</span> Support',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Avatars, Contenthash and Reverse Resolution',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br>Enjoy ENS gasfree'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: skyblue">Gasless</span> <span style="color: skyblue">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: skyblue">Decentralised</span> Records Storage on <span style="color: skyblue">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: skyblue">Unlimited</span> Record Updates With <span style="color: skyblue">IPNS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Records and More',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: skyblue">Enjoy ENS</span> Hassle Free'
 ]
 
 export const ccip2Interface = [
@@ -125,48 +226,7 @@ export const ccip2Config = [
   }
 
 ]
-// Uneditable records in Preview modal
-export const forbidden = [
-  'resolver',
-]
-// Blocked records in Preview modal
-export const blocked = [
-  //'avatar',
-  //'contenthash'
-  'none'
-]
-// Record types in Preview modal
-export const typesRecords = [
-  'storage', // On-Chain Record
-  'resolver', // Exception: Not a Record type
-  'addr',
-  'contenthash',
-  'avatar',
-  'zonehash',
-  'revision' // Extra local history; Not a Record type
-]
-// Record types in Stealth modal
-export const typesStealth = [
-  'rsa',
-  'stealth',
-  'revision' // Extra local history; Not a Record type
-]
-// Record filenames corresponding to record types
-export const filesRecords = [
-  '', // No associated record file; Not a Record
-  '', // No associated record file; Not a Record
-  'address/60',
-  'contenthash',
-  'text/avatar',
-  'dns/zonehash',
-  'revision' // No associated record file; Not a Record
-]
-// Record filenames corresponding to record types
-export const filesStealth = [
-  'text/rsa',
-  'text/stealth',
-  'revision' // No associated record file; Not a Record
-]
+
 // Overlay 
 export function showOverlay(durationInSeconds: number) {
   const overlay = document.getElementById('overlay')
@@ -249,6 +309,62 @@ export function isAddr(value: string) {
 export function isAvatar(value: string) {
   return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
 }
+// Check if value is a valid Pubkey
+export function isPubkey(value: string) {
+  return value.length > 0
+}
+// Check if value is a valid URL
+export function isEmail(value: string) {
+  return emailRegex.test(value)
+}
+// Check if value is a valid Github username
+export function isGithub(value: string) {
+  return githubRegex.test(value)
+}
+// Check if value is a valid URL
+export function isUrl(value: string) {
+  return urlRegex.test(value)
+}
+// Check if value is a valid Twitter username
+export function isTwitter(value: string) {
+  return twitterRegex.test(value)
+}
+// Check if value is a valid Discord username
+export function isDiscord(value: string) {
+  return discordRegex.test(value)
+}
+// Check if value is a valid Farcaster username
+export function isFarcaster(value: string) {
+  return farcasterRegex.test(value)
+}
+// Check if value is a valid Nostr username
+export function isNostr(value: string) {
+  return btcRegex.test(value) || emailRegex.test(value)
+}
+// Check if value is a valid BTC address
+export function isBTC(value: string) {
+  return btcRegex.test(value)
+}
+// Check if value is a valid LTC address
+export function isLTC(value: string) {
+  return ltcRegex.test(value)
+}
+// Check if value is a valid DOGE address
+export function isDOGE(value: string) {
+  return dogeRegex.test(value)
+}
+// Check if value is a valid SOL address
+export function isSOL(value: string) {
+  return solRegex.test(value)
+}
+// Check if value is a valid ATOM address
+export function isATOM(value: string) {
+  return atomRegex.test(value)
+}
+// Check if value is a valid Zonehash
+export function isZonehash(value: string) {
+  return zonehashRegex.test(value)
+}
 // Check if value is a valid Contenthash
 export function isContenthash(value: string) {
   const prefixIPFS = value.substring(0, 7)
@@ -276,7 +392,7 @@ export function latestTimestamp(list: string[]) {
 export function EMPTY_STRING_RECORDS() {
   const EMPTY_STRING = {}
   for (const key of typesRecords) {
-    if (!['resolver', 'storage'].includes(key)) {
+    if (!config.includes(key)) {
       EMPTY_STRING[key] = ''
     }
   }
@@ -296,7 +412,7 @@ export function EMPTY_STRING_STEALTH() {
 export function EMPTY_BOOL_RECORDS() {
   const EMPTY_BOOL = {}
   for (const key of typesRecords) {
-    EMPTY_BOOL[key] = ['resolver', 'storage', 'revision'].includes(key) ? true : false
+    EMPTY_BOOL[key] = [...config, 'revision'].includes(key) ? true : false
   }
   return EMPTY_BOOL
 }
@@ -402,3 +518,23 @@ export function randomString(length: number) {
   }
   return result;
 }
+
+// Get ABI
+export async function getABI(contractAddress: string): Promise<any | null> {
+  try {
+    const url = `https://api${network === 'goerli' ? '-goerli' : ''}.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${process.env.NEXT_PUBLIC_ETHERSCAN_KEY}`
+    const response = await axios.get(url)
+    const data = response.data
+
+    if (data.status === '1' && data.result) {
+      return JSON.parse(data.result)
+    } else {
+      console.error('Failed to get ABI:', data.message)
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching ABI:', error)
+    return null;
+  }
+}
+

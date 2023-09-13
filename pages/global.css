@@ -110,6 +110,7 @@ body {
   height: auto;
   border-radius: 4px;
   overflow-x: hidden;
+  position: relative;
 }
 
 .avatar {
@@ -196,6 +197,10 @@ input:disabled {
 
 .inputextra__::placeholder {
   color: rgba(255, 251, 0, 0.7);
+}
+
+.inputextra___::placeholder {
+  color: rgba(255, 111, 67, 0.5);
 }
 
 .icon-ens {
@@ -1405,10 +1410,52 @@ button:not(:disabled),
   }
 }
 
+.emphasis-smol {
+  animation: blink-smol 3s linear infinite;
+}
+.emphasis-smol:hover {
+  animation: none;
+  transform: scale(1.5);
+}
+@keyframes blink-smol {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  25%, 75% {
+    opacity: 0.75;
+    transform: scale(1.25);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.emphasis {
+  animation: blink-guide 3s linear infinite;
+}
+.emphasis:hover {
+  animation: none;
+}
+@keyframes blink-guide {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  25%, 75% {
+    opacity: 0.75;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
 .blink {
   animation: blinker 1s linear infinite;
 }
-
 @keyframes blinker {
   50% {
     opacity: 0;
@@ -1432,6 +1479,25 @@ button:not(:disabled),
   border: var(--cui-border-width) var(--cui-border-style) var(--cui-border-color) !important;
 }
 
-/* rtl:begin:remove */
+/* For Webkit browsers like Chrome and Safari */
+.scrollable-div::-webkit-scrollbar {
+  width: 12px;  /* Width of the scrollbar */
+}
 
-/* rtl:end:remove */
+.scrollable-div::-webkit-scrollbar-track {
+  background: #f1f1f163;  /* Color of the track */
+}
+
+.scrollable-div::-webkit-scrollbar-thumb {
+  background: #ff8c56;  /* Color of the thumb */
+}
+
+.scrollable-div::-webkit-scrollbar-thumb:hover {
+  background: #ff8c56;  /* Color of the thumb on hover */
+}
+
+/* For Firefox */
+.scrollable-div {
+  scrollbar-width: thin;  /* "auto" or "thin"  */
+  scrollbar-color: #ff5100 #f1f1f150;  /* thumb and track color */
+}

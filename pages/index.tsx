@@ -4,12 +4,11 @@ import Head from 'next/head'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
 import {
-  useConnect,
   useAccount,
   useContractRead,
   useNetwork
 } from 'wagmi'
-import { ethers, providers } from 'ethers'
+import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
 import Help from '../components/Help'
 import Terms from '../components/Terms'
@@ -27,36 +26,36 @@ import * as ensContent from '../utils/contenthash'
 
 /// Homepage
 const Home: NextPage = () => {
-  const { chain: activeChain } = useNetwork()
   const { address: _Wallet_, isConnected: isConnected, isDisconnected: isDisconnected } = useAccount()
-  const [meta, setMeta] = React.useState<any[]>([])
-  const [faqModal, setFaqModal] = React.useState(false)
-  const [modal, setModal] = React.useState(false)
-  const [termsModal, setTermsModal] = React.useState(false)
-  const [errorModal, setErrorModal] = React.useState(false)
-  const [errorMessage, setErrorMessage] = React.useState('')
+  const [meta, setMeta] = React.useState<any[]>([])  // Stores all names and their states
+  const [faqModal, setFaqModal] = React.useState(false) // Controls FAQ modal
+  const [helpModal, setHelpModal] = React.useState(false)
+  const [termsModal, setTermsModal] = React.useState(false) // Controls Terms modal
+  const [errorModal, setErrorModal] = React.useState(false) // Controls Error modal
+  const [errorMessage, setErrorMessage] = React.useState('') // Sets Error message
   const [previewModal, setPreviewModal] = React.useState(false) // Controls Preview modal
   const [stealthModal, setStealthModal] = React.useState(false) // Controls Stealth modal
-  const [nameToPreview, setNameToPreview] = React.useState('') // // Sets name to expand in preview
+  const [nameToPreview, setNameToPreview] = React.useState('') // Sets name to expand in preview
   const [nameToStealth, setNameToStealth] = React.useState('') // Sets name to expand in stealth
-  const [loading, setLoading] = React.useState(true)
-  const [empty, setEmpty] = React.useState(false)
-  const [success, setSuccess] = React.useState(false)
-  const [finish, setFinish] = React.useState(false)
-  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('')
-  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('')
-  const [namehashLegacy, setNamehashLegacy] = React.useState(''); // Legacy Namehash of ENS Domain
-  const [manager, setManager] = React.useState('')
-  const [query, setQuery] = React.useState('')
-  const [savings, setSavings] = React.useState('')
-  const [icon, setIcon] = React.useState('')
-  const [color, setColor] = React.useState('')
-  const [help, setHelp] = React.useState('')
-  const [searchType, setSearchType] = React.useState('')
-  const [recordhash, setRecordhash] = React.useState('')
-  const [ownerhash, setOwnerhash] = React.useState('')
-  const [owner, setOwner] = React.useState('')
-  const [onSearch, setOnSearch] = React.useState(false)
+  const [loading, setLoading] = React.useState(true) // Tracks if a process is occuring
+  const [empty, setEmpty] = React.useState(false) // Tracks if wallet has no NFTs
+  const [success, setSuccess] = React.useState(false) // Tracks success of process(es)
+  const [finish, setFinish] = React.useState(false) // Finish query 
+  const [tokenIDLegacy, setTokenIDLegacy] = React.useState('') // Set Token ID of unwrapped/legacy name
+  const [namehashLegacy, setNamehashLegacy] = React.useState('') // Legacy Namehash of ENS Domain
+  const [tokenIDWrapper, setTokenIDWrapper] = React.useState('') // Set Token ID of wrapped name
+  const [manager, setManager] = React.useState('') // Set manager of name
+  const [query, setQuery] = React.useState('') // Store name in query
+  const [savings, setSavings] = React.useState('') // Save gas savings
+  const [icon, setIcon] = React.useState('') // Set Icon inside help modal
+  const [color, setColor] = React.useState('cyan') // Set Color of help modal
+  const [help, setHelp] = React.useState('') // Set Help modal
+  const [searchType, setSearchType] = React.useState('') // Type of search by query
+  const [recordhash, setRecordhash] = React.useState('') // Recordhash
+  const [ownerhash, setOwnerhash] = React.useState('') // Ownerhash
+  const [owner, setOwner] = React.useState('') // Owner of ENS domain
+  const [onSearch, setOnSearch] = React.useState(false) // Stores search trigger
+  const [top, setTop] = React.useState('') // Top margin for Help modal
   const [previewModalState, setPreviewModalState] = React.useState<constants.CustomBodyState>({
     modalData: '',
     trigger: false
@@ -87,6 +86,8 @@ const Home: NextPage = () => {
   const _Chain_ = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? '1' : '5'
   const ccip2Contract = constants.ccip2[_Chain_ === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[_Chain_ === '1' ? 1 : 0]
+  const PORT = process.env.NEXT_PUBLIC_PORT
+  const SERVER = process.env.NEXT_PUBLIC_SERVER
 
   // Get Owner with ethers.js
   async function getManager(provider: any) {
@@ -129,7 +130,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_recordhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(String(_recordhash)).decoded}`
+    return _recordhash
   }
 
   // Get Ownerhash with ethers.js
@@ -142,7 +143,7 @@ const Home: NextPage = () => {
       console.error('Error in getRecordhash():', error)
     }
     if (_ownerhash === null) { return '' }
-    return `ipns://${ensContent.decodeContenthash(String(_ownerhash)).decoded}`
+    return _ownerhash
   }
 
   // Get historical gas savings
@@ -152,7 +153,7 @@ const Home: NextPage = () => {
     }
     try {
       const _RESPONSE = await fetch(
-        "https://ipfs.namesys.xyz:3003/gas",
+        `${SERVER}:${PORT}/gas`,
         {
           method: "post",
           headers: {
@@ -317,10 +318,9 @@ const Home: NextPage = () => {
 
   // Set in-app manager for the ENS domain
   React.useEffect(() => {
-    if (_OwnerLegacy_ && _ManagerLegacy_
-      && String(_OwnerLegacy_) !== constants.zeroAddress
+    if ((_OwnerWrapped_ && _ManagerLegacy_)
       && String(_ManagerLegacy_) !== constants.zeroAddress) {
-      if (String(_OwnerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
+      if (String(_ManagerLegacy_) === constants.ensContracts[_Chain_ === '1' ? 7 : 3]) {
         if (_OwnerWrapped_ && String(_OwnerWrapped_) !== constants.zeroAddress) {
           setManager(String(_OwnerWrapped_))
           setOwner(String(_OwnerWrapped_))
@@ -346,13 +346,25 @@ const Home: NextPage = () => {
         if (_Owner) {
           setOwner(_Owner)
           if (_Recordhash && _Ownerhash && (_Recordhash !== _Ownerhash)) {
-            setRecordhash(_Recordhash)
+            if (String(_Recordhash).startsWith(constants.httpPrefix)) {
+              setRecordhash(ethers.utils.toUtf8String(String(_Recordhash)))
+            } else {
+              setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash)).decoded}`)
+            }
             setOwnerhash(_Ownerhash)
           } else if (_Recordhash && _Ownerhash && (_Recordhash === _Ownerhash)) {
             setRecordhash('')
-            setOwnerhash(_Ownerhash)
+            if (String(_Ownerhash).startsWith(constants.httpPrefix)) {
+              setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash)))
+            } else {
+              setOwnerhash(`ipns://${ensContent.decodeContenthash(String(_Ownerhash)).decoded}`)
+            }
           } else if (_Recordhash && !_Ownerhash) {
-            setRecordhash(_Recordhash)
+            if (String(_Recordhash).startsWith(constants.httpPrefix)) {
+              setRecordhash(ethers.utils.toUtf8String(String(_Recordhash)))
+            } else {
+              setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash)).decoded}`)
+            }
             setOwnerhash('')
           } else {
             setRecordhash('')
@@ -402,7 +414,7 @@ const Home: NextPage = () => {
   // Captures Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_ && (_Recordhash_ !== _Ownerhash_) && _Wallet_) {
-      if (String(_Recordhash_).startsWith('0x6874')) {
+      if (String(_Recordhash_).startsWith(constants.httpPrefix)) {
         setRecordhash(ethers.utils.toUtf8String(String(_Recordhash_)))
       } else {
         setRecordhash(`ipns://${ensContent.decodeContenthash(String(_Recordhash_)).decoded}`)
@@ -412,10 +424,11 @@ const Home: NextPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_Recordhash_, _Ownerhash_])
+
   // Captures Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_ && _Wallet_) {
-      if (String(_Ownerhash_).startsWith('0x6874')) {
+      if (String(_Ownerhash_).startsWith(constants.httpPrefix)) {
         setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash_)))
       } else {
         setOwnerhash(`ipns://${ensContent.decodeContenthash(String(_Ownerhash_)).decoded}`)
@@ -504,12 +517,12 @@ const Home: NextPage = () => {
     }
   }
 
+  /// index.tsx
   return (
     <div
       className="page flex-column-sans-align"
       style={{
-        maxWidth: '100vw',
-        top: '20px'
+        maxWidth: '100vw'
       }}
     >
       {/* Avatar */}
@@ -637,7 +650,7 @@ const Home: NextPage = () => {
               >
                 {'v'}
               </span>
-              {'1.0.2'}
+              {'1.1'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -646,7 +659,7 @@ const Home: NextPage = () => {
                   marginLeft: '2px'
                 }}
               >
-                { }
+                {'-beta'}
               </span>
             </div>
             <button
@@ -891,10 +904,11 @@ const Home: NextPage = () => {
                 <button
                   className="button-tiny"
                   onClick={() => {
-                    setModal(true),
-                      setIcon('info'),
-                      setColor('cyan'),
-                      setHelp('search results for your query')
+                    setHelpModal(true)
+                    setIcon('info')
+                    setColor('cyan')
+                    setTop('')
+                    setHelp('Search results for your query')
                   }}
                 >
                   <div
@@ -1012,11 +1026,11 @@ const Home: NextPage = () => {
             />
             <Error
               onClose={() => {
-                setErrorModal(false),
-                  setTokenIDLegacy(''),
-                  setTokenIDWrapper(''),
-                  setQuery(''),
-                  setManager('')
+                setErrorModal(false)
+                setTokenIDLegacy('')
+                setTokenIDWrapper('')
+                setQuery('')
+                setManager('')
               }}
               color={'red'}
               show={errorModal && searchType === 'search' && !loading}
@@ -1027,8 +1041,9 @@ const Home: NextPage = () => {
             <Help
               color={color}
               icon={icon}
-              onClose={() => setModal(false)}
-              show={modal}
+              onClose={() => setHelpModal(false)}
+              show={helpModal}
+              position={top}
             >
               {help}
             </Help>

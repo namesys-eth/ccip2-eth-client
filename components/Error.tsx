@@ -77,6 +77,8 @@ const StyledModalHeader = styled.div`
 `
 
 const StyledModal = styled.div`
+  position: fixed;
+  top: 300px;  
   background: red;
   width: 400px;
   height: auto;
@@ -88,7 +90,7 @@ const StyledModal = styled.div`
 `
 
 const StyledModalOverlay = styled.div`
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
