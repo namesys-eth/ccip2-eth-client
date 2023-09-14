@@ -78,6 +78,8 @@
     "patch-package": "^6.4.7",
     "purgecss": "^5.0.0",
     "react-router-dom": "^6.11.1",
-    "typescript": "5.0.4"
+    "ts-loader": "^9.4.4",
+    "typescript": "5.0.4",
+    "worker-loader": "^3.0.8"
   }
 }
