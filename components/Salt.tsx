@@ -302,7 +302,6 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   position: fixed;
-  top: 200px;  
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: 460px;

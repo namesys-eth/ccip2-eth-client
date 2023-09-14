@@ -78,7 +78,6 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   position: fixed;
-  top: 300px;  
   background: red;
   width: 400px;
   height: auto;

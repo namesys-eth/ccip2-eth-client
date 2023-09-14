@@ -3447,7 +3447,7 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   position: fixed;
-  top: 60px;  
+  top: 60px;
   width: auto;
   min-width: 400px;
   border-radius: 6px;
@@ -3460,7 +3460,7 @@ const StyledModal = styled.div`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
-  top: -60px;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;

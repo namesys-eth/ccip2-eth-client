@@ -93,7 +93,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const [gas, setGas] = React.useState<{}>({}); // Sets historical gas savings
   const [wrapped, setWrapped] = React.useState(false); // Indicates if the ENS Domain is wrapped
   const [keypairIPNS, setKeypairIPNS] = React.useState<[string, string]>(); // Sets generated K_IPNS keys
-  const [keypairRSA, setKeypairRSA] = React.useState<[string, string]>(); // Sets generated K_RSA keys
+  const [keypairRSA, setKeypairRSA] = React.useState<[any, string]>(); // Sets generated K_RSA keys
   const [keypairSigner, setKeypairSigner] = React.useState<[string, string]>(); // Sets generated K_IPNS and K_SIGNER keys
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
@@ -149,6 +149,8 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const origin = `eth:${_Wallet_ || constants.zeroAddress}`
   const PORT = process.env.NEXT_PUBLIC_PORT
   const SERVER = process.env.NEXT_PUBLIC_SERVER
+
+  // Wagmi Signature hook
   const {
     data: signature,
     error: signError,
@@ -159,7 +161,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const address = verifyMessage(variables.message, data)
       recoveredAddress.current = address
     },
-  })  // Wagmi Signature hook
+  })
 
   // Write hooks
   const { config: sendPayment } = usePrepareSendTransaction({
@@ -398,7 +400,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Signature S_RSA statement; S_RSA(K_WALLET) [Signer Keygen]
   // S_RSA generates AES-encrypted text
   function statementEncryptionKey(extradata: string) {
-    let _toSign = `Requesting Signature To Generate Encryption Key\n\nOrigin: ${ENS}\nKey Type: RSA-1048\nExtradata: ${extradata}\nSigned By: ${caip10}`
+    let _toSign = `Requesting Signature To Generate Encryption Key\n\nOrigin: ${ENS}\nKey Type: RSA-2048\nExtradata: ${extradata}\nSigned By: ${caip10}`
     let _digest = _toSign
     return _digest
   }
@@ -723,7 +725,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const _revision = JSON.parse(JSON.stringify(revision, (key, value) => {
         return typeof value === 'bigint' ? String(value) : value
       }))
-      if(_revision._name._privKey) _revision._name._privKey._key = {}
+      if (_revision._name._privKey) _revision._name._privKey._key = {}
       __revision = JSON.stringify(_revision)
     } else {
       __revision = JSON.stringify(__revision)
@@ -1150,14 +1152,47 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   React.useEffect(() => {
     if (isPayment && keygen) {
       if (sigRSA && saltModalState.trigger) {
-        setMessage(['Generating Encryption Key', ''])
-        const keygen = async () => {
-          const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
-          const __keypair = await RSAGEN(_origin, caip10, sigRSA, saltModalState.modalData)
-          setKeypairRSA(__keypair)
+        setMessage(['Generating Encryption Key', '+'])
+        const origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+        const worker = new Worker(new URL('../src/worker/worker', import.meta.url))
+        worker.onmessage = (event) => {
+          const _deserialisedRSAKey = constants.deserialiseRSAKey(event.data[0])
+          const _rehydratedKey = Object.assign(Object.create(constants.prototypeRSAKey), _deserialisedRSAKey)
+          setKeypairRSA([_rehydratedKey, event.data[1]])
           setMessage(['Encryption Keypair Generated', ''])
+          return
         }
-        keygen()
+        worker.onerror = (event) => {
+          if (event instanceof Event) {
+            console.error('❌ ERROR:', event)
+            setKeypairRSA(undefined)
+            setLoading(false)
+            setMessage(['Failed To Generate RSA Key', ''])
+            doCrash()
+            setColor('orangered')
+            setSigCount(0)
+            setProcessCount(0)
+            return
+          }
+          console.error('❌ UNKNOWN ERROR:', event)
+          setKeypairRSA(undefined)
+          setLoading(false)
+          setMessage(['Unknown Error While Generating RSA Key', ''])
+          doCrash()
+          setColor('orangered')
+          setSigCount(0)
+          setProcessCount(0)
+          return
+        }
+        worker.postMessage({
+          "_origin": origin,
+          "_caip10": caip10,
+          "_sigRSA": sigRSA,
+          "_salt": saltModalState.modalData
+        })
+        return () => {
+          worker.terminate()
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1196,6 +1231,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         resolve()
       } catch (error) {
+        console.error('ERROR:', error)
         setLoading(false)
         setMessage(['Bad Invoice', ''])
         doCrash()
@@ -1225,15 +1261,47 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         setGoodSalt(true)
       }
     } else if (sigRSA && !keypairRSA && isSigner) {
-      setLoading(true)
-      setMessage(['Generating Encryption Key', ''])
-      const keygen = async () => {
-        const _origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
-        const __keypair = await RSAGEN(_origin, caip10, sigRSA, saltModalState.modalData)
-        setKeypairRSA(__keypair)
+      setMessage(['Generating Encryption Key', '+'])
+      const origin = hashType !== 'recordhash' ? `eth:${_Wallet_ || constants.zeroAddress}` : ENS
+      const worker = new Worker(new URL('../src/worker/worker', import.meta.url))
+      worker.onmessage = (event) => {
+        const _deserialisedRSAKey = constants.deserialiseRSAKey(event.data[0])
+        const _rehydratedKey = Object.assign(Object.create(constants.prototypeRSAKey), _deserialisedRSAKey)
+        setKeypairRSA([_rehydratedKey, event.data[1]])
         setMessage(['Encryption Keypair Generated', ''])
+        return
       }
-      keygen()
+      worker.onerror = (event) => {
+        if (event instanceof Event) {
+          console.error('❌ ERROR:', event)
+          setKeypairRSA(undefined)
+          setLoading(false)
+          setMessage(['Failed To Generate RSA Key', ''])
+          doCrash()
+          setColor('orangered')
+          setSigCount(0)
+          setProcessCount(0)
+          return
+        }
+        console.error('❌ UNKNOWN ERROR:', event)
+        setKeypairRSA(undefined)
+        setLoading(false)
+        setMessage(['Unknown Error While Generating RSA Key', ''])
+        doCrash()
+        setColor('orangered')
+        setSigCount(0)
+        setProcessCount(0)
+        return
+      }
+      worker.postMessage({
+        "_origin": origin,
+        "_caip10": caip10,
+        "_sigRSA": sigRSA,
+        "_salt": saltModalState.modalData
+      })
+      return () => {
+        worker.terminate()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keygen, keypairIPNS, goodSalt, write, sigIPNS, isSigner, sigRSA, keypairRSA, isPayment])
@@ -1398,11 +1466,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 setMessage(['Waiting For Signature', '2'])
                 _RSA = response
                 let _encryptionResult: any = {}
-                if (keypairRSA) {
-                  _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA, keypairRSA[0])
-                } else {
-                  _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA)
-                }
+                _encryptionResult = cryptico.encrypt(`{"payer":"${_Payer}","payee":"${_Payee}","amount":"${_Amount}"}`, _RSA)
                 const _THIS = newValues
                 _THIS['stealth'] = _encryptionResult.cipher
                 setNewValues(_THIS)
@@ -1908,7 +1972,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   {message[0]}
                 </span>
               </div>
-              {message[1] && message[1] !== '-' && (
+              {message[1] && !['-', '+'].includes(message[1]) && (
                 <div
                   style={{
                     marginTop: '10px'
@@ -1930,7 +1994,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   </span>
                 </div>
               )}
-              {message[1] && message[1] === '-' && (
+              {message[1] && ['-', '+'].includes(message[1]) && (
                 <div
                   style={{
                     marginTop: '10px'
@@ -1943,7 +2007,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       fontWeight: '700'
                     }}
                   >
-                    <span>{message[0].includes('Refresh') ? 'Please Be Patient' : 'Please Be Patient'}</span>
+                    <span>{message[1] === '-' ? 'Please Be Patient' : 'This Will Take Time. Hang on'}</span>
                   </span>
                 </div>
               )}
@@ -2144,7 +2208,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       marginLeft: '-5px'
                                     }}
                                   >
-                                    {item.type === 'stealth' ? 'gpp_good': (RSA ? 'gpp_good' : 'gpp_bad')}
+                                    {item.type === 'stealth' ? 'gpp_good' : (RSA ? 'gpp_good' : 'gpp_bad')}
                                   </div>
                                 </button>
                               )}
@@ -2685,7 +2749,7 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   position: fixed;
-  top: 60px; 
+  top: 60px;
   width: auto;
   min-width: 400px;
   border-radius: 6px;
@@ -2698,7 +2762,7 @@ const StyledModal = styled.div`
 
 const StyledModalOverlay = styled.div`
   position: absolute;
-  top: -60px;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;

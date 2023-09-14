@@ -12,6 +12,7 @@ import iCCIP2Goerli from '../ABI/CCIP2Goerli.json'
 import iCCIP2Mainnet from '../ABI/CCIP2Mainnet.json'
 import * as ensContent from '../utils/contenthash'
 import axios from 'axios'
+import * as cryptico from 'cryptico-js/dist/cryptico.browser.js'
 
 // Config records
 export const config = [
@@ -49,10 +50,10 @@ export const typesRecords = [
   'nostr',
   // Multi-addr
   'btc',
-	'ltc',
-	'doge',
-	'sol',
-	'atom', 
+  'ltc',
+  'doge',
+  'sol',
+  'atom',
   // DNS
   //'zonehash',
   // Extradata
@@ -84,10 +85,10 @@ export const filesRecords = [
   'text/nostr',
   // Multi-addr
   'address/0',
-	'address/2',
-	'address/3',
-	'address/501',
-	'address/118',
+  'address/2',
+  'address/3',
+  'address/501',
+  'address/118',
   // DNS
   //'dns/zonehash',
   // Extradata
@@ -538,3 +539,27 @@ export async function getABI(contractAddress: string): Promise<any | null> {
   }
 }
 
+/// Stealth 
+const keyClass = cryptico.generateRSAKey('0', '64')
+export const prototypeRSAKey = Object.getPrototypeOf(keyClass)
+const BigInteger = Object.getPrototypeOf(keyClass.n).constructor
+
+/// RSA Key de-serialisation
+export function deserialiseRSAKey(serialised: any): any {
+  return {
+    ...serialised,
+    coeff: deserialiseBigInteger(serialised.coeff),
+    d: deserialiseBigInteger(serialised.d),
+    dmp1: deserialiseBigInteger(serialised.dmp1),
+    dmq1: deserialiseBigInteger(serialised.dmq1),
+    n: deserialiseBigInteger(serialised.n),
+    p: deserialiseBigInteger(serialised.p),
+    q: deserialiseBigInteger(serialised.q),
+  }
+}
+
+/// BigInteger de-serialisation
+export function deserialiseBigInteger(serialised: any): any {
+  let bigInt = Object.assign(Object.create(BigInteger.prototype), serialised)
+  return bigInt
+}
