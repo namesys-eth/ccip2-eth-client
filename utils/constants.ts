@@ -137,6 +137,7 @@ export interface CustomBodyState {
   trigger: boolean
 }
 let network = process.env.NEXT_PUBLIC_NETWORK
+export const w3timestamp = 1699534314 
 export const alchemyConfig = {
   apiKey: network === 'goerli' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET,
   network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
@@ -171,11 +172,11 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: skyblue">Gasless</span> <span style="color: skyblue">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: skyblue">Decentralised</span> Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: skyblue">Unlimited</span> Record Updates With <span style="color: skyblue">IPNS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Records and More',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: skyblue">Enjoy ENS</span> Hassle Free'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: cyan">Gasless</span> <span style="color: cyan">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: cyan">Decentralised</span> Records Storage on <span style="color: cyan">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: cyan">Unlimited</span> Record Updates With <span style="color: cyan">IPNS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: cyan">Dynamic</span> Records and <span style="color: cyan">Private</span> Payments',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: cyan">Enjoy ENS</span> Hassle Free'
 ]
 
 export const ccip2Interface = [

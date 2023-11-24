@@ -650,7 +650,7 @@ const Home: NextPage = () => {
               >
                 {'v'}
               </span>
-              {'1.1'}
+              {'1.2'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -659,7 +659,7 @@ const Home: NextPage = () => {
                   marginLeft: '2px'
                 }}
               >
-                {'-beta'}
+                {''}
               </span>
             </div>
             <button
@@ -842,6 +842,32 @@ const Home: NextPage = () => {
                   </div>
                 </div>
               </div>
+              <div
+                className="flex-column"
+                style={{
+                  paddingBottom: '10px',
+                  marginTop: isMobile ? '-160px' : '0px'
+                }}
+              >
+                <span
+                  style={{
+                    color: '#fc6603',
+                    fontWeight: '700',
+                    fontSize: isMobile ? '12px' : '14px'
+                  }}
+                >
+                  {'Funded By'}
+                </span>
+                <span
+                  style={{
+                    color: 'cyan',
+                    fontWeight: '700',
+                    fontSize: isMobile ? '16px' : '20px'
+                  }}
+                >
+                  {'ENS DAO'}
+                </span>
+              </div>
             </div>
           )}
           {loading && onSearch && (
@@ -944,8 +970,8 @@ const Home: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: !isMobile ? '13%' : '32%',
-              transform: !isMobile ? 'translateX(-93%)' : 'translateX(-72%)',
+              left: !isMobile ? '1.5%' : '1.5%',
+              transform: !isMobile ? '' : '',
               bottom: 10,
               position: 'fixed'
             }}

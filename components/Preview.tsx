@@ -20,6 +20,7 @@ import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
 import { KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
+import * as Nam3 from '@namesys-eth/w3name-client'
 import * as ed25519v2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 import * as verifier from '../utils/verifier'
@@ -2218,7 +2219,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       resolve()
                     } else {
                       setTimeout(checkGas, 100)
-                    }
+                    } 
                   }
                   checkGas()
                 })
@@ -2226,25 +2227,40 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   // Handle W3Name publish 
                   let key = constants.formatkey(keypairIPNS)
                   let w3name: Name.WritableName
+                  let w3nam3: Nam3.WritableName
                   const keygen = async () => {
                     w3name = await Name.from(ed25519v2.etc.hexToBytes(key))
+                    w3nam3 = await Nam3.from(ed25519v2.etc.hexToBytes(key))
                     const pin = async () => {
-                      if (data.response.ipfs && w3name && gas) {
+                      if (data.response.ipfs && w3name && w3nam3 && gas) {
                         setHashIPFS(data.response.ipfs.split('ipfs://')[1])
                         const toPublish = '/ipfs/' + data.response.ipfs.split('ipfs://')[1]
                         // @W3Name broadcast
                         let _revision: Name.Revision
+                        let revision_: Nam3.Revision
                         if (!history.revision) {
                           _revision = await Name.v0(w3name, toPublish)
+                          revision_ = await Nam3.v0(w3nam3, toPublish)
                         } else {
                           let _revision_ = Revision.decode(new Uint8Array(Object.values(JSON.parse(JSON.stringify(history.revision)))))
-                          _revision = await Name.increment(_revision_, toPublish)
+                          if (Number(data.response.timestamp) < constants.w3timestamp) {
+                            _revision = await Name.increment(_revision_, toPublish)
+                            revision_ = _revision
+                          } else {
+                            _revision = await Name.increment(_revision_, toPublish)
+                            revision_ = await Nam3.increment(_revision_, toPublish)
+                          }
                         }
                         setTimestamp(data.response.timestamp)
                         // Write revision to database & user directory
                         await writeRevision(_revision, gas, data.response.timestamp, data.response.ipfs.split('ipfs://')[1])
                         // Publish IPNS
-                        await Name.publish(_revision, w3name.key)
+                        if (Number(data.response.timestamp) < constants.w3timestamp) {
+                          await Name.publish(_revision, w3name.key)
+                        } else {
+                          await Name.publish(_revision, w3name.key)
+                          await Nam3.publish(revision_, w3nam3.key)
+                        }
                         // Wrap up
                         setGas(gas)
                         setGasModal(true)

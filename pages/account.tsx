@@ -31,7 +31,7 @@ import Export from '../components/Export'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
 import { KEYGEN } from '../utils/keygen'
-import * as Name from 'w3name'
+import * as Name from '@namesys-eth/w3name-client'
 import * as ed25519_2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 
@@ -1602,7 +1602,7 @@ const Account: NextPage = () => {
                       setHelpModal(true)
                       setIcon('info')
                       setColor('cyan')
-                      setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find names in these categories</span>')
+                      setHelp('<span>This list <span style="color: orangered">does not</span> contain <span style="color: orange">Wrapped Names</span> or <span style="color: orange">Freshly Registered Names</span> or <span style="color: orange">Subdomains</span> or <span style="color: orange">Legacy Names that you Manage but do not Own</span>. Please use the <span style="color: cyan">Search</span> tab to find missing names.</span>')
                     }}
                     data-tooltip='Enlighten me'
                   >
