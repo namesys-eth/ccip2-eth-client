@@ -41,10 +41,11 @@ export const typesRecords = [
   'avatar',
   'email',
   'pubkey',
+  'url',
   // Socials
   'github',
-  'url',
   'twitter',
+  'x',
   'discord',
   'farcaster',
   'nostr',
@@ -76,13 +77,14 @@ export const filesRecords = [
   'text/avatar',
   'text/email',
   'pubkey',
-  // Socials
-  'text/github',
   'text/url',
-  'text/twitter',
-  'text/discord',
-  'text/farcaster',
-  'text/nostr',
+  // Socials
+  'text/com.github',
+  'text/com.twitter',
+  'text/com.x',
+  'text/com.discord',
+  'text/xyz.farcaster',
+  'address/1237',
   // Multi-addr
   'address/0',
   'address/2',
