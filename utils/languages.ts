@@ -16,26 +16,26 @@ export const korean = ["영", "일", "이", "삼", "사", "오", "육", "칠", "
 export const chinese = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
 
 const isRoman = (digit: string) => {
-  /^(m{1,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})|m{0,4}(cm|c?d|d?c{1,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})|m{0,4}(cm|cd|d?c{0,3})(xc|x?l|l?x{1,3})(ix|iv|v?i{0,3})|m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|i?v|v?i{1,3}))$/.test(digit) || /^(M{1,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|M{0,4}(CM|C?D|D?C{1,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|M{0,4}(CM|CD|D?C{0,3})(XC|X?L|L?X{1,3})(IX|IV|V?I{0,3})|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|I?V|V?I{1,3}))$/.test(digit);
+	/^(m{1,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})|m{0,4}(cm|c?d|d?c{1,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})|m{0,4}(cm|cd|d?c{0,3})(xc|x?l|l?x{1,3})(ix|iv|v?i{0,3})|m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|i?v|v?i{1,3}))$/.test(digit) || /^(M{1,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|M{0,4}(CM|C?D|D?C{1,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|M{0,4}(CM|CD|D?C{0,3})(XC|X?L|L?X{1,3})(IX|IV|V?I{0,3})|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|I?V|V?I{1,3}))$/.test(digit);
 };
 export const parseRoman = (roman: string | any[]) => {
 	let sum = 0;
-  let romanMap = {
-  	"i": 1,
-  	"v": 5,
-  	"x": 10,
-  	"l": 50,
-  	"c": 100,
-  	"d": 500,
-  	"m": 1000,
-    "I": 1,
-  	"V": 5,
-  	"X": 10,
-  	"L": 50,
-  	"C": 100,
-  	"D": 500,
-  	"M": 1000
-  };
+	let romanMap = {
+		"i": 1,
+		"v": 5,
+		"x": 10,
+		"l": 50,
+		"c": 100,
+		"d": 500,
+		"m": 1000,
+		"I": 1,
+		"V": 5,
+		"X": 10,
+		"L": 50,
+		"C": 100,
+		"D": 500,
+		"M": 1000
+	};
 	for (let i = 0; i < roman.length; i++) {
 		const current = romanMap[roman[i]];
 		const next = romanMap[roman[i + 1]];

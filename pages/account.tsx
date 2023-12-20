@@ -2341,6 +2341,7 @@ const Account: NextPage = () => {
                 setGateway(false)
               }}
               show={gateway}
+              children={undefined}
             >
             </Gateway>
             <Salt

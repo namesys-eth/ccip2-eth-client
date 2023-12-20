@@ -1930,8 +1930,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       } else {
         setMetadata(recordhash, addr, contenthash, avatar, pubkey, email,
           github, url, twitter, discord, farcaster, nostr, BTC, LTC, DOGE, SOL, ATOM)
-      }   
-      setLoading(false)  
+      }
+      setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sync, hashType, recordhash, ownerhash, resolver, addr, contenthash, avatar, email,
@@ -2219,7 +2219,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       resolve()
                     } else {
                       setTimeout(checkGas, 100)
-                    } 
+                    }
                   }
                   checkGas()
                 })
@@ -2240,15 +2240,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         let revision_: Nam3.Revision
                         if (!history.revision) {
                           _revision = await Name.v0(w3name, toPublish)
-                          revision_ = await Nam3.v0(w3nam3, toPublish)
+                          //revision_ = await Nam3.v0(w3nam3, toPublish)
                         } else {
                           let _revision_ = Revision.decode(new Uint8Array(Object.values(JSON.parse(JSON.stringify(history.revision)))))
                           if (Number(data.response.timestamp) < constants.w3timestamp) {
                             _revision = await Name.increment(_revision_, toPublish)
-                            revision_ = _revision
+                            //revision_ = _revision
                           } else {
                             _revision = await Name.increment(_revision_, toPublish)
-                            revision_ = await Nam3.increment(_revision_, toPublish)
+                            //revision_ = await Nam3.increment(_revision_, toPublish)
                           }
                         }
                         setTimestamp(data.response.timestamp)
@@ -2259,7 +2259,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                           await Name.publish(_revision, w3name.key)
                         } else {
                           await Name.publish(_revision, w3name.key)
-                          await Nam3.publish(revision_, w3nam3.key)
+                          //await Nam3.publish(revision_, w3nam3.key)
                         }
                         // Wrap up
                         setGas(gas)
@@ -2702,7 +2702,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               <div
                 className="flex-column"
               >
-                <LoadingIcons.Bars 
+                <LoadingIcons.Bars
                   width={'110px'}
                   fill={'#fc6603'}
                 />
@@ -3381,7 +3381,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             onClose={() => {
               setGateway(false)
             }}
-            show={gateway}
+            show={gateway} 
+            children={undefined}
           >
           </Gateway>
           <Options

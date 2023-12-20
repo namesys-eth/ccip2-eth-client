@@ -48,7 +48,7 @@ const Home: NextPage = () => {
   const [query, setQuery] = React.useState('') // Store name in query
   const [savings, setSavings] = React.useState('') // Save gas savings
   const [icon, setIcon] = React.useState('') // Set Icon inside help modal
-  const [color, setColor] = React.useState('cyan') // Set Color of help modal
+  const [color, setColor] = React.useState('#6291fc') // Set Color of help modal
   const [help, setHelp] = React.useState('') // Set Help modal
   const [searchType, setSearchType] = React.useState('') // Type of search by query
   const [recordhash, setRecordhash] = React.useState('') // Recordhash
@@ -750,7 +750,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '24px' : '28px',
                       marginTop: '0px',
-                      color: '#eb8634',
+                      color: '#fc6603',
                       fontWeight: '700'
                     }}
                   >
@@ -781,7 +781,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
                       fontWeight: 700,
-                      color: '#eb8634',
+                      color: '#fc6603',
                       marginTop: '5px'
                     }}
                   >
@@ -853,14 +853,15 @@ const Home: NextPage = () => {
                   style={{
                     color: '#fc6603',
                     fontWeight: '700',
-                    fontSize: isMobile ? '12px' : '14px'
+                    fontSize: isMobile ? '12px' : '14px',
+                    paddingBottom: '5px'
                   }}
                 >
                   {'Funded By'}
                 </span>
                 <span
                   style={{
-                    color: 'cyan',
+                    color: '#6291fc',
                     fontWeight: '700',
                     fontSize: isMobile ? '16px' : '20px'
                   }}
@@ -915,7 +916,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'cyan',
+                  color: '#6291fc',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -932,7 +933,7 @@ const Home: NextPage = () => {
                   onClick={() => {
                     setHelpModal(true)
                     setIcon('info')
-                    setColor('cyan')
+                    setColor('#6291fc')
                     setTop('')
                     setHelp('Search results for your query')
                   }}
@@ -940,7 +941,7 @@ const Home: NextPage = () => {
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'cyan'
+                      color: '#6291fc'
                     }}
                   >
                     info_outline
@@ -970,7 +971,7 @@ const Home: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: !isMobile ? '1.5%' : '1.5%',
+              left: !isMobile ? '0.5%' : '1.5%',
               transform: !isMobile ? '' : '',
               bottom: 10,
               position: 'fixed'
