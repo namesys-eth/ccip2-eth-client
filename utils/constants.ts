@@ -174,11 +174,11 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: #6291fc">Gasless</span> <span style="color: #6291fc">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: #6291fc">Decentralised</span> Records Storage on <span style="color: #6291fc">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: #6291fc">Unlimited</span> Record Updates With <span style="color: #6291fc">IPNS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: #6291fc">Dynamic</span> Records and <span style="color: #6291fc">Private</span> Payments',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: #6291fc">Enjoy ENS</span> Hassle Free'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: white">Gasless</span> <span style="color: white">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: white">Decentralised</span> Records Storage on <span style="color: white">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: white">Unlimited</span> Record Updates With <span style="color: white">IPNS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: white">Dynamic</span> Records and <span style="color: white">Private</span> Payments',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: white">Enjoy ENS</span> Hassle Free'
 ]
 
 export const ccip2Interface = [
@@ -228,7 +228,6 @@ export const ccip2Config = [
     addressOrName: ccip2[1],
     contractInterface: ccip2Interface[1]
   }
-
 ]
 
 // Overlay 

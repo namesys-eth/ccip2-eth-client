@@ -2341,8 +2341,8 @@ const Account: NextPage = () => {
                 setGateway(false)
               }}
               show={gateway}
-              children={undefined}
             >
+              {undefined}
             </Gateway>
             <Salt
               handleTrigger={handleSaltTrigger}

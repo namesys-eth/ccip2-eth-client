@@ -48,7 +48,7 @@ const Home: NextPage = () => {
   const [query, setQuery] = React.useState('') // Store name in query
   const [savings, setSavings] = React.useState('') // Save gas savings
   const [icon, setIcon] = React.useState('') // Set Icon inside help modal
-  const [color, setColor] = React.useState('#6291fc') // Set Color of help modal
+  const [color, setColor] = React.useState('white') // Set Color of help modal
   const [help, setHelp] = React.useState('') // Set Help modal
   const [searchType, setSearchType] = React.useState('') // Type of search by query
   const [recordhash, setRecordhash] = React.useState('') // Recordhash
@@ -861,7 +861,7 @@ const Home: NextPage = () => {
                 </span>
                 <span
                   style={{
-                    color: '#6291fc',
+                    color: 'white',
                     fontWeight: '700',
                     fontSize: isMobile ? '16px' : '20px'
                   }}
@@ -916,7 +916,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: '#6291fc',
+                  color: 'white',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -933,7 +933,7 @@ const Home: NextPage = () => {
                   onClick={() => {
                     setHelpModal(true)
                     setIcon('info')
-                    setColor('#6291fc')
+                    setColor('white')
                     setTop('')
                     setHelp('Search results for your query')
                   }}
@@ -941,7 +941,7 @@ const Home: NextPage = () => {
                   <div
                     className="material-icons smol"
                     style={{
-                      color: '#6291fc'
+                      color: 'white'
                     }}
                   >
                     info_outline

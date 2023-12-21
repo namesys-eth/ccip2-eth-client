@@ -170,9 +170,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const ccip2Contract = constants.ccip2[chain === '1' ? 1 : 0]
   const ccip2Config = constants.ccip2Config[chain === '1' ? 1 : 0]
   const apiKey = chain === '5' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET
-  const network = chain === '5' ? 'goerli' : 'homestead'
+  const network = chain === '5' ? 'goerli' : 'mainnet'
   const provider = new ethers.providers.AlchemyProvider(network, apiKey)
-  const alchemyEndpoint = 'https://eth-goerli.g.alchemy.com/v2/' + apiKey
+  const alchemyEndpoint = `https://eth-${network}.g.alchemy.com/v2/` + apiKey
   const web3 = new Web3(alchemyEndpoint)
   const caip10 = `eip155:${chain}:${_Wallet_}`  // CAIP-10
   const origin = `eth:${_Wallet_ || constants.zeroAddress}`
@@ -3382,8 +3382,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               setGateway(false)
             }}
             show={gateway} 
-            children={undefined}
           >
+            {undefined}
           </Gateway>
           <Options
             handleTrigger={handleOptionsTrigger}
