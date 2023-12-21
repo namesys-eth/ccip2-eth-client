@@ -41,10 +41,11 @@ export const typesRecords = [
   'avatar',
   'email',
   'pubkey',
+  'url',
   // Socials
   'github',
-  'url',
   'twitter',
+  'x',
   'discord',
   'farcaster',
   'nostr',
@@ -76,13 +77,14 @@ export const filesRecords = [
   'text/avatar',
   'text/email',
   'pubkey',
-  // Socials
-  'text/github',
   'text/url',
-  'text/twitter',
-  'text/discord',
-  'text/farcaster',
-  'text/nostr',
+  // Socials
+  'text/com.github',
+  'text/com.twitter',
+  'text/com.x',
+  'text/com.discord',
+  'text/xyz.farcaster',
+  'address/1237',
   // Multi-addr
   'address/0',
   'address/2',
@@ -137,6 +139,7 @@ export interface CustomBodyState {
   trigger: boolean
 }
 let network = process.env.NEXT_PUBLIC_NETWORK
+export const w3timestamp = 1699534314 
 export const alchemyConfig = {
   apiKey: network === 'goerli' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET,
   network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
@@ -171,11 +174,11 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: skyblue">Gasless</span> <span style="color: skyblue">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: skyblue">Decentralised</span> Records Storage on <span style="color: skyblue">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: skyblue">Unlimited</span> Record Updates With <span style="color: skyblue">IPNS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: skyblue">Dynamic</span> Records and More',
-  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: skyblue">Enjoy ENS</span> Hassle Free'
+  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: white">Gasless</span> <span style="color: white">ENS</span> Records',
+  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: white">Decentralised</span> Records Storage on <span style="color: white">IPFS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: white">Unlimited</span> Record Updates With <span style="color: white">IPNS</span>',
+  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: white">Dynamic</span> Records and <span style="color: white">Private</span> Payments',
+  '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: white">Enjoy ENS</span> Hassle Free'
 ]
 
 export const ccip2Interface = [
@@ -225,7 +228,6 @@ export const ccip2Config = [
     addressOrName: ccip2[1],
     contractInterface: ccip2Interface[1]
   }
-
 ]
 
 // Overlay 

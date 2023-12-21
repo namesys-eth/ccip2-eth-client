@@ -73,7 +73,7 @@ body {
 
 .heading {
   background-image: url('/shadow.svg');
-  background-size: 4%;
+  background-size: 2.5%;
   background-repeat: no-repeat;
   background-position-x: 50%;
   background-position-y: 10%;
@@ -747,7 +747,7 @@ a:visited {
   padding-top: 10px;
   border-radius: 6px;
   font-size: 30px;
-  color: #eb8634;
+  color: #fc6603;
   font-weight: 700;
   font-family: 'Spotnik';
 }
