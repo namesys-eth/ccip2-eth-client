@@ -481,7 +481,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 7,
         header: 'Github',
-        type: 'github',
+        type: 'com.github',
         value: _github,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isGithub(_github) && queue > 0,
@@ -505,7 +505,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 9,
         header: 'Twitter',
-        type: 'twitter',
+        type: 'com.twitter',
         value: _twitter,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isTwitter(_twitter) && queue > 0,
@@ -517,7 +517,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 10,
         header: 'Discord',
-        type: 'discord',
+        type: 'com.discord',
         value: _discord,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isDiscord(_discord) && queue > 0,
@@ -529,7 +529,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 11,
         header: 'Farcaster',
-        type: 'farcaster',
+        type: 'xyz.farcaster',
         value: _farcaster,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isFarcaster(_farcaster) && queue > 0,
@@ -680,7 +680,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _value: string = ''
     let type: string = ''
     if (['avatar', 'email', 'pubkey',
-      'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+      'com.github', 'url', 'com.twitter', 'com.discord', 'xyz.farcaster', 'nostr',
       'zonehash'
     ].includes(key)) {
       type = 'string'
@@ -722,7 +722,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let type: string = ''
     let _value: string = ''
     if (['avatar', 'email', 'pubkey',
-      'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+      'com.github', 'url', 'com.twitter', 'com.discord', 'xyz.farcaster', 'nostr',
       'zonehash'
     ].includes(key)) {
       type = 'string'
@@ -766,11 +766,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'avatar') setAvatar(value)
     if (key === 'email') setEmail(value)
     if (key === 'pubkey') setPubkey(value)
-    if (key === 'github') setGithub(value)
+    if (key === 'com.github') setGithub(value)
     if (key === 'url') setUrl(value)
-    if (key === 'twitter') setTwitter(value)
-    if (key === 'discord') setDiscord(value)
-    if (key === 'farcaster') setFarcaster(value)
+    if (key === 'com.twitter') setTwitter(value)
+    if (key === 'com.discord') setDiscord(value)
+    if (key === 'xyz.farcaster') setFarcaster(value)
     if (key === 'nostr') setNostr(value)
     if (key === 'btc') setBTC(value)
     if (key === 'ltc') setLTC(value)
@@ -785,11 +785,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     getText(resolver, 'avatar')
     getText(resolver, 'email')
     getText(resolver, 'pubkey')
-    getText(resolver, 'github')
+    getText(resolver, 'com.github')
     getText(resolver, 'url')
-    getText(resolver, 'twitter')
-    getText(resolver, 'discord')
-    getText(resolver, 'farcaster')
+    getText(resolver, 'com.twitter')
+    getText(resolver, 'com.discord')
+    getText(resolver, 'xyz.farcaster')
     getText(resolver, 'nostr')
     getAddress(resolver, 'btc')
     getAddress(resolver, 'ltc')
@@ -804,11 +804,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'avatar') setAvatar('')
     if (key === 'email') setEmail('')
     if (key === 'pubkey') setPubkey('')
-    if (key === 'github') setGithub('')
+    if (key === 'com.github') setGithub('')
     if (key === 'url') setUrl('')
-    if (key === 'twitter') setTwitter('')
-    if (key === 'discord') setDiscord('')
-    if (key === 'farcaster') setFarcaster('')
+    if (key === 'com.twitter') setTwitter('')
+    if (key === 'com.discord') setDiscord('')
+    if (key === 'xyz.farcaster') setFarcaster('')
     if (key === 'nostr') setNostr('')
     if (key === 'btc') setBTC('')
     if (key === 'ltc') setLTC('')
@@ -944,7 +944,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (key === 'contenthash') {
         gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
       } else if (['avatar', 'email', 'pubkey',
-        'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+        'com.github', 'url', 'com.twitter', 'com.discord', 'xyz.farcaster', 'nostr',
         'zonehash'
       ].includes(key)) {
         gasAmount = await contract.methods.setText(ethers.utils.namehash(ENS), key, value).estimateGas({ from: _Wallet_ })
@@ -1099,11 +1099,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               _history.revision.contenthash ? setContenthash(_history.contenthash) : setContenthash('')
               _history.revision.avatar ? setAvatar(_history.avatar) : setAvatar('')
               _history.revision.email ? setEmail(_history.email) : setEmail('')
-              _history.revision.github ? setGithub(_history.github) : setGithub('')
+              _history.revision['com.github'] ? setGithub(_history['com.github']) : setGithub('')
               _history.revision.url ? setUrl(_history.url) : setUrl('')
-              _history.revision.twitter ? setTwitter(_history.twitter) : setTwitter('')
-              _history.revision.discord ? setTwitter(_history.discord) : setDiscord('')
-              _history.revision.farcaster ? setFarcaster(_history.farcaster) : setFarcaster('')
+              _history.revision['com.twitter'] ? setTwitter(_history['com.twitter']) : setTwitter('')
+              _history.revision['com.discord'] ? setTwitter(_history['com.discord']) : setDiscord('')
+              _history.revision['xyz.farcaster'] ? setFarcaster(_history['xyz.farcaster']) : setFarcaster('')
               _history.revision.nostr ? setNostr(_history.nostr) : setNostr('')
               _history.revision.btc ? setBTC(_history.btc) : setBTC('')
               _history.revision.ltc ? setLTC(_history.ltc) : setLTC('')
@@ -1138,15 +1138,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           const _email = await refreshRecord(['text', 'email'], _response, _ENS, false)
           setEmail(_email || '')
           setPubkey('')
-          const _github = await refreshRecord(['text', 'github'], _response, _ENS, false)
+          const _github = await refreshRecord(['text', 'com.github'], _response, _ENS, false)
           setGithub(_github || '')
           const _url = await refreshRecord(['text', 'url'], _response, _ENS, false)
           setUrl(_url || '')
-          const _twitter = await refreshRecord(['text', 'twitter'], _response, _ENS, false)
+          const _twitter = await refreshRecord(['text', 'com.twitter'], _response, _ENS, false)
           setTwitter(_twitter || '')
-          const _discord = await refreshRecord(['text', 'discord'], _response, _ENS, false)
+          const _discord = await refreshRecord(['text', 'com.discord'], _response, _ENS, false)
           setDiscord(_discord || '')
-          const _farcaster = await refreshRecord(['text', 'farcaster'], _response, _ENS, false)
+          const _farcaster = await refreshRecord(['text', 'xyz.farcaster'], _response, _ENS, false)
           setFarcaster(_farcaster || '')
           const _nostr = await refreshRecord(['text', 'nostr'], _response, _ENS, false)
           setNostr(_nostr || '')
@@ -1232,9 +1232,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           if (_trigger) {
             if (_record[1] === 'avatar') setAvatar(_response)
             if (_record[1] === 'email') setEmail(_response)
-            if (_record[1] === 'github') setGithub(_response)
+            if (_record[1] === 'com.github') setGithub(_response)
             if (_record[1] === 'url') setUrl(_response)
-            if (_record[1] === 'twitter') setTwitter(_response)
+            if (_record[1] === 'com.twitter') setTwitter(_response)
+            if (_record[1] === 'com.discord') setDiscord(_response)
+            if (_record[1] === 'xyz.farcaster') setFarcaster(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
@@ -1361,15 +1363,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       __THIS[key] = constants.isEmail(value)
     } else if (key === 'pubkey') {
       __THIS[key] = constants.isPubkey(value)
-    } else if (key === 'github') {
+    } else if (key === 'com.github') {
       __THIS[key] = constants.isGithub(value)
     } else if (key === 'url') {
       __THIS[key] = constants.isUrl(value)
-    } else if (key === 'twitter') {
+    } else if (key === 'com.twitter') {
       __THIS[key] = constants.isTwitter(value)
-    } else if (key === 'discord') {
+    } else if (key === 'com.discord') {
       __THIS[key] = constants.isDiscord(value)
-    } else if (key === 'farcaster') {
+    } else if (key === 'xyz.farcaster') {
       __THIS[key] = constants.isFarcaster(value)
     } else if (key === 'nostr') {
       __THIS[key] = constants.isEmail(value) || constants.isBTC(value)
@@ -1446,11 +1448,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             email: data.response.email,
             pubkey: data.response.pubkey,
             avatar: data.response.avatar,
-            github: data.response.github,
+            'com.github': data.response.github,
             url: data.response.url,
-            twitter: data.response.twitter,
-            discord: data.response.discord,
-            farcaster: data.response.farcaster,
+            'com.twitter': data.response.twitter,
+            'com.discord': data.response.discord,
+            'xyz.farcaster': data.response.farcaster,
             nostr: data.response.nostr,
             btc: data.response.btc,
             ltc: data.response.ltc,
@@ -2171,19 +2173,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     if (item.type === 'pubkey') {
                       setPubkey(data.response.pubkey)
                     }
-                    if (item.type === 'github') {
+                    if (item.type === 'com.github') {
                       setGithub(data.response.github)
                     }
                     if (item.type === 'url') {
                       setUrl(data.response.url)
                     }
-                    if (item.type === 'twitter') {
+                    if (item.type === 'com.twitter') {
                       setTwitter(data.response.twitter)
                     }
-                    if (item.type === 'discord') {
+                    if (item.type === 'com.discord') {
                       setDiscord(data.response.discord)
                     }
-                    if (item.type === 'farcaster') {
+                    if (item.type === 'xyz.farcaster') {
                       setFarcaster(data.response.farcaster)
                     }
                     if (item.type === 'nostr') {
@@ -2928,20 +2930,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                             item.type === 'avatar' ? 'portrait' : (
                                               item.type === 'addr' ? 'account_balance_wallet' : (
                                                 item.type === 'contenthash' ? 'public' : (
-                                                  item.type === 'github' ? 'code' : (
+                                                  item.type === 'com.github' ? 'code' : (
                                                     item.type === 'url' ? 'share' : (
                                                       item.type === 'email' ? 'email' : (
                                                         item.type === 'pubkey' ? 'key' : (
-                                                          item.type === 'discord' ? 'group_add' : (
-                                                            item.type === 'farcaster' ? 'people_alt' : (
-                                                              item.type === 'nostr' ? 'groups' : (
-                                                                item.type === 'btc' ? 'currency_bitcoin' : (
-                                                                  item.type === 'ltc' ? 'currency_lira' : (
-                                                                    item.type === 'doge' ? 'pets' : (
-                                                                      item.type === 'sol' ? 'flash_on' : (
-                                                                        item.type === 'atom' ? 'font_download' : (
-                                                                          item.type === 'zonehash' ? 'tag' :
-                                                                            'circle_notifications'
+                                                          item.type === 'com.twitter' ? 'groups' : (
+                                                            item.type === 'com.discord' ? 'group_add' : (
+                                                              item.type === 'xyz.farcaster' ? 'people_alt' : (
+                                                                item.type === 'nostr' ? 'groups' : (
+                                                                  item.type === 'btc' ? 'currency_bitcoin' : (
+                                                                    item.type === 'ltc' ? 'currency_lira' : (
+                                                                      item.type === 'doge' ? 'pets' : (
+                                                                        item.type === 'sol' ? 'flash_on' : (
+                                                                          item.type === 'atom' ? 'font_download' : (
+                                                                            item.type === 'zonehash' ? 'tag' :
+                                                                              'circle_notifications'
+                                                                          )
                                                                         )
                                                                       )
                                                                     )

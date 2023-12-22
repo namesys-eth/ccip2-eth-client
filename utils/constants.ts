@@ -43,11 +43,11 @@ export const typesRecords = [
   'pubkey',
   'url',
   // Socials
-  'github',
-  'twitter',
-  'x',
-  'discord',
-  'farcaster',
+  'com.github',
+  'com.twitter',
+  'com.x',
+  'com.discord',
+  'xyz.farcaster',
   'nostr',
   // Multi-addr
   'btc',
