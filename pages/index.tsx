@@ -651,7 +651,7 @@ const Home: NextPage = () => {
               >
                 {'v'}
               </span>
-              {'1.2'}
+              {'1.2.1'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
