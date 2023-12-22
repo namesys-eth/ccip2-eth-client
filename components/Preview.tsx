@@ -1092,9 +1092,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               '_sequence': ''
             }
           }
-          console.log(_IPFS)
-          console.log(_history)
-          console.log(_Storage)
           setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
             if ((_IPFS._sequence && _history.timestamp.revision) && (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1) && _Storage[1]) {

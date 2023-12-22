@@ -490,11 +490,12 @@ const Home: NextPage = () => {
         let __namehash = ethers.utils.namehash(query)
         let __token = ethers.BigNumber.from(__namehash)
         setTokenIDWrapper(String(__token))
+
+        // BROWSER
         let __labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
         setNamehashLegacy(__namehash)
         setTokenIDLegacy(String(ethers.BigNumber.from(__labelhash)))
-      } catch (error) {
-      }
+      } catch { }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, owner, manager])

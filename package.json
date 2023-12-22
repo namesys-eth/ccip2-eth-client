@@ -35,7 +35,7 @@
     "dag-cbor-sync": "^0.6.3",
     "ed25519-1.6.1": "npm:@noble/ed25519@^1.6",
     "ed25519-2.0.0": "npm:@noble/ed25519@^2.0",
-    "ethers": "^5.6.1",
+    "ethers": "^5.7.2",
     "framer-motion": "^6.3.3",
     "fs": "^0.0.1-security",
     "ipfs-http-client": "^60.0.1",
