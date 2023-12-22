@@ -139,7 +139,7 @@ export interface CustomBodyState {
   trigger: boolean
 }
 let network = process.env.NEXT_PUBLIC_NETWORK
-export const w3timestamp = 1699534314 
+export const w3timestamp = 1699534314
 export const alchemyConfig = {
   apiKey: network === 'goerli' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET,
   network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
@@ -259,6 +259,26 @@ export function encodeContenthash(contenthash: string) {
     return ensContentHash.encoded
   }
   return ''
+}
+
+// Copy <span>, <div>
+export function copyElement(value: string, spanId: string) {
+  const hiddenInput = document.createElement('input')
+  hiddenInput.value = value
+  document.body.appendChild(hiddenInput)
+  hiddenInput.select()
+  document.execCommand('copy')
+  document.body.removeChild(hiddenInput)
+  const spanElement = document.getElementById(spanId)
+  if (spanElement) {
+    if (spanElement.style.color === 'lightgreen') spanElement.style.color = 'white'
+    else spanElement.style.color = 'white'
+    // Reset the color after a delay (e.g., 2 seconds)
+    setTimeout(() => {
+      if (spanElement.style.color === 'lightgreen') spanElement.style.color = 'white' // Reset to the default color
+      else spanElement.style.color = 'lightgreen'
+    }, 2000)
+  }
 }
 
 // Copy text

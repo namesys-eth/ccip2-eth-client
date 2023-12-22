@@ -1086,7 +1086,7 @@ const Account: NextPage = () => {
       <div style={{ fontFamily: 'Spotnik' }}></div>
       {/* Overlay */}
       <div id="overlay" className="overlay">
-        <div 
+        <div
           className="overlay-content overlay-content-alt"
         >
           <Loading
@@ -1233,7 +1233,7 @@ const Account: NextPage = () => {
                   <div
                     className="flex-column"
                     style={{
-                      fontSize: '70px',
+                      fontSize: '54px',
                       color: '#fc6603',
                       marginBottom: '20px',
                       fontWeight: '700'
@@ -1244,13 +1244,13 @@ const Account: NextPage = () => {
                   <div
                     className="flex-column"
                     style={{
-                      fontSize: 26,
-                      color: '#eb8634',
-                      marginTop: isMobile ? '-30px' : '10px',
+                      fontSize: 22,
+                      color: '#fc6603',
+                      margin: '-10px 0 5px 0',
                       fontWeight: '700'
                     }}
                   >
-                    Off-chain Records Manager
+                    Pro
                   </div>
                 </div>
               )}
@@ -1270,7 +1270,7 @@ const Account: NextPage = () => {
                   <div
                     className="flex-column"
                     style={{
-                      fontSize: '52px',
+                      fontSize: '44px',
                       color: '#fc6603',
                       marginBottom: '20px',
                       marginTop: '30px',
@@ -1278,6 +1278,17 @@ const Account: NextPage = () => {
                     }}
                   >
                     NameSys
+                  </div>
+                  <div
+                    className="flex-column"
+                    style={{
+                      fontSize: 26,
+                      color: '#fc6603',
+                      fontWeight: '700',
+                      margin: '-10px 0 5px 0'
+                    }}
+                  >
+                    Pro
                   </div>
                 </div>
               )}
@@ -2264,28 +2275,28 @@ const Account: NextPage = () => {
             </div>
           </div>
           {/* Modals */}
-          <div 
+          <div
             id="modal"
           >
             {previewModal && (
               <Preview
-              onClose={() => setPreviewModal(false)}
-              show={previewModal}
-              _ENS_={nameToPreview}
-              chain={_Chain_}
-              handleParentTrigger={handlePreviewTrigger}
-              handleParentModalData={handlePreviewModalData}
-            />
+                onClose={() => setPreviewModal(false)}
+                show={previewModal}
+                _ENS_={nameToPreview}
+                chain={_Chain_}
+                handleParentTrigger={handlePreviewTrigger}
+                handleParentModalData={handlePreviewModalData}
+              />
             )}
             {stealthModal && (
               <Stealth
-              onClose={() => setStealthModal(false)}
-              show={stealthModal}
-              _ENS_={nameToStealth}
-              chain={_Chain_}
-              handleParentTrigger={handleStealthTrigger}
-              handleParentModalData={handleStealthModalData}
-            />
+                onClose={() => setStealthModal(false)}
+                show={stealthModal}
+                _ENS_={nameToStealth}
+                chain={_Chain_}
+                handleParentTrigger={handleStealthTrigger}
+                handleParentModalData={handleStealthModalData}
+              />
             )}
             <Faq
               onClose={() => setFaqModal(false)}

@@ -754,7 +754,7 @@ const Home: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    Off-chain Records Manager
+                    Pro
                   </div>
                 </div>
               )}

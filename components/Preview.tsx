@@ -2690,7 +2690,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           <StyledModalTitle>
             <img
               src={thumbnail || avatar}
-              width={'100px'}
+              width={'104px'}
               alt={ENS}
               onError={() => setImageLoaded(false)}
             />
@@ -2698,17 +2698,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
-            {isLoading['avatar'] === '-' && (
-              <div
-                className="flex-column"
-              >
-                <LoadingIcons.Bars
-                  width={'110px'}
-                  fill={'#fc6603'}
-                />
-              </div>
-            )}
-            {['0', '1', ''].includes(isLoading['avatar']) && (
+            {['0', '1', '-', ''].includes(isLoading['avatar']) && (
               <span
                 className="material-icons-round miui"
                 style={{
@@ -3251,7 +3241,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 textAlign: 'left',
                                 marginTop: '-5px',
                                 marginBottom: '-5px',
-                                paddingRight: !constants.config.includes(item.type) ? '10px' : '0',
+                                paddingRight: !constants.config.includes(item.type) ? '30px' : '0',
                                 color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
                                 cursor: 'copy'
                               }}
@@ -3261,15 +3251,19 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                             />
                             {!constants.config.includes(item.type) && !constants.blocked.includes(item.type) && (
                               <div
+                                id={item.type}
                                 className="material-icons-round"
                                 style={{
+                                  cursor: "copy",
                                   fontSize: '22px',
                                   fontWeight: '700',
                                   marginLeft: '-25px',
-                                  color: isLoading[item.type] === '1' ? 'lightgreen' : (isLoading[item.type] === '-' ? 'white' : 'grey')
+                                  color: 'lightgreen',
+                                  opacity: isLoading[item.type] === '0' ? '0' : '1',
                                 }}
+                                onClick={() => constants.copyElement(item.value, item.type)}
                               >
-                                {isLoading[item.type] === '1' ? 'hourglass_bottom' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'hourglass_empty')}
+                                {isLoading[item.type] === '1' ? 'content_copy' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'content_copy')}
                               </div>
                             )}
                           </div>
@@ -3381,7 +3375,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             onClose={() => {
               setGateway(false)
             }}
-            show={gateway} 
+            show={gateway}
           >
             {undefined}
           </Gateway>
