@@ -1092,24 +1092,27 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               '_sequence': ''
             }
           }
+          console.log(_IPFS)
+          console.log(_history)
+          console.log(_Storage)
           setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
             if ((_IPFS._sequence && _history.timestamp.revision) && (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1) && _Storage[1]) {
-              _history.revision.addr ? setAddr(_history.addr) : setAddr('')
-              _history.revision.contenthash ? setContenthash(_history.contenthash) : setContenthash('')
-              _history.revision.avatar ? setAvatar(_history.avatar) : setAvatar('')
-              _history.revision.email ? setEmail(_history.email) : setEmail('')
-              _history.revision['com.github'] ? setGithub(_history['com.github']) : setGithub('')
-              _history.revision.url ? setUrl(_history.url) : setUrl('')
-              _history.revision['com.twitter'] ? setTwitter(_history['com.twitter']) : setTwitter('')
-              _history.revision['com.discord'] ? setTwitter(_history['com.discord']) : setDiscord('')
-              _history.revision['xyz.farcaster'] ? setFarcaster(_history['xyz.farcaster']) : setFarcaster('')
-              _history.revision.nostr ? setNostr(_history.nostr) : setNostr('')
-              _history.revision.btc ? setBTC(_history.btc) : setBTC('')
-              _history.revision.ltc ? setLTC(_history.ltc) : setLTC('')
-              _history.revision.doge ? setDOGE(_history.doge) : setDOGE('')
-              _history.revision.sol ? setSOL(_history.sol) : setSOL('')
-              _history.revision.atom ? setATOM(_history.atom) : setATOM('')
+              _history.addr ? setAddr(_history.addr) : setAddr('')
+              _history.contenthash ? setContenthash(_history.contenthash) : setContenthash('')
+              _history.avatar ? setAvatar(_history.avatar) : setAvatar('')
+              _history.email ? setEmail(_history.email) : setEmail('')
+              _history['com.github'] ? setGithub(_history['com.github']) : setGithub('')
+              _history.url ? setUrl(_history.url) : setUrl('')
+              _history['com.twitter'] ? setTwitter(_history['com.twitter']) : setTwitter('')
+              _history['com.discord'] ? setTwitter(_history['com.discord']) : setDiscord('')
+              _history['xyz.farcaster'] ? setFarcaster(_history['xyz.farcaster']) : setFarcaster('')
+              _history.nostr ? setNostr(_history.nostr) : setNostr('')
+              _history.btc ? setBTC(_history.btc) : setBTC('')
+              _history.ltc ? setLTC(_history.ltc) : setLTC('')
+              _history.doge ? setDOGE(_history.doge) : setDOGE('')
+              _history.sol ? setSOL(_history.sol) : setSOL('')
+              _history.atom ? setATOM(_history.atom) : setATOM('')
               setSync(true)
             } else {
               getContenthash(_response)
@@ -3154,12 +3157,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true)
                                       setRefreshedItem(item.type)
                                     }}
-                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : (refresh === '-' ? 'No New Update' : 'Click to Refresh')))))}
+                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : (refresh === '-' ? 'No New Update' : 'Click to Refresh')))))}
                                   >
                                     <div
                                       className="material-icons-round smol"
                                       style={{
-                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'white' : (refresh === '-' ? 'yellow' : 'cyan'))))),
+                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'white' : (refresh === '-' ? 'yellow' : 'cyan'))))),
                                         marginLeft: '-5px'
                                       }}
                                     >
