@@ -47,7 +47,7 @@ export async function KEYGEN(
   let ed25519priv = ed25519legacy.utils.hashToPrivateScalar(hashKey).toString(16).padStart(64, "0") // ed25519 (IPNS) Private Key
   let ed25519pub = ed25519latest.etc.bytesToHex(await ed25519legacy.getPublicKey(ed25519priv)) // ed25519 (IPNS) Public Key
   let secp256k1priv = secp256k1.utils.bytesToHex(secp256k1.utils.hashToPrivateKey(hashKey)) // secp256k1 Private Key
-  let secp256k1pub = secp256k1.utils.bytesToHex(secp256k1.getPublicKey(ed25519priv)) // secp256k1 Public Key
+  let secp256k1pub = secp256k1.utils.bytesToHex(secp256k1.getPublicKey(secp256k1priv)) // secp256k1 Public Key
   return [ // Hex-encoded [[ed25519.priv, ed25519.pub], [secp256k1.priv, secp256k1.pub]]
     [ed25519priv, ed25519pub],
     [secp256k1priv, secp256k1pub]
