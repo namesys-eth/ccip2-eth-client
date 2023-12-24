@@ -13,7 +13,7 @@ import Error from '../components/Error'
 import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
 import * as constants from '../utils/constants'
-import { KEYGEN, RSAGEN } from '../utils/keygen'
+import { KEYGEN } from '../utils/keygen'
 import * as Name from 'w3name'
 import * as Nam3 from '@namesys-eth/w3name-client'
 import * as ed25519v2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0

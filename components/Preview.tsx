@@ -24,7 +24,6 @@ import * as Nam3 from '@namesys-eth/w3name-client'
 import * as ed25519v2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 import * as verifier from '../utils/verifier'
-import { Utils } from "alchemy-sdk"
 import { isMobile } from 'react-device-detect'
 import {
   useAccount,
@@ -1731,7 +1730,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const _sigSigner = async () => {
         setSigCount(2) // Trigger S_SIGNER(K_WALLET)
         setProcessCount(2)
-        signSigner(constants.randomString(10))
+        signSigner(constants.randomString(10)) // Generates redundant signatures; can bypass this [?]
       }
       _sigSigner()
     } else if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && !write) {
@@ -1787,7 +1786,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (saltModalState.modalData !== undefined) {
           setSigCount(2) // Trigger S_SIGNER(K_WALLET)
           setProcessCount(3)
-          signSigner(saltModalState.modalData)
+          signSigner(saltModalState.modalData) // IPNS Signer Signatures are DETERMINISTIC!
         }
       }
       _sigSigner()
