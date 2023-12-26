@@ -962,7 +962,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Contenthash for ENS domain
   async function getContenthash(resolver: ethers.providers.Resolver) {
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading['contenthash'] = '-'
     setIsLoading(_Loading)
     setSync(true)
@@ -989,7 +989,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Text records for ENS domain
   async function getText(resolver: ethers.providers.Resolver, key: string) {
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading[key] = '-'
     setIsLoading(_Loading)
     await resolver.getText(key)
@@ -1014,7 +1014,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Get non-ETH addresses for ENS domain
   async function getAddress(resolver: ethers.providers.Resolver, key: string) {
     let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading[key] = '-'
     setIsLoading(_Loading)
     if (key === 'btc') { // Use Ethers.JS for BTC
@@ -1040,7 +1040,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Addr60 for ENS domain
   async function getAddr(resolver: ethers.providers.Resolver) {
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading['addr'] = '-'
     setIsLoading(_Loading)
     await provider.resolveName(ENS)
@@ -2162,57 +2162,23 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       let _gasData = gasData && gasData.formatted && gasData.formatted.gasPrice ? Number(gasData.formatted.gasPrice) : 0
                       gas[item.type] = value * _gasData * 0.000000001
                     })
-                    if (item.type === 'addr') {
-                      setAddr(data.response.addr)
-                    }
-                    if (item.type === 'avatar') {
-                      setAvatar(data.response.avatar)
-                    }
-                    if (item.type === 'email') {
-                      setEmail(data.response.email)
-                    }
-                    if (item.type === 'pubkey') {
-                      setPubkey(data.response.pubkey)
-                    }
-                    if (item.type === 'com.github') {
-                      setGithub(data.response.github)
-                    }
-                    if (item.type === 'url') {
-                      setUrl(data.response.url)
-                    }
-                    if (item.type === 'com.twitter') {
-                      setTwitter(data.response.twitter)
-                    }
-                    if (item.type === 'com.discord') {
-                      setDiscord(data.response.discord)
-                    }
-                    if (item.type === 'xyz.farcaster') {
-                      setFarcaster(data.response.farcaster)
-                    }
-                    if (item.type === 'nostr') {
-                      setNostr(data.response.nostr)
-                    }
-                    if (item.type === 'btc') {
-                      setBTC(data.response.btc)
-                    }
-                    if (item.type === 'ltc') {
-                      setLTC(data.response.ltc)
-                    }
-                    if (item.type === 'doge') {
-                      setDOGE(data.response.doge)
-                    }
-                    if (item.type === 'sol') {
-                      setSOL(data.response.sol)
-                    }
-                    if (item.type === 'atom') {
-                      setATOM(data.response.atom)
-                    }
-                    if (item.type === 'zonehash') {
-                      setZonehash(data.response.zonehash)
-                    }
-                    if (item.type === 'contenthash') {
-                      setContenthash(data.response.contenthash)
-                    }
+                    if (item.type === 'addr') setAddr(data.response.addr)
+                    if (item.type === 'avatar') setAvatar(data.response.avatar)
+                    if (item.type === 'email') setEmail(data.response.email)
+                    if (item.type === 'pubkey') setPubkey(data.response.pubkey)
+                    if (item.type === 'com.github') setGithub(data.response.github)
+                    if (item.type === 'url') setUrl(data.response.url)
+                    if (item.type === 'com.twitter') setTwitter(data.response.twitter)
+                    if (item.type === 'com.discord') setDiscord(data.response.discord)
+                    if (item.type === 'xyz.farcaster') setFarcaster(data.response.farcaster)
+                    if (item.type === 'nostr') setNostr(data.response.nostr)
+                    if (item.type === 'btc') setBTC(data.response.btc)
+                    if (item.type === 'ltc') setLTC(data.response.ltc)
+                    if (item.type === 'doge') setDOGE(data.response.doge)
+                    if (item.type === 'sol') setSOL(data.response.sol)
+                    if (item.type === 'atom') setATOM(data.response.atom)
+                    if (item.type === 'zonehash') setZonehash(data.response.zonehash)
+                    if (item.type === 'contenthash') setContenthash(data.response.contenthash)
                   }
                 })
                 // Wait for gas to be estimated
@@ -2778,14 +2744,31 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   <span
                     style={{
                       color: 'white',
-                      fontSize: '18px',
+                      fontSize: '15px',
                       fontWeight: '700'
                     }}
                   >
-                    <span>{message[0].includes('Refresh') ? 'Please Be Patient' : 'This May Take Some Time'}</span>
+                    {message[0].includes('Refresh') ? 'Please Be Patient' : 'This May Take Some Time'}
                   </span>
                 </div>
               )}
+              <div
+                style={{
+                  marginTop: '75px',
+                  maxWidth: '400px',
+                  textAlign: 'center'
+                }}
+              >
+                <span
+                  style={{
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '700'
+                  }}
+                >
+                  {`If this dialogue persists for too long, try closing and re-opening it`}
+                </span>
+              </div>
             </div>
           </StyledModalBody>
         }
@@ -3254,7 +3237,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 setValues(item.type, e.target.value)
                               }}
                             />
-                            {!constants.config.includes(item.type) && !constants.blocked.includes(item.type) && (
+                            {!constants.config.includes(item.type) && !constants.blocked.includes(item.type) && !states.includes(item.type) && (
                               <div
                                 id={item.type}
                                 className="material-icons-round"
@@ -3268,7 +3251,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 }}
                                 onClick={() => constants.copyElement(item.value, item.type)}
                               >
-                                {isLoading[item.type] === '1' ? 'content_copy' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'content_copy')}
+                                {isLoading[item.type] === '1' ? 'content_copy' : (isLoading[item.type] === '-' ? 'hourglass_top' : '')}
                               </div>
                             )}
                           </div>
