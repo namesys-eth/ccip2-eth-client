@@ -2,20 +2,20 @@
   "name": "NameSys - ENS Off-Chain Records Manager",
   "short_name": "NameSys",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "landscape",
   "purpose": "any maskable",
-  "theme_color": "#FFFFFF",
-  "background_color": "#FFFFFF",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "start_url": "/",
   "icons": [
     {
       "src": "/logo.png",
-      "sizes": "192x192",
+      "sizes": "192 x 192",
       "type": "image/png"
     },
     {
       "src": "/logo.png",
-      "sizes": "512x512",
+      "sizes": "512 x 512",
       "type": "image/png"
     }
   ]

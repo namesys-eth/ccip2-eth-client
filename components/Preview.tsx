@@ -2162,6 +2162,9 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       let _gasData = gasData && gasData.formatted && gasData.formatted.gasPrice ? Number(gasData.formatted.gasPrice) : 0
                       gas[item.type] = value * _gasData * 0.000000001
                     })
+                    if (item.type === 'addr') {
+                      setAddr(data.response.addr)
+                    }
                     if (item.type === 'avatar') {
                       setAvatar(data.response.avatar)
                     }
