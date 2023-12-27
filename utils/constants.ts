@@ -330,7 +330,7 @@ export function isAddr(value: string) {
 }
 // Check if value is a valid Avatar URL
 export function isAvatar(value: string) {
-  return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
+  return urlRegex.test(value) || (value.startsWith('ipfs://') && (ipfsRegexCID0.test(value) || ipfsRegexCID1.test(value))) || value.startsWith('eip155:')
 }
 // Check if value is a valid Pubkey
 export function isPubkey(value: string) {

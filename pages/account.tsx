@@ -1143,10 +1143,11 @@ const Account: NextPage = () => {
             </div>
             <div
               style={{
-                marginLeft: !isMobile ? '-30px' : '-9px'
+                marginLeft: !isMobile ? '-30px' : '-20px',
+                marginTop: !isMobile ? '0px' : '-25px'
               }}
             >
-              <Ticker variable={savings} />
+              <Ticker variable={savings} mobile={isMobile} />
             </div>
           </div>
           <div
@@ -1324,18 +1325,7 @@ const Account: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    Off-chain Records
-                  </div>
-                  <div
-                    className="flex-column"
-                    style={{
-                      fontSize: 26,
-                      color: '#eb8634',
-                      marginTop: '0px',
-                      fontWeight: '700'
-                    }}
-                  >
-                    Manager
+                    Pro
                   </div>
                 </div>
               )}

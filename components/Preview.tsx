@@ -779,21 +779,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Function to get additional records
-  function getExtraRecords(resolver: ethers.providers.Resolver) {
-    getText(resolver, 'avatar')
-    getText(resolver, 'email')
-    getText(resolver, 'pubkey')
-    getText(resolver, 'com.github')
-    getText(resolver, 'url')
-    getText(resolver, 'com.twitter')
-    getText(resolver, 'com.discord')
-    getText(resolver, 'xyz.farcaster')
-    getText(resolver, 'nostr')
-    getAddress(resolver, 'btc')
-    getAddress(resolver, 'ltc')
-    getAddress(resolver, 'doge')
-    getAddress(resolver, 'sol')
-    getAddress(resolver, 'atom')
+  async function getExtraRecords(resolver: ethers.providers.Resolver) {
+    await getText(resolver, 'avatar')
+    await getText(resolver, 'email')
+    await getText(resolver, 'pubkey')
+    await getText(resolver, 'com.github')
+    await getText(resolver, 'url')
+    await getText(resolver, 'com.twitter')
+    await getText(resolver, 'com.discord')
+    await getText(resolver, 'xyz.farcaster')
+    await getText(resolver, 'nostr')
+    await getAddress(resolver, 'btc')
+    await getAddress(resolver, 'ltc')
+    await getAddress(resolver, 'doge')
+    await getAddress(resolver, 'sol')
+    await getAddress(resolver, 'atom')
     // getDns(type)
   }
 
@@ -1044,24 +1044,24 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     _Loading['addr'] = '-'
     setIsLoading(_Loading)
     await provider.resolveName(ENS)
-      .then(response => {
+      .then(async response => {
         if (!response) {
           _Loading['addr'] = '0'
           setAddr('')
           setIsLoading(_Loading)
-          getExtraRecords(resolver)
+          await getExtraRecords(resolver)
         } else {
           _Loading['addr'] = '1'
           setAddr(response)
           setIsLoading(_Loading)
-          getExtraRecords(resolver)
+          await getExtraRecords(resolver)
         }
       })
-      .catch(() => {
+      .catch(async () => {
         _Loading['addr'] = '0'
         setAddr('')
         setIsLoading(_Loading)
-        getExtraRecords(resolver)
+        await getExtraRecords(resolver)
       })
   }
 
@@ -2659,7 +2659,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           <StyledModalTitle>
             <img
               src={thumbnail || avatar}
-              width={'104px'}
+              width={isMobile ? '104px' : '125px'}
               alt={ENS}
               onError={() => setImageLoaded(false)}
             />
@@ -2776,17 +2776,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           <StyledModalBody>
             <div
               className='flex-column'
+              style={{
+                marginLeft: isMobile ? '-3.5%' : 'auto'
+              }}
             >
               <div
                 style={{
-                  marginBottom: '15px',
-                  marginTop: '-15px'
+                  marginLeft: isMobile ? '-42.5%' : '-50%',
+                  marginBottom: isMobile ? '7.5px' : '15px',
+                  marginTop: isMobile ? '-15px' : '20px'
                 }}
               >
                 <span
                   style={{
-                    color: 'white',
-                    fontSize: '20px',
+                    color: '#fc6603',
+                    fontSize: isMobile ? '24px' : '30px',
                     fontWeight: '700',
                     fontFamily: 'SF Mono'
                   }}
@@ -2826,7 +2830,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   style={{
                     listStyle: 'none',
                     color: 'white',
-                    marginLeft: !isMobile ? '-5%' : '0'
+                    marginLeft: !isMobile ? '-5%' : '-1%'
                   }}
                 >
                   <div
@@ -2842,10 +2846,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          width: !isMobile ? '530px' : '480px',
-                          maxWidth: !isMobile ? '95%' : '85%',
-                          paddingLeft: '15px',
-                          paddingRight: '15px'
+                          width: !isMobile ? '630px' : '400px',
+                          maxWidth: !isMobile ? '95%' : '92.5%',
+                          paddingLeft: !isMobile ? '15px' : '10px',
+                          paddingRight: !isMobile ? '15px' : '10px'
                         }}
                       >
                         <div
@@ -3178,14 +3182,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 height: '25px',
                                 width: 'auto',
                                 marginBottom: '6px',
+                                marginRight: '-6px',
                                 background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
                               }}
-                              onClick={() => {
-                                setTrigger(item.type)
-                                setSafeTrigger('1')
-                                item.type === 'resolver' ? setOptions(true) : (item.type === 'storage' ? setConfirm(true) : (setWrite(true)))
-                                constants.config.includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
-                              }}
+                              onClick={() => { }}
                               data-tooltip={item.tooltip}
                             >
                               <div
@@ -3247,11 +3247,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                   fontWeight: '700',
                                   marginLeft: '-25px',
                                   color: 'lightgreen',
-                                  opacity: isLoading[item.type] === '0' ? '0' : '1',
+                                  opacity: isLoading[item.type] === '0' || (!item.value && isLoading[item.type] !== '-') ? '0' : '1',
                                 }}
                                 onClick={() => constants.copyElement(item.value, item.type)}
                               >
-                                {isLoading[item.type] === '1' ? 'content_copy' : (isLoading[item.type] === '-' ? 'hourglass_top' : '')}
+                                {isLoading[item.type] === '1' ? 'content_copy' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'content_copy')}
                               </div>
                             )}
                           </div>
@@ -3270,7 +3270,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   }}
                 >
                   <button
-                    className="button flex-column"
+                    className="button flex-column emphasis"
                     hidden={
                       states.length < 2
                     }
@@ -3283,7 +3283,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       alignSelf: 'flex-end',
                       height: '30px',
                       width: 'auto',
-                      marginTop: '-3px',
+                      marginTop: isMobile ? '-3px' : '35px',
                     }}
                     onClick={() => {
                       setTrigger('records')
@@ -3426,15 +3426,16 @@ const StyledModalBody = styled.div`
 `
 
 const StyledModalTitle = styled.div`
-  padding-top: 10px;
+  padding-top: ${isMobile ? '10px' : '30px'};
   padding-bottom: 10px;
+  margin-left: ${isMobile ? '5.5%' : '17%'};
   font-size: 22px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   font-weight: 1200;
-  margin-bottom: 0px;
+  margin-bottom: ${isMobile ? '0' : '-15px'};
   color: white;
 `
 
@@ -3446,9 +3447,10 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   position: fixed;
-  top: 60px;
-  width: auto;
-  min-width: 400px;
+  top: ${isMobile ? '20px' : '60px'};
+  width: ${isMobile ? '95%' : 'auto'};
+  min-width: ${isMobile ? '95%' : '900px'};
+  min-height: ${isMobile ? '92.5%' : '90%'};
   border-radius: 6px;
   padding-top: 0px;
   padding-left: 0px;

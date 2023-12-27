@@ -233,12 +233,21 @@ input:disabled {
   margin-bottom: 15px;
 }
 
+.icon-ccip2-mobile {
+  margin-top: 45px;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: -5px;
+}
+
 @media screen and (max-width: 800px) {
   .icon-ccip2 {
     margin-top: 10px;
     width: 60px;
     height: 60px;
-    margin-bottom: -7px;
+    margin-bottom: -7.5px;
   }
 }
 
@@ -619,7 +628,6 @@ input:disabled {
   text-decoration: none;
   font-size: 14px;
   font-weight: 700;
-  margin-bottom: -3px;
 }
 
 .footer-text:hover {
@@ -846,7 +854,7 @@ img {
 /*
 /* Carousal Home */
 .content-slider {
-  margin-top: 50px;
+  margin-top: 30px;
   margin-bottom: 170px;
   height: 200px;
   width: 100%;

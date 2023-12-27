@@ -616,11 +616,11 @@ const Home: NextPage = () => {
             </div>
             <div
               style={{
-                marginLeft: !isMobile ? '-30px' : '-9px',
-                marginTop: !isMobile ? '0px' : '-15px'
+                marginLeft: !isMobile ? '-30px' : '-20px',
+                marginTop: !isMobile ? '0px' : '-25px'
               }}
             >
-              <Ticker variable={savings} />
+              <Ticker variable={savings} mobile={isMobile} />
             </div>
           </div>
           <div
@@ -732,7 +732,6 @@ const Home: NextPage = () => {
                     className="icon-ccip2"
                     alt="sample-icon"
                     src="logo.png"
-                    hidden
                   />
                   <div
                     className="flex-column"
@@ -762,16 +761,15 @@ const Home: NextPage = () => {
               {isMobile && (
                 <div>
                   <img
-                    className="icon-ccip2"
+                    className={onSearch ? "icon-ccip2-mobile" : "icon-ccip2"}
                     alt="sample-icon"
                     src="logo.png"
-                    hidden={onSearch}
                   />
                   <div
                     className="flex-column"
                     style={{
                       fontSize: onSearch ? '36px' : '44px',
-                      marginTop: onSearch ? '44px' : '10px',
+                      marginTop: '10px',
                       color: '#fc6603'
                     }}
                   >
@@ -786,7 +784,7 @@ const Home: NextPage = () => {
                       marginTop: '5px'
                     }}
                   >
-                    Off-chain Records Manager
+                    Pro
                   </div>
                   <div
                     style={{
@@ -847,14 +845,17 @@ const Home: NextPage = () => {
                 className="flex-column"
                 style={{
                   paddingBottom: '10px',
-                  marginTop: isMobile ? '-160px' : '0px'
+                  top: 'auto',
+                  left: isMobile ? '43%' : '47%',
+                  bottom: 10,
+                  position: 'fixed'
                 }}
               >
                 <span
                   style={{
                     color: '#fc6603',
                     fontWeight: '700',
-                    fontSize: isMobile ? '12px' : '14px',
+                    fontSize: isMobile ? '10px' : '14px',
                     paddingBottom: '5px'
                   }}
                 >
@@ -864,7 +865,7 @@ const Home: NextPage = () => {
                   style={{
                     color: 'white',
                     fontWeight: '700',
-                    fontSize: isMobile ? '16px' : '20px'
+                    fontSize: isMobile ? '13px' : '20px'
                   }}
                 >
                   {'ENS DAO'}
@@ -972,8 +973,7 @@ const Home: NextPage = () => {
             style={{
               color: '#fc6603',
               top: 'auto',
-              left: !isMobile ? '0.5%' : '1.5%',
-              transform: !isMobile ? '' : '',
+              left: !isMobile ? '1%' : '3.5%',
               bottom: 10,
               position: 'fixed'
             }}
@@ -981,44 +981,46 @@ const Home: NextPage = () => {
             <div
               className='flex-row'
               style={{
-                marginRight: '15px'
+                marginRight: !isMobile ? '15px' : '5px'
               }}
             >
-              <span
-                className="material-icons"
-                style={{
-                  marginRight: '3px'
-                }}
-              >
-                source
-              </span>
               <a
                 href="https://github.com/namesys-eth"
-                className="footer-text"
+                className="footer-text flex-row"
                 target='_blank'
                 rel="noreferrer"
               >
-                GitHub
+                <span
+                  className="material-icons"
+                  style={{
+                    marginRight: '5px',
+                    color: '#fc6603'
+                  }}
+                >
+                  source
+                </span>
+                <span hidden={isMobile}>GitHub</span>
               </a>
             </div>
             <div
               className='flex-row'
             >
-              <span
-                className="material-icons"
-                style={{
-                  marginRight: '3px'
-                }}
-              >
-                info_outline
-              </span>
               <a
                 href="readme/readme.htm?src=https://namesys-eth.github.io/ccip2-eth-resources/GUIDE.md"
-                className="footer-text"
+                className="footer-text flex-row"
                 target='_blank'
                 rel="noreferrer"
               >
-                Help
+                <span
+                  className="material-icons"
+                  style={{
+                    marginRight: '5px',
+                    color: '#fc6603'
+                  }}
+                >
+                  info_outline
+                </span>
+                <span hidden={isMobile}>Help</span>
               </a>
             </div>
           </div>
