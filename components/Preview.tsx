@@ -2649,20 +2649,20 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             style={{
               marginLeft: isMobile ? '5.5%' : '15.5%',
               marginTop: isMobile ? '10px' : '35px',
-              marginBottom: isMobile ? '10px' : '0'
+              marginBottom: !avatar || !imageLoaded ? (isMobile ? '2.5px' : '-12.5px') : (isMobile ? '22.5px' : '5px')
             }}
           >
             <div>
               <img
                 alt='ens'
                 src='ens.png'
-                width={isMobile ? '17.5px' : '25px'}
+                width={isMobile ? '20px' : '25px'}
                 style={{ margin: isMobile ? '0 10px -2px 0' : '0 10px -3px 0' }}
               />
               <span
                 style={{
                   color: '#fc6603',
-                  fontSize: isMobile ? '20px' : '30px',
+                  fontSize: isMobile ? '24px' : '30px',
                   fontWeight: '700',
                   fontFamily: 'SF Mono'
                 }}
@@ -2672,7 +2672,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               <span
                 style={{
                   fontFamily: 'SF Mono',
-                  fontSize: isMobile ? '18px' : '21px',
+                  fontSize: isMobile ? '20px' : '24px',
                   color: 'grey'
                 }}
               >
@@ -2681,7 +2681,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               <span
                 style={{
                   fontFamily: 'SF Mono',
-                  fontSize: isMobile ? '14px' : '18px',
+                  fontSize: isMobile ? '18px' : '22px',
                   color: 'grey',
                   fontWeight: '700',
                   letterSpacing: '0px',
@@ -2791,7 +2791,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                     onClick={() => { }}
                     color=''
                   >
-                    {isMobile ? constants.truncateHexString(String(_OwnerLegacy_) || constants.zeroAddress) : String(_OwnerLegacy_) || constants.zeroAddress}
+                    {isMobile ? constants.truncateHexString(_OwnerLegacy_ ? String(_OwnerLegacy_) : constants.zeroAddress) : _OwnerLegacy_ ? String(_OwnerLegacy_) : constants.zeroAddress}
                   </span>
                 </div>
                 <div style={{ margin: '-3px 0 1px 0' }}>
@@ -2823,13 +2823,13 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <div
               className='flex-column'
               style={{
-                marginTop: '-10px',
+                marginTop: isMobile ? '-35px' : '-10px',
                 marginBottom: '80px'
               }}
             >
               <div
                 style={{
-                  marginTop: '20px'
+                  marginTop: '30px'
                 }}
               >
                 <Loading
@@ -3286,7 +3286,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 marginRight: '-6px',
                                 background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
                               }}
-                              onClick={() => { }}
+                              onClick={() => {
+                                setTrigger(item.type)
+                                setSafeTrigger('1')
+                                item.type === 'resolver' ? setOptions(true) : (item.type === 'storage' ? setConfirm(true) : (setWrite(true)))
+                                constants.config.includes(item.type) ? setStates(prevState => [...prevState, item.type]) : '' // Update States
+                              }}
                               data-tooltip={item.tooltip}
                             >
                               <div
