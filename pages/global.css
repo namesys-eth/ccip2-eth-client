@@ -416,7 +416,7 @@ input:disabled {
   justify-content: center;
   flex-direction: column;
   margin-top: 220px;
-  color: #fc6603;
+  color: #ff2600;
   font-size: 30px;
   font-weight: 700;
 }
@@ -824,7 +824,7 @@ a:visited {
   padding-top: 10px;
   border-radius: 6px;
   font-size: 30px;
-  color: #fc6603;
+  color: #ff2600;
   font-weight: 700;
   font-family: 'Spotnik';
 }

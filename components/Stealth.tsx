@@ -1980,7 +1980,7 @@ const Stealth: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               >
                 <span
                   style={{
-                    color: '#fc6603',
+                    color: '#ff2600',
                     fontSize: '20px',
                     fontWeight: '700'
                   }}

@@ -2132,6 +2132,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         chain: chain,
         hashType: hashType,
       }
+      console.log(request)
       const editRecord = async () => {
         setMessage(['Writing Records', ''])
         try {
@@ -2629,7 +2630,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : '#121212'
+          background: loading ? 'none' : '#0a0a09'
         }}
       >
         <StyledModalHeader>
@@ -2661,7 +2662,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               />
               <span
                 style={{
-                  color: '#fc6603',
+                  color: '#ff2600',
                   fontSize: isMobile ? '24px' : '30px',
                   fontWeight: '700',
                   fontFamily: 'SF Mono'
@@ -2722,7 +2723,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <div
               className='flex-row'
               style={{
-                color: '#fc6603',
+                color: '#ff2600',
                 marginTop: isMobile ? '-38.5%' : '-21.5%',
                 marginLeft: isMobile ? (!avatar || !imageLoaded ? '27.5%' : '15.5%') : '-4%'
               }}
@@ -2844,7 +2845,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               >
                 <span
                   style={{
-                    color: '#fc6603',
+                    color: '#ff2600',
                     fontSize: '20px',
                     fontWeight: '700'
                   }}

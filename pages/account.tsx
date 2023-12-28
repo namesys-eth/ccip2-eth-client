@@ -1235,7 +1235,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: '54px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginBottom: '20px',
                       fontWeight: '700'
                     }}
@@ -1246,7 +1246,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: 22,
-                      color: '#fc6603',
+                      color: '#fc4e14',
                       margin: '-10px 0 5px 0',
                       fontWeight: '700'
                     }}
@@ -1272,7 +1272,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: '44px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginBottom: '20px',
                       marginTop: '30px',
                       fontWeight: '700'
@@ -1284,7 +1284,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: 26,
-                      color: '#fc6603',
+                      color: '#ff2600',
                       fontWeight: '700',
                       margin: '-10px 0 5px 0'
                     }}
@@ -1309,7 +1309,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: '52px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginBottom: '20px',
                       fontWeight: '700'
                     }}
@@ -1320,7 +1320,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: 26,
-                      color: '#eb8634',
+                      color: '#fc4e14',
                       marginTop: '-10px',
                       fontWeight: '700'
                     }}
@@ -1349,7 +1349,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: '40px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginTop: '10px',
                       fontWeight: '700'
                     }}
@@ -1500,7 +1500,7 @@ const Account: NextPage = () => {
                 >
                   <div
                     style={{
-                      color: '#fc6603',
+                      color: '#ff2600',
                       fontWeight: '700'
                     }}
                   >
@@ -1567,7 +1567,7 @@ const Account: NextPage = () => {
                   >
                     <div
                       style={{
-                        color: '#fc6603',
+                        color: '#ff2600',
                         fontWeight: '700'
                       }}
                     >
@@ -2173,7 +2173,7 @@ const Account: NextPage = () => {
                 className="flex-column"
                 style={{
                   fontSize: '22px',
-                  color: '#fc6603',
+                  color: '#ff2600',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -2194,7 +2194,7 @@ const Account: NextPage = () => {
                 className="flex-column"
                 style={{
                   fontSize: '22px',
-                  color: '#fc6603',
+                  color: '#ff2600',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -2213,7 +2213,7 @@ const Account: NextPage = () => {
           <div
             className="flex-sans-direction"
             style={{
-              color: '#fc6603',
+              color: '#ff2600',
               top: 'auto',
               left: !isMobile ? '14%' : '32%',
               transform: !isMobile ? 'translateX(-92%)' : 'translateX(-72%)',

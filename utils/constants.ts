@@ -174,10 +174,10 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: white">Gasless</span> <span style="color: white">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: white">Decentralised</span> Records Storage on <span style="color: white">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: white">Unlimited</span> Record Updates With <span style="color: white">IPNS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: white">Dynamic</span> Records and <span style="color: white">Private</span> Payments',
+  '<span style="color: #ff2600" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: white">Gasless</span> <span style="color: white">ENS</span> Records',
+  '<span style="color: #ff2600" class="material-icons miui">hub</span><br></br><span style="color: white">Decentralised</span> Records Storage on <span style="color: white">IPFS</span>',
+  '<span style="color: #ff2600" class="material-icons miui">recycling</span><br></br><span style="color: white">Unlimited</span> Record Updates With <span style="color: white">IPNS</span>',
+  '<span style="color: #ff2600" class="material-icons miui">badge</span><br></br><span style="color: white">Dynamic</span> Records and <span style="color: white">Private</span> Payments',
   '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: white">Enjoy ENS</span> Hassle Free'
 ]
 

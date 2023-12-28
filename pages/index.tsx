@@ -636,7 +636,7 @@ const Home: NextPage = () => {
               style={{
                 marginRight: !isMobile ? '15px' : '10px',
                 marginTop: !isMobile ? '6px' : '10px',
-                color: '#fc6603',
+                color: '#ff2600',
                 fontFamily: 'SF Mono',
                 fontSize: !isMobile ? '18px' : '13px',
               }}
@@ -733,7 +733,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '46px' : '50px',
                       marginTop: onSearch ? '20px' : '28px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginBottom: '10px',
                       fontWeight: '700'
                     }}
@@ -745,7 +745,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '24px' : '28px',
                       marginTop: '0px',
-                      color: '#fc6603',
+                      color: '#fc4e14',
                       fontWeight: '700'
                     }}
                   >
@@ -765,7 +765,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '36px' : '44px',
                       marginTop: '10px',
-                      color: '#fc6603'
+                      color: '#ff2600'
                     }}
                   >
                     NameSys
@@ -775,7 +775,7 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
                       fontWeight: 700,
-                      color: '#fc6603',
+                      color: '#fc4e14',
                       marginTop: '5px'
                     }}
                   >
@@ -848,7 +848,7 @@ const Home: NextPage = () => {
               >
                 <span
                   style={{
-                    color: '#fc6603',
+                    color: '#fc4e14',
                     fontWeight: '700',
                     fontSize: isMobile ? '10px' : '14px',
                     paddingBottom: '5px'
@@ -896,7 +896,7 @@ const Home: NextPage = () => {
                   <span
                     style={{
                       fontSize: isMobile ? '17px' : '22px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       fontWeight: '700'
                     }}
                   >
@@ -967,7 +967,7 @@ const Home: NextPage = () => {
           <div
             className="flex-sans-direction"
             style={{
-              color: '#fc6603',
+              color: '#ff2600',
               top: 'auto',
               left: !isMobile ? '1%' : '3.5%',
               bottom: 10,
@@ -990,7 +990,7 @@ const Home: NextPage = () => {
                   className="material-icons"
                   style={{
                     marginRight: '5px',
-                    color: '#fc6603'
+                    color: '#ff2600'
                   }}
                 >
                   source
@@ -1011,7 +1011,7 @@ const Home: NextPage = () => {
                   className="material-icons"
                   style={{
                     marginRight: '5px',
-                    color: '#fc6603'
+                    color: '#ff2600'
                   }}
                 >
                   info_outline
