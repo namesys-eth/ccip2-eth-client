@@ -2624,7 +2624,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const modalContent = show ? (
     <StyledModalOverlay
       style={{
-        backgroundColor: !loading ? 'rgba(0, 0, 0, 0.5)' : 'black'
+        backgroundColor: loading ? 'black' : (!isMobile ? 'rgba(0, 0, 0, 0.75)' : 'black')
       }}
     >
       <StyledModal
@@ -2656,8 +2656,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               <img
                 alt='ens'
                 src='ens.png'
-                width={isMobile ? '17.5px' : '17.5px'}
-                style={{ margin: isMobile ? '0 10px 0 0' : '0 10px -3px 0' }}
+                width={isMobile ? '17.5px' : '25px'}
+                style={{ margin: isMobile ? '0 10px -2px 0' : '0 10px -3px 0' }}
               />
               <span
                 style={{
