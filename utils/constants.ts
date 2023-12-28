@@ -320,6 +320,13 @@ export function isEmpty(object: any) {
   return true
 }
 
+// Truncate hex string
+export function truncateHexString(hexString: string) {
+  const prefix = hexString.slice(0, 2)
+  const truncated = hexString.slice(2, 6) + '...' + hexString.slice(-4)
+  return prefix + truncated
+}
+
 // Check if value is a valid Name
 export function isName(value: string) {
   return value.endsWith('.eth') && value.length <= 32 + 4

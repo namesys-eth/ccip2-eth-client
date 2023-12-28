@@ -288,7 +288,7 @@ input:disabled {
 
 /* Font sizes */
 .miui {
-  font-size: 100px;
+  font-size: 140px;
 }
 
 .miui-small {
@@ -856,7 +856,7 @@ img {
 .content-slider {
   margin-top: 30px;
   margin-bottom: 170px;
-  height: 200px;
+  height: 250px;
   width: 100%;
   justify-content: center;
   align-items: center;

@@ -728,11 +728,6 @@ const Home: NextPage = () => {
             >
               {!isMobile && (
                 <div>
-                  <img
-                    className="icon-ccip2"
-                    alt="sample-icon"
-                    src="logo.png"
-                  />
                   <div
                     className="flex-column"
                     style={{

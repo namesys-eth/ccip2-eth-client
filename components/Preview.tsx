@@ -2624,7 +2624,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const modalContent = show ? (
     <StyledModalOverlay
       style={{
-        backgroundColor: !loading ? 'rgba(0, 0, 0, 1)' : 'black'
+        backgroundColor: !loading ? 'rgba(0, 0, 0, 0.5)' : 'black'
       }}
     >
       <StyledModal
@@ -2644,17 +2644,55 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             </span>
           </a>
         </StyledModalHeader>
-        {ENS && loading &&
-          <StyledModalTitle>
-            <span
-              className="material-icons-round miui-small"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-            </span>
-          </StyledModalTitle>
-        }
+        {!loading && (
+          <div
+            style={{
+              marginLeft: isMobile ? '5.5%' : '15.5%',
+              marginTop: isMobile ? '10px' : '35px',
+              marginBottom: isMobile ? '10px' : '0'
+            }}
+          >
+            <div>
+              <img
+                alt='ens'
+                src='ens.png'
+                width={isMobile ? '17.5px' : '17.5px'}
+                style={{ margin: isMobile ? '0 10px 0 0' : '0 10px -3px 0' }}
+              />
+              <span
+                style={{
+                  color: '#fc6603',
+                  fontSize: isMobile ? '20px' : '30px',
+                  fontWeight: '700',
+                  fontFamily: 'SF Mono'
+                }}
+              >
+                {ENS.split('.eth')[0]}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'SF Mono',
+                  fontSize: isMobile ? '18px' : '21px',
+                  color: 'grey'
+                }}
+              >
+                .
+              </span>
+              <span
+                style={{
+                  fontFamily: 'SF Mono',
+                  fontSize: isMobile ? '14px' : '18px',
+                  color: 'grey',
+                  fontWeight: '700',
+                  letterSpacing: '0px',
+                  marginTop: '13px'
+                }}
+              >
+                eth
+              </span>
+            </div>
+          </div>
+        )}
         {ENS && avatar && imageLoaded && !loading && list.length > 0 &&
           <StyledModalTitle>
             <img
@@ -2677,6 +2715,107 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 portrait
               </span>
             )}
+          </StyledModalTitle>
+        }
+        {ENS && !loading && list.length > 0 &&
+          <StyledModalTitle>
+            <div
+              className='flex-row'
+              style={{
+                color: '#fc6603',
+                marginTop: isMobile ? '-38.5%' : '-21.5%',
+                marginLeft: isMobile ? (!avatar || !imageLoaded ? '27.5%' : '15.5%') : '-4%'
+              }}
+            >
+              <div
+                className="flex-column"
+                style={{
+                  alignItems: 'flex-end',
+                  lineHeight: isMobile ? '23.5px' : '23.5px',
+                  marginTop: isMobile ? '3px' : '2px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '800'
+                }}
+              >
+                <div>
+                  <span>{'Migrated'}</span>
+                </div>
+                <div>
+                  <span>{'Owner'}</span>
+                </div>
+                <div>
+                  <span>{'Manager'}</span>
+                </div>
+                <div>
+                  <span>{'Wrapped'}</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  marginLeft: '5px',
+                  lineHeight: '23.5px',
+                  fontSize: '14px',
+                  fontFamily: 'SF Mono',
+                  color: 'white'
+                }}
+              >
+                <div
+                  className='flex-column'
+                  style={{
+                    alignItems: 'flex-start',
+                    marginTop: '1px'
+                  }}
+                >
+                  <button
+                    className="button-tiny"
+                    style={{
+                      marginBottom: '-2px'
+                    }}
+                    data-tooltip={migrated || resolver === ccip2Contract ? `Resolver is migrated` : `Resolver is not migrated`}
+                  >
+                    <div
+                      className="material-icons-round smoller"
+                      style={{
+                        color: migrated || resolver === ccip2Contract ? 'lightgreen' : 'orange',
+                        fontSize: '22px',
+                      }}
+                    >
+                      {migrated || resolver === ccip2Contract ? 'done' : 'close'}
+                    </div>
+                  </button>
+                </div>
+                <div style={{ margin: '-5px 0 1px 0' }}>
+                  <span
+                    className='mono'
+                    id="metaOwner"
+                    onClick={() => constants.copyToClipboard(String(_OwnerLegacy_) || constants.zeroAddress)}
+                    color=''
+                  >
+                    {isMobile ? constants.truncateHexString(String(_OwnerLegacy_) || constants.zeroAddress) : String(_OwnerLegacy_) || constants.zeroAddress}
+                  </span>
+                </div>
+                <div style={{ margin: '-3px 0 1px 0' }}>
+                  <span
+                    className='mono'
+                    id="metaManager"
+                    onClick={() => constants.copyToClipboard(getManager())}
+                  >
+                    {isMobile ? constants.truncateHexString(getManager()) : getManager()}
+                  </span>
+                </div>
+                <div style={{ margin: '0px 0 2px 0' }}>
+                  <span
+                    className='material-icons'
+                    style={{
+                      color: 'white',
+                      fontSize: '21px'
+                    }}
+                  >
+                    {String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3] ? 'done' : 'close'}
+                  </span>
+                </div>
+              </div>
+            </div>
           </StyledModalTitle>
         }
         {ENS && loading &&
@@ -2743,8 +2882,8 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 >
                   <span
                     style={{
-                      color: 'white',
-                      fontSize: '15px',
+                      color: 'grey',
+                      fontSize: isMobile ? '12px' : '15px',
                       fontWeight: '700'
                     }}
                   >
@@ -2777,48 +2916,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <div
               className='flex-column'
               style={{
-                marginLeft: isMobile ? '-3.5%' : 'auto'
+                marginTop: isMobile ? (!avatar || !imageLoaded ? '-17.5px' : '0') : '0',
+                marginLeft: isMobile ? '-3.5%' : '-2.5%'
               }}
             >
-              <div
-                style={{
-                  marginLeft: isMobile ? '-42.5%' : '-50%',
-                  marginBottom: isMobile ? '7.5px' : '15px',
-                  marginTop: isMobile ? '-15px' : '20px'
-                }}
-              >
-                <span
-                  style={{
-                    color: '#fc6603',
-                    fontSize: isMobile ? '24px' : '30px',
-                    fontWeight: '700',
-                    fontFamily: 'SF Mono'
-                  }}
-                >
-                  {ENS.split('.eth')[0]}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'SF Mono',
-                    fontSize: '15px',
-                    color: 'cyan'
-                  }}
-                >
-                  .
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'Spotnik',
-                    fontSize: '11px',
-                    color: 'cyan',
-                    fontWeight: '700',
-                    letterSpacing: '0px',
-                    marginTop: '13px'
-                  }}
-                >
-                  ETH
-                </span>
-              </div>
               <div
                 className="scrollable-div"
                 style={{
@@ -3414,7 +3515,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 }
 
 const StyledModalBody = styled.div`
-  padding-top: 20px;
+  padding-top: 0px;
   padding-left: 0px;
   padding-right: 0px;
   padding-bottom: 0px;
@@ -3428,13 +3529,9 @@ const StyledModalBody = styled.div`
 const StyledModalTitle = styled.div`
   padding-top: ${isMobile ? '10px' : '30px'};
   padding-bottom: 10px;
-  margin-left: ${isMobile ? '5.5%' : '17%'};
+  margin-left: ${isMobile ? '5.5%' : '15.5%'};
   font-size: 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  font-weight: 1200;
+  font-weight: 800;
   margin-bottom: ${isMobile ? '0' : '-15px'};
   color: white;
 `
