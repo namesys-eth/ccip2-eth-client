@@ -145,6 +145,14 @@ body {
   padding-right: 50px;
 }
 
+.mono {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'SF Mono';
+  color: lightgreen;
+  cursor: copy;
+}
+
 @media screen and (max-width: 800px) {
   .container {
     padding: 0 0 0 0;

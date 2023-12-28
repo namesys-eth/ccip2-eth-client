@@ -561,15 +561,15 @@ const Home: NextPage = () => {
       <div id="overlay" className="overlay">
         <div className="overlay-content">
           <Loading
-            height={75}
-            width={75}
+            height={isMobile ? 50 : 75}
+            width={isMobile ? 50 : 75}
           />
           <div
             style={{
               marginTop: '20px'
             }}
           >
-            <span>
+            <span style={{ fontSize: isMobile ? '15px' : '20px' }}>
               PLEASE WAIT
             </span>
           </div>
@@ -913,7 +913,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'white',
+                  color: 'lightblue',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -930,7 +930,7 @@ const Home: NextPage = () => {
                   onClick={() => {
                     setHelpModal(true)
                     setIcon('info')
-                    setColor('white')
+                    setColor('lightblue')
                     setTop('')
                     setHelp('Search results for your query')
                   }}
@@ -938,7 +938,7 @@ const Home: NextPage = () => {
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'white'
+                      color: 'lightblue'
                     }}
                   >
                     info_outline

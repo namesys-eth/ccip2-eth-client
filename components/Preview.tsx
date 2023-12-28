@@ -2788,7 +2788,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   <span
                     className='mono'
                     id="metaOwner"
-                    onClick={() => constants.copyToClipboard(String(_OwnerLegacy_) || constants.zeroAddress)}
+                    onClick={() => { }}
                     color=''
                   >
                     {isMobile ? constants.truncateHexString(String(_OwnerLegacy_) || constants.zeroAddress) : String(_OwnerLegacy_) || constants.zeroAddress}
@@ -2798,14 +2798,14 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   <span
                     className='mono'
                     id="metaManager"
-                    onClick={() => constants.copyToClipboard(getManager())}
+                    onClick={() => { }}
                   >
                     {isMobile ? constants.truncateHexString(getManager()) : getManager()}
                   </span>
                 </div>
                 <div style={{ margin: '0px 0 2px 0' }}>
                   <span
-                    className='material-icons'
+                    className='material-icons-round smoller'
                     style={{
                       color: 'white',
                       fontSize: '21px'
@@ -2882,7 +2882,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 >
                   <span
                     style={{
-                      color: 'grey',
+                      color: 'white',
                       fontSize: isMobile ? '12px' : '15px',
                       fontWeight: '700'
                     }}
@@ -2900,7 +2900,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               >
                 <span
                   style={{
-                    color: 'white',
+                    color: 'grey',
                     fontSize: '14px',
                     fontWeight: '700'
                   }}
