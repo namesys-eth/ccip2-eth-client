@@ -569,7 +569,7 @@ const Home: NextPage = () => {
               marginTop: '20px'
             }}
           >
-            <span style={{ fontSize: isMobile ? '15px' : '20px' }}>
+            <span>
               PLEASE WAIT
             </span>
           </div>
@@ -884,8 +884,8 @@ const Home: NextPage = () => {
                   }}
                 >
                   <Loading
-                    height={50}
-                    width={50}
+                    height={isMobile ? 35 : 50}
+                    width={isMobile ? 35 : 50}
                   />
                 </div>
                 <div
@@ -895,6 +895,7 @@ const Home: NextPage = () => {
                 >
                   <span
                     style={{
+                      fontSize: isMobile ? '17px' : '22px',
                       color: '#fc6603',
                       fontWeight: '700'
                     }}

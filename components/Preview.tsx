@@ -2883,7 +2883,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   <span
                     style={{
                       color: 'white',
-                      fontSize: isMobile ? '12px' : '15px',
+                      fontSize: '15px',
                       fontWeight: '700'
                     }}
                   >
@@ -2901,7 +2901,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                 <span
                   style={{
                     color: 'grey',
-                    fontSize: '14px',
+                    fontSize: isMobile ? '12px' : '14px',
                     fontWeight: '700'
                   }}
                 >
