@@ -2649,7 +2649,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             style={{
               marginLeft: isMobile ? '5.5%' : '15.5%',
               marginTop: isMobile ? '10px' : '35px',
-              marginBottom: !avatar || !imageLoaded ? (isMobile ? '2.5px' : '-12.5px') : (isMobile ? '22.5px' : '5px')
+              marginBottom: !avatar || !imageLoaded ? (isMobile ? '-2.5px' : '-12.5px') : (isMobile ? '20px' : '5px')
             }}
           >
             <div>
@@ -2823,7 +2823,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             <div
               className='flex-column'
               style={{
-                marginTop: isMobile ? '-35px' : '-10px',
+                marginTop: isMobile ? '-40px' : '-10px',
                 marginBottom: '80px'
               }}
             >
