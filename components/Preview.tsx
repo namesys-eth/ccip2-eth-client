@@ -2132,7 +2132,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         chain: chain,
         hashType: hashType,
       }
-      console.log(request)
       const editRecord = async () => {
         setMessage(['Writing Records', ''])
         try {
