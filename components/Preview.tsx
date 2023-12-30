@@ -2705,7 +2705,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
-            {['0', '1', ''].includes(isLoading['avatar']) && (
+            {['0', '1', '-', ''].includes(isLoading['avatar']) && (
               <span
                 className="material-icons-round miui"
                 style={{
@@ -3469,7 +3469,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             onClose={() => {
               setGateway(false)
             }}
-            show={gateway} 
+            show={gateway}
           >
             {undefined}
           </Gateway>
