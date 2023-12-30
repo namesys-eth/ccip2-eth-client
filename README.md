@@ -1,11 +1,12 @@
-# CCIP2 Client
+# CCIP2 `PRO` Client
 
-Client for CCIP2 ENS Records Manager
+**PRO** Client for CCIP2 ENS Records Manager
 
-# Hacks
+# Notes
 
-Force push to Git subtree:
+### Reset `gh-pages`
 
-```
-git push origin `git subtree split --prefix out dev`:gh-pages --force
+```shell
+git push origin -d gh-pages
+git push origin `git subtree split --prefix out <branch> gh-pages` --force
 ```

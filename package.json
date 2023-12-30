@@ -1,7 +1,8 @@
 {
   "name": "@namesys-eth/namesys-client",
-  "homepage": "https://namesys.eth.limo",
   "version": "1.2.1",
+  "homepage": "https://pro.namesys.xyz",
+  "description": "NameSys/CCIP2 Pro Client",
   "scripts": {
     "postinstall": "patch-package",
     "dev": "next dev",
