@@ -1,7 +1,8 @@
 {
   "name": "@namesys-eth/namesys-client",
-  "homepage": "https://namesys.eth.limo",
-  "version": "1.0.0",
+  "version": "1.2.1",
+  "homepage": "https://pro.namesys.xyz",
+  "description": "NameSys/CCIP2 Pro Client",
   "scripts": {
     "postinstall": "patch-package",
     "dev": "next dev",
@@ -24,6 +25,7 @@
     "@ipld/dag-pb": "^4.0.2",
     "@namesys-eth/w3name-client": "github:namesys-eth/w3name#stage",
     "@noble/curves": "^1.2.0",
+    "@noble/secp256k1": "^1.7.0",
     "@noble/hashes": "1.2.0",
     "@rainbow-me/rainbowkit": "^1.0.8",
     "alchemy-sdk": "^2.2.0",
@@ -35,7 +37,7 @@
     "dag-cbor-sync": "^0.6.3",
     "ed25519-1.6.1": "npm:@noble/ed25519@^1.6",
     "ed25519-2.0.0": "npm:@noble/ed25519@^2.0",
-    "ethers": "^5.6.1",
+    "ethers": "^5.7.2",
     "framer-motion": "^6.3.3",
     "fs": "^0.0.1-security",
     "ipfs-http-client": "^60.0.1",

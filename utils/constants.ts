@@ -43,11 +43,11 @@ export const typesRecords = [
   'pubkey',
   'url',
   // Socials
-  'github',
-  'twitter',
-  'x',
-  'discord',
-  'farcaster',
+  'com.github',
+  'com.twitter',
+  'com.x',
+  'com.discord',
+  'xyz.farcaster',
   'nostr',
   // Multi-addr
   'btc',
@@ -139,7 +139,7 @@ export interface CustomBodyState {
   trigger: boolean
 }
 let network = process.env.NEXT_PUBLIC_NETWORK
-export const w3timestamp = 1699534314 
+export const w3timestamp = 1699534314
 export const alchemyConfig = {
   apiKey: network === 'goerli' ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI : process.env.NEXT_PUBLIC_ALCHEMY_ID_MAINNET,
   network: network === 'goerli' ? Network.ETH_GOERLI : Network.ETH_MAINNET,
@@ -174,10 +174,10 @@ export const ensInterface = [
   iEnsWrapperMainnet // Name Wrapper (Mainnet)
 ]
 export const carousal = [
-  '<span style="color: #fc6603" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: white">Gasless</span> <span style="color: white">ENS</span> Records',
-  '<span style="color: #fc6603" class="material-icons miui">hub</span><br></br><span style="color: white">Decentralised</span> Records Storage on <span style="color: white">IPFS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">recycling</span><br></br><span style="color: white">Unlimited</span> Record Updates With <span style="color: white">IPNS</span>',
-  '<span style="color: #fc6603" class="material-icons miui">badge</span><br></br><span style="color: white">Dynamic</span> Records and <span style="color: white">Private</span> Payments',
+  '<span style="color: #ff2600" class="material-icons miui">energy_savings_leaf</span><br></br><span style="color: white">Gasless</span> <span style="color: white">ENS</span> Records',
+  '<span style="color: #ff2600" class="material-icons miui">hub</span><br></br><span style="color: white">Decentralised</span> Records Storage on <span style="color: white">IPFS</span>',
+  '<span style="color: #ff2600" class="material-icons miui">recycling</span><br></br><span style="color: white">Unlimited</span> Record Updates With <span style="color: white">IPNS</span>',
+  '<span style="color: #ff2600" class="material-icons miui">badge</span><br></br><span style="color: white">Dynamic</span> Records and <span style="color: white">Private</span> Payments',
   '<img class="icon-ens" src="/ens-red.png"/><br></br><span style="color: white">Enjoy ENS</span> Hassle Free'
 ]
 
@@ -261,6 +261,26 @@ export function encodeContenthash(contenthash: string) {
   return ''
 }
 
+// Copy <span>, <div>
+export function copyElement(value: string, spanId: string) {
+  const hiddenInput = document.createElement('input')
+  hiddenInput.value = value
+  document.body.appendChild(hiddenInput)
+  hiddenInput.select()
+  document.execCommand('copy')
+  document.body.removeChild(hiddenInput)
+  const spanElement = document.getElementById(spanId)
+  if (spanElement) {
+    if (spanElement.style.color === 'lightgreen') spanElement.style.color = 'white'
+    else spanElement.style.color = 'white'
+    // Reset the color after a delay (e.g., 2 seconds)
+    setTimeout(() => {
+      if (spanElement.style.color === 'lightgreen') spanElement.style.color = 'white' // Reset to the default color
+      else spanElement.style.color = 'lightgreen'
+    }, 2000)
+  }
+}
+
 // Copy text
 export function copyToClipboard(element: string) {
   const copyText = document.getElementById(element) as HTMLInputElement
@@ -300,6 +320,13 @@ export function isEmpty(object: any) {
   return true
 }
 
+// Truncate hex string
+export function truncateHexString(hexString: string) {
+  const prefix = hexString.slice(0, 2)
+  const truncated = hexString.slice(2, 6) + '...' + hexString.slice(-4)
+  return prefix + truncated
+}
+
 // Check if value is a valid Name
 export function isName(value: string) {
   return value.endsWith('.eth') && value.length <= 32 + 4
@@ -310,7 +337,7 @@ export function isAddr(value: string) {
 }
 // Check if value is a valid Avatar URL
 export function isAvatar(value: string) {
-  return urlRegex.test(value) || value.startsWith('ipfs://') || value.startsWith('eip155:')
+  return urlRegex.test(value) || (value.startsWith('ipfs://') && (ipfsRegexCID0.test(value) || ipfsRegexCID1.test(value))) || value.startsWith('eip155:')
 }
 // Check if value is a valid Pubkey
 export function isPubkey(value: string) {

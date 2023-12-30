@@ -12,7 +12,6 @@ import Gateway from '../components/Gateway'
 import Options from '../components/Options'
 import Error from '../components/Error'
 import Info from '../components/Info'
-import LoadingIcons from 'react-loading-icons'
 import Gas from '../components/Gas'
 import Loading from '../components/LoadingColors'
 import Success from '../components/Success'
@@ -24,7 +23,6 @@ import * as Nam3 from '@namesys-eth/w3name-client'
 import * as ed25519v2 from 'ed25519-2.0.0' // @noble/ed25519 v2.0.0
 import * as ensContent from '../utils/contenthash'
 import * as verifier from '../utils/verifier'
-import { Utils } from "alchemy-sdk"
 import { isMobile } from 'react-device-detect'
 import {
   useAccount,
@@ -481,7 +479,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 7,
         header: 'Github',
-        type: 'github',
+        type: 'com.github',
         value: _github,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isGithub(_github) && queue > 0,
@@ -505,7 +503,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 9,
         header: 'Twitter',
-        type: 'twitter',
+        type: 'com.twitter',
         value: _twitter,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isTwitter(_twitter) && queue > 0,
@@ -517,7 +515,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 10,
         header: 'Discord',
-        type: 'discord',
+        type: 'com.discord',
         value: _discord,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isDiscord(_discord) && queue > 0,
@@ -529,7 +527,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       {
         key: 11,
         header: 'Farcaster',
-        type: 'farcaster',
+        type: 'xyz.farcaster',
         value: _farcaster,
         editable: resolver === ccip2Contract && queue > 0,
         active: constants.isFarcaster(_farcaster) && queue > 0,
@@ -680,7 +678,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let _value: string = ''
     let type: string = ''
     if (['avatar', 'email', 'pubkey',
-      'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+      'com.github', 'url', 'com.twitter', 'com.discord', 'xyz.farcaster', 'nostr',
       'zonehash'
     ].includes(key)) {
       type = 'string'
@@ -722,7 +720,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     let type: string = ''
     let _value: string = ''
     if (['avatar', 'email', 'pubkey',
-      'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+      'com.github', 'url', 'com.twitter', 'com.discord', 'xyz.farcaster', 'nostr',
       'zonehash'
     ].includes(key)) {
       type = 'string'
@@ -766,11 +764,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'avatar') setAvatar(value)
     if (key === 'email') setEmail(value)
     if (key === 'pubkey') setPubkey(value)
-    if (key === 'github') setGithub(value)
+    if (key === 'com.github') setGithub(value)
     if (key === 'url') setUrl(value)
-    if (key === 'twitter') setTwitter(value)
-    if (key === 'discord') setDiscord(value)
-    if (key === 'farcaster') setFarcaster(value)
+    if (key === 'com.twitter') setTwitter(value)
+    if (key === 'com.discord') setDiscord(value)
+    if (key === 'xyz.farcaster') setFarcaster(value)
     if (key === 'nostr') setNostr(value)
     if (key === 'btc') setBTC(value)
     if (key === 'ltc') setLTC(value)
@@ -781,21 +779,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   }
 
   // Function to get additional records
-  function getExtraRecords(resolver: ethers.providers.Resolver) {
-    getText(resolver, 'avatar')
-    getText(resolver, 'email')
-    getText(resolver, 'pubkey')
-    getText(resolver, 'github')
-    getText(resolver, 'url')
-    getText(resolver, 'twitter')
-    getText(resolver, 'discord')
-    getText(resolver, 'farcaster')
-    getText(resolver, 'nostr')
-    getAddress(resolver, 'btc')
-    getAddress(resolver, 'ltc')
-    getAddress(resolver, 'doge')
-    getAddress(resolver, 'sol')
-    getAddress(resolver, 'atom')
+  async function getExtraRecords(resolver: ethers.providers.Resolver) {
+    await getText(resolver, 'avatar')
+    await getText(resolver, 'email')
+    await getText(resolver, 'pubkey')
+    await getText(resolver, 'com.github')
+    await getText(resolver, 'url')
+    await getText(resolver, 'com.twitter')
+    await getText(resolver, 'com.discord')
+    await getText(resolver, 'xyz.farcaster')
+    await getText(resolver, 'nostr')
+    await getAddress(resolver, 'btc')
+    await getAddress(resolver, 'ltc')
+    await getAddress(resolver, 'doge')
+    await getAddress(resolver, 'sol')
+    await getAddress(resolver, 'atom')
     // getDns(type)
   }
 
@@ -804,11 +802,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
     if (key === 'avatar') setAvatar('')
     if (key === 'email') setEmail('')
     if (key === 'pubkey') setPubkey('')
-    if (key === 'github') setGithub('')
+    if (key === 'com.github') setGithub('')
     if (key === 'url') setUrl('')
-    if (key === 'twitter') setTwitter('')
-    if (key === 'discord') setDiscord('')
-    if (key === 'farcaster') setFarcaster('')
+    if (key === 'com.twitter') setTwitter('')
+    if (key === 'com.discord') setDiscord('')
+    if (key === 'xyz.farcaster') setFarcaster('')
     if (key === 'nostr') setNostr('')
     if (key === 'btc') setBTC('')
     if (key === 'ltc') setLTC('')
@@ -944,7 +942,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       if (key === 'contenthash') {
         gasAmount = await contract.methods.setContenthash(ethers.utils.namehash(ENS), ensContent.encodeContenthash(value).encoded).estimateGas({ from: _Wallet_ })
       } else if (['avatar', 'email', 'pubkey',
-        'github', 'url', 'twitter', 'discord', 'farcaster', 'nostr',
+        'com.github', 'url', 'com.twitter', 'com.discord', 'xyz.farcaster', 'nostr',
         'zonehash'
       ].includes(key)) {
         gasAmount = await contract.methods.setText(ethers.utils.namehash(ENS), key, value).estimateGas({ from: _Wallet_ })
@@ -964,7 +962,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Contenthash for ENS domain
   async function getContenthash(resolver: ethers.providers.Resolver) {
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading['contenthash'] = '-'
     setIsLoading(_Loading)
     setSync(true)
@@ -991,7 +989,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Text records for ENS domain
   async function getText(resolver: ethers.providers.Resolver, key: string) {
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading[key] = '-'
     setIsLoading(_Loading)
     await resolver.getText(key)
@@ -1016,7 +1014,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   // Get non-ETH addresses for ENS domain
   async function getAddress(resolver: ethers.providers.Resolver, key: string) {
     let _type = key === 'btc' ? 0 : (key === 'ltc' ? 2 : (key === 'doge' ? 3 : (key === 'sol' ? 501 : 118)))
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading[key] = '-'
     setIsLoading(_Loading)
     if (key === 'btc') { // Use Ethers.JS for BTC
@@ -1042,28 +1040,28 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 
   // Get Addr60 for ENS domain
   async function getAddr(resolver: ethers.providers.Resolver) {
-    let _Loading = isLoading
+    let _Loading = { ...isLoading }
     _Loading['addr'] = '-'
     setIsLoading(_Loading)
     await provider.resolveName(ENS)
-      .then(response => {
+      .then(async response => {
         if (!response) {
           _Loading['addr'] = '0'
           setAddr('')
           setIsLoading(_Loading)
-          getExtraRecords(resolver)
+          await getExtraRecords(resolver)
         } else {
           _Loading['addr'] = '1'
           setAddr(response)
           setIsLoading(_Loading)
-          getExtraRecords(resolver)
+          await getExtraRecords(resolver)
         }
       })
-      .catch(() => {
+      .catch(async () => {
         _Loading['addr'] = '0'
         setAddr('')
         setIsLoading(_Loading)
-        getExtraRecords(resolver)
+        await getExtraRecords(resolver)
       })
   }
 
@@ -1095,21 +1093,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           setHashIPFS(_IPFS._value.split('/')[2])
           if (_history.ownerstamp.length >= 1) {
             if ((_IPFS._sequence && _history.timestamp.revision) && (Number(_IPFS._sequence) === Number(_history.timestamp.revision) - 1) && _Storage[1]) {
-              _history.revision.addr ? setAddr(_history.addr) : setAddr('')
-              _history.revision.contenthash ? setContenthash(_history.contenthash) : setContenthash('')
-              _history.revision.avatar ? setAvatar(_history.avatar) : setAvatar('')
-              _history.revision.email ? setEmail(_history.email) : setEmail('')
-              _history.revision.github ? setGithub(_history.github) : setGithub('')
-              _history.revision.url ? setUrl(_history.url) : setUrl('')
-              _history.revision.twitter ? setTwitter(_history.twitter) : setTwitter('')
-              _history.revision.discord ? setTwitter(_history.discord) : setDiscord('')
-              _history.revision.farcaster ? setFarcaster(_history.farcaster) : setFarcaster('')
-              _history.revision.nostr ? setNostr(_history.nostr) : setNostr('')
-              _history.revision.btc ? setBTC(_history.btc) : setBTC('')
-              _history.revision.ltc ? setLTC(_history.ltc) : setLTC('')
-              _history.revision.doge ? setDOGE(_history.doge) : setDOGE('')
-              _history.revision.sol ? setSOL(_history.sol) : setSOL('')
-              _history.revision.atom ? setATOM(_history.atom) : setATOM('')
+              _history.addr ? setAddr(_history.addr) : setAddr('')
+              _history.contenthash ? setContenthash(_history.contenthash) : setContenthash('')
+              _history.avatar ? setAvatar(_history.avatar) : setAvatar('')
+              _history.email ? setEmail(_history.email) : setEmail('')
+              _history['com.github'] ? setGithub(_history['com.github']) : setGithub('')
+              _history.url ? setUrl(_history.url) : setUrl('')
+              _history['com.twitter'] ? setTwitter(_history['com.twitter']) : setTwitter('')
+              _history['com.discord'] ? setTwitter(_history['com.discord']) : setDiscord('')
+              _history['xyz.farcaster'] ? setFarcaster(_history['xyz.farcaster']) : setFarcaster('')
+              _history.nostr ? setNostr(_history.nostr) : setNostr('')
+              _history.btc ? setBTC(_history.btc) : setBTC('')
+              _history.ltc ? setLTC(_history.ltc) : setLTC('')
+              _history.doge ? setDOGE(_history.doge) : setDOGE('')
+              _history.sol ? setSOL(_history.sol) : setSOL('')
+              _history.atom ? setATOM(_history.atom) : setATOM('')
               setSync(true)
             } else {
               getContenthash(_response)
@@ -1138,15 +1136,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           const _email = await refreshRecord(['text', 'email'], _response, _ENS, false)
           setEmail(_email || '')
           setPubkey('')
-          const _github = await refreshRecord(['text', 'github'], _response, _ENS, false)
+          const _github = await refreshRecord(['text', 'com.github'], _response, _ENS, false)
           setGithub(_github || '')
           const _url = await refreshRecord(['text', 'url'], _response, _ENS, false)
           setUrl(_url || '')
-          const _twitter = await refreshRecord(['text', 'twitter'], _response, _ENS, false)
+          const _twitter = await refreshRecord(['text', 'com.twitter'], _response, _ENS, false)
           setTwitter(_twitter || '')
-          const _discord = await refreshRecord(['text', 'discord'], _response, _ENS, false)
+          const _discord = await refreshRecord(['text', 'com.discord'], _response, _ENS, false)
           setDiscord(_discord || '')
-          const _farcaster = await refreshRecord(['text', 'farcaster'], _response, _ENS, false)
+          const _farcaster = await refreshRecord(['text', 'xyz.farcaster'], _response, _ENS, false)
           setFarcaster(_farcaster || '')
           const _nostr = await refreshRecord(['text', 'nostr'], _response, _ENS, false)
           setNostr(_nostr || '')
@@ -1232,9 +1230,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           if (_trigger) {
             if (_record[1] === 'avatar') setAvatar(_response)
             if (_record[1] === 'email') setEmail(_response)
-            if (_record[1] === 'github') setGithub(_response)
+            if (_record[1] === 'com.github') setGithub(_response)
             if (_record[1] === 'url') setUrl(_response)
-            if (_record[1] === 'twitter') setTwitter(_response)
+            if (_record[1] === 'com.twitter') setTwitter(_response)
+            if (_record[1] === 'com.discord') setDiscord(_response)
+            if (_record[1] === 'xyz.farcaster') setFarcaster(_response)
             setRefreshedValue(_response)
             setRefresh('1')
           }
@@ -1361,15 +1361,15 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       __THIS[key] = constants.isEmail(value)
     } else if (key === 'pubkey') {
       __THIS[key] = constants.isPubkey(value)
-    } else if (key === 'github') {
+    } else if (key === 'com.github') {
       __THIS[key] = constants.isGithub(value)
     } else if (key === 'url') {
       __THIS[key] = constants.isUrl(value)
-    } else if (key === 'twitter') {
+    } else if (key === 'com.twitter') {
       __THIS[key] = constants.isTwitter(value)
-    } else if (key === 'discord') {
+    } else if (key === 'com.discord') {
       __THIS[key] = constants.isDiscord(value)
-    } else if (key === 'farcaster') {
+    } else if (key === 'xyz.farcaster') {
       __THIS[key] = constants.isFarcaster(value)
     } else if (key === 'nostr') {
       __THIS[key] = constants.isEmail(value) || constants.isBTC(value)
@@ -1446,11 +1446,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             email: data.response.email,
             pubkey: data.response.pubkey,
             avatar: data.response.avatar,
-            github: data.response.github,
+            'com.github': data.response.github,
             url: data.response.url,
-            twitter: data.response.twitter,
-            discord: data.response.discord,
-            farcaster: data.response.farcaster,
+            'com.twitter': data.response.twitter,
+            'com.discord': data.response.discord,
+            'xyz.farcaster': data.response.farcaster,
             nostr: data.response.nostr,
             btc: data.response.btc,
             ltc: data.response.ltc,
@@ -1729,7 +1729,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
       const _sigSigner = async () => {
         setSigCount(2) // Trigger S_SIGNER(K_WALLET)
         setProcessCount(2)
-        signSigner(constants.randomString(10))
+        signSigner(constants.randomString(10)) // Generates redundant signatures; can bypass this [?]
       }
       _sigSigner()
     } else if (gatewayModalState.trigger && gatewayModalState.modalData !== undefined && !write) {
@@ -1785,7 +1785,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         if (saltModalState.modalData !== undefined) {
           setSigCount(2) // Trigger S_SIGNER(K_WALLET)
           setProcessCount(3)
-          signSigner(saltModalState.modalData)
+          signSigner(saltModalState.modalData) // IPNS Signer Signatures are DETERMINISTIC!
         }
       }
       _sigSigner()
@@ -2162,54 +2162,23 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       let _gasData = gasData && gasData.formatted && gasData.formatted.gasPrice ? Number(gasData.formatted.gasPrice) : 0
                       gas[item.type] = value * _gasData * 0.000000001
                     })
-                    if (item.type === 'avatar') {
-                      setAvatar(data.response.avatar)
-                    }
-                    if (item.type === 'email') {
-                      setEmail(data.response.email)
-                    }
-                    if (item.type === 'pubkey') {
-                      setPubkey(data.response.pubkey)
-                    }
-                    if (item.type === 'github') {
-                      setGithub(data.response.github)
-                    }
-                    if (item.type === 'url') {
-                      setUrl(data.response.url)
-                    }
-                    if (item.type === 'twitter') {
-                      setTwitter(data.response.twitter)
-                    }
-                    if (item.type === 'discord') {
-                      setDiscord(data.response.discord)
-                    }
-                    if (item.type === 'farcaster') {
-                      setFarcaster(data.response.farcaster)
-                    }
-                    if (item.type === 'nostr') {
-                      setNostr(data.response.nostr)
-                    }
-                    if (item.type === 'btc') {
-                      setBTC(data.response.btc)
-                    }
-                    if (item.type === 'ltc') {
-                      setLTC(data.response.ltc)
-                    }
-                    if (item.type === 'doge') {
-                      setDOGE(data.response.doge)
-                    }
-                    if (item.type === 'sol') {
-                      setSOL(data.response.sol)
-                    }
-                    if (item.type === 'atom') {
-                      setATOM(data.response.atom)
-                    }
-                    if (item.type === 'zonehash') {
-                      setZonehash(data.response.zonehash)
-                    }
-                    if (item.type === 'contenthash') {
-                      setContenthash(data.response.contenthash)
-                    }
+                    if (item.type === 'addr') setAddr(data.response.addr)
+                    if (item.type === 'avatar') setAvatar(data.response.avatar)
+                    if (item.type === 'email') setEmail(data.response.email)
+                    if (item.type === 'pubkey') setPubkey(data.response.pubkey)
+                    if (item.type === 'com.github') setGithub(data.response.github)
+                    if (item.type === 'url') setUrl(data.response.url)
+                    if (item.type === 'com.twitter') setTwitter(data.response.twitter)
+                    if (item.type === 'com.discord') setDiscord(data.response.discord)
+                    if (item.type === 'xyz.farcaster') setFarcaster(data.response.farcaster)
+                    if (item.type === 'nostr') setNostr(data.response.nostr)
+                    if (item.type === 'btc') setBTC(data.response.btc)
+                    if (item.type === 'ltc') setLTC(data.response.ltc)
+                    if (item.type === 'doge') setDOGE(data.response.doge)
+                    if (item.type === 'sol') setSOL(data.response.sol)
+                    if (item.type === 'atom') setATOM(data.response.atom)
+                    if (item.type === 'zonehash') setZonehash(data.response.zonehash)
+                    if (item.type === 'contenthash') setContenthash(data.response.contenthash)
                   }
                 })
                 // Wait for gas to be estimated
@@ -2655,12 +2624,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
   const modalContent = show ? (
     <StyledModalOverlay
       style={{
-        backgroundColor: !loading ? 'rgba(0, 0, 0, 1)' : 'black'
+        backgroundColor: loading ? 'black' : (!isMobile ? 'rgba(0, 0, 0, 0.75)' : 'black')
       }}
     >
       <StyledModal
         style={{
-          background: loading ? 'none' : '#121212'
+          background: loading ? 'none' : '#0a0a09'
         }}
       >
         <StyledModalHeader>
@@ -2675,22 +2644,60 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             </span>
           </a>
         </StyledModalHeader>
-        {ENS && loading &&
-          <StyledModalTitle>
-            <span
-              className="material-icons-round miui-small"
-              style={{
-                marginTop: '4px'
-              }}
-            >
-            </span>
-          </StyledModalTitle>
-        }
+        {!loading && (
+          <div
+            style={{
+              marginLeft: isMobile ? '5.5%' : '15.5%',
+              marginTop: isMobile ? '10px' : '35px',
+              marginBottom: !avatar || !imageLoaded ? (isMobile ? '-2.5px' : '-12.5px') : (isMobile ? '20px' : '5px')
+            }}
+          >
+            <div>
+              <img
+                alt='ens'
+                src='ens.png'
+                width={isMobile ? '20px' : '25px'}
+                style={{ margin: isMobile ? '0 10px -2px 0' : '0 10px -3px 0' }}
+              />
+              <span
+                style={{
+                  color: '#ff2600',
+                  fontSize: isMobile ? '24px' : '30px',
+                  fontWeight: '700',
+                  fontFamily: 'SF Mono'
+                }}
+              >
+                {ENS.split('.eth')[0]}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'SF Mono',
+                  fontSize: isMobile ? '20px' : '24px',
+                  color: 'grey'
+                }}
+              >
+                .
+              </span>
+              <span
+                style={{
+                  fontFamily: 'SF Mono',
+                  fontSize: isMobile ? '18px' : '22px',
+                  color: 'grey',
+                  fontWeight: '700',
+                  letterSpacing: '0px',
+                  marginTop: '13px'
+                }}
+              >
+                eth
+              </span>
+            </div>
+          </div>
+        )}
         {ENS && avatar && imageLoaded && !loading && list.length > 0 &&
           <StyledModalTitle>
             <img
               src={thumbnail || avatar}
-              width={'100px'}
+              width={isMobile ? '104px' : '125px'}
               alt={ENS}
               onError={() => setImageLoaded(false)}
             />
@@ -2698,16 +2705,6 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
         }
         {ENS && (!avatar || !imageLoaded) && !loading && list.length > 0 &&
           <StyledModalTitle>
-            {isLoading['avatar'] === '-' && (
-              <div
-                className="flex-column"
-              >
-                <LoadingIcons.Bars
-                  width={'110px'}
-                  fill={'#fc6603'}
-                />
-              </div>
-            )}
             {['0', '1', ''].includes(isLoading['avatar']) && (
               <span
                 className="material-icons-round miui"
@@ -2720,18 +2717,119 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             )}
           </StyledModalTitle>
         }
+        {ENS && !loading && list.length > 0 &&
+          <StyledModalTitle>
+            <div
+              className='flex-row'
+              style={{
+                color: '#ff2600',
+                marginTop: isMobile ? '-38.5%' : '-21.5%',
+                marginLeft: isMobile ? (!avatar || !imageLoaded ? '27.5%' : '15.5%') : '-4%'
+              }}
+            >
+              <div
+                className="flex-column"
+                style={{
+                  alignItems: 'flex-end',
+                  lineHeight: isMobile ? '23.5px' : '23.5px',
+                  marginTop: isMobile ? '3px' : '2px',
+                  fontSize: isMobile ? '12px' : '14px',
+                  fontWeight: '800'
+                }}
+              >
+                <div>
+                  <span>{'Migrated'}</span>
+                </div>
+                <div>
+                  <span>{'Owner'}</span>
+                </div>
+                <div>
+                  <span>{'Manager'}</span>
+                </div>
+                <div>
+                  <span>{'Wrapped'}</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  marginLeft: '5px',
+                  lineHeight: '23.5px',
+                  fontSize: '14px',
+                  fontFamily: 'SF Mono',
+                  color: 'white'
+                }}
+              >
+                <div
+                  className='flex-column'
+                  style={{
+                    alignItems: 'flex-start',
+                    marginTop: '1px'
+                  }}
+                >
+                  <button
+                    className="button-tiny"
+                    style={{
+                      marginBottom: '-2px'
+                    }}
+                    data-tooltip={migrated || resolver === ccip2Contract ? `Resolver is migrated` : `Resolver is not migrated`}
+                  >
+                    <div
+                      className="material-icons-round smoller"
+                      style={{
+                        color: migrated || resolver === ccip2Contract ? 'lightgreen' : 'orange',
+                        fontSize: '22px',
+                      }}
+                    >
+                      {migrated || resolver === ccip2Contract ? 'done' : 'close'}
+                    </div>
+                  </button>
+                </div>
+                <div style={{ margin: '-5px 0 1px 0' }}>
+                  <span
+                    className='mono'
+                    id="metaOwner"
+                    onClick={() => { }}
+                    color=''
+                  >
+                    {isMobile ? constants.truncateHexString(_OwnerLegacy_ ? String(_OwnerLegacy_) : constants.zeroAddress) : _OwnerLegacy_ ? String(_OwnerLegacy_) : constants.zeroAddress}
+                  </span>
+                </div>
+                <div style={{ margin: '-3px 0 1px 0' }}>
+                  <span
+                    className='mono'
+                    id="metaManager"
+                    onClick={() => { }}
+                  >
+                    {isMobile ? constants.truncateHexString(getManager()) : getManager()}
+                  </span>
+                </div>
+                <div style={{ margin: '0px 0 2px 0' }}>
+                  <span
+                    className='material-icons-round smoller'
+                    style={{
+                      color: 'white',
+                      fontSize: '21px'
+                    }}
+                  >
+                    {String(_OwnerLegacy_) === constants.ensContracts[chain === '1' ? 7 : 3] ? 'done' : 'close'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </StyledModalTitle>
+        }
         {ENS && loading &&
           <StyledModalBody>
             <div
               className='flex-column'
               style={{
-                marginTop: '-10px',
+                marginTop: isMobile ? '-40px' : '-10px',
                 marginBottom: '80px'
               }}
             >
               <div
                 style={{
-                  marginTop: '20px'
+                  marginTop: '30px'
                 }}
               >
                 <Loading
@@ -2746,7 +2844,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
               >
                 <span
                   style={{
-                    color: '#fc6603',
+                    color: '#ff2600',
                     fontSize: '20px',
                     fontWeight: '700'
                   }}
@@ -2785,14 +2883,31 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   <span
                     style={{
                       color: 'white',
-                      fontSize: '18px',
+                      fontSize: '15px',
                       fontWeight: '700'
                     }}
                   >
-                    <span>{message[0].includes('Refresh') ? 'Please Be Patient' : 'This May Take Some Time'}</span>
+                    {message[0].includes('Refresh') ? 'Please Be Patient' : 'This May Take Some Time'}
                   </span>
                 </div>
               )}
+              <div
+                style={{
+                  marginTop: '75px',
+                  maxWidth: '400px',
+                  textAlign: 'center'
+                }}
+              >
+                <span
+                  style={{
+                    color: 'grey',
+                    fontSize: isMobile ? '12px' : '14px',
+                    fontWeight: '700'
+                  }}
+                >
+                  {`If this dialogue persists for too long, try closing and re-opening it`}
+                </span>
+              </div>
             </div>
           </StyledModalBody>
         }
@@ -2800,45 +2915,11 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           <StyledModalBody>
             <div
               className='flex-column'
+              style={{
+                marginTop: isMobile ? (!avatar || !imageLoaded ? '-17.5px' : '0') : '0',
+                marginLeft: isMobile ? '-3.5%' : '-2.5%'
+              }}
             >
-              <div
-                style={{
-                  marginBottom: '15px',
-                  marginTop: '-15px'
-                }}
-              >
-                <span
-                  style={{
-                    color: 'white',
-                    fontSize: '20px',
-                    fontWeight: '700',
-                    fontFamily: 'SF Mono'
-                  }}
-                >
-                  {ENS.split('.eth')[0]}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'SF Mono',
-                    fontSize: '15px',
-                    color: 'cyan'
-                  }}
-                >
-                  .
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'Spotnik',
-                    fontSize: '11px',
-                    color: 'cyan',
-                    fontWeight: '700',
-                    letterSpacing: '0px',
-                    marginTop: '13px'
-                  }}
-                >
-                  ETH
-                </span>
-              </div>
               <div
                 className="scrollable-div"
                 style={{
@@ -2850,7 +2931,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   style={{
                     listStyle: 'none',
                     color: 'white',
-                    marginLeft: !isMobile ? '-5%' : '0'
+                    marginLeft: !isMobile ? '-5%' : '-1%'
                   }}
                 >
                   <div
@@ -2866,10 +2947,10 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          width: !isMobile ? '530px' : '480px',
-                          maxWidth: !isMobile ? '95%' : '85%',
-                          paddingLeft: '15px',
-                          paddingRight: '15px'
+                          width: !isMobile ? '630px' : '400px',
+                          maxWidth: !isMobile ? '95%' : '92.5%',
+                          paddingLeft: !isMobile ? '15px' : '10px',
+                          paddingRight: !isMobile ? '15px' : '10px'
                         }}
                       >
                         <div
@@ -2938,20 +3019,22 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                             item.type === 'avatar' ? 'portrait' : (
                                               item.type === 'addr' ? 'account_balance_wallet' : (
                                                 item.type === 'contenthash' ? 'public' : (
-                                                  item.type === 'github' ? 'code' : (
+                                                  item.type === 'com.github' ? 'code' : (
                                                     item.type === 'url' ? 'share' : (
                                                       item.type === 'email' ? 'email' : (
                                                         item.type === 'pubkey' ? 'key' : (
-                                                          item.type === 'discord' ? 'group_add' : (
-                                                            item.type === 'farcaster' ? 'people_alt' : (
-                                                              item.type === 'nostr' ? 'groups' : (
-                                                                item.type === 'btc' ? 'currency_bitcoin' : (
-                                                                  item.type === 'ltc' ? 'currency_lira' : (
-                                                                    item.type === 'doge' ? 'pets' : (
-                                                                      item.type === 'sol' ? 'flash_on' : (
-                                                                        item.type === 'atom' ? 'font_download' : (
-                                                                          item.type === 'zonehash' ? 'tag' :
-                                                                            'circle_notifications'
+                                                          item.type === 'com.twitter' ? 'groups' : (
+                                                            item.type === 'com.discord' ? 'group_add' : (
+                                                              item.type === 'xyz.farcaster' ? 'people_alt' : (
+                                                                item.type === 'nostr' ? 'groups' : (
+                                                                  item.type === 'btc' ? 'currency_bitcoin' : (
+                                                                    item.type === 'ltc' ? 'currency_lira' : (
+                                                                      item.type === 'doge' ? 'pets' : (
+                                                                        item.type === 'sol' ? 'flash_on' : (
+                                                                          item.type === 'atom' ? 'font_download' : (
+                                                                            item.type === 'zonehash' ? 'tag' :
+                                                                              'circle_notifications'
+                                                                          )
                                                                         )
                                                                       )
                                                                     )
@@ -3160,12 +3243,12 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                       refresh !== '' ? '' : refreshRecord([item.type, ''], resolveCall, ENS, true)
                                       setRefreshedItem(item.type)
                                     }}
-                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : (refresh === '-' ? 'No New Update' : 'Click to Refresh')))))}
+                                    data-tooltip={![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? `Record in Sync with ${hashType === 'gateway' ? 'Gateway' : 'IPNS'}` : 'Record not in Sync. Click to refresh') : (!['.', '', '0', '1'].includes(refresh) ? 'Refresh in Progress' : (refresh === '1' ? 'Record Updated' : (refresh === '0' ? 'No New Update' : (refresh === '.' ? 'Please Wait to Refresh again' : (refresh === '-' ? 'No New Update' : 'Click to Refresh')))))}
                                   >
                                     <div
                                       className="material-icons-round smol"
                                       style={{
-                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value.toLowerCase() === history[item.type].toLowerCase() ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'white' : (refresh === '-' ? 'yellow' : 'cyan'))))),
+                                        color: ![item.type, '.', '0', '1'].includes(refresh) ? (item.value === history[item.type] ? 'lightgreen' : 'orange') : (!['.', '', '0', '1'].includes(refresh) ? 'white' : (refresh === '1' ? 'lime' : (refresh === '0' ? 'yellow' : (refresh === '.' ? 'white' : (refresh === '-' ? 'yellow' : 'cyan'))))),
                                         marginLeft: '-5px'
                                       }}
                                     >
@@ -3200,6 +3283,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 height: '25px',
                                 width: 'auto',
                                 marginBottom: '6px',
+                                marginRight: '-6px',
                                 background: isDisabled(item) ? (multiEdit(item) ? 'none' : 'rgb(255, 255, 255, 0.2)') : (multiEdit(item) ? 'none' : 'linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)')
                               }}
                               onClick={() => {
@@ -3251,7 +3335,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 textAlign: 'left',
                                 marginTop: '-5px',
                                 marginBottom: '-5px',
-                                paddingRight: !constants.config.includes(item.type) ? '10px' : '0',
+                                paddingRight: !constants.config.includes(item.type) ? '30px' : '0',
                                 color: !legit[item.type] ? 'white' : (item.type === 'storage' && item.value === constants.defaultGateway ? 'yellow' : 'lightgreen'),
                                 cursor: 'copy'
                               }}
@@ -3259,17 +3343,21 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                                 setValues(item.type, e.target.value)
                               }}
                             />
-                            {!constants.config.includes(item.type) && !constants.blocked.includes(item.type) && (
+                            {!constants.config.includes(item.type) && !constants.blocked.includes(item.type) && !states.includes(item.type) && (
                               <div
+                                id={item.type}
                                 className="material-icons-round"
                                 style={{
+                                  cursor: "copy",
                                   fontSize: '22px',
                                   fontWeight: '700',
                                   marginLeft: '-25px',
-                                  color: isLoading[item.type] === '1' ? 'lightgreen' : (isLoading[item.type] === '-' ? 'white' : 'grey')
+                                  color: 'lightgreen',
+                                  opacity: isLoading[item.type] === '0' || (!item.value && isLoading[item.type] !== '-') ? '0' : '1',
                                 }}
+                                onClick={() => constants.copyElement(item.value, item.type)}
                               >
-                                {isLoading[item.type] === '1' ? 'hourglass_bottom' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'hourglass_empty')}
+                                {isLoading[item.type] === '1' ? 'content_copy' : (isLoading[item.type] === '-' ? 'hourglass_top' : 'content_copy')}
                               </div>
                             )}
                           </div>
@@ -3288,7 +3376,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                   }}
                 >
                   <button
-                    className="button flex-column"
+                    className="button flex-column emphasis"
                     hidden={
                       states.length < 2
                     }
@@ -3301,7 +3389,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
                       alignSelf: 'flex-end',
                       height: '30px',
                       width: 'auto',
-                      marginTop: '-3px',
+                      marginTop: isMobile ? '-3px' : '35px',
                     }}
                     onClick={() => {
                       setTrigger('records')
@@ -3432,7 +3520,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
 }
 
 const StyledModalBody = styled.div`
-  padding-top: 20px;
+  padding-top: 0px;
   padding-left: 0px;
   padding-right: 0px;
   padding-bottom: 0px;
@@ -3444,15 +3532,12 @@ const StyledModalBody = styled.div`
 `
 
 const StyledModalTitle = styled.div`
-  padding-top: 10px;
+  padding-top: ${isMobile ? '10px' : '30px'};
   padding-bottom: 10px;
+  margin-left: ${isMobile ? '5.5%' : '15.5%'};
   font-size: 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-weight: 1200;
-  margin-bottom: 0px;
+  font-weight: 800;
+  margin-bottom: ${isMobile ? '0' : '-15px'};
   color: white;
 `
 
@@ -3464,9 +3549,10 @@ const StyledModalHeader = styled.div`
 
 const StyledModal = styled.div`
   position: fixed;
-  top: 60px;
-  width: auto;
-  min-width: 400px;
+  top: ${isMobile ? '20px' : '60px'};
+  width: ${isMobile ? '95%' : 'auto'};
+  min-width: ${isMobile ? '95%' : '900px'};
+  min-height: ${isMobile ? '92.5%' : '90%'};
   border-radius: 6px;
   padding-top: 0px;
   padding-left: 0px;

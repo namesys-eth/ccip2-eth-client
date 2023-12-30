@@ -490,11 +490,12 @@ const Home: NextPage = () => {
         let __namehash = ethers.utils.namehash(query)
         let __token = ethers.BigNumber.from(__namehash)
         setTokenIDWrapper(String(__token))
+
+        // BROWSER
         let __labelhash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(query.split('.eth')[0]))
         setNamehashLegacy(__namehash)
         setTokenIDLegacy(String(ethers.BigNumber.from(__labelhash)))
-      } catch (error) {
-      }
+      } catch { }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, owner, manager])
@@ -560,8 +561,8 @@ const Home: NextPage = () => {
       <div id="overlay" className="overlay">
         <div className="overlay-content">
           <Loading
-            height={75}
-            width={75}
+            height={isMobile ? 50 : 75}
+            width={isMobile ? 50 : 75}
           />
           <div
             style={{
@@ -615,11 +616,11 @@ const Home: NextPage = () => {
             </div>
             <div
               style={{
-                marginLeft: !isMobile ? '-30px' : '-9px',
-                marginTop: !isMobile ? '0px' : '-15px'
+                marginLeft: !isMobile ? '-30px' : '-20px',
+                marginTop: !isMobile ? '0px' : '-25px'
               }}
             >
-              <Ticker variable={savings} />
+              <Ticker variable={savings} mobile={isMobile} />
             </div>
           </div>
           <div
@@ -635,7 +636,7 @@ const Home: NextPage = () => {
               style={{
                 marginRight: !isMobile ? '15px' : '10px',
                 marginTop: !isMobile ? '6px' : '10px',
-                color: '#fc6603',
+                color: '#ff2600',
                 fontFamily: 'SF Mono',
                 fontSize: !isMobile ? '18px' : '13px',
               }}
@@ -650,7 +651,7 @@ const Home: NextPage = () => {
               >
                 {'v'}
               </span>
-              {'1.2'}
+              {'1.2.1'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -727,18 +728,12 @@ const Home: NextPage = () => {
             >
               {!isMobile && (
                 <div>
-                  <img
-                    className="icon-ccip2"
-                    alt="sample-icon"
-                    src="logo.png"
-                    hidden
-                  />
                   <div
                     className="flex-column"
                     style={{
                       fontSize: onSearch ? '46px' : '50px',
                       marginTop: onSearch ? '20px' : '28px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginBottom: '10px',
                       fontWeight: '700'
                     }}
@@ -750,28 +745,27 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '24px' : '28px',
                       marginTop: '0px',
-                      color: '#fc6603',
+                      color: '#fc4e14',
                       fontWeight: '700'
                     }}
                   >
-                    Off-chain Records Manager
+                    Pro
                   </div>
                 </div>
               )}
               {isMobile && (
                 <div>
                   <img
-                    className="icon-ccip2"
+                    className={onSearch ? "icon-ccip2-mobile" : "icon-ccip2"}
                     alt="sample-icon"
                     src="logo.png"
-                    hidden={onSearch}
                   />
                   <div
                     className="flex-column"
                     style={{
                       fontSize: onSearch ? '36px' : '44px',
-                      marginTop: onSearch ? '44px' : '10px',
-                      color: '#fc6603'
+                      marginTop: '10px',
+                      color: '#ff2600'
                     }}
                   >
                     NameSys
@@ -781,11 +775,11 @@ const Home: NextPage = () => {
                     style={{
                       fontSize: onSearch ? '20px' : '24px',
                       fontWeight: 700,
-                      color: '#fc6603',
+                      color: '#fc4e14',
                       marginTop: '5px'
                     }}
                   >
-                    Off-chain Records Manager
+                    Pro
                   </div>
                   <div
                     style={{
@@ -846,14 +840,17 @@ const Home: NextPage = () => {
                 className="flex-column"
                 style={{
                   paddingBottom: '10px',
-                  marginTop: isMobile ? '-160px' : '0px'
+                  top: 'auto',
+                  left: isMobile ? '43%' : '47%',
+                  bottom: 10,
+                  position: 'fixed'
                 }}
               >
                 <span
                   style={{
-                    color: '#fc6603',
+                    color: '#fc4e14',
                     fontWeight: '700',
-                    fontSize: isMobile ? '12px' : '14px',
+                    fontSize: isMobile ? '10px' : '14px',
                     paddingBottom: '5px'
                   }}
                 >
@@ -863,7 +860,7 @@ const Home: NextPage = () => {
                   style={{
                     color: 'white',
                     fontWeight: '700',
-                    fontSize: isMobile ? '16px' : '20px'
+                    fontSize: isMobile ? '13px' : '20px'
                   }}
                 >
                   {'ENS DAO'}
@@ -887,8 +884,8 @@ const Home: NextPage = () => {
                   }}
                 >
                   <Loading
-                    height={50}
-                    width={50}
+                    height={isMobile ? 35 : 50}
+                    width={isMobile ? 35 : 50}
                   />
                 </div>
                 <div
@@ -898,7 +895,8 @@ const Home: NextPage = () => {
                 >
                   <span
                     style={{
-                      color: '#fc6603',
+                      fontSize: isMobile ? '17px' : '22px',
+                      color: '#ff2600',
                       fontWeight: '700'
                     }}
                   >
@@ -916,7 +914,7 @@ const Home: NextPage = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   fontSize: '18px',
-                  color: 'white',
+                  color: 'lightblue',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -933,7 +931,7 @@ const Home: NextPage = () => {
                   onClick={() => {
                     setHelpModal(true)
                     setIcon('info')
-                    setColor('white')
+                    setColor('lightblue')
                     setTop('')
                     setHelp('Search results for your query')
                   }}
@@ -941,7 +939,7 @@ const Home: NextPage = () => {
                   <div
                     className="material-icons smol"
                     style={{
-                      color: 'white'
+                      color: 'lightblue'
                     }}
                   >
                     info_outline
@@ -969,10 +967,9 @@ const Home: NextPage = () => {
           <div
             className="flex-sans-direction"
             style={{
-              color: '#fc6603',
+              color: '#ff2600',
               top: 'auto',
-              left: !isMobile ? '0.5%' : '1.5%',
-              transform: !isMobile ? '' : '',
+              left: !isMobile ? '1%' : '3.5%',
               bottom: 10,
               position: 'fixed'
             }}
@@ -980,44 +977,46 @@ const Home: NextPage = () => {
             <div
               className='flex-row'
               style={{
-                marginRight: '15px'
+                marginRight: !isMobile ? '15px' : '5px'
               }}
             >
-              <span
-                className="material-icons"
-                style={{
-                  marginRight: '3px'
-                }}
-              >
-                source
-              </span>
               <a
                 href="https://github.com/namesys-eth"
-                className="footer-text"
+                className="footer-text flex-row"
                 target='_blank'
                 rel="noreferrer"
               >
-                GitHub
+                <span
+                  className="material-icons"
+                  style={{
+                    marginRight: '5px',
+                    color: '#ff2600'
+                  }}
+                >
+                  source
+                </span>
+                <span hidden={isMobile}>GitHub</span>
               </a>
             </div>
             <div
               className='flex-row'
             >
-              <span
-                className="material-icons"
-                style={{
-                  marginRight: '3px'
-                }}
-              >
-                info_outline
-              </span>
               <a
                 href="readme/readme.htm?src=https://namesys-eth.github.io/ccip2-eth-resources/GUIDE.md"
-                className="footer-text"
+                className="footer-text flex-row"
                 target='_blank'
                 rel="noreferrer"
               >
-                Help
+                <span
+                  className="material-icons"
+                  style={{
+                    marginRight: '5px',
+                    color: '#ff2600'
+                  }}
+                >
+                  info_outline
+                </span>
+                <span hidden={isMobile}>Help</span>
               </a>
             </div>
           </div>

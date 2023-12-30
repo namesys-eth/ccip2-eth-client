@@ -1,14 +1,15 @@
 import React from "react";
 
 interface Props {
-  variable: string;
+  variable: string
+  mobile: boolean
 }
 
-const MyComponent: React.FC<Props> = ({ variable }) => {
+const MyComponent: React.FC<Props> = ({ variable, mobile }) => {
   return (
-    <button 
+    <button
       className="button-tiny"
-      style={{ 
+      style={{
         color: 'lightgreen',
         marginRight: '15px',
         fontSize: '16px',
@@ -17,13 +18,13 @@ const MyComponent: React.FC<Props> = ({ variable }) => {
         justifyContent: 'center',
         alignItems: 'center'
       }}
-      data-tooltip={ 'Total Gas Saved by Off-chain Records' }
+      data-tooltip={'Total Gas Saved by Off-chain Records'}
     >
-      <div 
+      <div
         className="material-icons smol"
-        style={{ 
+        style={{
           color: 'lightgreen',
-          fontSize: '22px',
+          fontSize: mobile ? '18px' : '22px',
           marginRight: '5px'
         }}
       >
@@ -31,24 +32,24 @@ const MyComponent: React.FC<Props> = ({ variable }) => {
       </div>
       <div>
         <span
-          style={{ 
+          style={{
             fontFamily: 'SF Mono',
             color: 'white',
-            fontSize: '16px',
+            fontSize: mobile ? '14px' : '16px',
             fontWeight: '700'
           }}
         >
-          { variable ? variable : '0.00' }&nbsp;
+          {variable ? variable : '0.00'}&nbsp;
           <span
-            style={{ 
+            style={{
               fontFamily: 'Spotnik',
-              fontSize: '15px',
+              fontSize: mobile ? '12px' : '14px',
               fontWeight: '700'
             }}
           >
             ETH
           </span>
-      </span>
+        </span>
       </div>
     </button>
   );

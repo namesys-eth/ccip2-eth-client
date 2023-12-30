@@ -18,7 +18,7 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
   const [help, setHelp] = React.useState('')
-  
+
   React.useEffect(() => {
     setBrowser(true)
   }, [])
@@ -42,16 +42,16 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
             >
               close
             </span>
           </a>
         </StyledModalHeader>
-        {show && 
+        {show &&
           <StyledModalTitle>
-            <div 
+            <div
               className="material-icons"
               style={{
                 marginTop: '4px',
@@ -67,38 +67,38 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
                 fontSize: '18px'
               }}
             >
-              <span 
+              <span
                 style={{
                   fontWeight: '700'
                 }}
               >
                 Enter HTTP Gateway URL
               </span>
-              <button 
+              <button
                 className="button-tiny"
                 style={{
                   marginBottom: '-7.5px'
                 }}
-                onClick={() => { 
+                onClick={() => {
                   setHelpModal(true),
-                  setHelp('<span><span style="color: cyan">HTTP Gateway</span> should be a <span style="color: orange">HTTPS<span style="font-family: \'SF Mono\'">:</span>//</span> URL</span>')
+                    setHelp('<span><span style="color: cyan">HTTP Gateway</span> should be a <span style="color: orange">HTTPS<span style="font-family: \'SF Mono\'">:</span>//</span> URL</span>')
                 }}
-                data-tooltip={ 'Enlighten Me' }
+                data-tooltip={'Enlighten Me'}
               >
-                <div 
+                <div
                   className="material-icons smol"
-                  style={{ 
+                  style={{
                     color: 'cyan',
                     marginLeft: '5px'
                   }}
                 >
-                  info_outline 
+                  info_outline
                 </div>
               </button>
             </div>
           </StyledModalTitle>}
         <StyledModalBody>
-          <input 
+          <input
             id='keyid'
             key='0'
             placeholder={inputValue}
@@ -124,7 +124,7 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               cursor: 'copy'
             }}
           />
-          <button 
+          <button
             className="button"
             style={{
               height: '30px',
@@ -132,30 +132,30 @@ const Gateway: React.FC<ModalProps> = ({ show, onClose, children, handleModalDat
               marginTop: '17px',
               fontSize: '15px'
             }}
-            onClick={ handleSubmit }
+            onClick={handleSubmit}
             data-tooltip='Confirm'
           >
-            <div 
+            <div
               className="flex-row"
               style={{
                 fontSize: '15px',
                 fontWeight: '700'
               }}
             >
-              { 'Confirm' }&nbsp;<span className="material-icons smoller">local_laundry_service</span>
+              {'Confirm'}&nbsp;<span className="material-icons smoller">local_laundry_service</span>
             </div>
           </button>
         </StyledModalBody>
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'cyan' }
-          icon={ 'info' }
+          color={'cyan'}
+          icon={'info'}
           onClose={() => setHelpModal(false)}
           show={helpModal}
           position={''}
         >
-          { help }
+          {help}
         </Help>
       </div>
     </StyledModalOverlay>

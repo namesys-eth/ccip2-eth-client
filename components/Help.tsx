@@ -22,7 +22,7 @@ const Help = ({ icon, color, show, onClose, children, position }) => {
       <StyledModal top={position}>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
               style={{
                 margin: '4px'
@@ -32,9 +32,9 @@ const Help = ({ icon, color, show, onClose, children, position }) => {
             </span>
           </a>
         </StyledModalHeader>
-        {icon && 
+        {icon &&
           <StyledModalTitle>
-            <span 
+            <span
               className="material-icons"
               style={{
                 marginTop: '4px',
@@ -42,10 +42,10 @@ const Help = ({ icon, color, show, onClose, children, position }) => {
                 color: color
               }}
             >
-              { icon }
+              {icon}
             </span>
           </StyledModalTitle>}
-          <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
+        <StyledModalBody dangerouslySetInnerHTML={{ __html: children }} />
       </StyledModal>
     </StyledModalOverlay>
   ) : null

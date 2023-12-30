@@ -3,7 +3,6 @@ import { isMobile } from 'react-device-detect'
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
 import Help from '../components/Help'
-import { hashTypedData } from 'viem'
 
 interface ModalProps {
   show: boolean
@@ -18,9 +17,9 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
   const [username, setUsername] = React.useState("")
   const [browser, setBrowser] = React.useState(false)
   const [helpModal, setHelpModal] = React.useState(false)
-  const [help, setHelp] = React.useState('')
+  const [help, setHelp] = React.useState("")
 
-  React.useEffect(() => {  
+  React.useEffect(() => {
     setBrowser(true)
   }, [])
 
@@ -78,7 +77,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 }}
                 onClick={() => {
                   setHelpModal(true)
-                    setHelp('<span><span style="color: cyan">Secret identifier</span> or <span style="color: cyan">Password</span> is an <span style="color: orange">Optional Value</span> required to generate a secure <span style="color: cyan">IPNS key</span> or the <span style="color: cyan">Record Signer key</span> or <span style="color: cyan">RSA Encryption key</span>.<br></br><span style="color: orange">You will need it to update your records in the future</span>. <span style="color: orangered">Please remember your choice</span>.<br></br>Your provided password will apply to <span style="color: orange">all three Key types</span>.</span>')
+                  setHelp('<span><span style="color: cyan">Secret identifier</span> or <span style="color: cyan">Password</span> is an <span style="color: orange">Optional Value</span> required to generate a secure <span style="color: cyan">IPNS key</span> or the <span style="color: cyan">Record Signer key</span> or <span style="color: cyan">RSA Encryption key</span>.<br></br><span style="color: orange">You will need it to update your records in the future</span>. <span style="color: orangered">Please remember your choice</span>.<br></br>Your provided password will apply to <span style="color: orange">all three Key types</span>.</span>')
                 }}
                 data-tooltip={'Enlighten Me'}
               >
@@ -144,7 +143,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 disabled
                 onClick={() => {
                   setHelpModal(true)
-                    setHelp('<span><span style="color: cyan">Username</span></span>')
+                  setHelp('<span><span style="color: cyan">Username</span></span>')
                 }}
                 data-tooltip={'Username'}
               >
@@ -199,7 +198,7 @@ const Salt: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, 
                 disabled
                 onClick={() => {
                   setHelpModal(true)
-                    setHelp('<span><span style="color: cyan">Secret IPNS identifier</span></span>')
+                  setHelp('<span><span style="color: cyan">Secret IPNS identifier</span></span>')
                 }}
                 data-tooltip={'Password'}
               >

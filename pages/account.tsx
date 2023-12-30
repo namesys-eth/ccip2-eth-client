@@ -1086,7 +1086,7 @@ const Account: NextPage = () => {
       <div style={{ fontFamily: 'Spotnik' }}></div>
       {/* Overlay */}
       <div id="overlay" className="overlay">
-        <div 
+        <div
           className="overlay-content overlay-content-alt"
         >
           <Loading
@@ -1143,10 +1143,11 @@ const Account: NextPage = () => {
             </div>
             <div
               style={{
-                marginLeft: !isMobile ? '-30px' : '-9px'
+                marginLeft: !isMobile ? '-30px' : '-20px',
+                marginTop: !isMobile ? '0px' : '-25px'
               }}
             >
-              <Ticker variable={savings} />
+              <Ticker variable={savings} mobile={isMobile} />
             </div>
           </div>
           <div
@@ -1233,8 +1234,8 @@ const Account: NextPage = () => {
                   <div
                     className="flex-column"
                     style={{
-                      fontSize: '70px',
-                      color: '#fc6603',
+                      fontSize: '54px',
+                      color: '#ff2600',
                       marginBottom: '20px',
                       fontWeight: '700'
                     }}
@@ -1244,13 +1245,13 @@ const Account: NextPage = () => {
                   <div
                     className="flex-column"
                     style={{
-                      fontSize: 26,
-                      color: '#eb8634',
-                      marginTop: isMobile ? '-30px' : '10px',
+                      fontSize: 22,
+                      color: '#fc4e14',
+                      margin: '-10px 0 5px 0',
                       fontWeight: '700'
                     }}
                   >
-                    Off-chain Records Manager
+                    Pro
                   </div>
                 </div>
               )}
@@ -1270,14 +1271,25 @@ const Account: NextPage = () => {
                   <div
                     className="flex-column"
                     style={{
-                      fontSize: '52px',
-                      color: '#fc6603',
+                      fontSize: '44px',
+                      color: '#ff2600',
                       marginBottom: '20px',
                       marginTop: '30px',
                       fontWeight: '700'
                     }}
                   >
                     NameSys
+                  </div>
+                  <div
+                    className="flex-column"
+                    style={{
+                      fontSize: 26,
+                      color: '#ff2600',
+                      fontWeight: '700',
+                      margin: '-10px 0 5px 0'
+                    }}
+                  >
+                    Pro
                   </div>
                 </div>
               )}
@@ -1297,7 +1309,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: '52px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginBottom: '20px',
                       fontWeight: '700'
                     }}
@@ -1308,23 +1320,12 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: 26,
-                      color: '#eb8634',
+                      color: '#fc4e14',
                       marginTop: '-10px',
                       fontWeight: '700'
                     }}
                   >
-                    Off-chain Records
-                  </div>
-                  <div
-                    className="flex-column"
-                    style={{
-                      fontSize: 26,
-                      color: '#eb8634',
-                      marginTop: '0px',
-                      fontWeight: '700'
-                    }}
-                  >
-                    Manager
+                    Pro
                   </div>
                 </div>
               )}
@@ -1348,7 +1349,7 @@ const Account: NextPage = () => {
                     className="flex-column"
                     style={{
                       fontSize: '40px',
-                      color: '#fc6603',
+                      color: '#ff2600',
                       marginTop: '10px',
                       fontWeight: '700'
                     }}
@@ -1499,7 +1500,7 @@ const Account: NextPage = () => {
                 >
                   <div
                     style={{
-                      color: '#fc6603',
+                      color: '#ff2600',
                       fontWeight: '700'
                     }}
                   >
@@ -1566,7 +1567,7 @@ const Account: NextPage = () => {
                   >
                     <div
                       style={{
-                        color: '#fc6603',
+                        color: '#ff2600',
                         fontWeight: '700'
                       }}
                     >
@@ -2172,7 +2173,7 @@ const Account: NextPage = () => {
                 className="flex-column"
                 style={{
                   fontSize: '22px',
-                  color: '#fc6603',
+                  color: '#ff2600',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -2193,7 +2194,7 @@ const Account: NextPage = () => {
                 className="flex-column"
                 style={{
                   fontSize: '22px',
-                  color: '#fc6603',
+                  color: '#ff2600',
                   marginBottom: '25px',
                   fontWeight: '700'
                 }}
@@ -2212,7 +2213,7 @@ const Account: NextPage = () => {
           <div
             className="flex-sans-direction"
             style={{
-              color: '#fc6603',
+              color: '#ff2600',
               top: 'auto',
               left: !isMobile ? '14%' : '32%',
               transform: !isMobile ? 'translateX(-92%)' : 'translateX(-72%)',
@@ -2264,28 +2265,28 @@ const Account: NextPage = () => {
             </div>
           </div>
           {/* Modals */}
-          <div 
+          <div
             id="modal"
           >
             {previewModal && (
               <Preview
-              onClose={() => setPreviewModal(false)}
-              show={previewModal}
-              _ENS_={nameToPreview}
-              chain={_Chain_}
-              handleParentTrigger={handlePreviewTrigger}
-              handleParentModalData={handlePreviewModalData}
-            />
+                onClose={() => setPreviewModal(false)}
+                show={previewModal}
+                _ENS_={nameToPreview}
+                chain={_Chain_}
+                handleParentTrigger={handlePreviewTrigger}
+                handleParentModalData={handlePreviewModalData}
+              />
             )}
             {stealthModal && (
               <Stealth
-              onClose={() => setStealthModal(false)}
-              show={stealthModal}
-              _ENS_={nameToStealth}
-              chain={_Chain_}
-              handleParentTrigger={handleStealthTrigger}
-              handleParentModalData={handleStealthModalData}
-            />
+                onClose={() => setStealthModal(false)}
+                show={stealthModal}
+                _ENS_={nameToStealth}
+                chain={_Chain_}
+                handleParentTrigger={handleStealthTrigger}
+                handleParentModalData={handleStealthModalData}
+              />
             )}
             <Faq
               onClose={() => setFaqModal(false)}
