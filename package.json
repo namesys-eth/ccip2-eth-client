@@ -12,7 +12,7 @@
     "purge": "purgecss --css ./**/*.css --content ./**/*.ts* --output ./postbuild/purgecss/",
     "xyz-deploy": "node postbuild/replacerNameSysWeb2.js",
     "eth-deploy": "node postbuild/replacerNameSysWeb3.js",
-    "ghp-deploy": "touch out/.nojekyll && node postbuild/replacerGithubPages.js && git add out && git commit -S -m 'auto-commit: gh-pages' && git subtree push --prefix out origin gh-pages"
+    "ghp-deploy": "touch out/.nojekyll && node postbuild/replacerGithubPages.js && git add -f out && git commit -S -m 'auto-commit: gh-pages' && git subtree push --prefix out origin gh-pages"
   },
   "dependencies": {
     "@alch/alchemy-web3": "^1.4.7",
