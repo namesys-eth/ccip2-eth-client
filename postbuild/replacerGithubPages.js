@@ -17,20 +17,14 @@ const optionsHTML = {
 (async function () {
   try {
     const resultsCSS = await replace(optionsCSS)
-    console.log('Replacement results:', resultsCSS)
   } catch (error) {
-    console.error('Error occurred:', error)
   }
   try {
     const resultsJS = await replace(optionsJS)
-    console.log('Replacement results in JS:', resultsJS)
   } catch (error) {
-    console.error('Error occurred in JS replacement:', error)
   }
   try {
     const resultsHTML = await replace(optionsHTML)
-    console.log('Replacement results in HTML:', resultsHTML)
   } catch (error) {
-    console.error('Error occurred in HTML replacement:', error)
   }
 })()
