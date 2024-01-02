@@ -1,5 +1,5 @@
 {
-  "name": "@namesys-eth/namesys-client",
+  "name": "ccip2-eth-client",
   "version": "1.2.1",
   "homepage": "https://pro.namesys.xyz",
   "description": "NameSys/CCIP2 Pro Client",
@@ -10,9 +10,9 @@
     "start": "next start",
     "lint": "next lint",
     "purge": "purgecss --css ./**/*.css --content ./**/*.ts* --output ./postbuild/purgecss/",
-    "xyz-deploy": "node postbuild/replacerNameSysWeb2.js",
-    "eth-deploy": "node postbuild/replacerNameSysWeb3.js",
-    "ghp-deploy": "touch out/.nojekyll && node postbuild/replacerGithubPages.js && git add -f out && git commit -S -m 'auto-commit: gh-pages' && git subtree push --prefix out origin gh-pages"
+    "xyz-deploy": "node postbuild/replacerXYZ.js",
+    "eth-deploy": "node postbuild/replacerETH.js",
+    "ghp-deploy": "touch out/.nojekyll && node postbuild/replacerGHP.js && git add -f out && git commit -S -m 'auto-commit: gh-pages' && git subtree push --prefix out origin gh-pages"
   },
   "dependencies": {
     "@alch/alchemy-web3": "^1.4.7",

@@ -2,7 +2,7 @@ const replace = require('replace-in-file')
 const optionsCSS = {
   files: './out/_next/static/css/*.css',
   from: [/webpack:\/\/\/mini-css-extract-plugin\/_next\//g],
-  to: ['https://namesys.xyz/_next/'],
+  to: ['https://pro.namesys.eth.limo/_next/'],
 };
 (async function () {
   try {
