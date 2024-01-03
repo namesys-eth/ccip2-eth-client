@@ -44,7 +44,7 @@ const BigSearch: React.FC<SearchBoxProps> = ({ onSearch }) => {
         <input
           className="input-main"
           type="text"
-          placeholder={ isMobile ? "search .eth" : "search for a .eth domain" }
+          placeholder={ isMobile ? "search" : "search domain" }
           value={query.toLowerCase()}
           name=".eth search"
           id="eth-search"
@@ -57,8 +57,8 @@ const BigSearch: React.FC<SearchBoxProps> = ({ onSearch }) => {
           style={{
             fontFamily: query ? 'SF Mono' : 'Spotnik',
             fontWeight: '600',
-            fontSize: query ? '22px' : '19px',
-            paddingTop: query ? '8px' : '15px',
+            fontSize: query ? '22px' : '17px',
+            paddingTop: query ? '8px' : '17px',
             paddingBottom: query ? '8px' : '15px',
           }}
         />

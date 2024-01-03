@@ -34,7 +34,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
       >
         <input
           type="text"
-          placeholder={"search .eth name".toLowerCase()}
+          placeholder={"search".toLowerCase()}
           value={query.toLowerCase()}
           name=".eth search"
           id="eth-search"
