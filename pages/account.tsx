@@ -1251,7 +1251,7 @@ const Account: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    Pro
+                    Advanced
                   </div>
                 </div>
               )}
@@ -1289,7 +1289,7 @@ const Account: NextPage = () => {
                       margin: '-10px 0 5px 0'
                     }}
                   >
-                    Pro
+                    Advanced
                   </div>
                 </div>
               )}
@@ -1325,7 +1325,7 @@ const Account: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    Pro
+                    Advanced
                   </div>
                 </div>
               )}

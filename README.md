@@ -1,6 +1,6 @@
-# CCIP2 `PRO` Client
+# CCIP2 Legacy/Advanced/Pro Client
 
-**PRO** Client for CCIP2 ENS Records Manager
+Legacy/Advanced/Pro Client for CCIP2 ENS Records Manager
 
 # Notes
 

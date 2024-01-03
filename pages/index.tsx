@@ -651,7 +651,7 @@ const Home: NextPage = () => {
               >
                 {'v'}
               </span>
-              {'1.2.1'}
+              {'1.3'}
               <span
                 style={{
                   fontFamily: 'Spotnik',
@@ -749,7 +749,7 @@ const Home: NextPage = () => {
                       fontWeight: '700'
                     }}
                   >
-                    Pro
+                    Advanced
                   </div>
                 </div>
               )}
@@ -779,7 +779,7 @@ const Home: NextPage = () => {
                       marginTop: '5px'
                     }}
                   >
-                    Pro
+                    Advanced
                   </div>
                   <div
                     style={{
