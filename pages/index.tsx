@@ -5,8 +5,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import type { NextPage } from 'next'
 import {
   useAccount,
-  useContractRead,
-  useNetwork
+  useContractRead
 } from 'wagmi'
 import { ethers } from 'ethers'
 import { isMobile } from 'react-device-detect'
@@ -17,8 +16,8 @@ import Stealth from '../components/Stealth'
 import Faq from '../components/FAQ'
 import Error from '../components/Error'
 import List from '../components/List'
-import Ticker from '../components/Ticker'
-import Loading from '../components/LoadingColors'
+import GasTicker from '../components/Ticker'
+import Loading from '../components/Loading'
 import BigSearch from '../components/BigSearch'
 import * as constants from '../utils/constants'
 import * as verifier from '../utils/verifier'
@@ -620,7 +619,7 @@ const Home: NextPage = () => {
                 marginTop: !isMobile ? '0px' : '-25px'
               }}
             >
-              <Ticker variable={savings} mobile={isMobile} />
+              <GasTicker variable={savings} mobile={isMobile} />
             </div>
           </div>
           <div
@@ -858,7 +857,7 @@ const Home: NextPage = () => {
                 </span>
                 <span
                   style={{
-                    color: 'white',
+                    color: 'skyblue',
                     fontWeight: '700',
                     fontSize: isMobile ? '13px' : '20px'
                   }}

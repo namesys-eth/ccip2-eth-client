@@ -5,7 +5,7 @@ interface Props {
   mobile: boolean
 }
 
-const MyComponent: React.FC<Props> = ({ variable, mobile }) => {
+const GasTicker: React.FC<Props> = ({ variable, mobile }) => {
   return (
     <button
       className="button-tiny"
@@ -21,14 +21,14 @@ const MyComponent: React.FC<Props> = ({ variable, mobile }) => {
       data-tooltip={'Total Gas Saved by Off-chain Records'}
     >
       <div
-        className="material-icons smol"
+        className="material-icons-round smol"
         style={{
-          color: 'lightgreen',
+          color: 'lime',
           fontSize: mobile ? '18px' : '22px',
           marginRight: '5px'
         }}
       >
-        {'local_gas_station'}
+        {'energy_savings_leaf'}
       </div>
       <div>
         <span
@@ -55,4 +55,4 @@ const MyComponent: React.FC<Props> = ({ variable, mobile }) => {
   );
 };
 
-export default MyComponent;
+export default GasTicker;

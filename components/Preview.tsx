@@ -12,8 +12,8 @@ import Gateway from '../components/Gateway'
 import Options from '../components/Options'
 import Error from '../components/Error'
 import Info from '../components/Info'
-import Gas from '../components/Gas'
-import Loading from '../components/LoadingColors'
+import Savings from '../components/WrapUp'
+import Loading from './Loading'
 import Success from '../components/Success'
 import Confirm from '../components/Confirm'
 import * as constants from '../utils/constants'
@@ -3432,7 +3432,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
           >
             {success}
           </Success>
-          <Gas
+          <Savings
             color={'lime'}
             icon={'free_breakfast'}
             onClose={() => {
@@ -3442,7 +3442,7 @@ const Preview: React.FC<ModalProps> = ({ show, onClose, _ENS_, chain, handlePare
             show={gasModal}
           >
             {gas}
-          </Gas>
+          </Savings>
           <Info
             handleTrigger={handleInfoTrigger}
             handleModalData={handleInfoModalData}

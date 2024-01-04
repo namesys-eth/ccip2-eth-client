@@ -13,7 +13,7 @@ function sumValues(obj: { [key: string]: number }): number {
   return total;
 }
 
-const Gas = ({ icon, color, show, onClose, children }) => {
+const Savings = ({ icon, color, show, onClose, children }) => {
   const [browser, setBrowser] = React.useState(false);
   React.useEffect(() => {
     setBrowser(true);
@@ -49,7 +49,7 @@ const Gas = ({ icon, color, show, onClose, children }) => {
                 color: color
               }}
             >
-              { 'verified' }
+              { 'wind_power' }
             </span>
           </StyledModalTitle>}
         <StyledModalBody>
@@ -82,7 +82,7 @@ const Gas = ({ icon, color, show, onClose, children }) => {
             >
               <div>Your</div>&nbsp;
               <div
-                className="material-icons"
+                className="material-icons-round"
                 style={{
                   marginBottom: '3px',
                   fontSize: '28px',
@@ -194,4 +194,4 @@ const StyledModalOverlay = styled.div`
   background-color: rgba(0, 0, 0, 1);
 `;
 
-export default Gas;
+export default Savings;
