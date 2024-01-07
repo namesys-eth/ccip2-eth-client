@@ -1,7 +1,7 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
-import { isMobile } from 'react-device-detect'
+import React from "react";
+import ReactDOM from "react-dom";
+import styled from "styled-components";
+import { isMobile } from "react-device-detect";
 
 function sumValues(obj: { [key: string]: number }): number {
   let total = 0;
@@ -19,7 +19,7 @@ const Savings = ({ icon, color, show, onClose, children }) => {
     setBrowser(true);
   }, []);
 
-  const handleCloseClick = (e: { preventDefault: () => void; }) => {
+  const handleCloseClick = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     onClose();
   };
@@ -32,85 +32,85 @@ const Savings = ({ icon, color, show, onClose, children }) => {
             <span
               className="material-icons"
               style={{
-                margin: '4px'
+                margin: "4px",
               }}
             >
               close
             </span>
           </a>
         </StyledModalHeader>
-        {icon &&
+        {icon && (
           <StyledModalTitle>
             <span
               className="material-icons"
               style={{
-                marginTop: '14px',
-                fontSize: '72px',
-                color: color
+                marginTop: "14px",
+                fontSize: "72px",
+                color: color,
               }}
             >
-              { 'wind_power' }
+              {"wind_power"}
             </span>
-          </StyledModalTitle>}
+          </StyledModalTitle>
+        )}
         <StyledModalBody>
           <div
-            className='flex-column'
+            className="flex-column"
             style={{
-              marginBottom: '15px'
+              marginBottom: "15px",
             }}
           >
             <div
               style={{
-                fontSize: '24px',
-                marginTop: '10px',
-                color: 'lime',
-                fontWeight: '700'
+                fontSize: "24px",
+                marginTop: "10px",
+                color: "lime",
+                fontWeight: "700",
               }}
             >
               Off-Chain Records set
             </div>
-            <div 
+            <div
               style={{
-                marginTop: '20px',
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: '20px',
-                fontWeight: '700'
+                marginTop: "20px",
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                fontSize: "20px",
+                fontWeight: "700",
               }}
             >
               <div>Your</div>&nbsp;
               <div
                 className="material-icons-round"
                 style={{
-                  marginBottom: '3px',
-                  fontSize: '28px',
-                  color: color
+                  marginBottom: "3px",
+                  fontSize: "28px",
+                  color: color,
                 }}
               >
-                {'local_gas_station'}
-              </div>&nbsp;
-              <div>
-                savings
+                {"local_gas_station"}
               </div>
+              &nbsp;
+              <div>savings</div>
             </div>
             <div
               style={{
-                marginTop: '18px',
-                fontFamily: 'SF Mono',
-                fontSize: '24px',
-                fontWeight: '600',
-                color: 'lime'
+                marginTop: "18px",
+                fontFamily: "SF Mono",
+                fontSize: "24px",
+                fontWeight: "600",
+                color: "lime",
               }}
             >
-              { sumValues(children).toPrecision(3) } 
+              {sumValues(children).toPrecision(3)}
               &nbsp;
               <span
                 style={{
-                  fontFamily: 'Spotnik',
-                  fontSize: '21px',
-                  fontWeight: '700'
+                  fontFamily: "Spotnik",
+                  fontSize: "21px",
+                  fontWeight: "700",
                 }}
               >
                 ETH
@@ -134,13 +134,13 @@ const Savings = ({ icon, color, show, onClose, children }) => {
 
 const StyledModalBody = styled.div`
   padding-top: 0px;
-  padding-left: ${isMobile ? '10px' : '20px'};
-  padding-right: ${isMobile ? '10px' : '20px'};
-  padding-bottom: ${isMobile ? '10px' : '20px'};
+  padding-left: ${isMobile ? "10px" : "20px"};
+  padding-right: ${isMobile ? "10px" : "20px"};
+  padding-bottom: ${isMobile ? "10px" : "20px"};
   margin-top: 0px;
-  margin-left: ${isMobile ? '10px' : '20px'};
-  margin-right: ${isMobile ? '10px' : '20px'};
-  margin-bottom: ${isMobile ? '10px' : '20px'};
+  margin-left: ${isMobile ? "10px" : "20px"};
+  margin-right: ${isMobile ? "10px" : "20px"};
+  margin-bottom: ${isMobile ? "10px" : "20px"};
   display: flex;
   justify-content: center;
   height: auto;
@@ -172,7 +172,7 @@ const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: auto;
-  max-width: ${isMobile ? '90%' : '60%'};
+  max-width: ${isMobile ? "90%" : "60%"};
   height: 275px;
   border-radius: 6px;
   overflow-y: initial !important

@@ -1,35 +1,35 @@
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  swSrc: 'service-worker.js'
-})
+const withPWA = require("next-pwa")({
+  dest: "public",
+  swSrc: "service-worker.js",
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   assetPrefix: "",
   images: {
-    loader: 'akamai',
-    path: '',
+    loader: "akamai",
+    path: "",
   },
   exportPathMap: async function (defaultPathMap) {
     return {
-      '/': { page: '/' },
-      '/account': { page: '/account' },
-      '/fallback': { page: '/fallback' }
-    }
+      "/": { page: "/" },
+      "/account": { page: "/account" },
+      "/fallback": { page: "/fallback" },
+    };
   },
   externals: {
-    FileReader: "FileReader"
+    FileReader: "FileReader",
   },
   webpack5: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.fallback = { fs: false }
+      config.resolve.fallback = { fs: false };
     }
-    return config
-  }
-}
+    return config;
+  },
+};
 
 module.exports = withPWA({
-  ...nextConfig
-})
+  ...nextConfig,
+});

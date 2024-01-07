@@ -1,16 +1,16 @@
 import React from "react";
-import ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import ReactDOM from "react-dom";
+import styled from "styled-components";
 
 const Terms = ({ show, onClose }) => {
-  const title = 'terms of use';
+  const title = "terms of use";
   const [browser, setBrowser] = React.useState(false);
 
   React.useEffect(() => {
     setBrowser(true);
   }, []);
 
-  const handleCloseClick = (e: { preventDefault: () => void; }) => {
+  const handleCloseClick = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     onClose();
   };
@@ -20,30 +20,30 @@ const Terms = ({ show, onClose }) => {
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
+            <span
               className="material-icons"
               style={{
-                marginTop: '4px'
+                marginTop: "4px",
               }}
             >
               close
             </span>
           </a>
         </StyledModalHeader>
-        {title &&
+        {title && (
           <StyledModalTitle>
-            <span 
+            <span
               className="material-icons miui-small"
               style={{
-                marginTop: '4px',
-                color: 'white'
+                marginTop: "4px",
+                color: "white",
               }}
             >
               gavel
             </span>
-          </StyledModalTitle>}
-        <StyledModalBody>
-        </StyledModalBody>
+          </StyledModalTitle>
+        )}
+        <StyledModalBody></StyledModalBody>
       </StyledModal>
     </StyledModalOverlay>
   ) : null;

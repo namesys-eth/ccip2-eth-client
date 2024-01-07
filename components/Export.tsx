@@ -1,124 +1,128 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-import styled from 'styled-components'
-import Help from '../components/Help'
+import React from "react";
+import ReactDOM from "react-dom";
+import styled from "styled-components";
+import Help from "../components/Help";
 
 interface ModalProps {
-  show: boolean
-  onClose: any
-  children: any
-  handleModalData: (data: string | undefined) => void
-  handleTrigger: (data: boolean) => void
+  show: boolean;
+  onClose: any;
+  children: any;
+  handleModalData: (data: string | undefined) => void;
+  handleTrigger: (data: boolean) => void;
 }
 
-const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [browser, setBrowser] = React.useState(false)
-  const [helpModal, setHelpModal] = React.useState(false)
-  const [help, setHelp] = React.useState('')
-  
-  React.useEffect(() => {
-    setBrowser(true)
-  }, [])
+const Export: React.FC<ModalProps> = ({
+  show,
+  onClose,
+  children,
+  handleModalData,
+  handleTrigger,
+}) => {
+  const [browser, setBrowser] = React.useState(false);
+  const [helpModal, setHelpModal] = React.useState(false);
+  const [help, setHelp] = React.useState("");
 
-  const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    handleModalData(undefined)
-    handleTrigger(false)
-    e.preventDefault()
-    onClose()
-  }
+  React.useEffect(() => {
+    setBrowser(true);
+  }, []);
+
+  const handleCloseClick = (e: { preventDefault: () => void }) => {
+    handleModalData(undefined);
+    handleTrigger(false);
+    e.preventDefault();
+    onClose();
+  };
 
   const handleOwnerhashSubmit = () => {
-    handleModalData('0')
-    handleTrigger(true)
-    onClose()
-  }
+    handleModalData("0");
+    handleTrigger(true);
+    onClose();
+  };
 
   const handleRecordhashSubmit = () => {
-    handleModalData('1')
-    handleTrigger(true)
-    onClose()
-  }
+    handleModalData("1");
+    handleTrigger(true);
+    onClose();
+  };
 
   const handleGatewaySubmit = () => {
-    handleModalData('2')
-    handleTrigger(true)
-    onClose()
-  }
+    handleModalData("2");
+    handleTrigger(true);
+    onClose();
+  };
 
   const modalContent = show ? (
     <StyledModalOverlay>
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span 
-              className="material-icons"
-            >
-              close
-            </span>
+            <span className="material-icons">close</span>
           </a>
         </StyledModalHeader>
-        {show && 
+        {show && (
           <StyledModalTitle>
-            <div 
+            <div
               className="material-icons"
               style={{
-                marginTop: '4px',
-                fontSize: '66px'
+                marginTop: "4px",
+                fontSize: "66px",
               }}
             >
               accessible_forward
             </div>
             <div
               style={{
-                marginTop: '15px'
+                marginTop: "15px",
               }}
             >
               Choose Storage to Export Key For
             </div>
-          </StyledModalTitle>}
+          </StyledModalTitle>
+        )}
         <StyledModalBody>
           {/* Top Button */}
           <div
             className="flex-row"
             style={{
-              marginLeft: '25px'
+              marginLeft: "25px",
             }}
           >
-            <button 
+            <button
               className="button-option"
               style={{
-                height: '35px',
-                width: '175px',
-                marginTop: '15px',
-                fontSize: '15px',
-                fontWeight: '700'
+                height: "35px",
+                width: "175px",
+                marginTop: "15px",
+                fontSize: "15px",
+                fontWeight: "700",
               }}
-              onClick={ handleOwnerhashSubmit }
-              data-tooltip='Export Ownerhash Key'
+              onClick={handleOwnerhashSubmit}
+              data-tooltip="Export Ownerhash Key"
             >
-              <div 
-                className="flex-row"
-              >
-                { 'Ownerhash' }&nbsp;<span className="material-icons chonk">recycling</span>
+              <div className="flex-row">
+                {"Ownerhash"}&nbsp;
+                <span className="material-icons chonk">recycling</span>
               </div>
             </button>
-            <button 
+            <button
               className="button-tiny"
-              onClick={() => { 
+              onClick={() => {
                 setHelpModal(true),
-                setHelp('<span>Exports Key for <span style="color: cyan">Ownerhash</span></span>')
+                  setHelp(
+                    '<span>Exports Key for <span style="color: cyan">Ownerhash</span></span>'
+                  );
               }}
-              data-tooltip='Export Ownerhash Key'
+              data-tooltip="Export Ownerhash Key"
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
-                  color: 'cyan',
-                  marginLeft: '5px',
-                  marginTop: '21px'
+                style={{
+                  color: "cyan",
+                  marginLeft: "5px",
+                  marginTop: "21px",
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -126,44 +130,45 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
           <div
             className="flex-row"
             style={{
-              marginLeft: '25px'
+              marginLeft: "25px",
             }}
           >
-            <button 
+            <button
               className="button-option"
               style={{
-                height: '35px',
-                width: '175px',
-                marginTop: '15px',
-                fontSize: '15px',
-                fontWeight: '700'
+                height: "35px",
+                width: "175px",
+                marginTop: "15px",
+                fontSize: "15px",
+                fontWeight: "700",
               }}
-              onClick={ handleRecordhashSubmit }
-              data-tooltip='Export Recordhash Key'
+              onClick={handleRecordhashSubmit}
+              data-tooltip="Export Recordhash Key"
             >
-              <div 
-                className="flex-row"
-              >
-                { 'Recordhash' }&nbsp;<span className="material-icons chonk">create</span>
+              <div className="flex-row">
+                {"Recordhash"}&nbsp;
+                <span className="material-icons chonk">create</span>
               </div>
             </button>
-            <button 
+            <button
               className="button-tiny"
-              onClick={() => { 
+              onClick={() => {
                 setHelpModal(true),
-                setHelp('<span>Exports Key for <span style="color: cyan">Recordhash</span></span>')
+                  setHelp(
+                    '<span>Exports Key for <span style="color: cyan">Recordhash</span></span>'
+                  );
               }}
-              data-tooltip='Export Recordhash Key'
+              data-tooltip="Export Recordhash Key"
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
-                  color: 'cyan',
-                  marginLeft: '5px',
-                  marginTop: '16px'
+                style={{
+                  color: "cyan",
+                  marginLeft: "5px",
+                  marginTop: "16px",
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -171,44 +176,45 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
           <div
             className="flex-row"
             style={{
-              marginLeft: '25px'
+              marginLeft: "25px",
             }}
           >
-            <button 
+            <button
               className="button-option"
               style={{
-                height: '35px',
-                width: '175px',
-                marginTop: '15px',
-                fontSize: '15px',
-                fontWeight: '700'
+                height: "35px",
+                width: "175px",
+                marginTop: "15px",
+                fontSize: "15px",
+                fontWeight: "700",
               }}
-              onClick={ handleGatewaySubmit }
-              data-tooltip='Export Gateway Key'
+              onClick={handleGatewaySubmit}
+              data-tooltip="Export Gateway Key"
             >
-              <div 
-                className="flex-row"
-              >
-                { 'HTTP Gateway' }&nbsp;<span className="material-icons chonk">dns</span>
+              <div className="flex-row">
+                {"HTTP Gateway"}&nbsp;
+                <span className="material-icons chonk">dns</span>
               </div>
             </button>
-            <button 
+            <button
               className="button-tiny"
-              onClick={() => { 
+              onClick={() => {
                 setHelpModal(true),
-                setHelp('<span>Exports Key for <span style="color: cyan">HTTP Gateway</span></span>')
+                  setHelp(
+                    '<span>Exports Key for <span style="color: cyan">HTTP Gateway</span></span>'
+                  );
               }}
-              data-tooltip='Export Gateway Key'
+              data-tooltip="Export Gateway Key"
             >
-              <div 
+              <div
                 className="material-icons smol"
-                style={{ 
-                  color: 'cyan',
-                  marginLeft: '5px',
-                  marginTop: '16px'
+                style={{
+                  color: "cyan",
+                  marginLeft: "5px",
+                  marginTop: "16px",
                 }}
               >
-                info_outline 
+                info_outline
               </div>
             </button>
           </div>
@@ -216,27 +222,27 @@ const Export: React.FC<ModalProps> = ({ show, onClose, children, handleModalData
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={ 'cyan' }
-          icon={ 'info' }
+          color={"cyan"}
+          icon={"info"}
           onClose={() => setHelpModal(false)}
           show={helpModal}
-          position={''}
+          position={""}
         >
-          { help }
+          {help}
         </Help>
       </div>
     </StyledModalOverlay>
-  ) : null
+  ) : null;
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    )
+    );
   } else {
-    return null
+    return null;
   }
-}
+};
 
 const StyledModalBody = styled.div`
   padding-top: 10px;
@@ -267,12 +273,12 @@ const StyledModalTitle = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   color: cyan;
-`
+`;
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`
+`;
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
@@ -284,7 +290,7 @@ const StyledModal = styled.div`
   text-align: center;
   justify-content: center;
   padding: 5px;
-`
+`;
 
 const StyledModalOverlay = styled.div`
   position: absolute;
@@ -296,6 +302,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 1);
-`
+`;
 
-export default Export
+export default Export;

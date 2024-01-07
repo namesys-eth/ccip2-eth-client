@@ -1,73 +1,79 @@
-import React from 'react'
-import { isMobile } from 'react-device-detect'
-import ReactDOM from 'react-dom'
-import styled from 'styled-components'
-import * as constants from '../utils/constants'
-import Help from '../components/Help'
+import React from "react";
+import { isMobile } from "react-device-detect";
+import ReactDOM from "react-dom";
+import styled from "styled-components";
+import * as constants from "../utils/constants";
+import Help from "../components/Help";
 
 interface ModalProps {
-  show: boolean
-  onClose: any
-  children: any
-  handleModalData: (data: string | undefined) => void
-  handleTrigger: (data: boolean) => void
+  show: boolean;
+  onClose: any;
+  children: any;
+  handleModalData: (data: string | undefined) => void;
+  handleTrigger: (data: boolean) => void;
 }
 
-const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData, handleTrigger }) => {
-  const [browser, setBrowser] = React.useState(false)
-  const [color, setColor] = React.useState(['white', 'white'])
-  const [ENS, setENS] = React.useState('')
-  const [payee, setPayee] = React.useState('')
-  const [amount, setAmount] = React.useState('')
-  const [helpModal, setHelpModal] = React.useState(false)
-  const [help, setHelp] = React.useState('')
+const PayTo: React.FC<ModalProps> = ({
+  show,
+  onClose,
+  children,
+  handleModalData,
+  handleTrigger,
+}) => {
+  const [browser, setBrowser] = React.useState(false);
+  const [color, setColor] = React.useState(["white", "white"]);
+  const [ENS, setENS] = React.useState("");
+  const [payee, setPayee] = React.useState("");
+  const [amount, setAmount] = React.useState("");
+  const [helpModal, setHelpModal] = React.useState(false);
+  const [help, setHelp] = React.useState("");
   React.useEffect(() => {
-    setBrowser(true)
-  }, [])
+    setBrowser(true);
+  }, []);
 
-  const handleCloseClick = (e: { preventDefault: () => void; }) => {
-    handleTrigger(false)
-    handleModalData(undefined)
-    setColor(['white', 'white'])
-    e.preventDefault()
-    onClose()
-  }
+  const handleCloseClick = (e: { preventDefault: () => void }) => {
+    handleTrigger(false);
+    handleModalData(undefined);
+    setColor(["white", "white"]);
+    e.preventDefault();
+    onClose();
+  };
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
-    handleTrigger(true)
-    handleModalData(`${ENS}:${payee}:${amount}`)
-    setColor(['white', 'white', 'white'])
-    e.preventDefault()
-    onClose()
-  }
+  const handleSubmit = (e: { preventDefault: () => void }) => {
+    handleTrigger(true);
+    handleModalData(`${ENS}:${payee}:${amount}`);
+    setColor(["white", "white", "white"]);
+    e.preventDefault();
+    onClose();
+  };
 
   function setENSValue(_value: string) {
-    if (_value.endsWith('.eth')) {
-      setENS(_value)
-      setColor(['lime', color[1], color[2]])
+    if (_value.endsWith(".eth")) {
+      setENS(_value);
+      setColor(["lime", color[1], color[2]]);
     } else {
-      setENS('')
-      setColor(['white', color[1], color[2]])
+      setENS("");
+      setColor(["white", color[1], color[2]]);
     }
   }
 
   function setPayeeValue(_value: string) {
     if (constants.isAddr(_value) || constants.isName(_value)) {
-      setPayee(_value)
-      setColor([color[0], 'lime', color[2]])
+      setPayee(_value);
+      setColor([color[0], "lime", color[2]]);
     } else {
-      setPayee('')
-      setColor([color[0], 'white', color[2]])
+      setPayee("");
+      setColor([color[0], "white", color[2]]);
     }
   }
 
   function setPayeeAmount(_value: string) {
-    if (_value === '0' || _value === '0.' || /[a-zA-Z]/.test(_value)) {
-      setAmount('')
-      setColor([color[0], color[1], 'white'])
+    if (_value === "0" || _value === "0." || /[a-zA-Z]/.test(_value)) {
+      setAmount("");
+      setColor([color[0], color[1], "white"]);
     } else {
-      setAmount(_value)
-      setColor([color[0], color[1], 'lime'])
+      setAmount(_value);
+      setColor([color[0], color[1], "lime"]);
     }
   }
 
@@ -76,48 +82,48 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
       <StyledModal>
         <StyledModalHeader>
           <a href="#" onClick={handleCloseClick}>
-            <span
-              className="material-icons"
-            >
-              close
-            </span>
+            <span className="material-icons">close</span>
           </a>
         </StyledModalHeader>
         <StyledModalTitle>
           <div
             className="material-icons"
             style={{
-              marginTop: '10px',
-              fontSize: '66px',
-              color: 'lightgreen'
+              marginTop: "10px",
+              fontSize: "66px",
+              color: "lightgreen",
             }}
           >
             shopping_cart_checkout
           </div>
           <div
             style={{
-              marginTop: '17px',
-              marginBottom: '0px'
+              marginTop: "17px",
+              marginBottom: "0px",
             }}
           >
-            <span style={{ fontSize: '18px', fontWeight: '700' }}>Enter Payment Info</span>
+            <span style={{ fontSize: "18px", fontWeight: "700" }}>
+              Enter Payment Info
+            </span>
             <button
               className="button-tiny"
               style={{
-                marginTop: '-7.5px',
-                marginLeft: '5px'
+                marginTop: "-7.5px",
+                marginLeft: "5px",
               }}
               onClick={() => {
-                setHelpModal(true)
-                setHelp('<span>Please Specify the Requested Details To Receive Private Payment</span>')
+                setHelpModal(true);
+                setHelp(
+                  "<span>Please Specify the Requested Details To Receive Private Payment</span>"
+                );
               }}
-              data-tooltip={'Enlighten Me'}
+              data-tooltip={"Enlighten Me"}
             >
               <div
                 className="material-icons smol"
                 style={{
-                  color: 'cyan',
-                  marginLeft: '5px'
+                  color: "cyan",
+                  marginLeft: "5px",
                 }}
               >
                 info_outline
@@ -127,53 +133,55 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
         </StyledModalTitle>
         <StyledModalBody>
           <div
-            className='flex-row'
+            className="flex-row"
             style={{
-              width: '400px',
-              marginTop: '5px'
+              width: "400px",
+              marginTop: "5px",
             }}
           >
             <input
-              id='info'
-              key='0'
-              placeholder={'enter payer .eth'}
-              type='text'
+              id="info"
+              key="0"
+              placeholder={"enter payer .eth"}
+              type="text"
               style={{
-                background: 'black',
-                outline: 'none',
-                border: 'none',
-                padding: '7px',
-                borderRadius: '3px',
-                fontFamily: 'SF Mono',
-                letterSpacing: '-0.5px',
-                fontWeight: '400',
-                fontSize: '15px',
-                width: '90%',
-                wordWrap: 'break-word',
-                textAlign: 'left',
+                background: "black",
+                outline: "none",
+                border: "none",
+                padding: "7px",
+                borderRadius: "3px",
+                fontFamily: "SF Mono",
+                letterSpacing: "-0.5px",
+                fontWeight: "400",
+                fontSize: "15px",
+                width: "90%",
+                wordWrap: "break-word",
+                textAlign: "left",
                 color: color[0],
-                cursor: 'copy'
+                cursor: "copy",
               }}
               onChange={(e) => {
-                setENSValue(e.target.value)
+                setENSValue(e.target.value);
               }}
             />
             <button
               className="button-tiny"
               style={{
-                marginTop: '0px'
+                marginTop: "0px",
               }}
               onClick={() => {
-                setHelpModal(true)
-                setHelp('<span>ENS Of <span style="color: cyan">Sender</span></span>')
+                setHelpModal(true);
+                setHelp(
+                  '<span>ENS Of <span style="color: cyan">Sender</span></span>'
+                );
               }}
-              data-tooltip={'Sender'}
+              data-tooltip={"Sender"}
             >
               <div
                 className="material-icons smol"
                 style={{
-                  color: 'cyan',
-                  marginLeft: '5px'
+                  color: "cyan",
+                  marginLeft: "5px",
                 }}
               >
                 info_outline
@@ -181,53 +189,55 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             </button>
           </div>
           <div
-            className='flex-row'
+            className="flex-row"
             style={{
-              width: '400px',
-              marginTop: '7px'
+              width: "400px",
+              marginTop: "7px",
             }}
           >
             <input
-              id='info'
-              key='1'
-              placeholder={'enter payee address or .eth'}
-              type='text'
+              id="info"
+              key="1"
+              placeholder={"enter payee address or .eth"}
+              type="text"
               style={{
-                background: 'black',
-                outline: 'none',
-                border: 'none',
-                padding: '7px',
-                borderRadius: '3px',
-                fontFamily: 'SF Mono',
-                letterSpacing: '-0.5px',
-                fontWeight: '400',
-                fontSize: '15px',
-                width: '90%',
-                wordWrap: 'break-word',
-                textAlign: 'left',
+                background: "black",
+                outline: "none",
+                border: "none",
+                padding: "7px",
+                borderRadius: "3px",
+                fontFamily: "SF Mono",
+                letterSpacing: "-0.5px",
+                fontWeight: "400",
+                fontSize: "15px",
+                width: "90%",
+                wordWrap: "break-word",
+                textAlign: "left",
                 color: color[1],
-                cursor: 'copy'
+                cursor: "copy",
               }}
               onChange={(e) => {
-                setPayeeValue(e.target.value)
+                setPayeeValue(e.target.value);
               }}
             />
             <button
               className="button-tiny"
               style={{
-                marginTop: '0px'
+                marginTop: "0px",
               }}
               onClick={() => {
-                setHelpModal(true)
-                setHelp('<span>Private Address Of <span style="color: cyan">Receiver</span></span>')
+                setHelpModal(true);
+                setHelp(
+                  '<span>Private Address Of <span style="color: cyan">Receiver</span></span>'
+                );
               }}
-              data-tooltip={'Receiver'}
+              data-tooltip={"Receiver"}
             >
               <div
                 className="material-icons smol"
                 style={{
-                  color: 'cyan',
-                  marginLeft: '5px'
+                  color: "cyan",
+                  marginLeft: "5px",
                 }}
               >
                 info_outline
@@ -235,53 +245,55 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
             </button>
           </div>
           <div
-            className='flex-row'
+            className="flex-row"
             style={{
-              width: '400px',
-              marginTop: '7px'
+              width: "400px",
+              marginTop: "7px",
             }}
           >
             <input
-              id='info'
-              key='2'
-              placeholder={'enter amount to receive'}
-              type='text'
+              id="info"
+              key="2"
+              placeholder={"enter amount to receive"}
+              type="text"
               style={{
-                background: 'black',
-                outline: 'none',
-                border: 'none',
-                padding: '7px',
-                borderRadius: '3px',
-                fontFamily: 'SF Mono',
-                letterSpacing: '-0.5px',
-                fontWeight: '400',
-                fontSize: '15px',
-                width: '90%',
-                wordWrap: 'break-word',
-                textAlign: 'left',
+                background: "black",
+                outline: "none",
+                border: "none",
+                padding: "7px",
+                borderRadius: "3px",
+                fontFamily: "SF Mono",
+                letterSpacing: "-0.5px",
+                fontWeight: "400",
+                fontSize: "15px",
+                width: "90%",
+                wordWrap: "break-word",
+                textAlign: "left",
                 color: color[2],
-                cursor: 'copy'
+                cursor: "copy",
               }}
               onChange={(e) => {
-                setPayeeAmount(e.target.value)
+                setPayeeAmount(e.target.value);
               }}
             />
             <button
               className="button-tiny"
               style={{
-                marginTop: '0px'
+                marginTop: "0px",
               }}
               onClick={() => {
-                setHelpModal(true)
-                setHelp('<span>Amount To <span style="color: cyan">Receiver</span></span>')
+                setHelpModal(true);
+                setHelp(
+                  '<span>Amount To <span style="color: cyan">Receiver</span></span>'
+                );
               }}
-              data-tooltip={'Ether'}
+              data-tooltip={"Ether"}
             >
               <div
                 className="material-icons smol"
                 style={{
-                  color: 'cyan',
-                  marginLeft: '5px'
+                  color: "cyan",
+                  marginLeft: "5px",
                 }}
               >
                 info_outline
@@ -291,51 +303,52 @@ const PayTo: React.FC<ModalProps> = ({ show, onClose, children, handleModalData,
           <button
             className="button"
             style={{
-              height: '33px',
-              width: '90px',
-              padding: '5px',
-              marginTop: '17px',
-              fontSize: '16px',
-              fontWeight: '700'
+              height: "33px",
+              width: "90px",
+              padding: "5px",
+              marginTop: "17px",
+              fontSize: "16px",
+              fontWeight: "700",
             }}
             onClick={handleSubmit}
             disabled={!ENS || !payee || !amount}
-            data-tooltip='Confirm'
+            data-tooltip="Confirm"
           >
             <div
               className="flex-row"
               style={{
-                fontSize: '15px'
+                fontSize: "15px",
               }}
             >
-              {'Next'}&nbsp;<span className="material-icons smoller">navigate_next</span>
+              {"Next"}&nbsp;
+              <span className="material-icons smoller">navigate_next</span>
             </div>
           </button>
         </StyledModalBody>
       </StyledModal>
       <div id="modal-inner">
         <Help
-          color={'cyan'}
-          icon={'info'}
+          color={"cyan"}
+          icon={"info"}
           onClose={() => setHelpModal(false)}
           show={helpModal}
-          position={''}
+          position={""}
         >
           {help}
         </Help>
       </div>
     </StyledModalOverlay>
-  ) : null
+  ) : null;
 
   if (browser) {
     return ReactDOM.createPortal(
       modalContent,
       document.getElementById("modal")!
-    )
+    );
   } else {
-    return null
+    return null;
   }
-}
+};
 
 const StyledModalBody = styled.div`
   padding-top: 5px;
@@ -353,7 +366,7 @@ const StyledModalBody = styled.div`
   font-size: 14px;
   font-weight: 700;
   margin-top: 5px;
-`
+`;
 
 const StyledModalTitle = styled.div`
   margin-top: -15px;
@@ -367,18 +380,18 @@ const StyledModalTitle = styled.div`
   padding-right: 20px;
   color: cyan;
   margin-left: 10px;
-`
+`;
 
 const StyledModalHeader = styled.div`
   display: flex;
   justify-content: flex-end;
-`
+`;
 
 const StyledModal = styled.div`
   background: rgba(66,46,40,1);
   background-size: 400% 400%;
   width: 460px;
-  max-width: ${isMobile ? '90%' : '60%'};
+  max-width: ${isMobile ? "90%" : "60%"};
   height: 360px;
   border-radius: 6px;
   overflow-y: initial !important
@@ -386,7 +399,7 @@ const StyledModal = styled.div`
   text-align: center;
   justify-content: center;
   padding: 3px;
-`
+`;
 
 const StyledModalOverlay = styled.div`
   position: fixed;
@@ -398,6 +411,6 @@ const StyledModalOverlay = styled.div`
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 1);
-`
+`;
 
-export default PayTo
+export default PayTo;

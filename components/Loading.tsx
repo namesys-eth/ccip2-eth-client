@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react";
 
 interface Props {
-  height: number,
-  width: number
+  height: number;
+  width: number;
 }
 
 const ColorsLoadingIcon: React.FC<Props> = ({ height, width }) => {
-  
   const svgString = `
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 278 278" width="${width}mm" height="${height}mm">
       <defs>
@@ -30,27 +29,32 @@ const ColorsLoadingIcon: React.FC<Props> = ({ height, width }) => {
         </use>
       </g>
     </svg>
-  `
-  
-  return <div dangerouslySetInnerHTML={{ __html: svgString }} />
-}
+  `;
+
+  return <div dangerouslySetInnerHTML={{ __html: svgString }} />;
+};
 
 export const FlapLoadingIcon: React.FC<Props> = ({ height, width }) => {
-  const [flapStatus, setFlapStatus] = useState<Array<boolean>>([true, true, true, true])
+  const [flapStatus, setFlapStatus] = useState<Array<boolean>>([
+    true,
+    true,
+    true,
+    true,
+  ]);
 
   useEffect(() => {
     const flapInterval = setInterval(() => {
       setFlapStatus((prevStatus) => {
-        const newStatus = [...prevStatus]
-        const indexOfFalse = newStatus.indexOf(false)
-        newStatus[indexOfFalse] = true
-        newStatus[(indexOfFalse + 1) % newStatus.length] = false
-        return newStatus
-      })
-    }, 400)
-  
-    return () => clearInterval(flapInterval)
-  }, [])
+        const newStatus = [...prevStatus];
+        const indexOfFalse = newStatus.indexOf(false);
+        newStatus[indexOfFalse] = true;
+        newStatus[(indexOfFalse + 1) % newStatus.length] = false;
+        return newStatus;
+      });
+    }, 400);
+
+    return () => clearInterval(flapInterval);
+  }, []);
 
   const svgString = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="30 0 130 337" width="${width}mm" height="${height}mm">
@@ -75,9 +79,9 @@ export const FlapLoadingIcon: React.FC<Props> = ({ height, width }) => {
         opacity="${flapStatus[2] ? 1 : 0}"
       />
     </svg>
-  `
-  
-  return <div dangerouslySetInnerHTML={{ __html: svgString }} />
-}
+  `;
 
-export default ColorsLoadingIcon
+  return <div dangerouslySetInnerHTML={{ __html: svgString }} />;
+};
+
+export default ColorsLoadingIcon;
