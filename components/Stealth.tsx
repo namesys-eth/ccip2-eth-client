@@ -12,7 +12,7 @@ import PayTo from "../components/PayTo";
 import Error from "../components/Error";
 import Loading from "../components/Loading";
 import Success from "../components/Success";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 import { KEYGEN } from "../utils/keygen";
 import * as Name from "w3name";
 import * as Nam3 from "@namesys-eth/w3name-client";
@@ -106,17 +106,13 @@ const Stealth: React.FC<ModalProps> = ({
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(
-    constants.EMPTY_STRING_STEALTH()
-  ); // Contains new values for the active records in {a:b} format
+  const [newValues, setNewValues] = React.useState(C.EMPTY_STRING_STEALTH()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(""); // Sets icon for the loading state
   const [color, setColor] = React.useState(""); // Sets color for the loading state
   const [message, setMessage] = React.useState(["", ""]); // Sets message for the loading state
   const [payToModal, setPayToModal] = React.useState(false); // PayTo modal
   const [processed, setProcessed] = React.useState(false); // Checks if Encryption has occured
-  const [signatures, setSignatures] = React.useState(
-    constants.EMPTY_STRING_STEALTH()
-  ); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(C.EMPTY_STRING_STEALTH()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<
     string[]
   >(["", "", ""]); // CCIP2 Query for on-chain manager
@@ -125,22 +121,22 @@ const Stealth: React.FC<ModalProps> = ({
   const [hashIPFS, setHashIPFS] = React.useState(""); // IPFS hash behind IPNS
   const [recentCrash, setRecentCrash] = React.useState(false); // Crash state
   const [goodSalt, setGoodSalt] = React.useState(false); // If generated CID matches the available storage
-  const [saltModalState, setSaltModalState] =
-    React.useState<constants.MainBodyState>({
+  const [saltModalState, setSaltModalState] = React.useState<C.MainBodyState>({
+    modalData: undefined,
+    trigger: false,
+  }); // Salt modal state
+  const [payToModalState, setPayToModalState] = React.useState<C.MainBodyState>(
+    {
       modalData: undefined,
       trigger: false,
-    }); // Salt modal state
-  const [payToModalState, setPayToModalState] =
-    React.useState<constants.MainBodyState>({
-      modalData: undefined,
-      trigger: false,
-    }); // Salt modal state
+    }
+  ); // Salt modal state
   const [successModalState, setSuccessModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Confirm modal state
-  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_STEALTH); // Record history from last update
+  const [history, setHistory] = React.useState(C.EMPTY_HISTORY_STEALTH); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(""); // Signature S_IPNS(K_WALLET) for IPNS keygen
   const [sigRSA, setSigRSA] = React.useState(""); // Signature S_RSA(K_WALLET) for RSA keygen
   const [sigSigner, setSigSigner] = React.useState(""); // Signature S_SIGNER(K_WALLET) for Signer
@@ -155,8 +151,8 @@ const Stealth: React.FC<ModalProps> = ({
   const { address: _Wallet_ } = useAccount();
   const { Revision } = Name; // W3Name Revision object
   const recoveredAddress = React.useRef<string>();
-  const ccip2Contract = constants.ccip2[chain === "1" ? 1 : 0];
-  const ccip2Config = constants.ccip2Config[chain === "1" ? 1 : 0];
+  const ccip2Contract = C.ccip2[chain === "1" ? 1 : 0];
+  const ccip2Config = C.ccip2Config[chain === "1" ? 1 : 0];
   const apiKey =
     chain === "5"
       ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI
@@ -166,7 +162,7 @@ const Stealth: React.FC<ModalProps> = ({
   const alchemyEndpoint = "https://eth-goerli.g.alchemy.com/v2/" + apiKey;
   const web3 = new Web3(alchemyEndpoint);
   const caip10 = `eip155:${chain}:${_Wallet_}`; // CAIP-10
-  const origin = `eth:${_Wallet_ || constants.zeroAddress}`;
+  const origin = `eth:${_Wallet_ || C.zeroAddress}`;
   const PORT = process.env.NEXT_PUBLIC_PORT;
   const SERVER = process.env.NEXT_PUBLIC_SERVER;
 
@@ -203,8 +199,8 @@ const Stealth: React.FC<ModalProps> = ({
     isLoading: legacyOwnerLoading,
     isError: legacyOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[1].contractInterface,
+    address: `0x${C.ensConfig[1].addressOrName.slice(2)}`,
+    abi: C.ensConfig[1].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDLegacy],
   });
@@ -214,8 +210,8 @@ const Stealth: React.FC<ModalProps> = ({
     isLoading: legacyManagerLoading,
     isError: legacyManagerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[0].contractInterface,
+    address: `0x${C.ensConfig[0].addressOrName.slice(2)}`,
+    abi: C.ensConfig[0].contractInterface,
     functionName: "owner",
     args: [namehashLegacy],
   });
@@ -229,7 +225,7 @@ const Stealth: React.FC<ModalProps> = ({
       ethers.utils.namehash(ENS),
       keypairSigner && keypairSigner[0]
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-        : constants.zeroAddress,
+        : C.zeroAddress,
     ],
   });
   // Read ownership of a domain from ENS Wrapper
@@ -238,10 +234,8 @@ const Stealth: React.FC<ModalProps> = ({
     isLoading: wrapperOwnerLoading,
     isError: wrapperOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[
-      chain === "1" ? 7 : 3
-    ].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[chain === "1" ? 7 : 3].contractInterface,
+    address: `0x${C.ensConfig[chain === "1" ? 7 : 3].addressOrName.slice(2)}`,
+    abi: C.ensConfig[chain === "1" ? 7 : 3].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDWrapper],
   });
@@ -322,7 +316,7 @@ const Stealth: React.FC<ModalProps> = ({
           .then((response) => {
             if (!response) {
               setLoading(false);
-              setPayeeAddr(constants.zeroAddress);
+              setPayeeAddr(C.zeroAddress);
               setPayeeAmount("0.0");
               setMessage(["Payer Has No Payment For You", ""]);
               doCrash();
@@ -336,7 +330,7 @@ const Stealth: React.FC<ModalProps> = ({
           })
           .catch(() => {
             setLoading(false);
-            setPayeeAddr(constants.zeroAddress);
+            setPayeeAddr(C.zeroAddress);
             setPayeeAmount("0.0");
             setMessage(["Error Fetching Payment Data", ""]);
             doCrash();
@@ -344,7 +338,7 @@ const Stealth: React.FC<ModalProps> = ({
           });
       } else {
         setLoading(false);
-        setPayeeAddr(constants.zeroAddress);
+        setPayeeAddr(C.zeroAddress);
         setPayeeAmount("0.0");
         setMessage(["Payer Has No Resolver", ""]);
         doCrash();
@@ -357,7 +351,7 @@ const Stealth: React.FC<ModalProps> = ({
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void }) => {
     setSigApproved(""); // Purge Manager Signature S_RECORDS from local storage
-    setSignatures(constants.EMPTY_STRING_STEALTH()); // Purge Record Signatures from local storage
+    setSignatures(C.EMPTY_STRING_STEALTH()); // Purge Record Signatures from local storage
     setKeypairSigner(undefined);
     setKeypairIPNS(undefined);
     setKeypairRSA(undefined);
@@ -475,12 +469,12 @@ const Stealth: React.FC<ModalProps> = ({
       _value = value;
     }
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
-    let _ABI = [constants.signedRecord];
+    let _ABI = [C.signedRecord];
     let _interface = new ethers.utils.Interface(_ABI);
     let _encodedWithSelector = _interface.encodeFunctionData("signedRecord", [
       keypairSigner
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-        : constants.zeroAddress,
+        : C.zeroAddress,
       signatures[key],
       sigApproved,
       _result,
@@ -509,15 +503,13 @@ const Stealth: React.FC<ModalProps> = ({
   // Returns Owner of wrapped/legacy ENS Domain
   function getManager() {
     if (_OwnerLegacy_ && _ManagerLegacy_) {
-      if (
-        String(_OwnerLegacy_) === constants.ensContracts[chain === "1" ? 7 : 3]
-      ) {
-        return _OwnerWrapped_ ? String(_OwnerWrapped_) : constants.zeroAddress;
+      if (String(_OwnerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
+        return _OwnerWrapped_ ? String(_OwnerWrapped_) : C.zeroAddress;
       } else {
         return String(_ManagerLegacy_);
       }
     } else {
-      return constants.zeroAddress;
+      return C.zeroAddress;
     }
   }
 
@@ -632,9 +624,8 @@ const Stealth: React.FC<ModalProps> = ({
   async function getGas(key: string, value: string) {
     const getGasAmountForContractCall = async () => {
       const contract = new web3.eth.Contract(
-        constants.ensConfig[chain === "1" ? 6 : 6]
-          .contractInterface as AbiItem[],
-        constants.ensConfig[chain === "1" ? 6 : 6].addressOrName
+        C.ensConfig[chain === "1" ? 6 : 6].contractInterface as AbiItem[],
+        C.ensConfig[chain === "1" ? 6 : 6].addressOrName
       );
       let gasAmount: any;
       if (["stealth", "rsa"].includes(key)) {
@@ -702,7 +693,7 @@ const Stealth: React.FC<ModalProps> = ({
           let _IPFS: any;
           if (_history.ownerstamp.length > 1) {
             for (var i = 0; i < 2; i++) {
-              _IPFS = await constants.getIPFSHashFromIPNS(
+              _IPFS = await C.getIPFSHashFromIPNS(
                 ensContent.decodeContenthash(_Storage[0]).decoded,
                 i
               );
@@ -834,7 +825,7 @@ const Stealth: React.FC<ModalProps> = ({
       controller: _Wallet_,
       manager: keypairSigner
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-        : constants.zeroAddress,
+        : C.zeroAddress,
       managerSignature: sigApproved,
       revision: revision ? Revision.encode(revision) : {},
       chain: chain,
@@ -910,7 +901,7 @@ const Stealth: React.FC<ModalProps> = ({
             version: data.response.version,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
-            queue: constants.latestTimestamp(data.response.timestamp),
+            queue: C.latestTimestamp(data.response.timestamp),
             ownerstamp: data.response.ownerstamp,
           };
           setHistory(_HISTORY);
@@ -924,7 +915,7 @@ const Stealth: React.FC<ModalProps> = ({
             setQueue(
               Math.round(Date.now() / 1000) -
                 Math.max(..._Ownerstamps) -
-                constants.waitingPeriod
+                C.waitingPeriod
             );
           } else if (
             _storage &&
@@ -933,8 +924,8 @@ const Stealth: React.FC<ModalProps> = ({
           ) {
             setQueue(
               Math.round(Date.now() / 1000) -
-                constants.latestTimestamp(data.response.timestamp) -
-                constants.waitingPeriod
+                C.latestTimestamp(data.response.timestamp) -
+                C.waitingPeriod
             );
           } else if (_type === "gateway") {
             setQueue(1);
@@ -995,7 +986,7 @@ const Stealth: React.FC<ModalProps> = ({
     if (_Ownerhash_) {
       if (String(_Ownerhash_).length > 2) {
         let _String: string = "";
-        if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
+        if (String(_Ownerhash_).startsWith(C.ipnsPrefix)) {
           _String = `ipns://${
             ensContent.decodeContenthash(String(_Ownerhash_)).decoded
           }`;
@@ -1018,7 +1009,7 @@ const Stealth: React.FC<ModalProps> = ({
     if (_Recordhash_) {
       if (String(_Recordhash_).length > 2 && _Recordhash_ !== _Ownerhash_) {
         let _String: string = "";
-        if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
+        if (String(_Recordhash_).startsWith(C.ipnsPrefix)) {
           _String = `ipns://${
             ensContent.decodeContenthash(String(_Recordhash_)).decoded
           }`;
@@ -1100,9 +1091,7 @@ const Stealth: React.FC<ModalProps> = ({
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
     if (_OwnerLegacy_) {
-      if (
-        String(_OwnerLegacy_) === constants.ensContracts[chain === "1" ? 7 : 3]
-      ) {
+      if (String(_OwnerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
         setWrapped(true);
       } else {
         setWrapped(false);
@@ -1209,7 +1198,7 @@ const Stealth: React.FC<ModalProps> = ({
         payToModalState.trigger &&
         !keypairIPNS &&
         safeTrigger &&
-        !constants.isEmpty(newValues)
+        !C.isEmpty(newValues)
       ) {
         setSigCount(1);
         setMessage(["Waiting For Signature", "1"]);
@@ -1308,18 +1297,14 @@ const Stealth: React.FC<ModalProps> = ({
       if (sigRSA && saltModalState.trigger) {
         setMessage(["Generating Encryption Key", "+"]);
         const origin =
-          hashType !== "recordhash"
-            ? `eth:${_Wallet_ || constants.zeroAddress}`
-            : ENS;
+          hashType !== "recordhash" ? `eth:${_Wallet_ || C.zeroAddress}` : ENS;
         const worker = new Worker(
           new URL("../src/worker/worker", import.meta.url)
         );
         worker.onmessage = (event) => {
-          const _deserialisedRSAKey = constants.deserialiseRSAKey(
-            event.data[0]
-          );
+          const _deserialisedRSAKey = C.deserialiseRSAKey(event.data[0]);
           const _rehydratedKey = Object.assign(
-            Object.create(constants.prototypeRSAKey),
+            Object.create(C.prototypeRSAKey),
             _deserialisedRSAKey
           );
           setKeypairRSA([_rehydratedKey, event.data[1]]);
@@ -1416,9 +1401,7 @@ const Stealth: React.FC<ModalProps> = ({
         setMessage(["Generating IPNS Key", ""]);
         const keygen = async () => {
           const _origin =
-            hashType === "ownerhash"
-              ? `eth:${_Wallet_ || constants.zeroAddress}`
-              : ENS;
+            hashType === "ownerhash" ? `eth:${_Wallet_ || C.zeroAddress}` : ENS;
           const __keypair = await KEYGEN(
             _origin,
             caip10,
@@ -1436,16 +1419,14 @@ const Stealth: React.FC<ModalProps> = ({
     } else if (sigRSA && !keypairRSA && isSigner) {
       setMessage(["Generating Encryption Key", "+"]);
       const origin =
-        hashType !== "recordhash"
-          ? `eth:${_Wallet_ || constants.zeroAddress}`
-          : ENS;
+        hashType !== "recordhash" ? `eth:${_Wallet_ || C.zeroAddress}` : ENS;
       const worker = new Worker(
         new URL("../src/worker/worker", import.meta.url)
       );
       worker.onmessage = (event) => {
-        const _deserialisedRSAKey = constants.deserialiseRSAKey(event.data[0]);
+        const _deserialisedRSAKey = C.deserialiseRSAKey(event.data[0]);
         const _rehydratedKey = Object.assign(
-          Object.create(constants.prototypeRSAKey),
+          Object.create(C.prototypeRSAKey),
           _deserialisedRSAKey
         );
         setKeypairRSA([_rehydratedKey, event.data[1]]);
@@ -1529,14 +1510,14 @@ const Stealth: React.FC<ModalProps> = ({
             ethers.utils.namehash(ENS),
             keypairSigner
               ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-              : constants.zeroAddress,
+              : C.zeroAddress,
           ]); // Checks if connected wallet is on-chain manager
           setLoading(true);
           setMessage(["Generating Signer Key", ""]);
           const keygen = async () => {
             const _origin =
               hashType !== "recordhash"
-                ? `eth:${_Wallet_ || constants.zeroAddress}`
+                ? `eth:${_Wallet_ || C.zeroAddress}`
                 : ENS;
             const __keypair = await KEYGEN(
               _origin,
@@ -1611,7 +1592,7 @@ const Stealth: React.FC<ModalProps> = ({
     if (keypairIPNS && sigIPNS) {
       if (hashType !== "gateway") {
         const CIDGen = async () => {
-          let key = constants.formatkey(keypairIPNS);
+          let key = C.formatkey(keypairIPNS);
           const w3name = await Name.from(ed25519v2.etc.hexToBytes(key));
           const CID_IPNS = String(w3name);
           let _Recordhash = recordhash ? recordhash.split("ipns://")[1] : "";
@@ -1809,10 +1790,7 @@ const Stealth: React.FC<ModalProps> = ({
   React.useEffect(() => {
     if (trigger && states.length > 0) {
       let _updatedList = list.map((item) => {
-        if (
-          states.includes(item.type) &&
-          !constants.forbidden.includes(item.type)
-        ) {
+        if (states.includes(item.type) && !C.forbidden.includes(item.type)) {
           return {
             ...item,
             editable: queue > 0, // allow updates only after the waiting period
@@ -1877,18 +1855,16 @@ const Stealth: React.FC<ModalProps> = ({
       keypairSigner &&
       keypairSigner[0] &&
       newValues &&
-      !constants.isEmpty(newValues) &&
+      !C.isEmpty(newValues) &&
       states.length > 0
     ) {
-      let __signatures = constants.EMPTY_STRING_STEALTH();
+      let __signatures = C.EMPTY_STRING_STEALTH();
       states.forEach(async (_recordType) => {
         let _signature: any;
         if (newValues[_recordType]) {
           _signature = await signRecords({
             message: statementRecords(
-              constants.filesStealth[
-                constants.typesStealth.indexOf(_recordType)
-              ],
+              C.filesStealth[C.typesStealth.indexOf(_recordType)],
               genExtradata(_recordType, newValues[_recordType]),
               keypairSigner[0]
             ),
@@ -1904,19 +1880,14 @@ const Stealth: React.FC<ModalProps> = ({
   // Triggers signing Off-Chain Signer's approval by Controller
   React.useEffect(() => {
     // Handle Signature S_APPROVE(K_WALLET)
-    if (
-      write &&
-      !onChainManager &&
-      !sigApproved &&
-      !constants.isEmpty(signatures)
-    ) {
+    if (write && !onChainManager && !sigApproved && !C.isEmpty(signatures)) {
       if (hashType !== "gateway") {
         setProcessCount(trigger === "rsa" ? 4 : 3);
       } else {
         setProcessCount(trigger === "rsa" ? 4 : 3);
       }
       signManager(); // Sign with K_WALLET
-    } else if (write && onChainManager && !constants.isEmpty(signatures)) {
+    } else if (write && onChainManager && !C.isEmpty(signatures)) {
       setSigApproved("0x");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1931,7 +1902,7 @@ const Stealth: React.FC<ModalProps> = ({
       }
     }
     if (write && CID && count === states.length && count > 0 && sigApproved) {
-      let _encodedValues = constants.EMPTY_STRING_STEALTH();
+      let _encodedValues = C.EMPTY_STRING_STEALTH();
       for (const key in newValues) {
         if (newValues.hasOwnProperty(key) && newValues[key] !== "") {
           _encodedValues[key] = encodeValue(key, newValues[key]);
@@ -1942,10 +1913,10 @@ const Stealth: React.FC<ModalProps> = ({
         signatures: signatures,
         manager: keypairSigner
           ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-          : constants.zeroAddress,
+          : C.zeroAddress,
         managerSignature: sigApproved,
         ens: ENS,
-        controller: _Wallet_ || constants.zeroAddress,
+        controller: _Wallet_ || C.zeroAddress,
         ipns: CID,
         recordsTypes: states,
         recordsValues: _encodedValues,
@@ -2015,7 +1986,7 @@ const Stealth: React.FC<ModalProps> = ({
                 });
                 if (hashType !== "gateway" && keypairIPNS) {
                   // Handle W3Name publish
-                  let key = constants.formatkey(keypairIPNS);
+                  let key = C.formatkey(keypairIPNS);
                   let w3name: Name.WritableName;
                   let w3nam3: Nam3.WritableName;
                   const keygen = async () => {
@@ -2040,10 +2011,7 @@ const Stealth: React.FC<ModalProps> = ({
                               )
                             )
                           );
-                          if (
-                            Number(data.response.timestamp) <
-                            constants.w3timestamp
-                          ) {
+                          if (Number(data.response.timestamp) < C.w3timestamp) {
                             _revision = await Name.increment(
                               _revision_,
                               toPublish
@@ -2066,10 +2034,7 @@ const Stealth: React.FC<ModalProps> = ({
                           data.response.ipfs.split("ipfs://")[1]
                         );
                         // Publish IPNS
-                        if (
-                          Number(data.response.timestamp) <
-                          constants.w3timestamp
-                        ) {
+                        if (Number(data.response.timestamp) < C.w3timestamp) {
                           await Name.publish(_revision, w3name.key);
                         } else {
                           await Name.publish(_revision, w3name.key);
@@ -2083,10 +2048,8 @@ const Stealth: React.FC<ModalProps> = ({
                           if (["stealth", "rsa"].includes(item.type)) {
                             let _queue =
                               Math.round(Date.now() / 1000) -
-                              constants.latestTimestamp(
-                                data.response.timestamp
-                              ) -
-                              constants.waitingPeriod;
+                              C.latestTimestamp(data.response.timestamp) -
+                              C.waitingPeriod;
                             setQueue(_queue);
                             if (data.response.meta[item.type]) {
                               return {
@@ -2106,8 +2069,8 @@ const Stealth: React.FC<ModalProps> = ({
                           }
                         });
                         setPreCache(_updatedList);
-                        setNewValues(constants.EMPTY_STRING_STEALTH());
-                        setSignatures(constants.EMPTY_STRING_STEALTH());
+                        setNewValues(C.EMPTY_STRING_STEALTH());
+                        setSignatures(C.EMPTY_STRING_STEALTH());
                         setUpdateRecords(false); // Reset
                         setSigCount(0);
                         setSaltModalState({
@@ -2166,8 +2129,8 @@ const Stealth: React.FC<ModalProps> = ({
                         }
                       });
                       setPreCache(_updatedList);
-                      setNewValues(constants.EMPTY_STRING_RECORDS());
-                      setSignatures(constants.EMPTY_STRING_RECORDS());
+                      setNewValues(C.EMPTY_STRING_RECORDS());
+                      setSignatures(C.EMPTY_STRING_RECORDS());
                       setUpdateRecords(false); // Reset
                       setSigCount(0);
                       setSaltModalState({
@@ -2217,7 +2180,7 @@ const Stealth: React.FC<ModalProps> = ({
         doCrash();
         setWrite(false);
         setUpdateRecords(false); // Reset
-        setNewValues(constants.EMPTY_STRING_STEALTH());
+        setNewValues(C.EMPTY_STRING_STEALTH());
         let _updatedList = list.map((item) => {
           if (item.type !== "storage") {
             return item;
@@ -2470,7 +2433,7 @@ const Stealth: React.FC<ModalProps> = ({
                               fontFamily: "Spotnik",
                               fontWeight: "700",
                               fontSize: "15px",
-                              color: constants.blocked.includes(item.type)
+                              color: C.blocked.includes(item.type)
                                 ? "orange"
                                 : "cyan",
                               marginRight: "15px",
@@ -2514,18 +2477,18 @@ const Stealth: React.FC<ModalProps> = ({
                                     setHelpModal(true);
                                     setIcon("info");
                                     setColor(
-                                      constants.blocked.includes(item.type)
+                                      C.blocked.includes(item.type)
                                         ? "orange"
                                         : "cyan"
                                     );
                                     setHelp(
-                                      constants.blocked.includes(item.type)
+                                      C.blocked.includes(item.type)
                                         ? '<span style="color: orangered">In Process of Bug Fixing</span>'
                                         : `<span>${item.help}</span>`
                                     );
                                   }}
                                   data-tooltip={
-                                    constants.blocked.includes(item.type)
+                                    C.blocked.includes(item.type)
                                       ? "Temporarily Unavailable"
                                       : "Enlighten Me"
                                   }
@@ -2533,9 +2496,7 @@ const Stealth: React.FC<ModalProps> = ({
                                   <div
                                     className="material-icons-round smol"
                                     style={{
-                                      color: constants.blocked.includes(
-                                        item.type
-                                      )
+                                      color: C.blocked.includes(item.type)
                                         ? "orange"
                                         : "cyan",
                                       marginLeft:
@@ -2610,7 +2571,7 @@ const Stealth: React.FC<ModalProps> = ({
                             {
                               // Countdown
                               ["stealth", "rsa"].includes(item.type) &&
-                                !constants.blocked.includes(item.type) &&
+                                !C.blocked.includes(item.type) &&
                                 resolver === ccip2Contract &&
                                 (recordhash || ownerhash) && (
                                   <button
@@ -2646,7 +2607,7 @@ const Stealth: React.FC<ModalProps> = ({
                             {
                               // Refresh buttons
                               ["stealth", "rsa"].includes(item.type) &&
-                                !constants.blocked.includes(item.type) &&
+                                !C.blocked.includes(item.type) &&
                                 resolver === ccip2Contract &&
                                 _Wallet_ &&
                                 (recordhash || ownerhash) &&
@@ -2748,7 +2709,7 @@ const Stealth: React.FC<ModalProps> = ({
                           <button
                             className="button"
                             disabled={
-                              constants.blocked.includes(item.type) ||
+                              C.blocked.includes(item.type) ||
                               !list[item.key].active ||
                               item.state ||
                               !_Wallet_ ||
@@ -2792,20 +2753,20 @@ const Stealth: React.FC<ModalProps> = ({
                           id={item.key}
                           key={item.key}
                           placeholder={
-                            constants.blocked.includes(item.type)
+                            C.blocked.includes(item.type)
                               ? "Temporarily Unavailable"
                               : item.value
                           }
                           type="text"
                           disabled={
                             !item.editable ||
-                            constants.blocked.includes(item.type) ||
+                            C.blocked.includes(item.type) ||
                             !managers.includes(String(_Wallet_))
                           }
                           style={{
                             background:
                               !RSA ||
-                              constants.blocked.includes(item.type) ||
+                              C.blocked.includes(item.type) ||
                               !managers.includes(String(_Wallet_))
                                 ? "linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)"
                                 : "linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)",
@@ -3003,7 +2964,7 @@ const Stealth: React.FC<ModalProps> = ({
                                 value={payeeAddr}
                                 style={{
                                   background:
-                                    payeeAddr === constants.zeroAddress
+                                    payeeAddr === C.zeroAddress
                                       ? "linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)"
                                       : "linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)",
                                   outline: "none",
@@ -3018,7 +2979,7 @@ const Stealth: React.FC<ModalProps> = ({
                                   wordWrap: "break-word",
                                   textAlign: "left",
                                   color:
-                                    payeeAddr === constants.zeroAddress
+                                    payeeAddr === C.zeroAddress
                                       ? "grey"
                                       : "lime",
                                   cursor: "copy",
@@ -3027,9 +2988,9 @@ const Stealth: React.FC<ModalProps> = ({
                               <button
                                 className="button-empty"
                                 onClick={() => {
-                                  constants.copyToClipboard("pay");
+                                  C.copyToClipboard("pay");
                                 }}
-                                hidden={payeeAddr === constants.zeroAddress}
+                                hidden={payeeAddr === C.zeroAddress}
                                 data-tooltip="Copy Address"
                                 style={{
                                   marginLeft: "-25px",
@@ -3069,19 +3030,19 @@ const Stealth: React.FC<ModalProps> = ({
                           fontSize: "16px",
                           fontWeight: "700",
                           backgroundImage:
-                            payeeAddr && payeeAddr !== constants.zeroAddress
+                            payeeAddr && payeeAddr !== C.zeroAddress
                               ? "linear-gradient(81deg, rgba(0,154,0,1) 0%, rgba(0,182,24,1) 52%, rgba(0,154,0,1) 100%)"
                               : "linear-gradient(112deg, rgba(190,95,65,1) 0%, rgba(191,41,36,1) 48%, rgba(203,111,0,1) 100%)",
                         }}
                         onClick={() =>
-                          payeeAddr && payeeAddr !== constants.zeroAddress
+                          payeeAddr && payeeAddr !== C.zeroAddress
                             ? sendTransaction?.()
                             : decrypt()
                         }
-                        disabled={!payee || payeeAddr === constants.zeroAddress}
+                        disabled={!payee || payeeAddr === C.zeroAddress}
                         hidden={!RSA}
                         data-tooltip={
-                          payeeAddr && payeeAddr !== constants.zeroAddress
+                          payeeAddr && payeeAddr !== C.zeroAddress
                             ? "Send Transaction"
                             : "Fetch and Decrypt"
                         }
@@ -3144,7 +3105,7 @@ const Stealth: React.FC<ModalProps> = ({
                     disabled={
                       !_Wallet_ ||
                       !managers.includes(String(_Wallet_)) ||
-                      newValues === constants.EMPTY_STRING_STEALTH()
+                      newValues === C.EMPTY_STRING_STEALTH()
                     }
                     style={{
                       alignSelf: "flex-end",

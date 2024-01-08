@@ -1,4 +1,4 @@
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 import { ethers } from "ethers";
 
 export async function verifyRecordhash(
@@ -10,7 +10,7 @@ export async function verifyRecordhash(
   const contract = new ethers.Contract(
     ccip2Config.addressOrName,
     ccip2Config.contractInterface,
-    constants.provider
+    C.provider
   );
   const _Recordhash_ = await contract.getRecordhash(
     ethers.utils.namehash(input)
@@ -44,7 +44,7 @@ export async function quickRecordhash(
   const contract = new ethers.Contract(
     ccip2Config.addressOrName,
     ccip2Config.contractInterface,
-    constants.provider
+    C.provider
   );
   const _Recordhash_ = await contract.getRecordhash(
     ethers.utils.namehash(input)
@@ -75,7 +75,7 @@ export async function verifyOwnerhash(
   const contract = new ethers.Contract(
     ccip2Config.addressOrName,
     ccip2Config.contractInterface,
-    constants.provider
+    C.provider
   );
   const _Ownerhash_ = await contract.getRecordhash(
     ethers.utils.hexZeroPad(address, 32).toLowerCase()

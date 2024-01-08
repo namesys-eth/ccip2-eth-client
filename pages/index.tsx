@@ -16,7 +16,7 @@ import List from "../components/List";
 import GasTicker from "../components/Ticker";
 import Loading from "../components/Loading";
 import { BigSearch } from "../components/Search";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 import * as verifier from "../utils/verifier";
 import * as ensContent from "../utils/contenthash";
 
@@ -57,12 +57,12 @@ const Home: NextPage = () => {
   const [onSearch, setOnSearch] = React.useState(false); // Stores search trigger
   const [top, setTop] = React.useState(""); // Top margin for Help modal
   const [previewModalState, setPreviewModalState] =
-    React.useState<constants.CustomBodyState>({
+    React.useState<C.CustomBodyState>({
       modalData: "",
       trigger: false,
     }); // Preview modal state
   const [stealthModalState, setStealthModalState] =
-    React.useState<constants.CustomBodyState>({
+    React.useState<C.CustomBodyState>({
       modalData: "",
       trigger: false,
     }); // Stealth modal state
@@ -86,8 +86,8 @@ const Home: NextPage = () => {
 
   const isProduction = process.env.NEXT_PUBLIC_ENV === "production";
   const _Chain_ = process.env.NEXT_PUBLIC_NETWORK === "mainnet" ? "1" : "5";
-  const ccip2Contract = constants.ccip2[_Chain_ === "1" ? 1 : 0];
-  const ccip2Config = constants.ccip2Config[_Chain_ === "1" ? 1 : 0];
+  const ccip2Contract = C.ccip2[_Chain_ === "1" ? 1 : 0];
+  const ccip2Config = C.ccip2Config[_Chain_ === "1" ? 1 : 0];
   const PORT = process.env.NEXT_PUBLIC_PORT;
   const SERVER = process.env.NEXT_PUBLIC_SERVER;
 
@@ -96,35 +96,35 @@ const Home: NextPage = () => {
     let _OwnerLegacy: string = "";
     let _ManagerLegacy: string = "";
     const contractLegacyRegistry = new ethers.Contract(
-      constants.ensConfig[0].addressOrName,
-      constants.ensConfig[0].contractInterface,
+      C.ensConfig[0].addressOrName,
+      C.ensConfig[0].contractInterface,
       provider
     );
     try {
       _ManagerLegacy = await contractLegacyRegistry.owner(namehashLegacy);
     } catch (error) {}
     const contractLegacyRegistrar = new ethers.Contract(
-      constants.ensConfig[1].addressOrName,
-      constants.ensConfig[1].contractInterface,
+      C.ensConfig[1].addressOrName,
+      C.ensConfig[1].contractInterface,
       provider
     );
     try {
       _OwnerLegacy = await contractLegacyRegistrar.ownerOf(tokenIDLegacy);
     } catch (error) {}
     const contractWrapper = new ethers.Contract(
-      constants.ensConfig[_Chain_ === "1" ? 7 : 3].addressOrName,
-      constants.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
+      C.ensConfig[_Chain_ === "1" ? 7 : 3].addressOrName,
+      C.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
       provider
     );
     let _OwnerWrapped: string = "";
     try {
       _OwnerWrapped = await contractWrapper.ownerOf(tokenIDWrapper);
     } catch (error) {}
-    if (_OwnerLegacy === ethers.constants.AddressZero) {
+    if (_OwnerLegacy === C.zeroAddress) {
       return "0x";
     }
-    if (_OwnerLegacy === constants.ensContracts[_Chain_ === "1" ? 7 : 3]) {
-      if (_OwnerWrapped !== ethers.constants.AddressZero) {
+    if (_OwnerLegacy === C.ensContracts[_Chain_ === "1" ? 7 : 3]) {
+      if (_OwnerWrapped !== C.zeroAddress) {
         return _OwnerWrapped;
       } else {
         return "0x";
@@ -199,7 +199,7 @@ const Home: NextPage = () => {
     setOwner("");
     setOwnerhash("");
     setRecordhash("");
-    constants.showOverlay(5);
+    C.showOverlay(5);
     const getSaving = async () => {
       const _savings = await getSavings();
       setSavings(_savings);
@@ -219,17 +219,17 @@ const Home: NextPage = () => {
       );
       const _update = async () => {
         if (previewModalState.modalData) {
-          const _Resolver = await constants.provider.getResolver(
+          const _Resolver = await C.provider.getResolver(
             previewModalState.modalData.slice(0, -1)
           ); // Get updated Resolver
           const __Recordhash = await verifier.verifyRecordhash(
             previewModalState.modalData.slice(0, -1),
             ccip2Config,
-            _Wallet_ || constants.zeroAddress
+            _Wallet_ || C.zeroAddress
           ); // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(
             ccip2Config,
-            _Wallet_ || constants.zeroAddress
+            _Wallet_ || C.zeroAddress
           ); // Get updated Ownerhash
           _LIST[index].migrated =
             _Resolver?.address === ccip2Contract && __Recordhash !== "0"
@@ -355,8 +355,8 @@ const Home: NextPage = () => {
     isLoading: legacyOwnerLoading,
     isError: legacyOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[1].contractInterface,
+    address: `0x${C.ensConfig[1].addressOrName.slice(2)}`,
+    abi: C.ensConfig[1].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDLegacy],
   });
@@ -367,10 +367,8 @@ const Home: NextPage = () => {
     isLoading: wrapperOwnerLoading,
     isError: wrapperOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[
-      _Chain_ === "1" ? 7 : 3
-    ].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
+    address: `0x${C.ensConfig[_Chain_ === "1" ? 7 : 3].addressOrName.slice(2)}`,
+    abi: C.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDWrapper],
   });
@@ -381,8 +379,8 @@ const Home: NextPage = () => {
     isLoading: legacyManagerLoading,
     isError: legacyManagerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[0].contractInterface,
+    address: `0x${C.ensConfig[0].addressOrName.slice(2)}`,
+    abi: C.ensConfig[0].contractInterface,
     functionName: "owner",
     args: [namehashLegacy],
   });
@@ -409,9 +407,7 @@ const Home: NextPage = () => {
     abi: ccip2Config.contractInterface,
     functionName: "getRecordhash",
     args: [
-      ethers.utils
-        .hexZeroPad(_Wallet_ || constants.zeroAddress, 32)
-        .toLowerCase(),
+      ethers.utils.hexZeroPad(_Wallet_ || C.zeroAddress, 32).toLowerCase(),
     ],
   });
 
@@ -420,16 +416,10 @@ const Home: NextPage = () => {
     if (
       _OwnerWrapped_ &&
       _ManagerLegacy_ &&
-      String(_ManagerLegacy_) !== constants.zeroAddress
+      String(_ManagerLegacy_) !== C.zeroAddress
     ) {
-      if (
-        String(_ManagerLegacy_) ===
-        constants.ensContracts[_Chain_ === "1" ? 7 : 3]
-      ) {
-        if (
-          _OwnerWrapped_ &&
-          String(_OwnerWrapped_) !== constants.zeroAddress
-        ) {
+      if (String(_ManagerLegacy_) === C.ensContracts[_Chain_ === "1" ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== C.zeroAddress) {
           setManager(String(_OwnerWrapped_));
           setOwner(String(_OwnerWrapped_));
         }
@@ -453,13 +443,13 @@ const Home: NextPage = () => {
   React.useEffect(() => {
     if (!_Wallet_ && tokenIDLegacy && tokenIDWrapper && query && query !== "") {
       const _setOrigins = async () => {
-        let _Owner = await getManager(constants.provider);
-        let _Recordhash = await getRecordhash(constants.provider, query);
-        let _Ownerhash = await getOwnerhash(constants.provider, _Owner);
+        let _Owner = await getManager(C.provider);
+        let _Recordhash = await getRecordhash(C.provider, query);
+        let _Ownerhash = await getOwnerhash(C.provider, _Owner);
         if (_Owner) {
           setOwner(_Owner);
           if (_Recordhash && _Ownerhash && _Recordhash !== _Ownerhash) {
-            if (String(_Recordhash).startsWith(constants.httpPrefix)) {
+            if (String(_Recordhash).startsWith(C.httpPrefix)) {
               setRecordhash(ethers.utils.toUtf8String(String(_Recordhash)));
             } else {
               setRecordhash(
@@ -471,7 +461,7 @@ const Home: NextPage = () => {
             setOwnerhash(_Ownerhash);
           } else if (_Recordhash && _Ownerhash && _Recordhash === _Ownerhash) {
             setRecordhash("");
-            if (String(_Ownerhash).startsWith(constants.httpPrefix)) {
+            if (String(_Ownerhash).startsWith(C.httpPrefix)) {
               setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash)));
             } else {
               setOwnerhash(
@@ -481,7 +471,7 @@ const Home: NextPage = () => {
               );
             }
           } else if (_Recordhash && !_Ownerhash) {
-            if (String(_Recordhash).startsWith(constants.httpPrefix)) {
+            if (String(_Recordhash).startsWith(C.httpPrefix)) {
               setRecordhash(ethers.utils.toUtf8String(String(_Recordhash)));
             } else {
               setRecordhash(
@@ -512,7 +502,7 @@ const Home: NextPage = () => {
       var items: any[] = [];
       allEns.push(query.split(".eth")[0]);
       const setMetadata = async () => {
-        constants.provider.getResolver(query).then((_RESPONSE) => {
+        C.provider.getResolver(query).then((_RESPONSE) => {
           items.push({
             key: 1, // Redundant [?]
             name: query.split(".eth")[0],
@@ -550,7 +540,7 @@ const Home: NextPage = () => {
   // Captures Recordhash hook
   React.useEffect(() => {
     if (_Recordhash_ && _Recordhash_ !== _Ownerhash_ && _Wallet_) {
-      if (String(_Recordhash_).startsWith(constants.httpPrefix)) {
+      if (String(_Recordhash_).startsWith(C.httpPrefix)) {
         setRecordhash(ethers.utils.toUtf8String(String(_Recordhash_)));
       } else {
         setRecordhash(
@@ -566,7 +556,7 @@ const Home: NextPage = () => {
   // Captures Ownerhash hook
   React.useEffect(() => {
     if (_Ownerhash_ && _Wallet_) {
-      if (String(_Ownerhash_).startsWith(constants.httpPrefix)) {
+      if (String(_Ownerhash_).startsWith(C.httpPrefix)) {
         setOwnerhash(ethers.utils.toUtf8String(String(_Ownerhash_)));
       } else {
         setOwnerhash(
@@ -582,7 +572,7 @@ const Home: NextPage = () => {
   // End name query
   React.useEffect(() => {
     if (success && finish) {
-      if (owner !== "0x" && owner !== constants.zeroAddress) {
+      if (owner !== "0x" && owner !== C.zeroAddress) {
         setErrorModal(false);
         setLoading(true);
         setTimeout(() => {
@@ -992,7 +982,7 @@ const Home: NextPage = () => {
                 <div className="slider">
                   <div className="mask">
                     <ul>
-                      {constants.carousal.map((item, index) => (
+                      {C.carousal.map((item, index) => (
                         <li className={`anim${index + 1}`} key={index}>
                           <div className="carousal-item">
                             <div
@@ -1198,7 +1188,7 @@ const Home: NextPage = () => {
                 onClose={() => setPreviewModal(false)}
                 show={previewModal}
                 _ENS_={nameToPreview}
-                chain={constants.alchemyConfig.chainId}
+                chain={C.alchemyConfig.chainId}
                 handleParentTrigger={handlePreviewTrigger}
                 handleParentModalData={handlePreviewModalData}
               />
@@ -1208,7 +1198,7 @@ const Home: NextPage = () => {
                 onClose={() => setStealthModal(false)}
                 show={stealthModal}
                 _ENS_={nameToStealth}
-                chain={constants.alchemyConfig.chainId}
+                chain={C.alchemyConfig.chainId}
                 handleParentTrigger={handleStealthTrigger}
                 handleParentModalData={handleStealthModalData}
               />

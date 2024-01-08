@@ -28,7 +28,7 @@ import Loading from "../components/Loading";
 import { SearchBox } from "../components/Search";
 import Confirm from "../components/Confirm";
 import Export from "../components/Export";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 import * as verifier from "../utils/verifier";
 import { KEYGEN } from "../utils/keygen";
 import * as Name from "@namesys-eth/w3name-client";
@@ -96,32 +96,31 @@ const Account: NextPage = () => {
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
   const [previewModalState, setPreviewModalState] =
-    React.useState<constants.CustomBodyState>({
+    React.useState<C.CustomBodyState>({
       modalData: "",
       trigger: false,
     }); // Preview modal state
   const [stealthModalState, setStealthModalState] =
-    React.useState<constants.CustomBodyState>({
+    React.useState<C.CustomBodyState>({
       modalData: "",
       trigger: false,
     }); // Stealth modal state
-  const [saltModalState, setSaltModalState] =
-    React.useState<constants.MainBodyState>({
-      modalData: undefined,
-      trigger: false,
-    }); // Salt modal state
+  const [saltModalState, setSaltModalState] = React.useState<C.MainBodyState>({
+    modalData: undefined,
+    trigger: false,
+  }); // Salt modal state
   const [confirmModalState, setConfirmModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Confirm modal state
   const [exportModalState, setExportModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Export modal state
   const [gatewayModalState, setGatewayModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Gateway modal state
@@ -132,8 +131,8 @@ const Account: NextPage = () => {
       activeChain.name.toLowerCase() === "ethereum")
       ? "1"
       : "5";
-  const ccip2Contract = constants.ccip2[_Chain_ === "1" ? 1 : 0];
-  const ccip2Config = constants.ccip2Config[_Chain_ === "1" ? 1 : 0];
+  const ccip2Contract = C.ccip2[_Chain_ === "1" ? 1 : 0];
+  const ccip2Config = C.ccip2Config[_Chain_ === "1" ? 1 : 0];
   const PORT = process.env.NEXT_PUBLIC_PORT;
   const SERVER = process.env.NEXT_PUBLIC_SERVER;
 
@@ -324,8 +323,8 @@ const Account: NextPage = () => {
     isLoading: legacyOwnerLoading,
     isError: legacyOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[1].contractInterface,
+    address: `0x${C.ensConfig[1].addressOrName.slice(2)}`,
+    abi: C.ensConfig[1].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDLegacy],
   });
@@ -336,10 +335,8 @@ const Account: NextPage = () => {
     isLoading: wrapperOwnerLoading,
     isError: wrapperOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[
-      _Chain_ === "1" ? 7 : 3
-    ].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
+    address: `0x${C.ensConfig[_Chain_ === "1" ? 7 : 3].addressOrName.slice(2)}`,
+    abi: C.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDWrapper],
   });
@@ -350,8 +347,8 @@ const Account: NextPage = () => {
     isLoading: legacyManagerLoading,
     isError: legacyManagerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[0].contractInterface,
+    address: `0x${C.ensConfig[0].addressOrName.slice(2)}`,
+    abi: C.ensConfig[0].contractInterface,
     functionName: "owner",
     args: [namehashLegacy],
   });
@@ -370,9 +367,7 @@ const Account: NextPage = () => {
     abi: ccip2Config.contractInterface,
     functionName: "getRecordhash",
     args: [
-      ethers.utils
-        .hexZeroPad(_Wallet_ || constants.zeroAddress, 32)
-        .toLowerCase(),
+      ethers.utils.hexZeroPad(_Wallet_ || C.zeroAddress, 32).toLowerCase(),
     ],
   });
 
@@ -392,10 +387,8 @@ const Account: NextPage = () => {
         ["bytes32"],
         [
           CID.startsWith("k")
-            ? `0x${
-                constants.encodeContenthash(CID).split(constants.ipnsPrefix)[1]
-              }`
-            : constants.zeroBytes,
+            ? `0x${C.encodeContenthash(CID).split(C.ipnsPrefix)[1]}`
+            : C.zeroBytes,
         ]
       ),
     ],
@@ -413,9 +406,7 @@ const Account: NextPage = () => {
     abi: ccip2Config.contractInterface,
     functionName: "setOwnerhash",
     args: [
-      CID
-        ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID))
-        : constants.zeroBytes,
+      CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : C.zeroBytes,
     ],
   });
 
@@ -442,7 +433,7 @@ const Account: NextPage = () => {
 
   // Load historical gas savings on pageload
   React.useEffect(() => {
-    constants.showOverlay(5);
+    C.showOverlay(5);
     const getSaving = async () => {
       const _savings = await getSavings();
       setSavings(_savings);
@@ -462,17 +453,17 @@ const Account: NextPage = () => {
       );
       const _update = async () => {
         if (previewModalState.modalData) {
-          const _Resolver = await constants.provider.getResolver(
+          const _Resolver = await C.provider.getResolver(
             previewModalState.modalData.slice(0, -1)
           ); // Get updated Resolver
           const __Recordhash = await verifier.verifyRecordhash(
             previewModalState.modalData.slice(0, -1),
             ccip2Config,
-            _Wallet_ || constants.zeroAddress
+            _Wallet_ || C.zeroAddress
           ); // Get updated Recordhash
           const __Ownerhash = await verifier.verifyOwnerhash(
             ccip2Config,
-            _Wallet_ || constants.zeroAddress
+            _Wallet_ || C.zeroAddress
           ); // Get updated Ownerhash
           _LIST[index].migrated =
             _Resolver?.address === ccip2Contract && __Recordhash !== "0"
@@ -783,7 +774,7 @@ const Account: NextPage = () => {
       !choice.endsWith("HTTP")
     ) {
       const CIDGen = async () => {
-        let key = constants.formatkey([keypairIPNS[0], keypairIPNS[1]]);
+        let key = C.formatkey([keypairIPNS[0], keypairIPNS[1]]);
         const w3name = await Name.from(ed25519_2.etc.hexToBytes(key));
         const CID_IPNS = String(w3name);
         setCID(CID_IPNS);
@@ -817,7 +808,7 @@ const Account: NextPage = () => {
       setLoading(true); // Show loading state when calling logTokens
       // Call logTokens directly here
       const loadTokens = async () => {
-        const nfts = await constants.alchemy.nft.getNftsForOwner(_Wallet_);
+        const nfts = await C.alchemy.nft.getNftsForOwner(_Wallet_);
         const allTokens = nfts.ownedNfts;
         var allEns: string[] = [];
         var items: any[] = [];
@@ -825,7 +816,7 @@ const Account: NextPage = () => {
         var _Cache: string[] = [];
         for (var i = 0; i < allTokens.length; i++) {
           if (
-            constants.ensContracts.includes(allTokens[i].contract.address) &&
+            C.ensContracts.includes(allTokens[i].contract.address) &&
             allTokens[i].title
           ) {
             _Cache.push(allTokens[i].title);
@@ -839,24 +830,22 @@ const Account: NextPage = () => {
           const contract = new ethers.Contract(
             ccip2Config.addressOrName,
             ccip2Config.contractInterface,
-            constants.provider
+            C.provider
           );
           const contractLegacy = new ethers.Contract(
-            constants.ensConfig[0].addressOrName,
-            constants.ensConfig[0].contractInterface,
-            constants.provider
+            C.ensConfig[0].addressOrName,
+            C.ensConfig[0].contractInterface,
+            C.provider
           );
           const _Ownerhash_ = await contract.getRecordhash(
-            ethers.utils
-              .hexZeroPad(_Wallet_ || constants.zeroAddress, 32)
-              .toLowerCase()
+            ethers.utils.hexZeroPad(_Wallet_ || C.zeroAddress, 32).toLowerCase()
           );
           let _Recordhash_: any;
           let __Recordhash: boolean = false;
           let __Ownerhash: boolean = false;
           for (var i = 0; i < allTokens.length; i++) {
             if (
-              constants.ensContracts.includes(allTokens[i].contract.address) &&
+              C.ensContracts.includes(allTokens[i].contract.address) &&
               allTokens[i].title
             ) {
               const _ManagerLegacy = await contractLegacy.owner(
@@ -866,7 +855,7 @@ const Account: NextPage = () => {
                 count = count + 1;
                 setGetting(count);
                 allEns.push(allTokens[i].title.split(".eth")[0]);
-                const _Resolver = await constants.provider.getResolver(
+                const _Resolver = await C.provider.getResolver(
                   allTokens[i].title
                 );
                 items.push({
@@ -896,11 +885,11 @@ const Account: NextPage = () => {
                 }
                 items[count - 1].migrated =
                   __Recordhash && items[count - 1].migrated === "1/2"
-                    ? _Recordhash_.startsWith(constants.httpPrefix)
+                    ? _Recordhash_.startsWith(C.httpPrefix)
                       ? "4/5"
                       : "1"
                     : __Ownerhash && items[count - 1].migrated === "1/2"
-                    ? _Ownerhash_.startsWith(constants.httpPrefix)
+                    ? _Ownerhash_.startsWith(C.httpPrefix)
                       ? "4/5"
                       : "3/4"
                     : items[count - 1].migrated === "1/2"
@@ -960,16 +949,10 @@ const Account: NextPage = () => {
     if (
       _OwnerWrapped_ &&
       _ManagerLegacy_ &&
-      String(_ManagerLegacy_) !== constants.zeroAddress
+      String(_ManagerLegacy_) !== C.zeroAddress
     ) {
-      if (
-        String(_ManagerLegacy_) ===
-        constants.ensContracts[_Chain_ === "1" ? 7 : 3]
-      ) {
-        if (
-          _OwnerWrapped_ &&
-          String(_OwnerWrapped_) !== constants.zeroAddress
-        ) {
+      if (String(_ManagerLegacy_) === C.ensContracts[_Chain_ === "1" ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== C.zeroAddress) {
           setManager(String(_OwnerWrapped_));
         }
       } else {
@@ -1015,7 +998,7 @@ const Account: NextPage = () => {
       var items: any[] = [];
       allEns.push(query.split(".eth")[0]);
       const setMetadata = async () => {
-        constants.provider.getResolver(query).then((_RESPONSE) => {
+        C.provider.getResolver(query).then((_RESPONSE) => {
           items.push({
             key: 1,
             name: query.split(".eth")[0],
@@ -1054,7 +1037,7 @@ const Account: NextPage = () => {
       setErrorModal(true);
     } else if (
       manager &&
-      manager === constants.zeroAddress &&
+      manager === C.zeroAddress &&
       query.length > 0 &&
       !legacyManagerLoading
     ) {
@@ -1125,7 +1108,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (_Recordhash_ && String(_Recordhash_) !== "0x") {
       let _String: string = "";
-      if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
+      if (String(_Recordhash_).startsWith(C.ipnsPrefix)) {
         _String = `ipns://${
           ensContent.decodeContenthash(String(_Recordhash_)).decoded
         }`;
@@ -1144,7 +1127,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (_Ownerhash_ && String(_Ownerhash_) !== "0x") {
       let _String: string = "";
-      if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
+      if (String(_Ownerhash_).startsWith(C.ipnsPrefix)) {
         _String = `ipns://${
           ensContent.decodeContenthash(String(_Ownerhash_)).decoded
         }`;
@@ -1677,7 +1660,7 @@ const Account: NextPage = () => {
                 <div className="slider">
                   <div className="mask">
                     <ul>
-                      {constants.carousal.map((item, index) => (
+                      {C.carousal.map((item, index) => (
                         <li className={`anim${index + 1}`} key={index}>
                           <div className="carousal-item">
                             <div
@@ -2283,7 +2266,7 @@ const Account: NextPage = () => {
                       <button
                         className="button-empty"
                         onClick={() => {
-                          constants.copyToClipboard("export-ipns");
+                          C.copyToClipboard("export-ipns");
                           setColor("lime");
                           setKeypairIPNS([
                             "IPNS PRIVATE KEY COPIED!",
@@ -2357,7 +2340,7 @@ const Account: NextPage = () => {
                       <button
                         className="button-empty"
                         onClick={() => {
-                          constants.copyToClipboard("export-ccip");
+                          C.copyToClipboard("export-ccip");
                           setColor("lime");
                           setKeypairSigner([
                             "RECORDS SIGNER KEY COPIED!",
@@ -2429,7 +2412,7 @@ const Account: NextPage = () => {
                       <button
                         className="button-empty"
                         onClick={() => {
-                          constants.copyToClipboard("export-encoded");
+                          C.copyToClipboard("export-encoded");
                           setColor("lime");
                           setKeyIPNS("IPNS ENCODED KEY COPIED!");
                         }}

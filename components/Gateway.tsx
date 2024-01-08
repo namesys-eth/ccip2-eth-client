@@ -3,7 +3,7 @@ import { isMobile } from "react-device-detect";
 import ReactDOM from "react-dom";
 import styled from "styled-components";
 import Help from "../components/Help";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 
 interface ModalProps {
   show: boolean;
@@ -20,7 +20,7 @@ const Gateway: React.FC<ModalProps> = ({
   handleModalData,
   handleTrigger,
 }) => {
-  const [inputValue, setInputValue] = React.useState(constants.defaultGateway);
+  const [inputValue, setInputValue] = React.useState(C.defaultGateway);
   const [browser, setBrowser] = React.useState(false);
   const [helpModal, setHelpModal] = React.useState(false);
   const [help, setHelp] = React.useState("");

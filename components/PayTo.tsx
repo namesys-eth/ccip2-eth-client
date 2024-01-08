@@ -2,7 +2,7 @@ import React from "react";
 import { isMobile } from "react-device-detect";
 import ReactDOM from "react-dom";
 import styled from "styled-components";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 import Help from "../components/Help";
 
 interface ModalProps {
@@ -58,7 +58,7 @@ const PayTo: React.FC<ModalProps> = ({
   }
 
   function setPayeeValue(_value: string) {
-    if (constants.isAddr(_value) || constants.isName(_value)) {
+    if (C.isAddr(_value) || C.isName(_value)) {
       setPayee(_value);
       setColor([color[0], "lime", color[2]]);
     } else {

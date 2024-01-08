@@ -16,7 +16,7 @@ import Savings from "../components/WrapUp";
 import Loading from "../components/Loading";
 import Success from "../components/Success";
 import Confirm from "../components/Confirm";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 import { KEYGEN } from "../utils/keygen";
 import * as Name from "w3name";
 import * as Nam3 from "@namesys-eth/w3name-client";
@@ -94,6 +94,7 @@ const Preview: React.FC<ModalProps> = ({
   const [SOL, setSOL] = React.useState(""); // SOL address record for ENS Domain
   const [ATOM, setATOM] = React.useState(""); // ATOM address record for ENS Domain
   const [zonehash, setZonehash] = React.useState(""); // DNS Zonehash record for ENS Domain
+  const [description, setDescription] = React.useState(""); // Description record for ENS Domain
   const [thumbnail, setThumbnail] = React.useState(""); // Thumbnail from avatar
   const [recordhash, setRecordhash] = React.useState<string>(""); // Recordhash for CCIP2 Resolver
   const [ownerhash, setOwnerhash] = React.useState<string>(""); // Ownerhash for CCIP2 Resolver
@@ -121,26 +122,20 @@ const Preview: React.FC<ModalProps> = ({
   const [updateRecords, setUpdateRecords] = React.useState(false); // Triggers signature for record update
   const [write, setWrite] = React.useState(false); // Triggers update of record to the NameSys backend and IPNS
   const [states, setStates] = React.useState<any[]>([]); // Contains keys of active records (that have been edited in the modal)
-  const [newValues, setNewValues] = React.useState(
-    constants.EMPTY_STRING_RECORDS()
-  ); // Contains new values for the active records in {a:b} format
+  const [newValues, setNewValues] = React.useState(C.EMPTY_STRING_RECORDS()); // Contains new values for the active records in {a:b} format
   const [icon, setIcon] = React.useState(""); // Sets icon for the loading state
   const [color, setColor] = React.useState(""); // Sets color for the loading state
   const [message, setMessage] = React.useState(["", ""]); // Sets message for the loading state
   const [options, setOptions] = React.useState(false); // Provides option with Ownerhash and Recordhash during migration
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [infoModal, setInfoModal] = React.useState(false); // Info modal
-  const [signatures, setSignatures] = React.useState(
-    constants.EMPTY_STRING_RECORDS()
-  ); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
+  const [signatures, setSignatures] = React.useState(C.EMPTY_STRING_RECORDS()); // Contains S_RECORDS(K_SIGNER) signatures of active records in the modal
   const [onChainManagerQuery, setOnChainManagerQuery] = React.useState<
     string[]
   >(["", "", ""]); // CCIP2 Query for on-chain manager
-  const [legit, setLegit] = React.useState(constants.EMPTY_BOOL_RECORDS()); // Whether record edit is legitimate
+  const [legit, setLegit] = React.useState(C.EMPTY_BOOL_RECORDS()); // Whether record edit is legitimate
   const [timestamp, setTimestamp] = React.useState(""); // Stores update timestamp returned by backend
-  const [isLoading, setIsLoading] = React.useState(
-    constants.EMPTY_STRING_RECORDS()
-  ); // Loading Records marker
+  const [isLoading, setIsLoading] = React.useState(C.EMPTY_STRING_RECORDS()); // Loading Records marker
   const [hashType, setHashType] = React.useState("gateway"); // Recordhash or Ownerhash storage
   const [hashIPFS, setHashIPFS] = React.useState(""); // IPFS hash behind IPNS
   const [imageLoaded, setImageLoaded] = React.useState<boolean | undefined>(
@@ -148,32 +143,31 @@ const Preview: React.FC<ModalProps> = ({
   ); // Whether avatar resolves or not
   const [recentCrash, setRecentCrash] = React.useState(false); // Crash state
   const [goodSalt, setGoodSalt] = React.useState(false); // If generated CID matches the available storage
-  const [saltModalState, setSaltModalState] =
-    React.useState<constants.MainBodyState>({
-      modalData: undefined,
-      trigger: false,
-    }); // Salt modal state
+  const [saltModalState, setSaltModalState] = React.useState<C.MainBodyState>({
+    modalData: undefined,
+    trigger: false,
+  }); // Salt modal state
   const [optionsModalState, setOptionsModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Options modal state
   const [confirmModalState, setConfirmModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Confirm modal state
   const [gatewayModalState, setGatewayModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Gateway modal state
   const [successModalState, setSuccessModalState] =
-    React.useState<constants.MainBodyState>({
+    React.useState<C.MainBodyState>({
       modalData: undefined,
       trigger: false,
     }); // Confirm modal state
-  const [history, setHistory] = React.useState(constants.EMPTY_HISTORY_RECORDS); // Record history from last update
+  const [history, setHistory] = React.useState(C.EMPTY_HISTORY_RECORDS); // Record history from last update
   const [sigIPNS, setSigIPNS] = React.useState(""); // Signature S_IPNS(K_WALLET) for IPNS keygen
   const [sigSigner, setSigSigner] = React.useState(""); // Signature S_SIGNER(K_WALLET) for Signer
   const [sigApproved, setSigApproved] = React.useState(""); // Signature S_APPROVE(K_WALLET) for Records Manager
@@ -187,8 +181,8 @@ const Preview: React.FC<ModalProps> = ({
   const { address: _Wallet_ } = useAccount();
   const { Revision } = Name; // W3Name Revision object
   const recoveredAddress = React.useRef<string>();
-  const ccip2Contract = constants.ccip2[chain === "1" ? 1 : 0];
-  const ccip2Config = constants.ccip2Config[chain === "1" ? 1 : 0];
+  const ccip2Contract = C.ccip2[chain === "1" ? 1 : 0];
+  const ccip2Config = C.ccip2Config[chain === "1" ? 1 : 0];
   const apiKey =
     chain === "5"
       ? process.env.NEXT_PUBLIC_ALCHEMY_ID_GOERLI
@@ -198,7 +192,7 @@ const Preview: React.FC<ModalProps> = ({
   const alchemyEndpoint = `https://eth-${network}.g.alchemy.com/v2/` + apiKey;
   const web3 = new Web3(alchemyEndpoint);
   const caip10 = `eip155:${chain}:${_Wallet_}`; // CAIP-10
-  const origin = `eth:${_Wallet_ || constants.zeroAddress}`;
+  const origin = `eth:${_Wallet_ || C.zeroAddress}`;
   const PORT = process.env.NEXT_PUBLIC_PORT;
   const SERVER = process.env.NEXT_PUBLIC_SERVER;
   const {
@@ -220,8 +214,8 @@ const Preview: React.FC<ModalProps> = ({
     isLoading: legacyOwnerLoading,
     isError: legacyOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[1].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[1].contractInterface,
+    address: `0x${C.ensConfig[1].addressOrName.slice(2)}`,
+    abi: C.ensConfig[1].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDLegacy],
   });
@@ -231,8 +225,8 @@ const Preview: React.FC<ModalProps> = ({
     isLoading: legacyManagerLoading,
     isError: legacyManagerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[0].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[0].contractInterface,
+    address: `0x${C.ensConfig[0].addressOrName.slice(2)}`,
+    abi: C.ensConfig[0].contractInterface,
     functionName: "owner",
     args: [namehashLegacy],
   });
@@ -246,7 +240,7 @@ const Preview: React.FC<ModalProps> = ({
       ethers.utils.namehash(ENS),
       keypairSigner && keypairSigner[0]
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-        : constants.zeroAddress,
+        : C.zeroAddress,
     ],
   });
   // Read ownership of a domain from ENS Wrapper
@@ -255,10 +249,8 @@ const Preview: React.FC<ModalProps> = ({
     isLoading: wrapperOwnerLoading,
     isError: wrapperOwnerError,
   } = useContractRead({
-    address: `0x${constants.ensConfig[
-      chain === "1" ? 7 : 3
-    ].addressOrName.slice(2)}`,
-    abi: constants.ensConfig[chain === "1" ? 7 : 3].contractInterface,
+    address: `0x${C.ensConfig[chain === "1" ? 7 : 3].addressOrName.slice(2)}`,
+    abi: C.ensConfig[chain === "1" ? 7 : 3].contractInterface,
     functionName: "ownerOf",
     args: [tokenIDWrapper],
   });
@@ -287,12 +279,12 @@ const Preview: React.FC<ModalProps> = ({
   } = useContractWrite({
     address: `0x${
       !wrapped
-        ? constants.ensConfig[0].addressOrName.slice(2)
-        : constants.ensConfig[chain === "1" ? 7 : 3].addressOrName.slice(2)
+        ? C.ensConfig[0].addressOrName.slice(2)
+        : C.ensConfig[chain === "1" ? 7 : 3].addressOrName.slice(2)
     }`,
     abi: !wrapped
-      ? constants.ensConfig[0].contractInterface
-      : constants.ensConfig[chain === "1" ? 7 : 3].contractInterface,
+      ? C.ensConfig[0].contractInterface
+      : C.ensConfig[chain === "1" ? 7 : 3].contractInterface,
     functionName: "setResolver",
     args: [ethers.utils.namehash(ENS), ccip2Contract],
   });
@@ -314,10 +306,8 @@ const Preview: React.FC<ModalProps> = ({
         ["bytes32"],
         [
           CID.startsWith("k")
-            ? `0x${
-                constants.encodeContenthash(CID).split(constants.ipnsPrefix)[1]
-              }`
-            : constants.zeroBytes,
+            ? `0x${C.encodeContenthash(CID).split(C.ipnsPrefix)[1]}`
+            : C.zeroBytes,
         ]
       ),
     ],
@@ -336,9 +326,7 @@ const Preview: React.FC<ModalProps> = ({
     functionName: "setRecordhash",
     args: [
       ethers.utils.namehash(ENS),
-      CID
-        ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID))
-        : constants.zeroBytes,
+      CID ? ethers.utils.hexlify(ethers.utils.toUtf8Bytes(CID)) : C.zeroBytes,
     ],
   });
 
@@ -443,7 +431,7 @@ const Preview: React.FC<ModalProps> = ({
   // Handle Preview modal close
   const handleCloseClick = (e: { preventDefault: () => void }) => {
     setSigApproved(""); // Purge Manager Signature S_RECORDS from local storage
-    setSignatures(constants.EMPTY_STRING_RECORDS()); // Purge Record Signatures from local storage
+    setSignatures(C.EMPTY_STRING_RECORDS()); // Purge Record Signatures from local storage
     setKeypairSigner(undefined);
     setKeypairIPNS(undefined);
     setSigSigner("");
@@ -462,6 +450,7 @@ const Preview: React.FC<ModalProps> = ({
     _avatar: string,
     _pubkey: string,
     _email: string,
+    _description: string,
     _github: string,
     _url: string,
     _twitter: string,
@@ -510,7 +499,7 @@ const Preview: React.FC<ModalProps> = ({
         type: "contenthash",
         value: _contenthash,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isContenthash(_contenthash) && queue > 0,
+        active: C.isContenthash(_contenthash) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">web contenthash</span></span>',
@@ -522,7 +511,7 @@ const Preview: React.FC<ModalProps> = ({
         type: "addr",
         value: _addr,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAddr(_addr) && queue > 0,
+        active: C.isAddr(_addr) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your default <span style="color: cyan">address</span></span>',
@@ -534,7 +523,7 @@ const Preview: React.FC<ModalProps> = ({
         type: "avatar",
         value: _avatar,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isAvatar(_avatar) && queue > 0,
+        active: C.isAvatar(_avatar) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">avatar</span></span>',
@@ -546,7 +535,7 @@ const Preview: React.FC<ModalProps> = ({
         type: "pubkey",
         value: _pubkey,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isPubkey(_pubkey) && queue > 0,
+        active: C.isPubkey(_pubkey) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Public Key</span></span>',
@@ -558,7 +547,7 @@ const Preview: React.FC<ModalProps> = ({
         type: "email",
         value: _email,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isEmail(_email) && queue > 0,
+        active: C.isEmail(_email) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Email</span></span>',
@@ -566,131 +555,143 @@ const Preview: React.FC<ModalProps> = ({
       },
       {
         key: 7,
+        header: "Description",
+        type: "description",
+        value: _description,
+        editable: resolver === ccip2Contract && queue > 0,
+        active: _description && queue > 0,
+        state: false,
+        label: "Edit",
+        help: '<span>Set your <span style="color: cyan">Description</span></span>',
+        tooltip: "Set Description Record",
+      },
+      {
+        key: 8,
         header: "Github",
         type: "com.github",
         value: _github,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isGithub(_github) && queue > 0,
+        active: C.isGithub(_github) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Github username</span></span>',
         tooltip: "Set Github Record",
       },
       {
-        key: 8,
+        key: 9,
         header: "Url",
         type: "url",
         value: _url,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isUrl(_url) && queue > 0,
+        active: C.isUrl(_url) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">URL</span></span>',
         tooltip: "Set URL Record",
       },
       {
-        key: 9,
+        key: 10,
         header: "Twitter",
         type: "com.twitter",
         value: _twitter,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isTwitter(_twitter) && queue > 0,
+        active: C.isTwitter(_twitter) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Twitter username</span></span>',
         tooltip: "Set Twitter Record",
       },
       {
-        key: 10,
+        key: 11,
         header: "Discord",
         type: "com.discord",
         value: _discord,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isDiscord(_discord) && queue > 0,
+        active: C.isDiscord(_discord) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Discord username</span></span>',
         tooltip: "Set Discord Record",
       },
       {
-        key: 11,
+        key: 12,
         header: "Farcaster",
         type: "xyz.farcaster",
         value: _farcaster,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isFarcaster(_farcaster) && queue > 0,
+        active: C.isFarcaster(_farcaster) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Farcaster username</span></span>',
         tooltip: "Set Farcaster Record",
       },
       {
-        key: 12,
+        key: 13,
         header: "Nostr",
         type: "nostr",
         value: _nostr,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isNostr(_nostr) && queue > 0,
+        active: C.isNostr(_nostr) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">Nostr username</span></span>',
         tooltip: "Set Discord Record",
       },
       {
-        key: 13,
+        key: 14,
         header: "Bitcoin",
         type: "btc",
         value: _btc,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isBTC(_btc) && queue > 0,
+        active: C.isBTC(_btc) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">BTC Address</span></span>',
         tooltip: "Set BTC Address",
       },
       {
-        key: 14,
+        key: 15,
         header: "Litecoin",
         type: "ltc",
         value: _ltc,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isLTC(_ltc) && queue > 0,
+        active: C.isLTC(_ltc) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">LTC Address</span></span>',
         tooltip: "Set LTC Address",
       },
       {
-        key: 15,
+        key: 16,
         header: "Dogecoin",
         type: "doge",
         value: _doge,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isDOGE(_doge) && queue > 0,
+        active: C.isDOGE(_doge) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">DOGE Address</span></span>',
         tooltip: "Set DOGE Address",
       },
       {
-        key: 16,
+        key: 17,
         header: "Solana",
         type: "sol",
         value: _sol,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isSOL(_sol) && queue > 0,
+        active: C.isSOL(_sol) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">SOL Address</span></span>',
         tooltip: "Set SOL Address",
       },
       {
-        key: 17,
+        key: 18,
         header: "Cosmos",
         type: "atom",
         value: _atom,
         editable: resolver === ccip2Contract && queue > 0,
-        active: constants.isATOM(_atom) && queue > 0,
+        active: C.isATOM(_atom) && queue > 0,
         state: false,
         label: "Edit",
         help: '<span>Set your <span style="color: cyan">ATOM Address</span></span>',
@@ -710,7 +711,7 @@ const Preview: React.FC<ModalProps> = ({
   // Functions for <Elements>
   function multiEdit(_item: any) {
     return (
-      !constants.config.includes(_item.type) &&
+      !C.config.includes(_item.type) &&
       states.length > 1 &&
       !states.includes("resolver") &&
       !states.includes("storage")
@@ -718,14 +719,13 @@ const Preview: React.FC<ModalProps> = ({
   }
   function isDisabled(_item: any) {
     return (
-      constants.blocked.includes(_item.type) ||
+      C.blocked.includes(_item.type) ||
       !list[_item.key].active ||
       !legit[_item.type] ||
       _item.state ||
       !_Wallet_ ||
       !managers.includes(String(_Wallet_)) ||
-      (!constants.config.includes(_item.type) &&
-        newValues === constants.EMPTY_STRING_RECORDS())
+      (!C.config.includes(_item.type) && newValues === C.EMPTY_STRING_RECORDS())
     );
   }
 
@@ -785,6 +785,7 @@ const Preview: React.FC<ModalProps> = ({
       [
         "avatar",
         "email",
+        "description",
         "pubkey",
         "com.github",
         "url",
@@ -813,12 +814,12 @@ const Preview: React.FC<ModalProps> = ({
       _value = value;
     }
     let _result = ethers.utils.defaultAbiCoder.encode([type], [_value]);
-    let _ABI = [constants.signedRecord];
+    let _ABI = [C.signedRecord];
     let _interface = new ethers.utils.Interface(_ABI);
     let _encodedWithSelector = _interface.encodeFunctionData("signedRecord", [
       keypairSigner
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-        : constants.zeroAddress,
+        : C.zeroAddress,
       signatures[key],
       sigApproved,
       _result,
@@ -836,6 +837,7 @@ const Preview: React.FC<ModalProps> = ({
       [
         "avatar",
         "email",
+        "description",
         "pubkey",
         "com.github",
         "url",
@@ -874,15 +876,13 @@ const Preview: React.FC<ModalProps> = ({
   // Returns Owner of Wrapped or Manager of Legacy ENS Domain
   function getManager() {
     if (_OwnerLegacy_ && _ManagerLegacy_) {
-      if (
-        String(_OwnerLegacy_) === constants.ensContracts[chain === "1" ? 7 : 3]
-      ) {
-        return _OwnerWrapped_ ? String(_OwnerWrapped_) : constants.zeroAddress;
+      if (String(_OwnerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
+        return _OwnerWrapped_ ? String(_OwnerWrapped_) : C.zeroAddress;
       } else {
         return String(_ManagerLegacy_);
       }
     } else {
-      return constants.zeroAddress;
+      return C.zeroAddress;
     }
   }
 
@@ -890,6 +890,7 @@ const Preview: React.FC<ModalProps> = ({
   function setExtraRecords(key: string, value: string) {
     if (key === "avatar") setAvatar(value);
     if (key === "email") setEmail(value);
+    if (key === "description") setDescription(value);
     if (key === "pubkey") setPubkey(value);
     if (key === "com.github") setGithub(value);
     if (key === "url") setUrl(value);
@@ -909,6 +910,7 @@ const Preview: React.FC<ModalProps> = ({
   async function getExtraRecords(resolver: ethers.providers.Resolver) {
     await getText(resolver, "avatar");
     await getText(resolver, "email");
+    await getText(resolver, "description");
     await getText(resolver, "pubkey");
     await getText(resolver, "com.github");
     await getText(resolver, "url");
@@ -928,6 +930,7 @@ const Preview: React.FC<ModalProps> = ({
   function setEmptyRecords(key: string) {
     if (key === "avatar") setAvatar("");
     if (key === "email") setEmail("");
+    if (key === "description") setDescription("");
     if (key === "pubkey") setPubkey("");
     if (key === "com.github") setGithub("");
     if (key === "url") setUrl("");
@@ -976,7 +979,7 @@ const Preview: React.FC<ModalProps> = ({
   function doEnjoy() {
     setIcon("gpp_good");
     setColor("lime");
-    setLegit(constants.EMPTY_BOOL_RECORDS());
+    setLegit(C.EMPTY_BOOL_RECORDS());
     setSaltModal(false);
     setLoading(false);
     setQueue(hashType === "gateway" ? 1 : 1);
@@ -1063,9 +1066,8 @@ const Preview: React.FC<ModalProps> = ({
   async function getGas(key: string, value: string) {
     const getGasAmountForContractCall = async () => {
       const contract = new web3.eth.Contract(
-        constants.ensConfig[chain === "1" ? 6 : 6]
-          .contractInterface as AbiItem[],
-        constants.ensConfig[chain === "1" ? 6 : 6].addressOrName
+        C.ensConfig[chain === "1" ? 6 : 6].contractInterface as AbiItem[],
+        C.ensConfig[chain === "1" ? 6 : 6].addressOrName
       );
       let gasAmount: any;
       if (key === "contenthash") {
@@ -1079,6 +1081,7 @@ const Preview: React.FC<ModalProps> = ({
         [
           "avatar",
           "email",
+          "description",
           "pubkey",
           "com.github",
           "url",
@@ -1258,7 +1261,7 @@ const Preview: React.FC<ModalProps> = ({
           let _IPFS: any;
           if (_history.ownerstamp.length > 1) {
             for (var i = 0; i < 2; i++) {
-              _IPFS = await constants.getIPFSHashFromIPNS(
+              _IPFS = await C.getIPFSHashFromIPNS(
                 ensContent.decodeContenthash(_Storage[0]).decoded,
                 i
               );
@@ -1289,6 +1292,7 @@ const Preview: React.FC<ModalProps> = ({
                 : setContenthash("");
               _history.avatar ? setAvatar(_history.avatar) : setAvatar("");
               _history.email ? setEmail(_history.email) : setEmail("");
+              _history.description ? setDescription(_history.description) : setDescription("");
               _history["com.github"]
                 ? setGithub(_history["com.github"])
                 : setGithub("");
@@ -1355,6 +1359,13 @@ const Preview: React.FC<ModalProps> = ({
             false
           );
           setEmail(_email || "");
+          const _description = await refreshRecord(
+            ["text", "description"],
+            _response,
+            _ENS,
+            false
+          );
+          setDescription(_description || "");
           setPubkey("");
           const _github = await refreshRecord(
             ["text", "com.github"],
@@ -1521,6 +1532,7 @@ const Preview: React.FC<ModalProps> = ({
           if (_trigger) {
             if (_record[1] === "avatar") setAvatar(_response);
             if (_record[1] === "email") setEmail(_response);
+            if (_record[1] === "description") setDescription(_response);
             if (_record[1] === "com.github") setGithub(_response);
             if (_record[1] === "url") setUrl(_response);
             if (_record[1] === "com.twitter") setTwitter(_response);
@@ -1549,7 +1561,7 @@ const Preview: React.FC<ModalProps> = ({
           _response = await _resolver.getAddress(_type);
         } else {
           /*
-          let _ABI = await constants.getABI(_resolver.address)
+          let _ABI = await C.getABI(_resolver.address)
           /// @TODO
           const contract = new web3.eth.Contract(
             _ABI as AbiItem[],
@@ -1615,7 +1627,7 @@ const Preview: React.FC<ModalProps> = ({
       controller: _Wallet_,
       manager: keypairSigner
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-        : constants.zeroAddress,
+        : C.zeroAddress,
       managerSignature: sigApproved,
       revision: revision ? Revision.encode(revision) : {},
       chain: chain,
@@ -1660,39 +1672,41 @@ const Preview: React.FC<ModalProps> = ({
     if (key === "storage") {
       __THIS[key] = true;
     } else if (key === "contenthash") {
-      __THIS[key] = constants.isContenthash(value);
+      __THIS[key] = C.isContenthash(value);
     } else if (key === "addr") {
-      __THIS[key] = constants.isAddr(value);
+      __THIS[key] = C.isAddr(value);
     } else if (key === "avatar") {
-      __THIS[key] = constants.isAvatar(value);
+      __THIS[key] = C.isAvatar(value);
     } else if (key === "email") {
-      __THIS[key] = constants.isEmail(value);
+      __THIS[key] = C.isEmail(value);
+    } else if (key === "description") {
+      __THIS[key] = value || false;
     } else if (key === "pubkey") {
-      __THIS[key] = constants.isPubkey(value);
+      __THIS[key] = C.isPubkey(value);
     } else if (key === "com.github") {
-      __THIS[key] = constants.isGithub(value);
+      __THIS[key] = C.isGithub(value);
     } else if (key === "url") {
-      __THIS[key] = constants.isUrl(value);
+      __THIS[key] = C.isUrl(value);
     } else if (key === "com.twitter") {
-      __THIS[key] = constants.isTwitter(value);
+      __THIS[key] = C.isTwitter(value);
     } else if (key === "com.discord") {
-      __THIS[key] = constants.isDiscord(value);
+      __THIS[key] = C.isDiscord(value);
     } else if (key === "xyz.farcaster") {
-      __THIS[key] = constants.isFarcaster(value);
+      __THIS[key] = C.isFarcaster(value);
     } else if (key === "nostr") {
-      __THIS[key] = constants.isEmail(value) || constants.isBTC(value);
+      __THIS[key] = C.isEmail(value) || C.isBTC(value);
     } else if (key === "btc") {
-      __THIS[key] = constants.isBTC(value);
+      __THIS[key] = C.isBTC(value);
     } else if (key === "ltc") {
-      __THIS[key] = constants.isLTC(value);
+      __THIS[key] = C.isLTC(value);
     } else if (key === "doge") {
-      __THIS[key] = constants.isDOGE(value);
+      __THIS[key] = C.isDOGE(value);
     } else if (key === "sol") {
-      __THIS[key] = constants.isSOL(value);
+      __THIS[key] = C.isSOL(value);
     } else if (key === "atom") {
-      __THIS[key] = constants.isATOM(value);
+      __THIS[key] = C.isATOM(value);
     } else if (key === "zonehash") {
-      __THIS[key] = constants.isZonehash(value);
+      __THIS[key] = C.isZonehash(value);
     } else {
       setStates((prevState) => [...prevState, key]);
       console.error("Error:", "Illegal State Checkpoint");
@@ -1750,6 +1764,7 @@ const Preview: React.FC<ModalProps> = ({
             contenthash: data.response.contenthash,
             addr: data.response.addr,
             email: data.response.email,
+            description: data.response.description,
             pubkey: data.response.pubkey,
             avatar: data.response.avatar,
             "com.github": data.response.github,
@@ -1766,7 +1781,7 @@ const Preview: React.FC<ModalProps> = ({
             version: data.response.version,
             revision: data.response.revision,
             timestamp: data.response.timestamp,
-            queue: constants.latestTimestamp(data.response.timestamp),
+            queue: C.latestTimestamp(data.response.timestamp),
             ownerstamp: data.response.ownerstamp,
           };
           setHistory(_HISTORY);
@@ -1780,7 +1795,7 @@ const Preview: React.FC<ModalProps> = ({
             setQueue(
               Math.round(Date.now() / 1000) -
                 Math.max(..._Ownerstamps) -
-                constants.waitingPeriod
+                C.waitingPeriod
             );
           } else if (
             _storage &&
@@ -1789,8 +1804,8 @@ const Preview: React.FC<ModalProps> = ({
           ) {
             setQueue(
               Math.round(Date.now() / 1000) -
-                constants.latestTimestamp(data.response.timestamp) -
-                constants.waitingPeriod
+                C.latestTimestamp(data.response.timestamp) -
+                C.waitingPeriod
             );
           } else if (_type === "gateway") {
             setQueue(1);
@@ -1863,7 +1878,7 @@ const Preview: React.FC<ModalProps> = ({
     if (_Ownerhash_) {
       if (String(_Ownerhash_).length > 2) {
         let _String: string = "";
-        if (String(_Ownerhash_).startsWith(constants.ipnsPrefix)) {
+        if (String(_Ownerhash_).startsWith(C.ipnsPrefix)) {
           _String = `ipns://${
             ensContent.decodeContenthash(String(_Ownerhash_)).decoded
           }`;
@@ -1887,7 +1902,7 @@ const Preview: React.FC<ModalProps> = ({
     if (_Recordhash_) {
       if (String(_Recordhash_).length > 2 && _Recordhash_ !== _Ownerhash_) {
         let _String: string = "";
-        if (String(_Recordhash_).startsWith(constants.ipnsPrefix)) {
+        if (String(_Recordhash_).startsWith(C.ipnsPrefix)) {
           _String = `ipns://${
             ensContent.decodeContenthash(String(_Recordhash_)).decoded
           }`;
@@ -1913,7 +1928,7 @@ const Preview: React.FC<ModalProps> = ({
         _Recordhash_ === _Ownerhash_
       ) {
         if (resolver === ccip2Contract) {
-          setRecordhash(constants.defaultGateway);
+          setRecordhash(C.defaultGateway);
         } else {
           setRecordhash("");
         }
@@ -2025,9 +2040,7 @@ const Preview: React.FC<ModalProps> = ({
   // Sets Wrapper status of ENS Domain
   React.useEffect(() => {
     if (_OwnerLegacy_) {
-      if (
-        String(_OwnerLegacy_) === constants.ensContracts[chain === "1" ? 7 : 3]
-      ) {
+      if (String(_OwnerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
         setWrapped(true);
       } else {
         setWrapped(false);
@@ -2041,8 +2054,7 @@ const Preview: React.FC<ModalProps> = ({
     let _avatar: string = "";
     if (avatar.startsWith("ipfs://")) {
       _avatar = `https://ipfs.io/ipfs/${avatar.split("ipfs://")[1]}`;
-      constants
-        .checkImageURL(_avatar)
+      C.checkImageURL(_avatar)
         .then(() => {
           setImageLoaded(true);
           setThumbnail(_avatar);
@@ -2054,25 +2066,21 @@ const Preview: React.FC<ModalProps> = ({
     } else if (avatar.startsWith(`eip155:${chain}`)) {
       let _contract = avatar.split(":")[2].split("/")[0];
       let _tokenID = avatar.split(":")[2].split("/")[1];
-      constants.alchemy.nft
-        .getNftMetadata(_contract, _tokenID)
-        .then((_response) => {
-          _avatar = _response.media[0].thumbnail || _response.media[0].gateway;
-          constants
-            .checkImageURL(_avatar)
-            .then(() => {
-              setImageLoaded(true);
-              setThumbnail(_avatar);
-            })
-            .catch(() => {
-              setImageLoaded(false);
-              setThumbnail("");
-            });
-        });
+      C.alchemy.nft.getNftMetadata(_contract, _tokenID).then((_response) => {
+        _avatar = _response.media[0].thumbnail || _response.media[0].gateway;
+        C.checkImageURL(_avatar)
+          .then(() => {
+            setImageLoaded(true);
+            setThumbnail(_avatar);
+          })
+          .catch(() => {
+            setImageLoaded(false);
+            setThumbnail("");
+          });
+      });
     } else if (avatar.startsWith("https://")) {
       _avatar = avatar;
-      constants
-        .checkImageURL(_avatar)
+      C.checkImageURL(_avatar)
         .then(() => {
           setImageLoaded(true);
           setThumbnail(_avatar);
@@ -2097,7 +2105,7 @@ const Preview: React.FC<ModalProps> = ({
       const _sigSigner = async () => {
         setSigCount(2); // Trigger S_SIGNER(K_WALLET)
         setProcessCount(2);
-        signSigner(constants.randomString(10)); // Generates redundant signatures; can bypass this [?]
+        signSigner(C.randomString(10)); // Generates redundant signatures; can bypass this [?]
       };
       _sigSigner();
     } else if (
@@ -2162,9 +2170,7 @@ const Preview: React.FC<ModalProps> = ({
       setMessage(["Generating IPNS Key", ""]);
       const keygen = async () => {
         const _origin =
-          hashType === "ownerhash"
-            ? `eth:${_Wallet_ || constants.zeroAddress}`
-            : ENS;
+          hashType === "ownerhash" ? `eth:${_Wallet_ || C.zeroAddress}` : ENS;
         const __keypair = await KEYGEN(
           _origin,
           caip10,
@@ -2206,14 +2212,14 @@ const Preview: React.FC<ModalProps> = ({
             ethers.utils.namehash(ENS),
             keypairSigner
               ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-              : constants.zeroAddress,
+              : C.zeroAddress,
           ]); // Checks if connected wallet is on-chain manager
           setLoading(true);
           setMessage(["Generating Signer Key", ""]);
           const keygen = async () => {
             const _origin =
               hashType !== "recordhash"
-                ? `eth:${_Wallet_ || constants.zeroAddress}`
+                ? `eth:${_Wallet_ || C.zeroAddress}`
                 : ENS;
             const __keypair = await KEYGEN(
               _origin,
@@ -2237,7 +2243,7 @@ const Preview: React.FC<ModalProps> = ({
     if (keypairIPNS && sigIPNS) {
       if (hashType !== "gateway") {
         const CIDGen = async () => {
-          let key = constants.formatkey(keypairIPNS);
+          let key = C.formatkey(keypairIPNS);
           const w3name = await Name.from(ed25519v2.etc.hexToBytes(key));
           const CID_IPNS = String(w3name);
           let _Recordhash = recordhash ? recordhash.split("ipns://")[1] : "";
@@ -2315,10 +2321,7 @@ const Preview: React.FC<ModalProps> = ({
   React.useEffect(() => {
     if (states.length > 1) {
       let _updatedList = list.map((item) => {
-        if (
-          !constants.config.includes(item.type) &&
-          states.includes(item.type)
-        ) {
+        if (!C.config.includes(item.type) && states.includes(item.type)) {
           return {
             ...item,
             label: "Edit",
@@ -2352,6 +2355,7 @@ const Preview: React.FC<ModalProps> = ({
           avatar,
           pubkey,
           email,
+          description,
           github,
           url,
           twitter,
@@ -2372,6 +2376,7 @@ const Preview: React.FC<ModalProps> = ({
           avatar,
           pubkey,
           email,
+          description,
           github,
           url,
           twitter,
@@ -2392,6 +2397,7 @@ const Preview: React.FC<ModalProps> = ({
           avatar,
           pubkey,
           email,
+          description,
           github,
           url,
           twitter,
@@ -2418,6 +2424,7 @@ const Preview: React.FC<ModalProps> = ({
     contenthash,
     avatar,
     email,
+    description,
     pubkey,
     github,
     url,
@@ -2486,10 +2493,7 @@ const Preview: React.FC<ModalProps> = ({
   React.useEffect(() => {
     if (trigger && states.length > 0) {
       let _updatedList = list.map((item) => {
-        if (
-          states.includes(item.type) &&
-          !constants.forbidden.includes(item.type)
-        ) {
+        if (states.includes(item.type) && !C.forbidden.includes(item.type)) {
           return {
             ...item,
             editable: queue > 0, // allow updates only after the waiting period
@@ -2577,18 +2581,16 @@ const Preview: React.FC<ModalProps> = ({
       keypairSigner &&
       keypairSigner[0] &&
       newValues &&
-      !constants.isEmpty(newValues) &&
+      !C.isEmpty(newValues) &&
       states.length > 0
     ) {
-      let __signatures = constants.EMPTY_STRING_RECORDS();
+      let __signatures = C.EMPTY_STRING_RECORDS();
       states.forEach(async (_recordType) => {
         let _signature: any;
         if (newValues[_recordType]) {
           _signature = await signRecords({
             message: statementRecords(
-              constants.filesRecords[
-                constants.typesRecords.indexOf(_recordType)
-              ],
+              C.filesRecords[C.typesRecords.indexOf(_recordType)],
               genExtradata(_recordType, newValues[_recordType]),
               keypairSigner[0]
             ),
@@ -2605,19 +2607,14 @@ const Preview: React.FC<ModalProps> = ({
   // Triggers signing Off-Chain Signer's approval by Controller
   React.useEffect(() => {
     // Handle Signature S_APPROVE(K_WALLET)
-    if (
-      write &&
-      !onChainManager &&
-      !sigApproved &&
-      !constants.isEmpty(signatures)
-    ) {
+    if (write && !onChainManager && !sigApproved && !C.isEmpty(signatures)) {
       if (hashType !== "gateway") {
         setProcessCount(3);
       } else {
         setProcessCount(3);
       }
       signManager(); // Sign with K_WALLET
-    } else if (write && onChainManager && !constants.isEmpty(signatures)) {
+    } else if (write && onChainManager && !C.isEmpty(signatures)) {
       setSigApproved("0x");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2633,7 +2630,7 @@ const Preview: React.FC<ModalProps> = ({
       }
     }
     if (write && CID && count === states.length && count > 0 && sigApproved) {
-      let _encodedValues = constants.EMPTY_STRING_RECORDS();
+      let _encodedValues = C.EMPTY_STRING_RECORDS();
       for (const key in newValues) {
         if (newValues.hasOwnProperty(key) && newValues[key] !== "") {
           _encodedValues[key] = encodeValue(key, newValues[key]);
@@ -2644,10 +2641,10 @@ const Preview: React.FC<ModalProps> = ({
         signatures: signatures,
         manager: keypairSigner
           ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
-          : constants.zeroAddress,
+          : C.zeroAddress,
         managerSignature: sigApproved,
         ens: ENS,
-        controller: _Wallet_ || constants.zeroAddress,
+        controller: _Wallet_ || C.zeroAddress,
         ipns: CID,
         recordsTypes: states,
         recordsValues: _encodedValues,
@@ -2700,6 +2697,7 @@ const Preview: React.FC<ModalProps> = ({
                     if (item.type === "addr") setAddr(data.response.addr);
                     if (item.type === "avatar") setAvatar(data.response.avatar);
                     if (item.type === "email") setEmail(data.response.email);
+                    if (item.type === "description") setDescription(data.response.description);
                     if (item.type === "pubkey") setPubkey(data.response.pubkey);
                     if (item.type === "com.github")
                       setGithub(data.response.github);
@@ -2735,7 +2733,7 @@ const Preview: React.FC<ModalProps> = ({
                 });
                 if (hashType !== "gateway" && keypairIPNS) {
                   // Handle W3Name publish
-                  let key = constants.formatkey(keypairIPNS);
+                  let key = C.formatkey(keypairIPNS);
                   let w3name: Name.WritableName;
                   let w3nam3: Nam3.WritableName;
                   const keygen = async () => {
@@ -2760,10 +2758,7 @@ const Preview: React.FC<ModalProps> = ({
                               )
                             )
                           );
-                          if (
-                            Number(data.response.timestamp) <
-                            constants.w3timestamp
-                          ) {
+                          if (Number(data.response.timestamp) < C.w3timestamp) {
                             _revision = await Name.increment(
                               _revision_,
                               toPublish
@@ -2786,10 +2781,7 @@ const Preview: React.FC<ModalProps> = ({
                           data.response.ipfs.split("ipfs://")[1]
                         );
                         // Publish IPNS
-                        if (
-                          Number(data.response.timestamp) <
-                          constants.w3timestamp
-                        ) {
+                        if (Number(data.response.timestamp) < C.w3timestamp) {
                           await Name.publish(_revision, w3name.key);
                         } else {
                           await Name.publish(_revision, w3name.key);
@@ -2799,17 +2791,15 @@ const Preview: React.FC<ModalProps> = ({
                         setGas(gas);
                         setGasModal(true);
                         setStates([]);
-                        setLegit(constants.EMPTY_BOOL_RECORDS());
+                        setLegit(C.EMPTY_BOOL_RECORDS());
                         setLoading(false);
                         // Update values in the modal to new ones
                         let _updatedList = list.map((item) => {
-                          if (!constants.config.includes(item.type)) {
+                          if (!C.config.includes(item.type)) {
                             let _queue =
                               Math.round(Date.now() / 1000) -
-                              constants.latestTimestamp(
-                                data.response.timestamp
-                              ) -
-                              constants.waitingPeriod;
+                              C.latestTimestamp(data.response.timestamp) -
+                              C.waitingPeriod;
                             setQueue(hashType === "gateway" ? 1 : _queue);
                             if (data.response.meta[item.type]) {
                               return {
@@ -2832,8 +2822,8 @@ const Preview: React.FC<ModalProps> = ({
                           }
                         });
                         setPreCache(_updatedList);
-                        setNewValues(constants.EMPTY_STRING_RECORDS());
-                        setSignatures(constants.EMPTY_STRING_RECORDS());
+                        setNewValues(C.EMPTY_STRING_RECORDS());
+                        setSignatures(C.EMPTY_STRING_RECORDS());
                         setUpdateRecords(false); // Reset
                         setSigCount(0);
                         setSaltModalState({
@@ -2861,11 +2851,11 @@ const Preview: React.FC<ModalProps> = ({
                       setGas(gas);
                       setGasModal(true);
                       setStates([]);
-                      setLegit(constants.EMPTY_BOOL_RECORDS());
+                      setLegit(C.EMPTY_BOOL_RECORDS());
                       setLoading(false);
                       // Update values in the modal to new ones
                       let _updatedList = list.map((item) => {
-                        if (!constants.config.includes(item.type)) {
+                        if (!C.config.includes(item.type)) {
                           let _queue = 1;
                           setQueue(_queue);
                           if (data.response.meta[item.type]) {
@@ -2889,8 +2879,8 @@ const Preview: React.FC<ModalProps> = ({
                         }
                       });
                       setPreCache(_updatedList);
-                      setNewValues(constants.EMPTY_STRING_RECORDS());
-                      setSignatures(constants.EMPTY_STRING_RECORDS());
+                      setNewValues(C.EMPTY_STRING_RECORDS());
+                      setSignatures(C.EMPTY_STRING_RECORDS());
                       setUpdateRecords(false); // Reset
                       setSigCount(0);
                       setSaltModalState({
@@ -3188,8 +3178,8 @@ const Preview: React.FC<ModalProps> = ({
         doCrash();
         setWrite(false);
         setUpdateRecords(false); // Reset
-        setLegit(constants.EMPTY_BOOL_RECORDS());
-        setNewValues(constants.EMPTY_STRING_RECORDS());
+        setLegit(C.EMPTY_BOOL_RECORDS());
+        setNewValues(C.EMPTY_STRING_RECORDS());
         let _updatedList = list.map((item) => {
           if (item.type !== "storage") {
             return item;
@@ -3415,20 +3405,18 @@ const Preview: React.FC<ModalProps> = ({
                     color=""
                   >
                     {isMobile
-                      ? constants.truncateHexString(
-                          _OwnerLegacy_
-                            ? String(_OwnerLegacy_)
-                            : constants.zeroAddress
+                      ? C.truncateHexString(
+                          _OwnerLegacy_ ? String(_OwnerLegacy_) : C.zeroAddress
                         )
                       : _OwnerLegacy_
                       ? String(_OwnerLegacy_)
-                      : constants.zeroAddress}
+                      : C.zeroAddress}
                   </span>
                 </div>
                 <div style={{ margin: "-3px 0 1px 0" }}>
                   <span className="mono" id="metaManager" onClick={() => {}}>
                     {isMobile
-                      ? constants.truncateHexString(getManager())
+                      ? C.truncateHexString(getManager())
                       : getManager()}
                   </span>
                 </div>
@@ -3441,7 +3429,7 @@ const Preview: React.FC<ModalProps> = ({
                     }}
                   >
                     {String(_OwnerLegacy_) ===
-                    constants.ensContracts[chain === "1" ? 7 : 3]
+                    C.ensContracts[chain === "1" ? 7 : 3]
                       ? "done"
                       : "close"}
                   </span>
@@ -3617,7 +3605,7 @@ const Preview: React.FC<ModalProps> = ({
                                 fontFamily: "Spotnik",
                                 fontWeight: "700",
                                 fontSize: "15px",
-                                color: constants.blocked.includes(item.type)
+                                color: C.blocked.includes(item.type)
                                   ? "orange"
                                   : "cyan",
                                 marginRight: "15px",
@@ -3678,6 +3666,8 @@ const Preview: React.FC<ModalProps> = ({
                                         ? "share"
                                         : item.type === "email"
                                         ? "email"
+                                        : item.type === "description"
+                                        ? "description"
                                         : item.type === "pubkey"
                                         ? "key"
                                         : item.type === "com.twitter"
@@ -3717,7 +3707,7 @@ const Preview: React.FC<ModalProps> = ({
                               }
                               {
                                 // Set Badge if Resolver is migrated and ONLY Ownerhash is set
-                                constants.config.includes(item.type) &&
+                                C.config.includes(item.type) &&
                                   resolver === ccip2Contract &&
                                   !recordhash &&
                                   ownerhash && (
@@ -3729,8 +3719,7 @@ const Preview: React.FC<ModalProps> = ({
                                         setColor(
                                           item.type === "resolver"
                                             ? "lime"
-                                            : ownerhash ===
-                                              constants.defaultGateway
+                                            : ownerhash === C.defaultGateway
                                             ? "yellow"
                                             : "cyan"
                                         );
@@ -3740,7 +3729,7 @@ const Preview: React.FC<ModalProps> = ({
                                             : `<span>Global <span style="color: cyan">${
                                                 ownerhash.startsWith("https://")
                                                   ? ownerhash ===
-                                                    constants.defaultGateway
+                                                    C.defaultGateway
                                                     ? "Default Storage"
                                                     : "Custom Gateway"
                                                   : "IPNS"
@@ -3752,8 +3741,7 @@ const Preview: React.FC<ModalProps> = ({
                                           ? "Resolver Is Migrated"
                                           : `${
                                               ownerhash.startsWith("https://")
-                                                ? ownerhash ===
-                                                  constants.defaultGateway
+                                                ? ownerhash === C.defaultGateway
                                                   ? "Default Storage Is Ownerhash"
                                                   : "Custom Gateway Is Ownerhash"
                                                 : "IPNS Ownerhash Is Set"
@@ -3766,8 +3754,7 @@ const Preview: React.FC<ModalProps> = ({
                                           color:
                                             item.type === "resolver"
                                               ? "lime"
-                                              : ownerhash ===
-                                                constants.defaultGateway
+                                              : ownerhash === C.defaultGateway
                                               ? "yellow"
                                               : ownerhash.startsWith("https://")
                                               ? "cyan"
@@ -3781,7 +3768,7 @@ const Preview: React.FC<ModalProps> = ({
                               }
                               {
                                 // Set Badge if Resolver is migrated and Recordhash is set
-                                constants.config.includes(item.type) &&
+                                C.config.includes(item.type) &&
                                   resolver === ccip2Contract &&
                                   recordhash && (
                                     <button
@@ -3793,8 +3780,7 @@ const Preview: React.FC<ModalProps> = ({
                                           item.type === "resolver"
                                             ? "lime"
                                             : recordhash.startsWith("https://")
-                                            ? recordhash ===
-                                              constants.defaultGateway
+                                            ? recordhash === C.defaultGateway
                                               ? "yellow"
                                               : "cyan"
                                             : "lime"
@@ -3807,7 +3793,7 @@ const Preview: React.FC<ModalProps> = ({
                                                   "https://"
                                                 )
                                                   ? recordhash ===
-                                                    constants.defaultGateway
+                                                    C.defaultGateway
                                                     ? "Default Storage"
                                                     : "Custom Gateway"
                                                   : "IPNS"
@@ -3820,7 +3806,7 @@ const Preview: React.FC<ModalProps> = ({
                                           : `${
                                               recordhash.startsWith("https://")
                                                 ? recordhash ===
-                                                  constants.defaultGateway
+                                                  C.defaultGateway
                                                   ? "Default Storage"
                                                   : "Custom Gateway"
                                                 : "Recordhash"
@@ -3836,8 +3822,7 @@ const Preview: React.FC<ModalProps> = ({
                                               : recordhash.startsWith(
                                                   "https://"
                                                 )
-                                              ? recordhash ===
-                                                constants.defaultGateway
+                                              ? recordhash === C.defaultGateway
                                                 ? "yellow"
                                                 : "cyan"
                                               : "lime",
@@ -3854,7 +3839,7 @@ const Preview: React.FC<ModalProps> = ({
                               }
                               {
                                 // Set Badge if Resolver is not migrated and no Recordhash or Ownerhash has been set in the past
-                                constants.config.includes(item.type) &&
+                                C.config.includes(item.type) &&
                                   resolver !== ccip2Contract &&
                                   !recordhash &&
                                   !ownerhash && (
@@ -3899,7 +3884,7 @@ const Preview: React.FC<ModalProps> = ({
                               }
                               {
                                 // Resolver is not migrated but Recordhash has been set in the past
-                                constants.config.includes(item.type) &&
+                                C.config.includes(item.type) &&
                                   resolver !== ccip2Contract &&
                                   (recordhash || ownerhash) && (
                                     <button
@@ -3990,8 +3975,7 @@ const Preview: React.FC<ModalProps> = ({
                                         color: !hashIPFS
                                           ? "orange"
                                           : recordhash &&
-                                            recordhash !==
-                                              constants.defaultGateway
+                                            recordhash !== C.defaultGateway
                                           ? "lime"
                                           : "cyan",
                                         fontSize: "17px",
@@ -4013,18 +3997,18 @@ const Preview: React.FC<ModalProps> = ({
                                       setHelpModal(true);
                                       setIcon("info");
                                       setColor(
-                                        constants.blocked.includes(item.type)
+                                        C.blocked.includes(item.type)
                                           ? "orange"
                                           : "cyan"
                                       );
                                       setHelp(
-                                        constants.blocked.includes(item.type)
+                                        C.blocked.includes(item.type)
                                           ? '<span style="color: orangered">In Process of Bug Fixing</span>'
                                           : `<span>${item.help}</span>`
                                       );
                                     }}
                                     data-tooltip={
-                                      constants.blocked.includes(item.type)
+                                      C.blocked.includes(item.type)
                                         ? "Coming Soon"
                                         : "Enlighten Me"
                                     }
@@ -4032,9 +4016,7 @@ const Preview: React.FC<ModalProps> = ({
                                     <div
                                       className="material-icons-round smol"
                                       style={{
-                                        color: constants.blocked.includes(
-                                          item.type
-                                        )
+                                        color: C.blocked.includes(item.type)
                                           ? "orange"
                                           : "cyan",
                                         marginLeft:
@@ -4051,8 +4033,8 @@ const Preview: React.FC<ModalProps> = ({
 
                               {
                                 // Countdown
-                                !constants.config.includes(item.type) &&
-                                  !constants.blocked.includes(item.type) &&
+                                !C.config.includes(item.type) &&
+                                  !C.blocked.includes(item.type) &&
                                   resolver === ccip2Contract &&
                                   (recordhash || ownerhash) && (
                                     <button
@@ -4088,8 +4070,8 @@ const Preview: React.FC<ModalProps> = ({
 
                               {
                                 // Refresh buttons
-                                !constants.config.includes(item.type) &&
-                                  !constants.blocked.includes(item.type) &&
+                                !C.config.includes(item.type) &&
+                                  !C.blocked.includes(item.type) &&
                                   resolver === ccip2Contract &&
                                   _Wallet_ &&
                                   (recordhash || ownerhash) &&
@@ -4225,7 +4207,7 @@ const Preview: React.FC<ModalProps> = ({
                                   : item.type === "storage"
                                   ? setConfirm(true)
                                   : setWrite(true);
-                                constants.config.includes(item.type)
+                                C.config.includes(item.type)
                                   ? setStates((prevState) => [
                                       ...prevState,
                                       item.type,
@@ -4238,7 +4220,7 @@ const Preview: React.FC<ModalProps> = ({
                                 className="flex-sans-direction"
                                 style={{
                                   fontSize: "13px",
-                                  color: constants.config.includes(item.type)
+                                  color: C.config.includes(item.type)
                                     ? "white"
                                     : !legit[item.type]
                                     ? "grey"
@@ -4266,42 +4248,42 @@ const Preview: React.FC<ModalProps> = ({
                           >
                             <input
                               className={
-                                !constants.config.includes(item.type)
+                                !C.config.includes(item.type)
                                   ? resolver !== ccip2Contract
                                     ? "inputextra_"
-                                    : constants.blocked.includes(item.type)
+                                    : C.blocked.includes(item.type)
                                     ? "inputextra___"
                                     : "inputextra"
                                   : resolver !== ccip2Contract
                                   ? "inputextra_"
                                   : item.type === "storage" &&
-                                    item.value == constants.defaultGateway
+                                    item.value == C.defaultGateway
                                   ? "inputextra__"
                                   : "inputextra"
                               }
                               id={item.key}
                               key={item.key}
                               placeholder={
-                                constants.blocked.includes(item.type)
+                                C.blocked.includes(item.type)
                                   ? "Coming Soon"
                                   : item.value
                               }
                               type="text"
                               disabled={
                                 !item.editable ||
-                                constants.blocked.includes(item.type) ||
+                                C.blocked.includes(item.type) ||
                                 !managers.includes(String(_Wallet_))
                               }
                               style={{
                                 background:
                                   resolver !== ccip2Contract ||
-                                  constants.blocked.includes(item.type) ||
+                                  C.blocked.includes(item.type) ||
                                   !managers.includes(String(_Wallet_))
-                                    ? !constants.config.includes(item.type)
+                                    ? !C.config.includes(item.type)
                                       ? "none"
                                       : "linear-gradient(90deg, rgba(100,0,0,0.5) 0%, rgba(100,25,25,0.5) 50%, rgba(100,0,0,0.5) 100%)"
                                     : item.type === "storage" &&
-                                      item.value === constants.defaultGateway
+                                      item.value === C.defaultGateway
                                     ? "linear-gradient(90deg, rgba(50,50,0,0.5) 0%, rgba(50,50,25,0.5) 50%, rgba(50,50,0,0.5) 100%)"
                                     : "linear-gradient(90deg, rgba(0,50,0,0.5) 0%, rgba(25,50,25,0.5) 50%, rgba(0,50,0,0.5) 100%)",
                                 fontFamily: "SF Mono",
@@ -4312,15 +4294,13 @@ const Preview: React.FC<ModalProps> = ({
                                 textAlign: "left",
                                 marginTop: "-5px",
                                 marginBottom: "-5px",
-                                paddingRight: !constants.config.includes(
-                                  item.type
-                                )
+                                paddingRight: !C.config.includes(item.type)
                                   ? "30px"
                                   : "0",
                                 color: !legit[item.type]
                                   ? "white"
                                   : item.type === "storage" &&
-                                    item.value === constants.defaultGateway
+                                    item.value === C.defaultGateway
                                   ? "yellow"
                                   : "lightgreen",
                                 cursor: "copy",
@@ -4329,8 +4309,8 @@ const Preview: React.FC<ModalProps> = ({
                                 setValues(item.type, e.target.value);
                               }}
                             />
-                            {!constants.config.includes(item.type) &&
-                              !constants.blocked.includes(item.type) &&
+                            {!C.config.includes(item.type) &&
+                              !C.blocked.includes(item.type) &&
                               !states.includes(item.type) && (
                                 <div
                                   id={item.type}
@@ -4349,7 +4329,7 @@ const Preview: React.FC<ModalProps> = ({
                                         : "1",
                                   }}
                                   onClick={() =>
-                                    constants.copyElement(item.value, item.type)
+                                    C.copyElement(item.value, item.type)
                                   }
                                 >
                                   {isLoading[item.type] === "1"
@@ -4382,7 +4362,7 @@ const Preview: React.FC<ModalProps> = ({
                       disabled={
                         !_Wallet_ ||
                         !managers.includes(String(_Wallet_)) ||
-                        newValues === constants.EMPTY_STRING_RECORDS()
+                        newValues === C.EMPTY_STRING_RECORDS()
                       }
                       style={{
                         alignSelf: "flex-end",

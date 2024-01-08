@@ -31,6 +31,7 @@ export const typesRecords = [
   "email",
   "pubkey",
   "url",
+  "description",
   // Socials
   "com.github",
   "com.twitter",
@@ -65,6 +66,7 @@ export const filesRecords = [
   "contenthash",
   "text/avatar",
   "text/email",
+  "text/description",
   "pubkey",
   "text/url",
   // Socials

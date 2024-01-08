@@ -2,7 +2,7 @@ import React from "react";
 import { isMobile } from "react-device-detect";
 import ReactDOM from "react-dom";
 import styled from "styled-components";
-import * as constants from "../utils/constants";
+import * as C from "../utils/constants";
 
 interface ModalProps {
   show: boolean;
@@ -98,7 +98,7 @@ const Info: React.FC<ModalProps> = ({
             <button
               className="button-empty"
               onClick={() => {
-                setColor("lime"), constants.copyToClipboard("info");
+                setColor("lime"), C.copyToClipboard("info");
               }}
               style={{
                 marginLeft: "-25px",
