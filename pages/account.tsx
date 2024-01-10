@@ -1147,9 +1147,7 @@ const Account: NextPage = () => {
     if (query) {
       let _namehash = ethers.utils.namehash(query);
       let _token = ethers.BigNumber.from(_namehash);
-      let _labelhash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(query.split(".eth")[0])
-      );
+      let _labelhash = C.calculateLabelhash(query);
       setNamehashLegacy(_namehash);
       setTokenIDWrapper(String(_token));
       setTokenIDLegacy(String(ethers.BigNumber.from(_labelhash)));

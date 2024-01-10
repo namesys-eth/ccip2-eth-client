@@ -622,3 +622,19 @@ export function deserialiseBigInteger(serialised: any): any {
   let bigInt = Object.assign(Object.create(BigInteger.prototype), serialised);
   return bigInt;
 }
+
+// Calculates labelhash for legacy subdomains
+export function calculateLabelhash(subdomain: string) {
+  let index: number = -1;
+  if (subdomain.split(".").length === 2) {
+    index = 0;
+  } else if (subdomain.split(".").length > 2) {
+    // [!] hack limited to parent access on zero-level
+    index = 1;
+  }
+  return index >= 0
+    ? ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(subdomain.split(".")[index])
+      )
+    : zeroBytes;
+}

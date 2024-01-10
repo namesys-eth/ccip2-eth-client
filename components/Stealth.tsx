@@ -500,7 +500,7 @@ const Stealth: React.FC<ModalProps> = ({
     return _extradata;
   }
 
-  // Returns Owner of wrapped/legacy ENS Domain
+  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
   function getManager() {
     if (_OwnerLegacy_ && _ManagerLegacy_) {
       if (String(_OwnerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
@@ -509,7 +509,42 @@ const Stealth: React.FC<ModalProps> = ({
         return String(_ManagerLegacy_);
       }
     } else {
+      if (
+        !_OwnerLegacy_ &&
+        String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]
+      ) {
+        return String(_OwnerWrapped_);
+      }
       return C.zeroAddress;
+    }
+  }
+
+  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
+  function getRecordEditor() {
+    if (
+      _OwnerWrapped_ &&
+      _ManagerLegacy_ &&
+      String(_OwnerWrapped_) !== C.zeroAddress &&
+      String(_ManagerLegacy_) !== C.zeroAddress
+    ) {
+      if (String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== C.zeroAddress) {
+          return String(_OwnerWrapped_);
+        }
+      } else {
+        return String(_OwnerLegacy_);
+      }
+      return C.zeroAddress;
+    } else {
+      if (_OwnerLegacy_ && String(_OwnerLegacy_) !== C.zeroAddress) {
+        return String(_OwnerLegacy_);
+      } else {
+        if (_ManagerLegacy_ && String(_ManagerLegacy_) !== C.zeroAddress) {
+          return String(_ManagerLegacy_);
+        } else {
+          return C.zeroAddress;
+        }
+      }
     }
   }
 
@@ -954,9 +989,7 @@ const Stealth: React.FC<ModalProps> = ({
   React.useEffect(() => {
     if (browser && ENS) {
       let namehash = ethers.utils.namehash(ENS);
-      let labelhash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(ENS.split(".eth")[0])
-      );
+      let labelhash = C.calculateLabelhash(ENS);
       setNamehashLegacy(namehash);
       setTokenIDLegacy(String(ethers.BigNumber.from(labelhash)));
       setTokenIDWrapper(String(ethers.BigNumber.from(namehash)));
@@ -1075,7 +1108,7 @@ const Stealth: React.FC<ModalProps> = ({
         setManagers([_Wallet_]);
       } else {
         // Set owner as in-app managers if no on-chain manager exists
-        let _Manager_ = getManager();
+        let _Manager_ = getRecordEditor();
         setManagers([_Manager_]);
       }
     }
@@ -1096,9 +1129,15 @@ const Stealth: React.FC<ModalProps> = ({
       } else {
         setWrapped(false);
       }
+    } else {
+      if (String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
+        setWrapped(true);
+      } else {
+        setWrapped(false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_OwnerLegacy_]);
+  }, [_ManagerLegacy_, _OwnerLegacy_]);
 
   // Error Handling
   // Handles Transaction Confirmation

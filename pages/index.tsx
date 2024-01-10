@@ -121,13 +121,13 @@ const Home: NextPage = () => {
       _OwnerWrapped = await contractWrapper.ownerOf(tokenIDWrapper);
     } catch (error) {}
     if (_OwnerLegacy === C.zeroAddress) {
-      return "0x";
+      return C.zeroAddress;
     }
     if (_OwnerLegacy === C.ensContracts[_Chain_ === "1" ? 7 : 3]) {
       if (_OwnerWrapped !== C.zeroAddress) {
         return _OwnerWrapped;
       } else {
-        return "0x";
+        return C.zeroAddress;
       }
     }
     return _ManagerLegacy;
@@ -416,6 +416,7 @@ const Home: NextPage = () => {
     if (
       _OwnerWrapped_ &&
       _ManagerLegacy_ &&
+      String(_OwnerWrapped_) !== C.zeroAddress &&
       String(_ManagerLegacy_) !== C.zeroAddress
     ) {
       if (String(_ManagerLegacy_) === C.ensContracts[_Chain_ === "1" ? 7 : 3]) {
@@ -424,11 +425,21 @@ const Home: NextPage = () => {
           setOwner(String(_OwnerWrapped_));
         }
       } else {
-        setManager(String(_ManagerLegacy_));
-        setOwner(String(_ManagerLegacy_));
+        setManager(String(_OwnerLegacy_));
+        setOwner(String(_OwnerLegacy_));
       }
     } else {
-      setOwner("0x");
+      if (_OwnerLegacy_ && String(_OwnerLegacy_) !== C.zeroAddress) {
+        setOwner(String(_OwnerLegacy_));
+        setManager(String(_OwnerLegacy_));
+      } else {
+        if (_ManagerLegacy_ && String(_ManagerLegacy_) !== C.zeroAddress) {
+          setManager(String(_ManagerLegacy_));
+        } else {
+          setManager(C.zeroAddress);
+        }
+        setOwner(C.zeroAddress);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -620,11 +631,8 @@ const Home: NextPage = () => {
         let __namehash = ethers.utils.namehash(query);
         let __token = ethers.BigNumber.from(__namehash);
         setTokenIDWrapper(String(__token));
-
         // BROWSER
-        let __labelhash = ethers.utils.keccak256(
-          ethers.utils.toUtf8Bytes(query.split(".eth")[0])
-        );
+        let __labelhash = C.calculateLabelhash(query);
         setNamehashLegacy(__namehash);
         setTokenIDLegacy(String(ethers.BigNumber.from(__labelhash)));
       } catch {}

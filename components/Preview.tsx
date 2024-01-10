@@ -882,7 +882,42 @@ const Preview: React.FC<ModalProps> = ({
         return String(_ManagerLegacy_);
       }
     } else {
+      if (
+        !_OwnerLegacy_ &&
+        String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]
+      ) {
+        return String(_OwnerWrapped_);
+      }
       return C.zeroAddress;
+    }
+  }
+
+  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
+  function getRecordEditor() {
+    if (
+      _OwnerWrapped_ &&
+      _ManagerLegacy_ &&
+      String(_OwnerWrapped_) !== C.zeroAddress &&
+      String(_ManagerLegacy_) !== C.zeroAddress
+    ) {
+      if (String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
+        if (_OwnerWrapped_ && String(_OwnerWrapped_) !== C.zeroAddress) {
+          return String(_OwnerWrapped_);
+        }
+      } else {
+        return String(_OwnerLegacy_);
+      }
+      return C.zeroAddress;
+    } else {
+      if (_OwnerLegacy_ && String(_OwnerLegacy_) !== C.zeroAddress) {
+        return String(_OwnerLegacy_);
+      } else {
+        if (_ManagerLegacy_ && String(_ManagerLegacy_) !== C.zeroAddress) {
+          return String(_ManagerLegacy_);
+        } else {
+          return C.zeroAddress;
+        }
+      }
     }
   }
 
@@ -1292,7 +1327,9 @@ const Preview: React.FC<ModalProps> = ({
                 : setContenthash("");
               _history.avatar ? setAvatar(_history.avatar) : setAvatar("");
               _history.email ? setEmail(_history.email) : setEmail("");
-              _history.description ? setDescription(_history.description) : setDescription("");
+              _history.description
+                ? setDescription(_history.description)
+                : setDescription("");
               _history["com.github"]
                 ? setGithub(_history["com.github"])
                 : setGithub("");
@@ -1846,9 +1883,7 @@ const Preview: React.FC<ModalProps> = ({
   React.useEffect(() => {
     if (browser && ENS) {
       let namehash = ethers.utils.namehash(ENS);
-      let labelhash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(ENS.split(".eth")[0])
-      );
+      let labelhash = C.calculateLabelhash(ENS);
       setNamehashLegacy(namehash);
       setTokenIDLegacy(String(ethers.BigNumber.from(labelhash)));
       setTokenIDWrapper(String(ethers.BigNumber.from(namehash)));
@@ -2024,7 +2059,7 @@ const Preview: React.FC<ModalProps> = ({
         setManagers([_Wallet_]);
       } else {
         // Set owner as in-app managers if no on-chain manager exists
-        let _Manager_ = getManager();
+        let _Manager_ = getRecordEditor();
         setManagers([_Manager_]);
       }
     }
@@ -2045,9 +2080,15 @@ const Preview: React.FC<ModalProps> = ({
       } else {
         setWrapped(false);
       }
+    } else {
+      if (String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
+        setWrapped(true);
+      } else {
+        setWrapped(false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_OwnerLegacy_]);
+  }, [_ManagerLegacy_, _OwnerLegacy_]);
 
   // Handles loading of avatar
   React.useEffect(() => {
@@ -2697,7 +2738,8 @@ const Preview: React.FC<ModalProps> = ({
                     if (item.type === "addr") setAddr(data.response.addr);
                     if (item.type === "avatar") setAvatar(data.response.avatar);
                     if (item.type === "email") setEmail(data.response.email);
-                    if (item.type === "description") setDescription(data.response.description);
+                    if (item.type === "description")
+                      setDescription(data.response.description);
                     if (item.type === "pubkey") setPubkey(data.response.pubkey);
                     if (item.type === "com.github")
                       setGithub(data.response.github);
@@ -3310,6 +3352,8 @@ const Preview: React.FC<ModalProps> = ({
                 className="material-icons-round miui"
                 style={{
                   marginTop: "4px",
+                  marginRight: "10px",
+                  color: "grey",
                 }}
               >
                 portrait
@@ -3326,9 +3370,9 @@ const Preview: React.FC<ModalProps> = ({
                 marginTop: isMobile ? "-38.5%" : "-21.5%",
                 marginLeft: isMobile
                   ? !avatar || !imageLoaded
-                    ? "27.5%"
+                    ? "28.5%"
                     : "15.5%"
-                  : "-4%",
+                  : "-3%",
               }}
             >
               <div
@@ -3412,6 +3456,40 @@ const Preview: React.FC<ModalProps> = ({
                       ? String(_OwnerLegacy_)
                       : C.zeroAddress}
                   </span>
+                  {(!_OwnerLegacy_ ||
+                    String(_OwnerLegacy_) === C.zeroAddress) && (
+                    <span
+                      style={{
+                        padding: "0 0 0 7.5px",
+                      }}
+                    >
+                      <span
+                        className="material-icons-round smoller"
+                        style={{
+                          color: "orange",
+                          fontSize: "15px",
+                        }}
+                      >
+                        {"report_problem"}
+                      </span>
+                    </span>
+                  )}
+                  {C.ensContracts.includes(String(_OwnerLegacy_)) && (
+                    <img
+                      alt="logo-2"
+                      src="ens.png"
+                      width={"15px"}
+                      style={{ margin: `0 -15px -1px 7.5px` }}
+                    />
+                  )}
+                  {!wrapped && (
+                    <img
+                      alt="logo-2"
+                      src="logo.png"
+                      width={"15px"}
+                      style={{ margin: `0 -15px -1px 7.5px` }}
+                    />
+                  )}
                 </div>
                 <div style={{ margin: "-3px 0 1px 0" }}>
                   <span className="mono" id="metaManager" onClick={() => {}}>
@@ -3419,6 +3497,15 @@ const Preview: React.FC<ModalProps> = ({
                       ? C.truncateHexString(getManager())
                       : getManager()}
                   </span>
+                  {(wrapped ||
+                    C.ensContracts.includes(String(_OwnerLegacy_))) && (
+                    <img
+                      alt="logo-2"
+                      src="logo.png"
+                      width={"15px"}
+                      style={{ margin: `0 -15px -1px 7.5px` }}
+                    />
+                  )}
                 </div>
                 <div style={{ margin: "0px 0 2px 0" }}>
                   <span
@@ -3428,10 +3515,7 @@ const Preview: React.FC<ModalProps> = ({
                       fontSize: "21px",
                     }}
                   >
-                    {String(_OwnerLegacy_) ===
-                    C.ensContracts[chain === "1" ? 7 : 3]
-                      ? "done"
-                      : "close"}
+                    {wrapped ? "done" : "close"}
                   </span>
                 </div>
               </div>
@@ -4036,6 +4120,7 @@ const Preview: React.FC<ModalProps> = ({
                                 !C.config.includes(item.type) &&
                                   !C.blocked.includes(item.type) &&
                                   resolver === ccip2Contract &&
+                                  !isDisabled(item) &&
                                   (recordhash || ownerhash) && (
                                     <button
                                       className="button-tiny"
