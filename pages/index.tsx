@@ -91,8 +91,8 @@ const Home: NextPage = () => {
   const PORT = process.env.NEXT_PUBLIC_PORT;
   const SERVER = process.env.NEXT_PUBLIC_SERVER;
 
-  // Get Owner with ethers.js
-  async function getManager(provider: any) {
+  // Get in-app account allowed to manage/edit NameSys records
+  async function getRecordEditor(provider: any) {
     let _OwnerLegacy: string = "";
     let _ManagerLegacy: string = "";
     const contractLegacyRegistry = new ethers.Contract(
@@ -152,7 +152,7 @@ const Home: NextPage = () => {
     return _recordhash;
   }
 
-  // Get Ownerhash with ethers.js
+  // Get Ownerhash
   async function getOwnerhash(provider: any, address: string) {
     const contract = new ethers.Contract(
       ccip2Config.addressOrName,
@@ -454,7 +454,7 @@ const Home: NextPage = () => {
   React.useEffect(() => {
     if (!_Wallet_ && tokenIDLegacy && tokenIDWrapper && query && query !== "") {
       const _setOrigins = async () => {
-        let _Owner = await getManager(C.provider);
+        let _Owner = await getRecordEditor(C.provider);
         let _Recordhash = await getRecordhash(C.provider, query);
         let _Ownerhash = await getOwnerhash(C.provider, _Owner);
         if (_Owner) {

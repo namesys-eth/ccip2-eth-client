@@ -221,7 +221,7 @@ const Stealth: React.FC<ModalProps> = ({
     abi: ccip2Config.contractInterface,
     functionName: "isApprovedSigner",
     args: [
-      getManager(),
+      getRecordEditor(),
       ethers.utils.namehash(ENS),
       keypairSigner && keypairSigner[0]
         ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
@@ -244,7 +244,7 @@ const Stealth: React.FC<ModalProps> = ({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: "getRecordhash",
-    args: [ethers.utils.hexZeroPad(getManager(), 32).toLowerCase()],
+    args: [ethers.utils.hexZeroPad(getRecordEditor(), 32).toLowerCase()],
   });
   // Read Recordhash from CCIP2 Resolver
   const { data: _Recordhash_ } = useContractRead({
@@ -500,26 +500,7 @@ const Stealth: React.FC<ModalProps> = ({
     return _extradata;
   }
 
-  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
-  function getManager() {
-    if (_OwnerLegacy_ && _ManagerLegacy_) {
-      if (String(_OwnerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]) {
-        return _OwnerWrapped_ ? String(_OwnerWrapped_) : C.zeroAddress;
-      } else {
-        return String(_ManagerLegacy_);
-      }
-    } else {
-      if (
-        !_OwnerLegacy_ &&
-        String(_ManagerLegacy_) === C.ensContracts[chain === "1" ? 7 : 3]
-      ) {
-        return String(_OwnerWrapped_);
-      }
-      return C.zeroAddress;
-    }
-  }
-
-  // Returns Owner of Wrapped or Manager of Legacy ENS Domain
+  // Returns Account allowed to manage/edit NameSys records
   function getRecordEditor() {
     if (
       _OwnerWrapped_ &&
@@ -723,7 +704,7 @@ const Stealth: React.FC<ModalProps> = ({
           let _Storage = await verifier.quickRecordhash(
             _ENS,
             ccip2Config,
-            getManager()
+            getRecordEditor()
           );
           let _IPFS: any;
           if (_history.ownerstamp.length > 1) {
@@ -912,7 +893,7 @@ const Stealth: React.FC<ModalProps> = ({
     const request = {
       type: "read",
       ens: ENS,
-      controller: getManager(),
+      controller: getRecordEditor(),
       recordsTypes: ["stealth", "rsa", "revision", "version"],
       recordsValues: "all",
       chain: chain,
@@ -1545,7 +1526,7 @@ const Stealth: React.FC<ModalProps> = ({
         if (sigSigner && !isSigner) {
           // Set query for on-chain manager [v2]
           setOnChainManagerQuery([
-            getManager(),
+            getRecordEditor(),
             ethers.utils.namehash(ENS),
             keypairSigner
               ? ethers.utils.computeAddress(`0x${keypairSigner[0]}`)
