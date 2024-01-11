@@ -247,7 +247,7 @@ const Confirm: React.FC<ModalProps> = ({
                     '<span><span style="color: cyan">HTTP Gateway</span> could point to a <span style="color: cyan">web<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> gateway or <span style="color: cyan">L<span style="font-family: \'SF Mono\'; font-size: 15px">2</span></span> proxy</span>'
                   );
                 }}
-                data-tooltip={"Continue With Gateway"}
+                data-tooltip={"Enlighten Me"}
               >
                 <div
                   className="material-icons smol"

@@ -276,7 +276,7 @@ const Account: NextPage = () => {
     _CID: string
   ) {
     if (_success && _set) {
-      let _LIST = _flash;
+      let _LIST = [..._flash];
       for (var i = 0; i < _flash.length; i++) {
         if (_flash[i].migrated === "1/2") {
           _LIST[i].migrated = _CID.startsWith("https://") ? "4/5" : "3/4";
@@ -446,7 +446,7 @@ const Account: NextPage = () => {
   React.useEffect(() => {
     if (previewModalState.trigger && previewModalState.modalData) {
       // Trigger update when one of the names is migrated
-      let _LIST = meta;
+      let _LIST = [...meta];
       const index = _LIST.findIndex(
         (item) =>
           `${item.name}.eth` === previewModalState.modalData.slice(0, -1)
@@ -1019,7 +1019,7 @@ const Account: NextPage = () => {
             ) {
               items[0].migrated = "3/4";
             }
-            setCache(flash);
+            setCache([...flash]);
             setMeta(items);
             setSuccess(true);
             setTimeout(() => {
@@ -1684,7 +1684,7 @@ const Account: NextPage = () => {
               <button
                 onClick={() => {
                   setActiveTab("OWNER");
-                  cache.length > 0 ? setMeta(cache) : console.error("BUG");
+                  cache.length > 0 ? setMeta([...cache]) : console.error("BUG");
                   setTokenIDLegacy("");
                   setTokenIDWrapper("");
                   setQuery("");
@@ -1718,7 +1718,7 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  activeTab === "SEARCH" ? "" : setCache(flash);
+                  activeTab === "SEARCH" ? "" : setCache([...flash]);
                   setMeta([]);
                   setActiveTab("UTILS");
                   setSuccess(false);
@@ -1748,7 +1748,7 @@ const Account: NextPage = () => {
               </button>
               <button
                 onClick={() => {
-                  activeTab === "UTILS" ? "" : setCache(flash);
+                  activeTab === "UTILS" ? "" : setCache([...flash]);
                   setMeta([]);
                   setActiveTab("SEARCH");
                   setSuccess(false);
