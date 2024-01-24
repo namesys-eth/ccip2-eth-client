@@ -1684,12 +1684,8 @@ const Preview: React.FC<ModalProps> = ({
         body: JSON.stringify(request),
       })
         .then((response) => response.json())
-        .then((data) => {
-          if (data.status) {
-            return data.status === "true";
-          } else {
-            return false;
-          }
+        .then(async (data) => {
+          return data.response.status;
         });
     } catch (error) {
       console.error("ERROR:", "Failed to write Revision to CCIP2 backend");
