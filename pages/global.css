@@ -796,6 +796,44 @@ input:disabled {
   opacity: 1;
 }
 
+.button-micro {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-family: "Spotnik";
+  font-size: 15px;
+  font-weight: 800;
+  height: auto;
+  padding: 0;
+  border-radius: 6px;
+  align-items: left;
+  color: white;
+  transition: all ease 100ms;
+}
+
+.button-micro::after {
+  content: attr(data-tooltip);
+  background-color: black;
+  color: white;
+  padding: 4px;
+  border-radius: 2px;
+  position: absolute;
+  top: -120%;
+  left: 150%;
+  max-width: 250px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  font-size: 10px;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.button-micro:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
 button:not(:disabled):hover {
   transform: scale(1.15);
 }

@@ -3,9 +3,10 @@ import { isMobile } from "react-device-detect";
 
 interface SearchBoxProps {
   onSearch: (query: string) => void;
+  disabled: boolean;
 }
 
-export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
+export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, disabled }) => {
   const [query, setQuery] = useState("");
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +41,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
           required
           pattern=".*\.eth$"
           title="❗ Input must end with '.eth'"
+          disabled={disabled}
         />
         <button
           className="button"
@@ -67,7 +69,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch }) => {
   );
 };
 
-export const BigSearch: React.FC<SearchBoxProps> = ({ onSearch }) => {
+export const BigSearch: React.FC<SearchBoxProps> = ({ onSearch, disabled }) => {
   const [query, setQuery] = useState("");
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,6 +125,7 @@ export const BigSearch: React.FC<SearchBoxProps> = ({ onSearch }) => {
             paddingTop: query ? "8px" : "17px",
             paddingBottom: query ? "8px" : "15px",
           }}
+          disabled={disabled}
         />
         <button
           className="button"

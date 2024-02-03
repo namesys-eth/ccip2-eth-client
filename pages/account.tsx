@@ -95,6 +95,7 @@ const Account: NextPage = () => {
   const [choice, setChoice] = React.useState(""); // Records active process
   const [confirm, setConfirm] = React.useState(false); // Confirmation modal
   const [gateway, setGateway] = React.useState(false); // Gateway URL for storage
+  const [backend, setBackend] = React.useState(true); // Sets backend status
   const [previewModalState, setPreviewModalState] =
     React.useState<C.CustomBodyState>({
       modalData: "",
@@ -282,6 +283,7 @@ const Account: NextPage = () => {
           _LIST[i].migrated = _CID.startsWith("https://") ? "4/5" : "3/4";
         }
       }
+      setCID("");
       setMeta(_LIST);
       setFlash(_LIST);
       setCache(_LIST);
@@ -289,6 +291,8 @@ const Account: NextPage = () => {
       setMessage("Transaction Confirmed");
       setTimeout(() => {
         setLoading(false);
+        setCrash(false);
+        setRecentCrash(false);
       }, 2000);
     }
     setSaltModalState({
@@ -320,6 +324,7 @@ const Account: NextPage = () => {
   // Read ENS Legacy Registrar for Owner record of ENS domain via namehash
   const {
     data: _OwnerLegacy_,
+    refetch: readLegacyOwner,
     isLoading: legacyOwnerLoading,
     isError: legacyOwnerError,
   } = useContractRead({
@@ -329,21 +334,10 @@ const Account: NextPage = () => {
     args: [tokenIDLegacy],
   });
 
-  // Read ENS Wrapper for Owner record of ENS domain
-  const {
-    data: _OwnerWrapped_,
-    isLoading: wrapperOwnerLoading,
-    isError: wrapperOwnerError,
-  } = useContractRead({
-    address: `0x${C.ensConfig[_Chain_ === "1" ? 7 : 3].addressOrName.slice(2)}`,
-    abi: C.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
-    functionName: "ownerOf",
-    args: [tokenIDWrapper],
-  });
-
   // Read Legacy ENS Registry for ENS domain Manager
   const {
     data: _ManagerLegacy_,
+    refetch: readLegacyManager,
     isLoading: legacyManagerLoading,
     isError: legacyManagerError,
   } = useContractRead({
@@ -353,8 +347,21 @@ const Account: NextPage = () => {
     args: [namehashLegacy],
   });
 
+  // Read ENS Wrapper for Owner record of ENS domain
+  const {
+    data: _OwnerWrapped_,
+    refetch: readWrapperManager,
+    isLoading: wrapperOwnerLoading,
+    isError: wrapperOwnerError,
+  } = useContractRead({
+    address: `0x${C.ensConfig[_Chain_ === "1" ? 7 : 3].addressOrName.slice(2)}`,
+    abi: C.ensConfig[_Chain_ === "1" ? 7 : 3].contractInterface,
+    functionName: "ownerOf",
+    args: [tokenIDWrapper],
+  });
+
   // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead({
+  const { data: _Recordhash_, refetch: readRecordhash } = useContractRead({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: "getRecordhash",
@@ -362,7 +369,7 @@ const Account: NextPage = () => {
   });
 
   // Read Ownerhash from CCIP2 Resolver
-  const { data: _Ownerhash_ } = useContractRead({
+  const { data: _Ownerhash_, refetch: readOwnerhash } = useContractRead({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: "getRecordhash",
@@ -427,6 +434,9 @@ const Account: NextPage = () => {
       return data.response.gas;
     } catch (error) {
       console.error("Error:", "Failed to get gas data from CCIP2 backend");
+      setErrorMessage("Backend Service is Offline");
+      setErrorModal(true);
+      setBackend(false);
       return "";
     }
   }
@@ -803,7 +813,8 @@ const Account: NextPage = () => {
       !success &&
       length === 0 &&
       _Wallet_ &&
-      activeTab === "OWNER"
+      activeTab === "OWNER" &&
+      backend
     ) {
       setLoading(true); // Show loading state when calling logTokens
       // Call logTokens directly here
@@ -901,7 +912,7 @@ const Account: NextPage = () => {
               setFinish(true); // Flag finish of process
               setLength(0);
               setProgress(0);
-              setMessage("Showing Names");
+              if (backend) setMessage("Showing Names");
               setMeta(items);
               setFlash(items);
               setLoading(false);
@@ -916,7 +927,7 @@ const Account: NextPage = () => {
       loadTokens();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_Wallet_, finish, length, activeTab]);
+  }, [_Wallet_, finish, length, activeTab, backend]);
 
   // Preserve metadata across tabs
   React.useEffect(() => {
@@ -1142,7 +1153,7 @@ const Account: NextPage = () => {
     }
   }, [_Ownerhash_]);
 
-  // Format query to ENS name and get tokenID
+  // Triggers upon query load and attempts to get token and name data
   React.useEffect(() => {
     if (query) {
       let _namehash = ethers.utils.namehash(query);
@@ -1153,6 +1164,18 @@ const Account: NextPage = () => {
       setTokenIDLegacy(String(ethers.BigNumber.from(_labelhash)));
     }
   }, [query]);
+
+  // Triggers reading ownership and controller details for a name after getting token and name data
+  React.useEffect(() => {
+    if (namehashLegacy && tokenIDLegacy && tokenIDWrapper && query) {
+      readRecordhash();
+      readOwnerhash();
+      readLegacyOwner();
+      readLegacyManager();
+      readWrapperManager();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namehashLegacy, tokenIDLegacy, tokenIDWrapper, query]);
 
   // Handle Query
   const handleNameSearch = (query: string) => {
@@ -1182,19 +1205,23 @@ const Account: NextPage = () => {
 
   // Handles setting Ownerhash after Transaction
   React.useEffect(() => {
-    if (txSuccess1of2 && isSetOwnerhashSuccess) {
-      const purge = async () => {
-        await writeRevision(undefined, {}, "", "");
-      };
-      purge();
+    if (CID) {
+      if (txSuccess1of2 && isSetOwnerhashSuccess) {
+        const purge = async () => {
+          await writeRevision(undefined, {}, "", "");
+        };
+        purge();
+      }
+      handleMeta(txSuccess1of2, isSetOwnerhashSuccess, flash, CID);
     }
-    handleMeta(txSuccess1of2, isSetOwnerhashSuccess, flash, CID);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSuccess1of2, isSetOwnerhashSuccess, flash, CID]);
 
   // Handles setting Gateway as Ownerhash after Transaction
   React.useEffect(() => {
-    handleMeta(txSuccess2of2, isSetGatewaySuccess, flash, CID);
+    if (CID) {
+      handleMeta(txSuccess2of2, isSetGatewaySuccess, flash, CID);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [txSuccess2of2, isSetGatewaySuccess, flash, CID]);
 
@@ -1362,9 +1389,15 @@ const Account: NextPage = () => {
       <div style={{ fontFamily: "SF Mono" }}></div>
       <div style={{ fontFamily: "Spotnik" }}></div>
       {/* Overlay */}
-      <div id="overlay" className="overlay">
+      <div
+        id="overlay"
+        className="overlay"
+        style={{
+          marginTop: "75px",
+        }}
+      >
         <div className="overlay-content overlay-content-alt">
-          <Loading height={75} width={75} />
+          <Loading height={50} width={50} />
           <div
             style={{
               marginTop: "20px",
@@ -1703,7 +1736,7 @@ const Account: NextPage = () => {
                   !cache ? "" : setSuccess(true);
                 }}
                 className="button-header"
-                disabled={activeTab === "OWNER" || loading}
+                disabled={activeTab === "OWNER" || loading || !backend}
                 data-tooltip="Show names that you can manage"
               >
                 <div className="flex-sans-direction">
@@ -1733,7 +1766,7 @@ const Account: NextPage = () => {
                   setSigCount(0);
                 }}
                 className="button-header"
-                disabled={activeTab === "UTILS" || loading}
+                disabled={activeTab === "UTILS" || loading || !backend}
                 data-tooltip="NameSys Utility Functions"
               >
                 <div className="flex-sans-direction">
@@ -1763,7 +1796,7 @@ const Account: NextPage = () => {
                   setSigCount(0);
                 }}
                 className="button-header"
-                disabled={activeTab === "SEARCH" || loading}
+                disabled={activeTab === "SEARCH" || loading || !backend}
                 data-tooltip="Search for an ENS name"
               >
                 <div className="flex-sans-direction">
@@ -1793,7 +1826,7 @@ const Account: NextPage = () => {
                     paddingBottom: "10px",
                   }}
                 >
-                  <Loading height={60} width={60} />
+                  <Loading height={40} width={40} />
                 </div>
                 <div
                   className="flex-column"
@@ -1884,7 +1917,7 @@ const Account: NextPage = () => {
                       paddingBottom: "10px",
                     }}
                   >
-                    <Loading height={60} width={60} />
+                    <Loading height={40} width={40} />
                   </div>
                   <div
                     className="flex-column"
@@ -1961,6 +1994,7 @@ const Account: NextPage = () => {
                     <List
                       label="edit"
                       items={meta}
+                      disabled={!backend}
                       onItemClickStealth={onItemClickStealth}
                       onItemClickPreview={onItemClickPreview}
                     />
@@ -1996,6 +2030,7 @@ const Account: NextPage = () => {
                   <List
                     label="edit"
                     items={meta}
+                    disabled={!backend}
                     onItemClickStealth={onItemClickStealth}
                     onItemClickPreview={onItemClickPreview}
                   />
@@ -2544,7 +2579,7 @@ const Account: NextPage = () => {
                     marginBottom: "50px",
                   }}
                 >
-                  <SearchBox onSearch={handleNameSearch} />
+                  <SearchBox onSearch={handleNameSearch} disabled={!backend} />
                 </div>
               </div>
             )}

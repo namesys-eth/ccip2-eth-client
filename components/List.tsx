@@ -12,6 +12,7 @@ interface ListItem {
 interface ListProps {
   label: string;
   items: ListItem[];
+  disabled: boolean;
   onItemClickStealth: (value: string) => void;
   onItemClickPreview: (value: string) => void;
 }
@@ -29,6 +30,7 @@ const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const List: React.FC<ListProps> = ({
   label,
   items,
+  disabled,
   onItemClickStealth,
   onItemClickPreview,
 }) => {
@@ -274,7 +276,7 @@ const List: React.FC<ListProps> = ({
                   width: "40px",
                 }}
                 onClick={() => onItemClickStealth(item.name + ".eth")}
-                disabled={["0"].includes(item.migrated) || label === "view"}
+                disabled={["0"].includes(item.migrated) || label === "view" || disabled}
                 data-tooltip={`Stealth Payments`}
               >
                 <div className="flex-sans-direction">
@@ -302,6 +304,7 @@ const List: React.FC<ListProps> = ({
                 }}
                 onClick={() => onItemClickPreview(item.name + ".eth")}
                 data-tooltip={`${label} Your Records`}
+                disabled={disabled}
               >
                 <div className="flex-sans-direction">
                   {}

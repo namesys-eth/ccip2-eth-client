@@ -55,6 +55,7 @@ const Home: NextPage = () => {
   const [ownerhash, setOwnerhash] = React.useState(""); // Ownerhash
   const [owner, setOwner] = React.useState(""); // Owner of ENS domain
   const [onSearch, setOnSearch] = React.useState(false); // Stores search trigger
+  const [backend, setBackend] = React.useState(true); // Sets backend status
   const [top, setTop] = React.useState(""); // Top margin for Help modal
   const [previewModalState, setPreviewModalState] =
     React.useState<C.CustomBodyState>({
@@ -187,9 +188,13 @@ const Home: NextPage = () => {
         body: JSON.stringify(request),
       });
       const data = await _RESPONSE.json();
+      setBackend(true);
       return data.response.gas;
     } catch (error) {
       console.error("Error:", "Failed to get gas data from NameSys backend");
+      setErrorMessage("Backend Service is Offline");
+      setErrorModal(true);
+      setBackend(false);
       return "";
     }
   }
@@ -761,7 +766,7 @@ const Home: NextPage = () => {
                     : "/account";
                 }}
                 data-tooltip="My Names"
-                disabled={isDisconnected}
+                disabled={isDisconnected || !backend}
                 hidden={isMobile}
               >
                 <div className="flex-sans-direction">
@@ -982,7 +987,7 @@ const Home: NextPage = () => {
               marginBottom: "50px",
             }}
           >
-            <BigSearch onSearch={handleNameSearch} />
+            <BigSearch onSearch={handleNameSearch} disabled={!backend} />
           </div>
           {!onSearch && (
             <div>
@@ -1128,6 +1133,7 @@ const Home: NextPage = () => {
                       : "view"
                   }
                   items={meta}
+                  disabled={!backend}
                   onItemClickStealth={onItemClickStealth}
                   onItemClickPreview={onItemClickPreview}
                 />
@@ -1223,6 +1229,16 @@ const Home: NextPage = () => {
               }}
               color={"red"}
               show={errorModal && searchType === "search" && !loading}
+              title={"block"}
+            >
+              {errorMessage}
+            </Error>
+            <Error
+              onClose={() => {
+                setErrorModal(false);
+              }}
+              color={"red"}
+              show={errorModal && !backend}
               title={"block"}
             >
               {errorMessage}

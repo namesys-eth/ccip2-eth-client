@@ -34,6 +34,7 @@ import {
 } from "wagmi"; // Legacy Wagmi 1.6
 import { Resolver } from "@ethersproject/providers";
 import { formatsByName } from "@ensdomains/address-encoder";
+import { zeroAddress } from "viem";
 
 // Modal data to pass back to homepage
 interface ModalProps {
@@ -101,6 +102,7 @@ const Preview: React.FC<ModalProps> = ({
   const [namehashLegacy, setNamehashLegacy] = React.useState(""); // Legacy Namehash of ENS Domain
   const [tokenIDLegacy, setTokenIDLegacy] = React.useState(""); // Legacy Token ID of ENS Domain
   const [tokenIDWrapper, setTokenIDWrapper] = React.useState(""); // Wrapper Token ID of ENS Domain
+  const [recordEditor, setRecordEditor] = React.useState(C.zeroAddress); // Sets in-app record editor
   const [managers, setManagers] = React.useState<string[]>([]); // Manager of ENS Domain
   const [contenthash, setContenthash] = React.useState(""); // Contenthash record for ENS Domain
   const [saltModal, setSaltModal] = React.useState(false); // Salt (password/key-identifier) for IPNS keygen
@@ -211,6 +213,7 @@ const Preview: React.FC<ModalProps> = ({
   // Read Legacy ENS Registry for ENS domain Owner
   const {
     data: _OwnerLegacy_,
+    refetch: readLegacyOwner,
     isLoading: legacyOwnerLoading,
     isError: legacyOwnerError,
   } = useContractRead({
@@ -222,6 +225,7 @@ const Preview: React.FC<ModalProps> = ({
   // Read Legacy ENS Registry for ENS domain Manager
   const {
     data: _ManagerLegacy_,
+    refetch: readLegacyManager,
     isLoading: legacyManagerLoading,
     isError: legacyManagerError,
   } = useContractRead({
@@ -230,8 +234,20 @@ const Preview: React.FC<ModalProps> = ({
     functionName: "owner",
     args: [namehashLegacy],
   });
+  // Read ownership of a domain from ENS Wrapper
+  const {
+    data: _OwnerWrapped_,
+    refetch: readWrapperManager,
+    isLoading: wrapperOwnerLoading,
+    isError: wrapperOwnerError,
+  } = useContractRead({
+    address: `0x${C.ensConfig[chain === "1" ? 7 : 3].addressOrName.slice(2)}`,
+    abi: C.ensConfig[chain === "1" ? 7 : 3].contractInterface,
+    functionName: "ownerOf",
+    args: [tokenIDWrapper],
+  });
   // Read CCIP2 for ENS domain on-chain manager
-  const { data: _CCIP2Manager_ } = useContractRead({
+  const { data: _CCIP2Manager_, refetch: readOnChainSigner } = useContractRead({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: "isApprovedSigner",
@@ -243,30 +259,19 @@ const Preview: React.FC<ModalProps> = ({
         : C.zeroAddress,
     ],
   });
-  // Read ownership of a domain from ENS Wrapper
-  const {
-    data: _OwnerWrapped_,
-    isLoading: wrapperOwnerLoading,
-    isError: wrapperOwnerError,
-  } = useContractRead({
-    address: `0x${C.ensConfig[chain === "1" ? 7 : 3].addressOrName.slice(2)}`,
-    abi: C.ensConfig[chain === "1" ? 7 : 3].contractInterface,
-    functionName: "ownerOf",
-    args: [tokenIDWrapper],
-  });
-  // Read Ownerhash from CCIP2 Resolver
-  const { data: _Ownerhash_ } = useContractRead({
-    address: `0x${ccip2Config.addressOrName.slice(2)}`,
-    abi: ccip2Config.contractInterface,
-    functionName: "getRecordhash",
-    args: [ethers.utils.hexZeroPad(getRecordEditor(), 32).toLowerCase()],
-  });
   // Read Recordhash from CCIP2 Resolver
-  const { data: _Recordhash_ } = useContractRead({
+  const { data: _Recordhash_, refetch: readRecordhash } = useContractRead({
     address: `0x${ccip2Config.addressOrName.slice(2)}`,
     abi: ccip2Config.contractInterface,
     functionName: "getRecordhash",
     args: [ethers.utils.namehash(ENS)],
+  });
+  // Read Ownerhash from CCIP2 Resolver
+  const { data: _Ownerhash_, refetch: readOwnerhash } = useContractRead({
+    address: `0x${ccip2Config.addressOrName.slice(2)}`,
+    abi: ccip2Config.contractInterface,
+    functionName: "getRecordhash",
+    args: [ethers.utils.hexZeroPad(getRecordEditor(), 32).toLowerCase()],
   });
 
   // Sets new ENS Resolver
@@ -1875,7 +1880,7 @@ const Preview: React.FC<ModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Triggers upon Preview load and attempts to get Resolver for ENS domain
+  // Triggers upon Preview load and attempts to get token and name data
   React.useEffect(() => {
     if (browser && ENS) {
       let namehash = ethers.utils.namehash(ENS);
@@ -1883,10 +1888,36 @@ const Preview: React.FC<ModalProps> = ({
       setNamehashLegacy(namehash);
       setTokenIDLegacy(String(ethers.BigNumber.from(labelhash)));
       setTokenIDWrapper(String(ethers.BigNumber.from(namehash)));
-      setConclude(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [browser, ENS]);
+
+  // Triggers reading ownership and controller details for a name after getting token and name data
+  React.useEffect(() => {
+    if (namehashLegacy && tokenIDLegacy && tokenIDWrapper && ENS) {
+      readRecordhash();
+      readLegacyOwner();
+      readLegacyManager();
+      readWrapperManager();
+      setConclude(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namehashLegacy, tokenIDLegacy, tokenIDWrapper, ENS]);
+
+  // Enables querying Ownerhash
+  React.useEffect(() => {
+    if (recordEditor && recordEditor !== C.zeroAddress) {
+      readOwnerhash();
+      readOnChainSigner();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordEditor]);
+
+  // Sets in-app record editor
+  React.useEffect(() => {
+    setRecordEditor(getRecordEditor());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_OwnerLegacy_, _ManagerLegacy_, _OwnerWrapped_]);
 
   // Handles setting setRecordhash on CCIP2 Resolver
   React.useEffect(() => {
@@ -3437,7 +3468,7 @@ const Preview: React.FC<ModalProps> = ({
                     </div>
                   </button>
                 </div>
-                <div style={{ margin: "-5px 0 1px 0" }}>
+                <div style={{ margin: "-5px 0 1px 0" }} className="flex-row">
                   <span
                     className="mono"
                     id="metaOwner"
@@ -3454,21 +3485,25 @@ const Preview: React.FC<ModalProps> = ({
                   </span>
                   {(!_OwnerLegacy_ ||
                     String(_OwnerLegacy_) === C.zeroAddress) && (
-                    <span
+                    <button
+                      className="button-micro"
                       style={{
-                        padding: "0 0 0 7.5px",
+                        margin: "-2px 0 0 7.5px",
                       }}
+                      data-tooltip={`Name in Grace Period or Expired`}
                     >
-                      <span
-                        className="material-icons-round smoller"
-                        style={{
-                          color: "orange",
-                          fontSize: "15px",
-                        }}
-                      >
-                        {"report_problem"}
-                      </span>
-                    </span>
+                      <div>
+                        <span
+                          className="material-icons-round smoller"
+                          style={{
+                            color: "orange",
+                            fontSize: "15px",
+                          }}
+                        >
+                          {"report_problem"}
+                        </span>
+                      </div>
+                    </button>
                   )}
                   {C.ensContracts.includes(String(_OwnerLegacy_)) && (
                     <img
@@ -3478,16 +3513,19 @@ const Preview: React.FC<ModalProps> = ({
                       style={{ margin: `0 -15px -1px 7.5px` }}
                     />
                   )}
-                  {!wrapped && (
-                    <img
-                      alt="logo-2"
-                      src="logo.png"
-                      width={"15px"}
-                      style={{ margin: `0 -15px -1px 7.5px` }}
-                    />
-                  )}
+                  {!wrapped &&
+                    !["undefined", C.zeroAddress].includes(
+                      String(_OwnerLegacy_)
+                    ) && (
+                      <img
+                        alt="logo-2"
+                        src="logo.png"
+                        width={"15px"}
+                        style={{ margin: `-5px -15px 0 7.5px` }}
+                      />
+                    )}
                 </div>
-                <div style={{ margin: "-3px 0 1px 0" }}>
+                <div style={{ margin: "0 0 1px 0" }}>
                   <span className="mono" id="metaManager" onClick={() => {}}>
                     {isMobile
                       ? C.truncateHexString(getManager())
